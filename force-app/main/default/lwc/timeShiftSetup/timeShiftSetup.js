@@ -440,8 +440,9 @@ const THEME_OBJECTS = {
   changerequestrelatedissue: "ChangeRequest",
   maintenanceasset: "MaintenancePlan"
 };
-// Where Salesforce can't say (a file link's document has no object theme of its own).
-const THEME_FALLBACKS = { contentdocumentlink: { icon: "standard:file", colour: "#BAAC93" } };
+// Where Salesforce has no theme to give the link itself: a file wears its document's
+// (standard:file, 939393, as ContentDocument's object info reports).
+const THEME_FALLBACKS = { contentdocumentlink: { icon: "standard:file", colour: "#939393" } };
 
 // "standard:case" from the icon address Salesforce gives an object
 // (.../img/icon/t4v35/standard/case_120.png).
