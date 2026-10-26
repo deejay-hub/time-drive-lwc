@@ -1,5 +1,6 @@
 import { LightningElement, wire } from "lwc";
 import { getLayout } from "lightning/uiLayoutApi";
+import { getObjectInfo } from "lightning/uiObjectInfoApi";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
 import TimeShiftConfirm from "c/timeShiftConfirm";
 import { subscribe, unsubscribe, onError } from "lightning/empApi";
@@ -424,6 +425,84 @@ function colourName(hex) {
     if (found) return `${row.hue} ${found.shade}`;
   }
   return value || null;
+}
+
+// The object whose icon and colour a source's items wear. A junction stands for
+// the record it joins (a TaskRelation is a Task), so it takes that record's.
+const THEME_OBJECTS = {
+  taskrelation: "Task",
+  taskwhorelation: "Task",
+  eventrelation: "Event",
+  eventwhorelation: "Event",
+  campaignmember: "Campaign",
+  opportunitycontactrole: "Opportunity",
+  caserelatedissue: "Case",
+  changerequestrelatedissue: "ChangeRequest",
+  maintenanceasset: "MaintenancePlan"
+};
+// Where Salesforce can't say (a file link's document has no object theme of its own).
+const THEME_FALLBACKS = { contentdocumentlink: { icon: "standard:file", colour: "#BAAC93" } };
+
+// "standard:case" from the icon address Salesforce gives an object
+// (.../img/icon/t4v35/standard/case_120.png).
+function themeIconName(iconUrl) {
+  const m = /\/img\/icon\/[^/]+\/(standard|custom|action|doctype|utility)\/([a-z0-9_]+?)(?:_\d+)?\.(?:png|svg)/i.exec(
+    iconUrl ?? ""
+  );
+  return m ? `${m[1]}:${m[2]}`.toLowerCase() : null;
+}
+
+let catalogNames;
+function inCatalog(name) {
+  if (!catalogNames) catalogNames = new Set(iconCatalog().map((i) => i.name));
+  return catalogNames.has(name);
+}
+
+// A colour, darkened a step at a time until the timeline's white icon can be
+// seen on it (WCAG 3:1), as Setup requires; one that already can is left as it is.
+function accessibleColour(hex) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex ?? "");
+  if (!m) return null;
+  let value = `#${m[1].toUpperCase()}`;
+  if (contrastWithWhite(value) >= MIN_CONTRAST) return value;
+  const r = parseInt(m[1].slice(0, 2), 16) / 255;
+  const g = parseInt(m[1].slice(2, 4), 16) / 255;
+  const b = parseInt(m[1].slice(4, 6), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let l = (max + min) / 2;
+  const d = max - min;
+  const sat = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+  let hue = 0;
+  if (d !== 0) {
+    if (max === r) hue = ((g - b) / d + (g < b ? 6 : 0)) * 60;
+    else if (max === g) hue = ((b - r) / d + 2) * 60;
+    else hue = ((r - g) / d + 4) * 60;
+  }
+  for (let i = 0; i < 40 && contrastWithWhite(value) < MIN_CONTRAST; i++) {
+    l = Math.max(0, l - 0.02);
+    const c = (1 - Math.abs(2 * l - 1)) * sat;
+    const x = c * (1 - Math.abs(((hue / 60) % 2) - 1));
+    const base = l - c / 2;
+    const [rr, gg, bb] =
+      hue < 60
+        ? [c, x, 0]
+        : hue < 120
+          ? [x, c, 0]
+          : hue < 180
+            ? [0, c, x]
+            : hue < 240
+              ? [0, x, c]
+              : hue < 300
+                ? [x, 0, c]
+                : [c, 0, x];
+    const hex2 = (n) =>
+      Math.round((n + base) * 255)
+        .toString(16)
+        .padStart(2, "0");
+    value = `#${hex2(rr)}${hex2(gg)}${hex2(bb)}`.toUpperCase();
+  }
+  return value;
 }
 
 const NUMBER_TYPES = new Set(["double", "currency", "integer", "long", "percent"]);
@@ -2303,6 +2382,7 @@ export default class TimeShiftSetup extends LightningElement {
   }
 
   resetWizard() {
+    this.lookTouched = false;
     this.legendModeChoice = undefined;
     this.legendDefaulted = false;
     this.legendPicked = false;
@@ -3222,8 +3302,13 @@ export default class TimeShiftSetup extends LightningElement {
           : suggested(d.subtitle)
             ? "{Name}"
             : d.subtitle,
-      icon: d.icon ?? OBJECT_ICONS[value.toLowerCase()] ?? (this.isDmo ? "utility:world" : "utility:record")
+      icon: this.lookTouched
+        ? (d.icon ?? OBJECT_ICONS[value.toLowerCase()] ?? (this.isDmo ? "utility:world" : "utility:record"))
+        : (OBJECT_ICONS[value.toLowerCase()] ?? (this.isDmo ? "utility:world" : "utility:record")),
+      iconColour: this.lookTouched ? d.iconColour : null
     });
+    // Salesforce's own icon and colour for it, where known at once.
+    this.applyObjectLook();
     this.reached = this.stepIndex;
     this.filterMode = "all";
     this.volumes = undefined;
@@ -3941,6 +4026,7 @@ export default class TimeShiftSetup extends LightningElement {
   }
 
   handleIcon(event) {
+    this.lookTouched = true;
     this.update({ icon: event.currentTarget.dataset.value });
   }
 
@@ -3992,12 +4078,82 @@ export default class TimeShiftSetup extends LightningElement {
   }
 
   handleColour(event) {
+    this.lookTouched = true;
     this.update({ iconColour: event.currentTarget.dataset.value });
   }
 
   handleCustomColour(event) {
     const value = (event.detail?.value ?? event.target.value ?? "").toUpperCase();
-    if (/^#[0-9A-F]{6}$/.test(value)) this.update({ iconColour: value });
+    if (/^#[0-9A-F]{6}$/.test(value)) {
+      this.lookTouched = true;
+      this.update({ iconColour: value });
+    }
+  }
+
+  // ---- the object's own icon and colour -----------------------------------
+
+  // A source starts with the icon and colour Salesforce gives its object (a
+  // junction takes its record's); choosing either yourself keeps your choice,
+  // and a button puts the object's back.
+  lookTouched = false;
+  theme;
+
+  get themeObject() {
+    const name = this.draft.objectName;
+    if (!this.isSalesforce || !name || THEME_FALLBACKS[name.toLowerCase()]) return undefined;
+    return THEME_OBJECTS[name.toLowerCase()] ?? name;
+  }
+
+  @wire(getObjectInfo, { objectApiName: "$themeObject" })
+  wiredTheme({ data }) {
+    if (!data?.themeInfo) return;
+    this.theme = {
+      object: data.apiName,
+      label: data.label,
+      icon: themeIconName(data.themeInfo.iconUrl),
+      colour: data.themeInfo.color ? `#${data.themeInfo.color}` : null
+    };
+    this.applyObjectLook();
+  }
+
+  // The icon and colour the object comes with, or null where they're not known.
+  get objectLook() {
+    const fallback = THEME_FALLBACKS[String(this.draft.objectName ?? "").toLowerCase()];
+    if (this.isSalesforce && fallback) {
+      return { icon: fallback.icon, colour: accessibleColour(fallback.colour), label: this.objectLabel };
+    }
+    const t = this.theme;
+    if (!this.isSalesforce || !t || t.object !== this.themeObject) return null;
+    const icon = t.icon && inCatalog(t.icon) ? t.icon : null;
+    const colour = accessibleColour(t.colour);
+    return icon || colour ? { icon, colour, label: t.label } : null;
+  }
+
+  // A new source takes them; a saved one, or one the person has set, doesn't.
+  applyObjectLook() {
+    const look = this.objectLook;
+    if (!look || this.lookTouched || this.editing) return;
+    this.update({ icon: look.icon ?? this.draft.icon, iconColour: look.colour ?? this.draft.iconColour });
+  }
+
+  get canRestoreLook() {
+    const look = this.objectLook;
+    if (!look) return false;
+    return (
+      (Boolean(look.icon) && this.draft.icon !== look.icon) ||
+      (Boolean(look.colour) && (this.draft.iconColour ?? "").toUpperCase() !== look.colour)
+    );
+  }
+
+  get restoreLookLabel() {
+    return `Use ${this.objectLook?.label ?? "the object"}'s icon and colour`;
+  }
+
+  handleRestoreLook() {
+    const look = this.objectLook;
+    if (!look) return;
+    this.lookTouched = false;
+    this.update({ icon: look.icon ?? this.draft.icon, iconColour: look.colour ?? this.draft.iconColour });
   }
 
   get nodeStyle() {

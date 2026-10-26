@@ -1967,111 +1967,124 @@
                   <!-- Words: the title and subtitle, with fields -->
                   <!-- Words and style: what each item says, its icon and colour, on one sample item -->
                   <template lwc:if={isLookStep}>
-                    <div class="sample sample_large" aria-hidden="true">
-                      <span class="node node_large" style={nodeStyle}>
+                    <div class="sample sample_large">
+                      <span class="node node_large" style={nodeStyle} aria-hidden="true">
                         <lightning-icon icon-name={iconName} size="small" variant="inverse"></lightning-icon>
                       </span>
-                      <span class="sample-text">
-                        <span class="sample-title">
-                          <template for:each={titleParts} for:item="p">
-                            <span key={p.key} class={p.className}>{p.text}</span>
-                          </template>
-                        </span>
-                        <span class="sample-sub">
-                          <template lwc:if={showWords}>
-                            <template for:each={subtitleParts} for:item="p">
+                      <div class="sample-body">
+                        <span class="sample-text" aria-hidden="true">
+                          <span class="sample-title">
+                            <template for:each={titleParts} for:item="p">
                               <span key={p.key} class={p.className}>{p.text}</span>
                             </template>
-                          </template>
-                          <template lwc:else>
-                            <lightning-formatted-date-time
-                              value={sampleDate}
-                              day="numeric"
-                              month="short"
-                              hour="2-digit"
-                              minute="2-digit"
-                            ></lightning-formatted-date-time>
-                          </template>
+                          </span>
+                          <span class="sample-sub">
+                            <template lwc:if={showWords}>
+                              <template for:each={subtitleParts} for:item="p">
+                                <span key={p.key} class={p.className}>{p.text}</span>
+                              </template>
+                            </template>
+                            <template lwc:else>
+                              <lightning-formatted-date-time
+                                value={sampleDate}
+                                day="numeric"
+                                month="short"
+                                hour="2-digit"
+                                minute="2-digit"
+                              ></lightning-formatted-date-time>
+                            </template>
+                          </span>
                         </span>
-                      </span>
+
+                        <template lwc:if={showWords}>
+                          <div class="word-fields">
+                            <div class="word-field">
+                              <label class="word-label" for="title-input">Title</label>
+                              <div class="word-row">
+                                <input
+                                  id="title-input"
+                                  class="word-input"
+                                  type="text"
+                                  placeholder="Order placed"
+                                  value={titleText}
+                                  data-field="title"
+                                  oninput={handleWords}
+                                />
+                                <button
+                                  lwc:if={hasFields}
+                                  class="add-field"
+                                  type="button"
+                                  data-field="title"
+                                  aria-expanded={titleTokensOpen}
+                                  onclick={handleTokenOpen}
+                                >
+                                  <lightning-icon icon-name="utility:add" size="xx-small"></lightning-icon>
+                                  <span>Field</span>
+                                </button>
+                              </div>
+                              <template lwc:if={titleTokensOpen}>
+                                <c-time-shift-field-picker
+                                  fields={tokenFields}
+                                  label="Search fields to add to the title"
+                                  onpick={handleFieldPick}
+                                  onclose={handleFieldPickClose}
+                                ></c-time-shift-field-picker>
+                              </template>
+                            </div>
+
+                            <div class="word-field">
+                              <label class="word-label" for="subtitle-input">Subtitle</label>
+                              <div class="word-row">
+                                <input
+                                  id="subtitle-input"
+                                  class="word-input"
+                                  type="text"
+                                  placeholder={subtitlePlaceholder}
+                                  value={subtitleText}
+                                  disabled={isEmailMessage}
+                                  aria-describedby="subtitle-note"
+                                  data-field="subtitle"
+                                  oninput={handleWords}
+                                />
+                                <button
+                                  lwc:if={canAddSubtitleField}
+                                  class="add-field"
+                                  type="button"
+                                  data-field="subtitle"
+                                  aria-expanded={subtitleTokensOpen}
+                                  onclick={handleTokenOpen}
+                                >
+                                  <lightning-icon icon-name="utility:add" size="xx-small"></lightning-icon>
+                                  <span>Field</span>
+                                </button>
+                              </div>
+                              <p lwc:if={isEmailMessage} id="subtitle-note" class="word-note">
+                                Set for you: who each email went to.
+                              </p>
+                              <template lwc:if={subtitleTokensOpen}>
+                                <c-time-shift-field-picker
+                                  fields={tokenFields}
+                                  label="Search fields to add to the subtitle"
+                                  onpick={handleFieldPick}
+                                  onclose={handleFieldPickClose}
+                                ></c-time-shift-field-picker>
+                              </template>
+                            </div>
+                          </div>
+                        </template>
+                        <template lwc:if={canRestoreLook}>
+                          <div class="look-restore">
+                            <lightning-button
+                              variant="base"
+                              icon-name="utility:undo"
+                              label={restoreLookLabel}
+                              onclick={handleRestoreLook}
+                            ></lightning-button>
+                          </div>
+                        </template>
+                      </div>
                     </div>
                     <div class={styleGridClass}>
-                      <template lwc:if={showWords}>
-                        <div class="word-fields">
-                          <div class="word-field">
-                            <label class="word-label" for="title-input">Title</label>
-                            <div class="word-row">
-                              <input
-                                id="title-input"
-                                class="word-input"
-                                type="text"
-                                placeholder="Order placed"
-                                value={titleText}
-                                data-field="title"
-                                oninput={handleWords}
-                              />
-                              <button
-                                lwc:if={hasFields}
-                                class="add-field"
-                                type="button"
-                                data-field="title"
-                                aria-expanded={titleTokensOpen}
-                                onclick={handleTokenOpen}
-                              >
-                                <lightning-icon icon-name="utility:add" size="xx-small"></lightning-icon>
-                                <span>Field</span>
-                              </button>
-                            </div>
-                            <template lwc:if={titleTokensOpen}>
-                              <c-time-shift-field-picker
-                                fields={tokenFields}
-                                label="Search fields to add to the title"
-                                onpick={handleFieldPick}
-                                onclose={handleFieldPickClose}
-                              ></c-time-shift-field-picker>
-                            </template>
-                          </div>
-
-                          <div class="word-field">
-                            <label class="word-label" for="subtitle-input">Subtitle</label>
-                            <div class="word-row">
-                              <input
-                                id="subtitle-input"
-                                class="word-input"
-                                type="text"
-                                placeholder={subtitlePlaceholder}
-                                value={subtitleText}
-                                disabled={isEmailMessage}
-                                aria-describedby="subtitle-note"
-                                data-field="subtitle"
-                                oninput={handleWords}
-                              />
-                              <button
-                                lwc:if={canAddSubtitleField}
-                                class="add-field"
-                                type="button"
-                                data-field="subtitle"
-                                aria-expanded={subtitleTokensOpen}
-                                onclick={handleTokenOpen}
-                              >
-                                <lightning-icon icon-name="utility:add" size="xx-small"></lightning-icon>
-                                <span>Field</span>
-                              </button>
-                            </div>
-                            <p lwc:if={isEmailMessage} id="subtitle-note" class="word-note">
-                              Set for you: who each email went to.
-                            </p>
-                            <template lwc:if={subtitleTokensOpen}>
-                              <c-time-shift-field-picker
-                                fields={tokenFields}
-                                label="Search fields to add to the subtitle"
-                                onpick={handleFieldPick}
-                                onclose={handleFieldPickClose}
-                              ></c-time-shift-field-picker>
-                            </template>
-                          </div>
-                        </div>
-                      </template>
                       <div class="look">
                         <section class="look-panel" aria-labelledby="icon-question">
                           <div class="look-head">

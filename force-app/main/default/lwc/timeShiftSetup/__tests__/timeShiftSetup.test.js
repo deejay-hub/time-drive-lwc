@@ -11,6 +11,7 @@ import setActive from "@salesforce/apex/TimeShiftSetupController.setActive";
 import save from "@salesforce/apex/TimeShiftSetupController.save";
 import TimeShiftConfirm from "c/timeShiftConfirm";
 import { subscribe } from "lightning/empApi";
+import { getObjectInfo } from "lightning/uiObjectInfoApi";
 import getLabelText from "@salesforce/apex/TimeShiftSetupController.getLabelText";
 import getOrgFit from "@salesforce/apex/TimeShiftSetupController.getOrgFit";
 import applyOrgFit from "@salesforce/apex/TimeShiftSetupController.applyOrgFit";
@@ -640,6 +641,56 @@ describe("c-time-shift-setup", () => {
       expect(root.querySelector(".picker-input").value).toBe("Task › Due Date");
     });
 
+    it("lays out the look: the icon preview with the title and subtitle beside it, the pickers side by side below", async () => {
+      const root = await openStep("look", { icon: "utility:record", iconColour: "#0B5CAB" });
+      await settle();
+      const card = root.querySelector(".sample");
+      // Top left the icon; top right the title and subtitle, to write.
+      expect(card.firstElementChild.classList.contains("node_large")).toBe(true);
+      expect(card.querySelector(".sample-body .sample-text")).not.toBeNull();
+      expect([...card.querySelectorAll(".word-label")].map((l) => l.textContent)).toEqual(["Title", "Subtitle"]);
+      // Underneath, the icon and the colour, as two panels of one row.
+      const look = root.querySelector(".look");
+      expect(card.contains(look)).toBe(false);
+      expect(card.compareDocumentPosition(look) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect([...look.querySelectorAll(":scope > .look-panel h3")].map((h) => h.textContent)).toEqual([
+        "Icon",
+        "Colour"
+      ]);
+    });
+
+    it("offers the object's own icon and colour, and puts them back after they're changed", async () => {
+      // A TaskRelation's items are tasks: they wear the Task's icon and colour.
+      const root = await openStep("look", { icon: "utility:record", iconColour: "#0B5CAB" });
+      await settle();
+      expect(root.querySelector(".look-restore")).toBeNull();
+      getObjectInfo.emit({
+        apiName: "Task",
+        label: "Task",
+        themeInfo: {
+          color: "4BC076",
+          iconUrl: "https://example.my.salesforce.com/img/icon/t4v35/standard/task_120.png"
+        }
+      });
+      await settle();
+      // Different from what's chosen: the way back is offered.
+      const restore = root.querySelector(".look-restore lightning-button");
+      expect(restore).not.toBeNull();
+      expect(restore.label).toBe("Use Task's icon and colour");
+      restore.click();
+      await settle();
+      expect(root.querySelector(".look-current").textContent).toContain("standard:task");
+      // Salesforce's green is too light for the white icon: darkened until it can be seen.
+      const chip = root.querySelector(".node_large").getAttribute("style");
+      expect(chip).toMatch(/--chip: #[0-9A-F]{6}/);
+      expect(chip).not.toContain("#4BC076");
+      expect(root.querySelector(".look-restore")).toBeNull();
+      // Choosing another icon is the person's: the button returns.
+      root.querySelector('.icon-choice[data-value="utility:email"], .icons button:not(.icon-choice_on)').click();
+      await settle();
+      expect(root.querySelector(".look-restore")).not.toBeNull();
+    });
+
     it("fixes a file's opening and click: its chosen fields, and the file preview", async () => {
       const root = await openStep("open", {
         objectName: "ContentDocumentLink",
@@ -1111,6 +1162,8 @@ describe("c-time-shift-setup", () => {
     expect(root.querySelector(".custom-label-input").value).toBe("Time_Shift_Legend_Files");
     expect(getLabelText).toHaveBeenCalledWith({ name: "Time_Shift_Legend_Files" });
     expect(root.querySelector(".legend-row_mine .legend-name").textContent).toBe("Files & Notes");
+    // And the file icon's colour (darkened to be seen), not the grey of nothing chosen.
+    expect(root.querySelector(".legend-row_mine .chip").getAttribute("style")).toMatch(/--chip: #[0-9A-F]{6}/);
 
     // Back to the object: another one takes the choice back.
     root.querySelector('.knot-button[data-step="object"]').click();

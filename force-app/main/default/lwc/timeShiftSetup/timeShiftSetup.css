@@ -3169,7 +3169,35 @@ a.guided-button lightning-icon {
 }
 
 .sample_large {
+  align-items: flex-start;
+  gap: calc(1.25rem * var(--d));
   padding: calc(1.25 * var(--space));
+}
+
+/* The title and subtitle, at the card's right: what they read as, then the
+   boxes to write them in. */
+.sample-body {
+  display: grid;
+  flex: 1;
+  gap: calc(0.875rem * var(--d));
+  min-width: 0;
+}
+
+.sample .word-fields {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.look-restore {
+  display: flex;
+}
+
+/* A field list opened from the title or subtitle goes over the pickers below. */
+.sample {
+  position: relative;
+}
+
+.sample:focus-within {
+  z-index: 10;
 }
 
 .node {
@@ -4755,68 +4783,14 @@ a.guided-button lightning-icon {
   align-items: start;
 }
 
-/* The Words and style step: the icon beside the title over the subtitle,
-   and the colour across the whole width underneath. */
+/* The Words and style step: the icon preview at the top left with the title
+   and subtitle beside it (the card above), then the icon and the colour side by
+   side underneath (.look). */
 .style-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(16rem, 24rem);
+  grid-template-columns: minmax(0, 1fr);
   gap: calc(1.5rem * var(--d));
   align-items: start;
-}
-
-/* The two panels become the grid's own rows. */
-.style-grid:not(.style-grid_solo) .look {
-  display: contents;
-}
-
-.style-grid:not(.style-grid_solo) .look > .look-panel:first-child {
-  grid-column: 1;
-  grid-row: 1;
-}
-
-.style-grid:not(.style-grid_solo) .look > .look-panel:last-child {
-  grid-column: 1 / -1;
-  grid-row: 2;
-}
-
-.style-grid .word-fields {
-  grid-column: 2;
-  grid-row: 1;
-  grid-template-columns: minmax(0, 1fr);
-}
-
-/* Across the full width, the colours flow in columns. */
-.style-grid:not(.style-grid_solo) .palette {
-  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
-  column-gap: calc(1.5rem * var(--d));
-}
-
-/* No words to write (an Apex class): the pickers as they were. */
-.style-grid_solo {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.style-grid_solo .look {
-  grid-template-columns: minmax(0, 1fr) minmax(16rem, 18rem);
-}
-
-@media (max-width: 52rem) {
-  .style-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .style-grid .word-fields {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  .style-grid:not(.style-grid_solo) .look > .look-panel:first-child {
-    grid-row: 2;
-  }
-
-  .style-grid:not(.style-grid_solo) .look > .look-panel:last-child {
-    grid-row: 3;
-  }
 }
 
 /* The data space above the objects, first on the screen. */
