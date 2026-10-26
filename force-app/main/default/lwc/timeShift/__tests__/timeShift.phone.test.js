@@ -7,11 +7,6 @@ import getDays from "@salesforce/apex/TimeShiftController.getPageDays";
 
 jest.mock("@salesforce/client/formFactor", () => ({ __esModule: true, default: "Small" }), { virtual: true });
 jest.mock("@salesforce/apex/TimeShiftController.getTimeline", () => ({ default: jest.fn() }), { virtual: true });
-jest.mock(
-  "@salesforce/apex/TimeShiftController.getDensity",
-  () => ({ default: jest.fn(() => Promise.resolve("comfy")) }),
-  { virtual: true }
-);
 jest.mock("@salesforce/apex/TimeShiftController.getRights", () => ({ default: jest.fn(() => Promise.resolve({ canEdit: true, canDelete: true })) }), {
   virtual: true
 });

@@ -6,7 +6,6 @@ import getTimeline from "@salesforce/apex/TimeShiftController.getTimeline";
 import getTimelineDiagnosed from "@salesforce/apex/TimeShiftController.getTimelineDiagnosed";
 import { currentServerReport, clear as clearTraceLog } from "c/timeShiftTraceLog";
 import getDays from "@salesforce/apex/TimeShiftController.getPageDays";
-import getDensity from "@salesforce/apex/TimeShiftController.getDensity";
 import getRights from "@salesforce/apex/TimeShiftController.getRights";
 import getActivityActions from "@salesforce/apex/TimeShiftController.getActivityActions";
 import TimeShiftConfirm from "c/timeShiftConfirm";
@@ -26,11 +25,6 @@ import {
 import { describeError } from "c/timeShiftErrors";
 
 jest.mock("@salesforce/apex/TimeShiftController.getTimeline", () => ({ default: jest.fn() }), { virtual: true });
-jest.mock(
-  "@salesforce/apex/TimeShiftController.getDensity",
-  () => ({ default: jest.fn(() => Promise.resolve("comfy")) }),
-  { virtual: true }
-);
 jest.mock("@salesforce/apex/TimeShiftController.getRights", () => ({ default: jest.fn(() => Promise.resolve({ canEdit: true, canDelete: true })) }), {
   virtual: true
 });
@@ -2631,31 +2625,11 @@ describe("display density", () => {
     forget();
   });
 
-  it("tightens the spacing when the user's density is Compact", async () => {
-    getDensity.mockResolvedValueOnce("compact");
-    const compact = createElement("c-time-shift", { is: TimeShift });
-    document.body.appendChild(compact);
-    await flush();
-    expect(compact.classList.contains("density_compact")).toBe(true);
-
-    getDensity.mockResolvedValueOnce("comfy");
-    const comfy = createElement("c-time-shift", { is: TimeShift });
-    document.body.appendChild(comfy);
-    await flush();
-    expect(comfy.classList.contains("density_compact")).toBe(false);
-    expect(comfy.classList.contains("density_comfy")).toBe(true);
-  });
-
-  it("starts in the density last seen, before the server says, so loading doesn't jump", () => {
-    window.localStorage.setItem("timeShift.density", "compact");
-    let finish;
-    getDensity.mockReturnValueOnce(new Promise((resolve) => (finish = resolve)));
+  it("starts in the density last seen, before the page's styles are read, so loading doesn't jump", () => {
+    window.localStorage.setItem("timeShift.density", "comfy");
     const element = createElement("c-time-shift", { is: TimeShift });
     document.body.appendChild(element);
-    // No flush: the server hasn't answered, and the loading state is already compact.
-    expect(element.classList.contains("density_compact")).toBe(true);
-    finish("compact");
-    window.localStorage.removeItem("timeShift.density");
+    expect(element.classList.contains("density_comfy")).toBe(true);
   });
 
   // The page's spacing hooks, as Lightning sets them from the user's density.
@@ -2674,15 +2648,13 @@ describe("display density", () => {
     return () => spy.mockRestore();
   };
 
-  it("reads Compact from the page's spacing, with no server call", async () => {
+  it("reads Compact from the page's spacing", async () => {
     const restore = withHooks({ "--slds-g-spacing-var-4": "0.5rem", "--lwc-varSpacingMedium": "0.5rem" });
     try {
-      getDensity.mockClear();
       const element = createElement("c-time-shift", { is: TimeShift });
       document.body.appendChild(element);
       await flush();
       expect(element.classList.contains("density_compact")).toBe(true);
-      expect(getDensity).not.toHaveBeenCalled();
       expect(window.localStorage.getItem("timeShift.density")).toBe("compact");
     } finally {
       restore();
@@ -2692,31 +2664,26 @@ describe("display density", () => {
   it("reads Comfy from SLDS 1's own spacing when the SLDS 2 hook isn't there", async () => {
     const restore = withHooks({ "--lwc-varSpacingMedium": "1rem" });
     try {
-      getDensity.mockClear();
       window.localStorage.setItem("timeShift.density", "compact");
       const element = createElement("c-time-shift", { is: TimeShift });
       document.body.appendChild(element);
       await flush();
       // What the page says now wins over what was remembered.
       expect(element.classList.contains("density_comfy")).toBe(true);
-      expect(getDensity).not.toHaveBeenCalled();
     } finally {
       restore();
     }
   });
 
-  it("asks the server when the page's styles say nothing", async () => {
-    getDensity.mockClear();
-    getDensity.mockResolvedValueOnce("compact");
+  it("defaults to Compact when the page's styles say nothing and nothing was remembered", async () => {
     const element = createElement("c-time-shift", { is: TimeShift });
     document.body.appendChild(element);
     await flush();
-    expect(getDensity).toHaveBeenCalledTimes(1);
     expect(element.classList.contains("density_compact")).toBe(true);
+    expect(element.classList.contains("density_comfy")).toBe(false);
   });
 
-  it("lets the page's Display Density override the user's", async () => {
-    getDensity.mockResolvedValueOnce("comfy");
+  it("lets the page's Display Density override the page's styles", async () => {
     const element = createElement("c-time-shift", { is: TimeShift });
     element.density = "Compact";
     document.body.appendChild(element);

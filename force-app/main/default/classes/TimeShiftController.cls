@@ -672,42 +672,6 @@ public with sharing class TimeShiftController {
     public String recordName;
   }
 
-  // The Density user preference (Settings > Display Density) and its
-  // Compact value; Comfy is VIEW_ONE, or no preference set.
-  @TestVisible
-  private static final String DENSITY_PREFERENCE = '108';
-  @TestVisible
-  private static final String DENSITY_COMPACT = 'VIEW_TWO';
-  @TestVisible
-  private static String testDensity;
-
-  /**
-   * The user's Lightning display density, 'compact' or 'comfy', so the
-   * timeline's spacing can follow it: SLDS 2 themes do that through
-   * --slds-g-spacing-var-*, but earlier themes leave custom components at
-   * Comfy. Only the user's own preference is read; anything unreadable is
-   * Comfy.
-   */
-  @AuraEnabled
-  public static String getDensity() {
-    String value = testDensity;
-    if (value == null) {
-      try {
-        for (UserPreference p : [
-          SELECT Value
-          FROM UserPreference
-          WHERE UserId = :UserInfo.getUserId() AND Preference = :DENSITY_PREFERENCE
-          LIMIT 1
-        ]) {
-          value = p.Value;
-        }
-      } catch (Exception e) {
-        value = null;
-      }
-    }
-    return value == DENSITY_COMPACT ? 'compact' : 'comfy';
-  }
-
   /** Every event, newest first (kept for callers that want the lot). */
   @AuraEnabled(cacheable=true)
   public static TimelineResult getEvents(Id contactId) {

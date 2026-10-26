@@ -10,7 +10,6 @@ import { LABELS, format } from "c/timeShiftLabels";
 import getTimeline from "@salesforce/apex/TimeShiftController.getTimeline";
 import getTimelineDiagnosed from "@salesforce/apex/TimeShiftController.getTimelineDiagnosed";
 import getDays from "@salesforce/apex/TimeShiftController.getPageDays";
-import getDensity from "@salesforce/apex/TimeShiftController.getDensity";
 import getRights from "@salesforce/apex/TimeShiftController.getRights";
 import getViews from "@salesforce/apex/TimeShiftController.getViews";
 import getActivityActions from "@salesforce/apex/TimeShiftController.getActivityActions";
@@ -457,34 +456,22 @@ export default class TimeShift extends NavigationMixin(LightningElement) {
       this.handleRefresh();
       return Promise.resolve(true);
     });
-    // Comfy or Compact spacing (see :host(.density_comfy)): the one last
-    // seen, from this browser, before the first paint (loading skeleton and
-    // all), so nothing jumps; then the user's preference, which corrects it.
+    // Titles only or full detail: the one last chosen in this browser.
     try {
       const kept = window.localStorage?.getItem(LITE_KEY);
       if (kept === "lite" || kept === "max") this._lite = kept === "lite";
     } catch {
       // No storage: the App Builder default stands.
     }
+    // Comfy or Compact spacing (see :host(.density_comfy)): the page's own
+    // (Display Density on the component, else the page's spacing hooks), else
+    // the one last seen in this browser, else Compact. No server call.
     if (this.densityOverride) {
       this.applyDensity(this.densityOverride);
     } else {
       const seen = this.cssDensity();
-      this.applyDensity(seen ?? this.storedDensity());
-      if (seen) {
-        this.keepDensity(seen);
-      } else {
-        // The page's styles say nothing: the server does.
-        getDensity()
-          .then((density) => {
-            trace("density from the server", density);
-            if (this.densityOverride) return;
-            const kept = density === "compact" ? "compact" : "comfy";
-            this.applyDensity(kept);
-            this.keepDensity(kept);
-          })
-          .catch(() => {});
-      }
+      this.applyDensity(seen ?? this.storedDensity() ?? "compact");
+      if (seen) this.keepDensity(seen);
     }
     // A press outside the panel (and its button) cancels it. Presses inside
     // flag themselves first, as the page can't see into the component.

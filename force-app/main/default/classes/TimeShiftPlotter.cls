@@ -64,7 +64,7 @@ public with sharing class TimeShiftPlotter {
           e.columns.put(field, format(row.get(path), null, row, path));
         }
       }
-      if (s.Object_Name__c == 'Event' && row.get('IsAllDayEvent') == true) {
+      if (TimeShiftConfig.dateOwner(s) == 'Event' && row.get(TimeShiftConfig.datePrefix(s) + 'IsAllDayEvent') == true) {
         e.allDay = true;
       }
       e.flags = TimeShiftHighlights.flagsFor(context.highlightRules(), row);

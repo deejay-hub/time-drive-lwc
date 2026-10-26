@@ -147,7 +147,7 @@ public with sharing class TimeShiftConfig {
     } else if (String.isNotBlank(raw)) {
       out = raw;
     } else if (new TimeShiftContext(null, null, null, s, null, null).kind() == TimeShiftContext.KIND_SALESFORCE) {
-      out = objectPlural(s.Object_Name__c);
+      out = objectPlural(dateOwner(s));
     }
     if (String.isBlank(out)) {
       out = s.Label;
@@ -224,6 +224,10 @@ public with sharing class TimeShiftConfig {
     if (String.isBlank(fieldName)) {
       return null;
     }
+    // A path through lookups (Task.ActivityDate on TaskRelation).
+    if (fieldName.contains('.')) {
+      return pathField(objectName, fieldName)?.field;
+    }
     String key = (objectName + '.' + fieldName).toLowerCase();
     Schema.DescribeFieldResult found = fieldDescribes.get(key);
     if (found == null) {
@@ -235,6 +239,102 @@ public with sharing class TimeShiftConfig {
       fieldDescribes.put(key, found);
     }
     return found;
+  }
+
+  /**
+   * A field reached through lookups: Task.ActivityDate on TaskRelation,
+   * Campaign.StartDate on CampaignMember. `owner` is the object the field
+   * belongs to (Task), `prefix` the path to it with its dot ('Task.'; blank
+   * for a field of the object itself).
+   */
+  public class PathField {
+    public Schema.DescribeFieldResult field;
+    public String owner;
+    public String prefix = '';
+  }
+
+  private static Map<String, PathField> pathFields = new Map<String, PathField>();
+
+  /**
+   * Follows a path of relationship names to its last field. Null when a step
+   * isn't a lookup to one object (a polymorphic Who or What can't be
+   * followed), the object or field doesn't exist, or the last field is
+   * missing. A path without dots is the object's own field.
+   */
+  public static PathField pathField(String objectName, String path) {
+    if (String.isBlank(objectName) || String.isBlank(path)) {
+      return null;
+    }
+    String key = (objectName + '|' + path).toLowerCase();
+    if (pathFields.containsKey(key)) {
+      return pathFields.get(key);
+    }
+    PathField out = new PathField();
+    try {
+      List<String> steps = path.split('\\.');
+      String current = describeObject(objectName).getName();
+      for (Integer i = 0; i < steps.size() - 1 && out != null; i++) {
+        Schema.DescribeFieldResult lookup = lookupNamed(current, steps[i]);
+        if (lookup == null || lookup.getReferenceTo().size() != 1) {
+          out = null;
+        } else {
+          current = describeType(lookup.getReferenceTo()[0]).getName();
+          out.prefix += steps[i] + '.';
+        }
+      }
+      if (out != null) {
+        String last = steps[steps.size() - 1].toLowerCase();
+        Schema.SObjectField f = fieldMap(current).get(last);
+        if (f == null) {
+          out = null;
+        } else {
+          out.field = f.getDescribe();
+          out.owner = current;
+        }
+      }
+    } catch (Exception e) {
+      out = null;
+    }
+    pathFields.put(key, out);
+    return out;
+  }
+
+  // The lookup field on an object whose relationship has this name: found by
+  // the usual names first (Task is TaskId, Campaign__r is Campaign__c), else
+  // by looking through the object's lookups.
+  private static Schema.DescribeFieldResult lookupNamed(String objectName, String relationship) {
+    Map<String, Schema.SObjectField> fields = fieldMap(objectName);
+    for (String guess : new List<String>{ relationship + 'Id', relationship.replaceAll('(?i)__r$', '__c') }) {
+      Schema.SObjectField f = fields.get(guess.toLowerCase());
+      if (f != null) {
+        Schema.DescribeFieldResult d = f.getDescribe();
+        if (d.getRelationshipName()?.equalsIgnoreCase(relationship) == true) {
+          return d;
+        }
+      }
+    }
+    for (Schema.SObjectField f : fields.values()) {
+      Schema.DescribeFieldResult d = f.getDescribe();
+      if (d.getRelationshipName()?.equalsIgnoreCase(relationship) == true) {
+        return d;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * The object a source's date belongs to: the source's own object, or, for
+   * a junction (TaskRelation with Task.ActivityDate), the object the date
+   * path leads to. Behaviour that depends on the kind of record (archived
+   * activities, all-day events) follows this, not the source's object.
+   */
+  public static String dateOwner(Time_Shift_Source__mdt s) {
+    return pathField(s.Object_Name__c, s.Date_Field__c)?.owner ?? s.Object_Name__c;
+  }
+
+  /** The path to the date's object with its dot (Task.), blank when it is the source's own. */
+  public static String datePrefix(Time_Shift_Source__mdt s) {
+    return pathField(s.Object_Name__c, s.Date_Field__c)?.prefix ?? '';
   }
 
   /** A type's describe, kept for the request, for record Ids and lookup targets. */

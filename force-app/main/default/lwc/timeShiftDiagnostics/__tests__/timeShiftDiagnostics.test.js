@@ -16,9 +16,6 @@ jest.mock(
 jest.mock("@salesforce/apex/TimeShiftController.getPageDays", () => ({ default: jest.fn(() => Promise.resolve([])) }), {
   virtual: true
 });
-jest.mock("@salesforce/apex/TimeShiftController.getDensity", () => ({ default: jest.fn(() => Promise.resolve("comfy")) }), {
-  virtual: true
-});
 jest.mock(
   "@salesforce/apex/TimeShiftController.getRights",
   () => ({ default: jest.fn(() => Promise.resolve({ canEdit: true, canDelete: true })) }),

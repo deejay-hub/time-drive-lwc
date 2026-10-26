@@ -861,16 +861,6 @@ private class TimeShiftControllerTest {
     }
   }
 
-  @IsTest
-  static void densityFollowsTheUsersDisplayDensity() {
-    // The running user's own preference, whatever it is, reads as one of two.
-    Assert.isTrue(new Set<String>{ 'compact', 'comfy' }.contains(TimeShiftController.getDensity()));
-    TimeShiftController.testDensity = 'VIEW_TWO';
-    Assert.areEqual('compact', TimeShiftController.getDensity());
-    TimeShiftController.testDensity = 'VIEW_ONE';
-    Assert.areEqual('comfy', TimeShiftController.getDensity());
-  }
-
   private static TimeShiftController.EngagementEvent event(
     String id,
     String type,
@@ -1884,6 +1874,180 @@ private class TimeShiftControllerTest {
       );
     }
     return sources;
+  }
+
+  @IsTest
+  static void fieldsReachedThroughLookupsAreDescribedWhereTheyLive() {
+    TimeShiftConfig.PathField close = TimeShiftConfig.pathField('OpportunityContactRole', 'Opportunity.CloseDate');
+    Assert.isNotNull(close, 'a lookup is followed');
+    Assert.areEqual('Opportunity', close.owner);
+    Assert.areEqual('Opportunity.', close.prefix);
+    Assert.areEqual(Schema.DisplayType.DATE, close.field.getType());
+    Assert.areEqual(
+      Schema.DisplayType.DATE,
+      TimeShiftConfig.fieldDescribe('OpportunityContactRole', 'Opportunity.CloseDate').getType(),
+      'fieldDescribe takes a path too'
+    );
+
+    TimeShiftConfig.PathField own = TimeShiftConfig.pathField('Task', 'ActivityDate');
+    Assert.areEqual('Task', own.owner);
+    Assert.areEqual('', own.prefix, 'a field of the object itself');
+
+    Assert.isNull(TimeShiftConfig.pathField('Task', 'Who.Name'), 'a polymorphic lookup is not followed');
+    Assert.isNull(TimeShiftConfig.pathField('OpportunityContactRole', 'Opportunity.NoSuchField'));
+    Assert.isNull(TimeShiftConfig.pathField('OpportunityContactRole', 'NoSuchLookup.CloseDate'));
+    Assert.isNull(TimeShiftConfig.pathField('NoSuchObject', 'Opportunity.CloseDate'));
+    Assert.isNull(TimeShiftConfig.fieldDescribe('OpportunityContactRole', 'Opportunity.NoSuchField'));
+  }
+
+  @IsTest
+  static void aSourceCanBeAJunctionWithItsFieldsReachedThroughIt() {
+    // OpportunityContactRole is the source (linked by ContactId); the date,
+    // title and filter are the Opportunity's, by path.
+    Time_Shift_Source__mdt source = source('Roles', 'OpportunityContactRole', 'Opportunity.CloseDate', 'ContactId');
+    source.Title__c = '{Opportunity.Name}';
+    source.Filter__c = 'Opportunity.IsWon = true';
+    source.Record_Id_Field__c = 'OpportunityId';
+    source.Details_Record_Field__c = 'OpportunityId';
+    TimeShiftConfig.testSources = new List<Time_Shift_Source__mdt>{ source };
+
+    TimeShiftController.TimelineSummary summary = TimeShiftController.getSummary(contactId(), null, null, '1', null);
+    Assert.areEqual(1, summary.total, 'only the won opportunity is counted, by its close date');
+    Assert.areEqual(1, summary.days.size());
+    Assert.areEqual(String.valueOf(Date.today().addDays(-5)), summary.days[0].key);
+
+    List<TimeShiftController.EngagementEvent> page = TimeShiftController.getDays(
+      contactId(),
+      null,
+      null,
+      '1',
+      null,
+      new List<String>{ summary.days[0].key },
+      null
+    );
+    Assert.areEqual(1, page.size());
+    Assert.areEqual('Holiday party', page[0].title, 'the title is read through the junction');
+    Assert.areEqual(Opportunity.SObjectType, page[0].recordId.getSObjectType(), 'it opens the opportunity');
+    Assert.areEqual('Opportunity', page[0].sourceObject);
+  }
+
+  @IsTest
+  static void activitiesOnEveryContactAreCountedThroughTheirRelations() {
+    // Needs Shared Activities, which a scratch org may not have.
+    if (!Schema.getGlobalDescribe().containsKey('taskrelation')) {
+      return;
+    }
+    Contact fresh = new Contact(LastName = 'Shared');
+    insert fresh;
+    Date day = Date.today().addDays(-3);
+    Task kept = new Task(WhoId = fresh.Id, Subject = 'Kept', ActivityDate = day, Status = 'Completed');
+    Task gone = new Task(WhoId = fresh.Id, Subject = 'Gone', ActivityDate = day, Status = 'Completed');
+    insert new List<Task>{ kept, gone };
+    delete gone;
+    Time_Shift_Source__mdt source = source('Shared', 'TaskRelation', 'Task.ActivityDate', 'RelationId');
+    source.Title__c = '{Task.Subject}';
+    source.Record_Id_Field__c = 'TaskId';
+    source.Details_Record_Field__c = 'TaskId';
+    TimeShiftConfig.testSources = new List<Time_Shift_Source__mdt>{ source };
+
+    TimeShiftController.TimelineSummary summary = TimeShiftController.getSummary(fresh.Id, null, null, '1', null);
+    Assert.areEqual(1, summary.total, 'counted without the deleted task');
+    List<TimeShiftController.EngagementEvent> page = TimeShiftController.getDays(
+      fresh.Id,
+      null,
+      null,
+      '1',
+      null,
+      new List<String>{ String.valueOf(day) },
+      null
+    );
+    Assert.areEqual(1, page.size());
+    Assert.areEqual('Kept', page[0].title);
+    Assert.areEqual(Task.SObjectType, page[0].recordId.getSObjectType());
+    Assert.areEqual('Task', page[0].sourceObject);
+  }
+
+  @IsTest
+  static void filtersAreRewrittenToReachTheirFieldsAcrossARelationship() {
+    String t = 'Task';
+    Assert.areEqual(
+      'Task.TaskSubtype = \'Call\'',
+      TimeShiftSoqlProvider.prefixed('TaskSubtype = \'Call\'', t, 'Task.')
+    );
+    Assert.areEqual(
+      '(Task.TaskSubtype = null OR Task.TaskSubtype NOT IN (\'Call\', \'Email\'))',
+      TimeShiftSoqlProvider.prefixed('(TaskSubtype = null OR TaskSubtype NOT IN (\'Call\', \'Email\'))', t, 'Task.')
+    );
+    Assert.areEqual(
+      'Task.Status = \'Subject = x\' AND Task.Priority = :priority',
+      TimeShiftSoqlProvider.prefixed('Status = \'Subject = x\' AND Priority = :priority', t, 'Task.'),
+      'text in quotes and binds are left alone'
+    );
+    Assert.areEqual(
+      'Task.ActivityDate >= LAST_N_DAYS:30 AND Task.ActivityDate < TODAY AND Task.CreatedDate > 2026-01-31T10:00:00Z',
+      TimeShiftSoqlProvider.prefixed('ActivityDate >= LAST_N_DAYS:30 AND ActivityDate < TODAY AND CreatedDate > 2026-01-31T10:00:00Z', t, 'Task.'),
+      'date literals are left alone'
+    );
+    Assert.areEqual(
+      'DAY_ONLY(Task.CreatedDate) = TODAY',
+      TimeShiftSoqlProvider.prefixed('DAY_ONLY(CreatedDate) = TODAY', t, 'Task.'),
+      'a function stays, its field is prefixed'
+    );
+    Assert.areEqual(
+      'Task.CreatedBy.Name = \'A\'',
+      TimeShiftSoqlProvider.prefixed('CreatedBy.Name = \'A\'', t, 'Task.'),
+      'a path is prefixed whole'
+    );
+    Assert.isNull(TimeShiftSoqlProvider.prefixed('Id IN (SELECT TaskId FROM TaskRelation)', t, 'Task.'), 'a subquery is not rewritten');
+    Assert.isNull(TimeShiftSoqlProvider.prefixed('NoSuchField__c = 1', t, 'Task.'), 'an unknown word is not guessed at');
+    Assert.isNull(TimeShiftSoqlProvider.prefixed('Subject = \'open', t, 'Task.'), 'an unclosed quote is not rewritten');
+  }
+
+  @IsTest
+  static void aJunctionSourceCountsThroughTheJunctionAndGivesTheSameAnswer() {
+    // OpportunityContactRole links Opportunities to the Contact, as Setup
+    // saves it: the Opportunity is the source, the role the junction.
+    Contact c = [SELECT Id FROM Contact LIMIT 1];
+    Time_Shift_Source__mdt source = source('Opps', 'Opportunity', 'CloseDate', null);
+    source.Parent_Field__c = null;
+    source.Junction_Object__c = 'OpportunityContactRole';
+    source.Junction_Parent_Field__c = 'ContactId';
+    source.Junction_Record_Field__c = 'OpportunityId';
+    source.Title__c = '{Name}';
+    source.Filter__c = 'IsWon = true';
+    TimeShiftConfig.testSources = new List<Time_Shift_Source__mdt>{ source };
+
+    TimeShiftDiagnostics.begin();
+    Datetime since = Datetime.now().addYears(-1);
+    TimeShiftContext context = new TimeShiftContext(c.Id, null, since, source, null, null);
+    TimeShiftSoqlProvider provider = new TimeShiftSoqlProvider();
+    List<TimeShiftContext.DayCount> counts = provider.countDays(context, TimeShiftContext.UNIT_DAY);
+    Integer total = 0;
+    for (TimeShiftContext.DayCount d : counts) {
+      total += d.count;
+    }
+    Assert.areEqual(1, total, 'the won opportunity, counted from the role');
+    String counted;
+    for (TimeShiftDiagnostics.Query q : TimeShiftDiagnostics.queries) {
+      if (q.kind == 'count') {
+        counted = q.soql;
+      }
+    }
+    Assert.isNotNull(counted, 'the count was recorded');
+    Assert.isTrue(counted.contains('FROM OpportunityContactRole'), 'counted from the junction: ' + counted);
+    Assert.isTrue(counted.contains('Opportunity.CloseDate'), 'the date is read across the role: ' + counted);
+    Assert.isTrue(counted.contains('Opportunity.IsWon = true'), 'so is the filter: ' + counted);
+
+    // A filter that can't be rewritten is counted the usual way, with the same answer.
+    source.Filter__c = 'Id IN (SELECT OpportunityId FROM OpportunityContactRole WHERE IsPrimary = false)';
+    TimeShiftDiagnostics.begin();
+    counts = provider.countDays(new TimeShiftContext(c.Id, null, since, source, null, null), TimeShiftContext.UNIT_DAY);
+    for (TimeShiftDiagnostics.Query q : TimeShiftDiagnostics.queries) {
+      if (q.kind == 'count') {
+        counted = q.soql;
+      }
+    }
+    Assert.isTrue(counted.contains('FROM Opportunity '), 'a subquery in the filter keeps the original form: ' + counted);
   }
 
   private static Time_Shift_Source__mdt source(

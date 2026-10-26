@@ -44,8 +44,8 @@ public with sharing class TimeShiftSoqlProvider implements TimeShiftRowProvider,
     // What the highlights read.
     fields.addAll(TimeShiftHighlights.fieldsOf(context.highlightRules()));
     // Events say whether they're all day (shown instead of a time).
-    if (s.Object_Name__c == 'Event') {
-      fields.add('IsAllDayEvent');
+    if (TimeShiftConfig.dateOwner(s) == 'Event') {
+      fields.add(TimeShiftConfig.datePrefix(s) + 'IsAllDayEvent');
     }
 
     String conditions = q.conditions(context.spans());
@@ -113,8 +113,12 @@ public with sharing class TimeShiftSoqlProvider implements TimeShiftRowProvider,
       grain = TimeShiftContext.UNIT_DAY;
     }
     Map<String, TimeShiftContext.DayCount> rolled = new Map<String, TimeShiftContext.DayCount>();
-    String local = q.dateOnly ? s.Date_Field__c : 'convertTimezone(' + s.Date_Field__c + ')';
-    String day = q.dateOnly ? s.Date_Field__c : 'DAY_ONLY(' + local + ')';
+    // Through the junction when the source has one (see Query.countsViaJunction).
+    Boolean viaJunction = q.countsViaJunction;
+    String countFrom = viaJunction ? q.countObject : s.Object_Name__c;
+    String dateRef = (viaJunction ? q.countPrefix : '') + s.Date_Field__c;
+    String local = q.dateOnly ? dateRef : 'convertTimezone(' + dateRef + ')';
+    String day = q.dateOnly ? dateRef : 'DAY_ONLY(' + local + ')';
     List<String> groups = new List<String>();
     if (grain == TimeShiftContext.UNIT_WEEK) {
       groups.addAll(new List<String>{ 'CALENDAR_YEAR(' + local + ')', 'WEEK_IN_YEAR(' + local + ')' });
@@ -132,13 +136,13 @@ public with sharing class TimeShiftSoqlProvider implements TimeShiftRowProvider,
     }
 
     for (List<TimeShiftController.TimeWindow> batch : batches(context.spans(), daysPerBatch(grain))) {
-      String conditions = q.conditions(batch);
+      String conditions = q.conditions(batch, viaJunction);
       Integer most = 0;
       for (TimeShiftController.TimeWindow span : batch) {
         most += TimeShiftContext.periods(span.since.date(), lastDay(span), grain);
       }
       if (Limits.getQueryRows() + most > Limits.getLimitQueryRows()) {
-        String checkSoql = 'SELECT COUNT() FROM ' + s.Object_Name__c + ' WHERE ' + conditions + q.allRows();
+        String checkSoql = 'SELECT COUNT() FROM ' + countFrom + ' WHERE ' + conditions + q.allRows();
         Long checkStart = TimeShiftDiagnostics.clock();
         Integer total = Database.countQueryWithBinds(checkSoql, q.binds, AccessLevel.USER_MODE);
         TimeShiftDiagnostics.query(s.DeveloperName, 'count check', checkSoql, q.binds, 1, checkStart, null);
@@ -151,7 +155,7 @@ public with sharing class TimeShiftSoqlProvider implements TimeShiftRowProvider,
         'SELECT ' +
         String.join(selected, ', ') +
         ', COUNT(Id) n FROM ' +
-        s.Object_Name__c +
+        countFrom +
         ' WHERE ' +
         conditions +
         ' GROUP BY ' +
@@ -202,7 +206,9 @@ public with sharing class TimeShiftSoqlProvider implements TimeShiftRowProvider,
    */
   private static Boolean acceptsDateFunctions(Time_Shift_Source__mdt s) {
     String key = (s.Object_Name__c + '.' + s.Date_Field__c).toLowerCase();
-    if (NO_DATE_FUNCTIONS.contains(key)) {
+    // A date reached through a junction is the date of the object it leads to.
+    String ownKey = (TimeShiftConfig.dateOwner(s) + '.' + s.Date_Field__c.substringAfterLast('.')).toLowerCase();
+    if (NO_DATE_FUNCTIONS.contains(key) || NO_DATE_FUNCTIONS.contains(ownKey)) {
       return false;
     }
     Boolean known = acceptsFunctions.get(key);
@@ -301,6 +307,86 @@ public with sharing class TimeShiftSoqlProvider implements TimeShiftRowProvider,
     return result;
   }
 
+  // Words a filter may use that aren't fields.
+  private static final Set<String> FILTER_WORDS = new Set<String>{
+    'and', 'or', 'not', 'in', 'like', 'null', 'true', 'false', 'includes', 'excludes',
+    'today', 'yesterday', 'tomorrow'
+  };
+
+  /**
+   * A filter written against an object, rewritten to reach its fields across
+   * a relationship (TaskSubtype = 'Call' as Task.TaskSubtype = 'Call'), for a
+   * query on the junction. Only field names are changed: text in quotes,
+   * numbers, dates, :binds, date literals (LAST_N_DAYS:30) and functions are
+   * left as written. Null when that can't be done with certainty (a subquery,
+   * or a word that is neither a field nor a known keyword), so the caller can
+   * use the filter on the object itself.
+   */
+  @TestVisible
+  private static String prefixed(String filter, String objectName, String prefix) {
+    String out = '';
+    Integer i = 0;
+    Integer n = filter.length();
+    while (i < n) {
+      String c = filter.substring(i, i + 1);
+      if (c == '\'') {
+        Integer j = i + 1;
+        while (j < n && filter.substring(j, j + 1) != '\'') {
+          j += filter.substring(j, j + 1) == '\\' ? 2 : 1;
+        }
+        if (j >= n) {
+          return null;
+        }
+        out += filter.substring(i, j + 1);
+        i = j + 1;
+      } else if (c == ':') {
+        // A bind or a date literal's number: not a field.
+        Integer j = i + 1;
+        while (j < n && (filter.substring(j, j + 1).isAlphanumeric() || filter.substring(j, j + 1) == '_')) {
+          j++;
+        }
+        out += filter.substring(i, j);
+        i = j;
+      } else if (c.isNumeric()) {
+        // A number or a date or date/time (2026-01-31, 2026-01-31T10:00:00Z).
+        Integer j = i;
+        while (j < n && !' ,)'.contains(filter.substring(j, j + 1))) {
+          j++;
+        }
+        out += filter.substring(i, j);
+        i = j;
+      } else if (c.isAlpha() || c == '_') {
+        Integer j = i;
+        while (j < n && (filter.substring(j, j + 1).isAlphanumeric() || '_.'.contains(filter.substring(j, j + 1)))) {
+          j++;
+        }
+        String word = filter.substring(i, j);
+        String lower = word.toLowerCase();
+        Integer k = j;
+        while (k < n && filter.substring(k, k + 1).isWhitespace()) {
+          k++;
+        }
+        Boolean isFunction = k < n && filter.substring(k, k + 1) == '(';
+        if (lower == 'select' || lower == 'from') {
+          return null;
+        } else if (FILTER_WORDS.contains(lower) || isFunction) {
+          out += word;
+        } else if (TimeShiftConfig.pathField(objectName, word) != null) {
+          out += prefix + word;
+        } else if (word == word.toUpperCase() && (lower.startsWith('last_') || lower.startsWith('this_') || lower.startsWith('next_'))) {
+          out += word;
+        } else {
+          return null;
+        }
+        i = j;
+      } else {
+        out += c;
+        i++;
+      }
+    }
+    return out;
+  }
+
   // Field names once each, whatever their case (SOQL rejects duplicates).
   public static List<String> unique(Set<String> fields) {
     Map<String, String> byKey = new Map<String, String>();
@@ -338,6 +424,25 @@ public with sharing class TimeShiftSoqlProvider implements TimeShiftRowProvider,
     // Tasks and Events over a year old are archived, and only ALL ROWS
     // (with deleted ones left out) returns them.
     Boolean archivable = false;
+    // The object the date belongs to, and the path to it with its dot: the
+    // source's own object and blank, or a junction's (Task. on TaskRelation).
+    String dateOwner;
+    String datePrefix = '';
+    // Whether the source's own records can be deleted (so ALL ROWS, which
+    // returns them, needs them left out; a junction row is removed with it).
+    Boolean ownDeletable = false;
+    // Counting through a junction (TaskRelation) instead of probing it from
+    // the object: the junction is filtered on its indexed lookup to the page's
+    // record, and the object's fields are read across the relationship
+    // (Task.ActivityDate). Several times faster for a record with many
+    // relations; null when the source isn't a junction or its filter can't be
+    // safely written across the relationship.
+    String countObject;
+    String countPrefix = '';
+    String countLink;
+    String countFilter;
+    Boolean countDeletable = false;
+    Boolean countsViaJunction = false;
     String link;
     Map<String, Object> binds = new Map<String, Object>();
 
@@ -357,7 +462,10 @@ public with sharing class TimeShiftSoqlProvider implements TimeShiftRowProvider,
       }
       dateOnly = dateDescribe.getType() == Schema.DisplayType.DATE;
       dateNullable = dateDescribe.isNillable();
-      archivable = ARCHIVED_OBJECTS.contains(objectDescribe.getName());
+      dateOwner = TimeShiftConfig.dateOwner(s);
+      datePrefix = TimeShiftConfig.datePrefix(s);
+      archivable = ARCHIVED_OBJECTS.contains(dateOwner);
+      ownDeletable = TimeShiftConfig.fieldMap(s.Object_Name__c).containsKey('isdeleted');
 
       Schema.DescribeFieldResult linkField;
       if (!useJunction(s) && String.isNotBlank(s.Parent_Field__c)) {
@@ -380,9 +488,41 @@ public with sharing class TimeShiftSoqlProvider implements TimeShiftRowProvider,
         context.warn(String.format(Label.Time_Shift_Server_No_Link, new List<String>{ s.Label }));
         return;
       }
+      if (useJunction(s)) {
+        prepareJunctionCount();
+      }
       binds.put('parentId', context.parentIdFor(linkField));
-      context.sourceObject = s.Object_Name__c;
+      // The record an item opens is the date's: a Task for a TaskRelation.
+      context.sourceObject = datePrefix == '' ? s.Object_Name__c : dateOwner;
       context.sourceLabel = 'Salesforce' + TimeShiftPlotter.SEPARATOR + objectDescribe.getLabel();
+    }
+
+    private void prepareJunctionCount() {
+      if (datePrefix != '' || String.isBlank(s.Junction_Parent_Field__c) || String.isBlank(s.Junction_Record_Field__c)) {
+        return;
+      }
+      Schema.DescribeFieldResult record = TimeShiftConfig.fieldDescribe(s.Junction_Object__c, s.Junction_Record_Field__c);
+      Schema.DescribeFieldResult parent = TimeShiftConfig.fieldDescribe(s.Junction_Object__c, s.Junction_Parent_Field__c);
+      if (
+        record == null ||
+        parent == null ||
+        String.isBlank(record.getRelationshipName()) ||
+        record.getReferenceTo().size() != 1 ||
+        TimeShiftConfig.describeType(record.getReferenceTo()[0]).getName() != TimeShiftConfig.describeObject(s.Object_Name__c).getName()
+      ) {
+        return;
+      }
+      String prefix = record.getRelationshipName() + '.';
+      String filter = String.isBlank(s.Filter__c) ? '' : prefixed(s.Filter__c, s.Object_Name__c, prefix);
+      if (filter == null) {
+        return;
+      }
+      countObject = s.Junction_Object__c;
+      countPrefix = prefix;
+      countLink = s.Junction_Parent_Field__c + ' = :parentId';
+      countFilter = filter;
+      countDeletable = TimeShiftConfig.fieldMap(s.Junction_Object__c).containsKey('isdeleted');
+      countsViaJunction = true;
     }
 
     // Archived activities too, for Tasks and Events.
@@ -393,25 +533,38 @@ public with sharing class TimeShiftSoqlProvider implements TimeShiftRowProvider,
     // The link, the dates (any of the spans) and the Filter, binding each
     // span's ends as since0/until0, since1/until1 ...
     String conditions(List<TimeShiftController.TimeWindow> spans) {
+      return conditions(spans, false);
+    }
+
+    // The same written for the junction (see countsViaJunction) when asked.
+    String conditions(List<TimeShiftController.TimeWindow> spans, Boolean viaJunction) {
+      String p = viaJunction ? countPrefix : '';
+      String dateRef = p + s.Date_Field__c;
       List<String> dates = new List<String>();
       for (TimeShiftController.TimeWindow span : spans) {
         Integer i = binds.size();
-        String clause = s.Date_Field__c + ' >= :since' + i;
+        String clause = dateRef + ' >= :since' + i;
         binds.put('since' + i, dateOnly ? (Object) span.since.date() : span.since);
         if (span.until != null) {
-          clause += ' AND ' + s.Date_Field__c + ' <= :until' + i;
+          clause += ' AND ' + dateRef + ' <= :until' + i;
           binds.put('until' + i, dateOnly ? (Object) span.until.date() : span.until);
         }
         dates.add('(' + clause + ')');
       }
-      return (archivable ? 'IsDeleted = false AND ' : '') +
-        link +
+      String deleted = '';
+      if (archivable) {
+        // A junction row's own IsDeleted too: ALL ROWS would return it.
+        deleted = ((viaJunction && countDeletable) || (!viaJunction && datePrefix != '' && ownDeletable) ? 'IsDeleted = false AND ' : '') +
+          p + datePrefix + 'IsDeleted = false AND ';
+      }
+      return deleted +
+        (viaJunction ? countLink : link) +
         // Only what has a date: the metadata says which fields can be empty.
-        (dateNullable ? ' AND ' + s.Date_Field__c + ' != null' : '') +
+        (dateNullable ? ' AND ' + dateRef + ' != null' : '') +
         ' AND (' +
         String.join(dates, ' OR ') +
         ')' +
-        (String.isBlank(s.Filter__c) ? '' : ' AND (' + s.Filter__c + ')');
+        (String.isBlank(s.Filter__c) ? '' : ' AND (' + (viaJunction ? countFilter : s.Filter__c) + ')');
     }
   }
 }
