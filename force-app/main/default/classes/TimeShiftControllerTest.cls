@@ -1363,7 +1363,11 @@ private class TimeShiftControllerTest {
     }
     Assert.isNotNull(padThai);
     Assert.areEqual(Task.Description.getDescribe().getLabel(), padThai.details[0].label);
-    Assert.areEqual(Task.WhoId.getDescribe().getLabel(), padThai.details[1].label, 'a name through a lookup reads as the lookup');
+    Assert.areEqual(
+      Task.WhoId.getDescribe().getLabel().removeEnd(' ID'),
+      padThai.details[1].label,
+      'a name through a lookup reads as the lookup, without the ID Apex adds'
+    );
     Assert.areEqual('Ada Shift', padThai.details[1].value);
     Assert.areEqual(Task.Status.getDescribe().getLabel(), padThai.details[2].label);
     Assert.areEqual('Notes', padThai.details[3].label, 'a label of its own wins');
@@ -1965,6 +1969,18 @@ private class TimeShiftControllerTest {
     Assert.areEqual('Kept', page[0].title);
     Assert.areEqual(Task.SObjectType, page[0].recordId.getSObjectType());
     Assert.areEqual('Task', page[0].sourceObject);
+  }
+
+  @IsTest
+  static void aLookupsLabelLeavesOffTheIdApexAddsToIt() {
+    TimeShiftRow row = new TimeShiftRow(new Task(Subject = 'Call', Status = 'Completed'));
+    Assert.areEqual('Related To', row.labelOf('WhatId'), 'a lookup reads as the page names it');
+    Assert.areEqual('Related To', row.labelOf('What.Name'), 'so does a path through it that ends at Name');
+    Assert.areEqual('Subject', row.labelOf('Subject'), 'other fields are as they were');
+    Assert.areEqual('Status', row.labelOf('Status'));
+    // Only a lookup's: the record's own Id is not one, and keeps its "ID".
+    Schema.DescribeFieldResult id = Task.SObjectType.getDescribe().fields.getMap().get('id').getDescribe();
+    Assert.areEqual(id.getLabel(), TimeShiftRow.plainLabel(id));
   }
 
   @IsTest

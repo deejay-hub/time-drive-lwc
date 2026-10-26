@@ -80,7 +80,7 @@ public with sharing class TimeShiftRow {
   private String worksOutLabel(String path) {
     Schema.DescribeFieldResult own = describe(path);
     if (own != null) {
-      return own.getLabel();
+      return plainLabel(own);
     }
     if (record == null || String.isBlank(path) || !path.contains('.')) {
       return path;
@@ -109,10 +109,24 @@ public with sharing class TimeShiftRow {
     }
     String last = steps[steps.size() - 1];
     if (last.equalsIgnoreCase('Name') || lookup.getReferenceTo().size() != 1) {
-      return lookup.getLabel();
+      return plainLabel(lookup);
     }
     Schema.SObjectField target = fieldsOf(lookup.getReferenceTo()[0]).get(last.toLowerCase());
-    return target == null ? lookup.getLabel() : target.getDescribe().getLabel();
+    return target == null ? plainLabel(lookup) : plainLabel(target.getDescribe());
+  }
+
+  /**
+   * A field's label as the page shows it. Apex's describe ends a lookup's
+   * label with " ID" ("Related To ID", "Account ID"), which the page leaves
+   * off; so does Setup. Only a lookup's: a text field called "Account ID"
+   * is left as it is.
+   */
+  @TestVisible
+  private static String plainLabel(Schema.DescribeFieldResult field) {
+    String label = field.getLabel();
+    return field.getType() == Schema.DisplayType.REFERENCE && label.endsWith(' ID') && label.length() > 3
+      ? label.removeEnd(' ID')
+      : label;
   }
 
   // The row's field, when it's a record and the path is one of its own
