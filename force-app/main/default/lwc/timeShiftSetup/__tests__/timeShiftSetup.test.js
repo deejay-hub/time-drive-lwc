@@ -1117,6 +1117,83 @@ describe("c-time-shift-setup", () => {
     expect(checked()).toBeUndefined();
   });
 
+  it("lists a source by the records it reads, and says on its page what the filter calls it", async () => {
+    getSources.mockResolvedValue([
+      {
+        developerName: "Shared_Tasks",
+        parentObject: "Contact",
+        type: "standard",
+        objectName: "TaskRelation",
+        objectLabel: "Task Relation",
+        label: "Tasks",
+        legendName: "Tasks",
+        eventLabel: "$Object.Task",
+        kind: "Salesforce",
+        active: true,
+        summary: "Task Relation records this Contact is on."
+      },
+      {
+        developerName: "Files",
+        parentObject: "Contact",
+        type: "standard",
+        objectName: "ContentDocumentLink",
+        objectLabel: "Content Document Link",
+        label: "Files & Notes",
+        legendName: "Files & Notes",
+        eventLabel: "$Label.Time_Shift_Legend_Files",
+        kind: "Salesforce",
+        active: true,
+        summary: "Content Document Link records."
+      },
+      {
+        developerName: "Apex_One",
+        parentObject: "Contact",
+        type: "apex",
+        label: "Loyalty events",
+        legendName: "Loyalty events",
+        kind: "Apex",
+        active: true,
+        summary: "Events from the Apex class Loyalty."
+      }
+    ]);
+    getSource.mockResolvedValue({
+      developerName: "Shared_Tasks",
+      label: "Tasks",
+      kind: "Salesforce",
+      parentObject: "Contact",
+      objectName: "TaskRelation",
+      parentField: "RelationId",
+      dateField: "CreatedDate",
+      eventLabel: "$Object.Task",
+      title: "{Task.Subject}",
+      active: true,
+      details: []
+    });
+    const element = mount();
+    await splash();
+    const root = element.shadowRoot;
+    await toPages(root);
+    root.querySelector("button.pcard").click();
+    await flush();
+    // The child record's name, whatever the legend calls it; Apex has no object.
+    expect([...root.querySelectorAll(".row-name")].map((n) => n.textContent)).toEqual([
+      "Task Relation",
+      "Content Document Link",
+      "Loyalty events"
+    ]);
+    root.querySelector('.row-main[data-name="Shared_Tasks"]').click();
+    await flush();
+    await flush();
+    expect(root.querySelector(".page-title").textContent).toBe("Task Relation");
+    const facts = Object.fromEntries(
+      [...root.querySelectorAll(".facts .fact")].map((f) => [
+        f.querySelector("dt").textContent,
+        f.querySelector("dd").textContent.trim()
+      ])
+    );
+    expect(facts["Name in the filter"]).toBe("Tasks");
+  });
+
   it("asks one question at a time and threads the answers along the top", async () => {
     getObjects.mockResolvedValue([
       { value: "Order_Item__c", label: "Order Item", detail: "Order_Item__c" },

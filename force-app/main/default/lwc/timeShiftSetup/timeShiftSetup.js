@@ -1946,7 +1946,16 @@ export default class TimeShiftSetup extends LightningElement {
     if (status === "inactive" && src.active) return false;
     const words = this.sourceQuery.trim().toLowerCase().split(/\s+/).filter(Boolean);
     if (!words.length) return true;
-    const text = [src.label, src.objectName, src.category, src.kind, src.summary, src.developerName]
+    const text = [
+      src.label,
+      src.objectLabel,
+      src.legendName,
+      src.objectName,
+      src.category,
+      src.kind,
+      src.summary,
+      src.developerName
+    ]
       .filter(Boolean)
       .join(" ")
       .toLowerCase();
@@ -2021,11 +2030,20 @@ export default class TimeShiftSetup extends LightningElement {
     this.sourceStatus = "all";
   }
 
+  // A source is listed by the records it reads (Task Relation), not by what the
+  // legend or filter calls it (Tasks): that name is on its page. An Apex source
+  // reads no object, so it keeps its own.
+  sourceName(s) {
+    return s.type === "apex" ? s.label : s.objectLabel || s.label;
+  }
+
   sourceCard(s, index) {
     const pending = this.pending[s.developerName];
     const active = pending && !pending.removing ? pending.active : s.active;
+    const name = this.sourceName(s);
     return {
       ...s,
+      name,
       active,
       pending: Boolean(pending),
       pendingText: pending
@@ -2043,10 +2061,10 @@ export default class TimeShiftSetup extends LightningElement {
       iconName: s.icon || "utility:record",
       offText: active ? "" : "Inactive",
       categoryLabel: this.viewNameOf(s.category),
-      toggleLabel: `${s.label}: active`,
-      viewLabel: `${s.label}: open`,
-      editLabel: `Edit ${s.label}`,
-      removeLabel: `Remove ${s.label}`
+      toggleLabel: `${name}: active`,
+      viewLabel: `${name}: open`,
+      editLabel: `Edit ${name}`,
+      removeLabel: `Remove ${name}`
     };
   }
 
@@ -2085,6 +2103,7 @@ export default class TimeShiftSetup extends LightningElement {
     const s = this.sources.find((x) => x.developerName === name);
     this.viewing = {
       ...s,
+      name: this.sourceName(s),
       chipStyle: `--chip: ${s.iconColour || "var(--setup-chip)"}`,
       iconName: s.icon || "utility:record",
       kindLabel: TYPES.find((t) => t.value === s.type)?.label.replace(/s$/, "") ?? s.kind
@@ -2157,7 +2176,7 @@ export default class TimeShiftSetup extends LightningElement {
       { key: "link", label: `Linked to the ${this.parentLabelOf(v.parentObject)} by`, value: this.viewLinkText },
       { key: "date", label: "Plotted by date", value: d?.dateField ? this.fieldLabel(d.dateField) : "" },
       { key: "filter", label: "Only the records where", value: this.viewFilterText },
-      { key: "named", label: "Named", value: this.namedText },
+      { key: "named", label: "Name in the filter", value: this.namedText },
       { key: "view", label: "Lens", value: this.viewNameOf(v.category) || "None" },
       { key: "title", label: "Title", value: d?.title || "" },
       { key: "subtitle", label: "Subtitle", value: d?.subtitle || "" },
@@ -2165,6 +2184,17 @@ export default class TimeShiftSetup extends LightningElement {
       { key: "clicks", label: "When its title is clicked", value: d && this.isSalesforce ? this.clickAnswer : "" }
     ];
     return facts.filter((f) => f.value);
+  }
+
+  // What the legend and filter call the source, as the viewer reads it
+  // (translated where it is a label), and where it comes from when it is one.
+  get namedText() {
+    const v = this.viewing;
+    if (!v || v.kind === "Apex") return "";
+    const name = v.legendName || v.eventLabel || "";
+    const raw = v.eventLabel?.trim() ?? "";
+    if (name && raw.startsWith(LABEL_PREFIX)) return `${name} · custom label ${raw.slice(LABEL_PREFIX.length)}`;
+    return name;
   }
 
   parentLabelOf(value) {
