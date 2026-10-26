@@ -3546,6 +3546,12 @@ a.guided-button lightning-icon {
   font-weight: 600;
 }
 
+.related-date {
+  display: grid;
+  gap: var(--space);
+  margin-top: var(--space);
+}
+
 .box-actions {
   display: flex;
   flex-wrap: wrap;

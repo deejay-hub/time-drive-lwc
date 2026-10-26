@@ -506,8 +506,7 @@ describe("c-time-shift-setup", () => {
         referenceLabel: "User",
         referencePlural: "Users",
         values: []
-      },
-      { name: "Task.ActivityDate", label: "Task › Due Date", type: "date", filterable: true, values: [] }
+      }
     ]);
     getLinks.mockResolvedValue([
       { key: "RelationId", parentField: "RelationId", label: "Task Relations whose Relation is this Contact" }
@@ -535,6 +534,134 @@ describe("c-time-shift-setup", () => {
     expect(chips.map((c) => c.textContent.trim())).toEqual(["Tasks"]);
     expect(chips[0].getAttribute("aria-pressed")).toBe("true");
     expect(root.querySelector(".legend-row_mine .legend-name").textContent).toBe("Tasks");
+  });
+
+  describe("a junction source's related record", () => {
+    const task = [
+      { name: "Subject", label: "Subject", type: "string", filterable: true, values: [] },
+      { name: "ActivityDate", label: "Due Date", type: "date", filterable: true, values: [] },
+      {
+        name: "TaskSubtype",
+        label: "Task Subtype",
+        type: "picklist",
+        filterable: true,
+        values: [
+          { value: "Call", label: "Call" },
+          { value: "Email", label: "Email" }
+        ]
+      }
+    ];
+    const relation = [
+      { name: "CreatedDate", label: "Created Date", type: "datetime", filterable: true, values: [] },
+      {
+        name: "TaskId",
+        label: "Task ID",
+        type: "reference",
+        filterable: true,
+        referenceTo: "Task",
+        relationshipName: "Task",
+        referenceLabel: "Task",
+        referencePlural: "Tasks",
+        values: []
+      }
+    ];
+
+    async function openStep(step, draft = {}) {
+      getObjects.mockResolvedValue([{ value: "TaskRelation", label: "Task Relation", detail: "TaskRelation" }]);
+      getSource.mockResolvedValue({
+        developerName: "Order_Placed",
+        label: "Task Relations",
+        kind: "Salesforce",
+        parentObject: "Contact",
+        objectName: "TaskRelation",
+        parentField: "RelationId",
+        dateField: "CreatedDate",
+        title: "{Task.Subject}",
+        active: true,
+        details: [],
+        ...draft
+      });
+      getFields.mockImplementation(({ objectName }) => Promise.resolve(objectName === "Task" ? task : relation));
+      getLinks.mockResolvedValue([
+        { key: "RelationId", parentField: "RelationId", label: "Task Relations whose Relation is this Contact" }
+      ]);
+      const element = mount();
+      await splash();
+      const root = element.shadowRoot;
+      await toPages(root);
+      root.querySelector("button.pcard").click();
+      await flush();
+      root.querySelector('.row-main[data-name="Order_Placed"]').click();
+      await flush();
+      root.querySelector(".head-actions .primary").click();
+      await flush();
+      await flush();
+      root.querySelector(`.knot-button[data-step="${step}"]`).click();
+      await flush();
+      return root;
+    }
+
+    const names = (root) =>
+      [...root.querySelectorAll("c-time-shift-field-picker")].flatMap((p) =>
+        [...p.shadowRoot.querySelectorAll(".token-result")].map((b) => b.dataset.name)
+      );
+    const settle = async () => {
+      await flush();
+      await flush();
+    };
+
+    it("picks the object first, then a date on it", async () => {
+      const root = await openStep("date");
+      // The box shows the date it opened with.
+      expect(root.querySelector(".picker-input").value).toBe("Created Date");
+
+      root.querySelector(".related-date lightning-button").click();
+      await flush();
+      const picker = root.querySelector("c-time-shift-field-picker");
+      expect(picker).not.toBeNull();
+      // The lookup alone, first.
+      expect(names(root)).toEqual(["TaskId"]);
+      picker.shadowRoot.querySelector('.token-result[data-name="TaskId"]').click();
+      await settle();
+      // Then the task's dates, none of its other fields.
+      expect(names(root)).toEqual(["ActivityDate"]);
+      picker.shadowRoot.querySelector('.token-result[data-name="ActivityDate"]').click();
+      await settle();
+      expect(root.querySelector("c-time-shift-field-picker")).toBeNull();
+      expect(root.querySelector(".picker-input").value).toBe("Task › Due Date");
+    });
+
+    it("reads a saved related date's label once the related fields are in", async () => {
+      const root = await openStep("date", { dateField: "Task.ActivityDate" });
+      await settle();
+      expect(root.querySelector(".picker-input").value).toBe("Task › Due Date");
+    });
+
+    it("filters on a field of the related record, picked object first", async () => {
+      const root = await openStep("object");
+      root.querySelector('.option[data-value="some"]').click();
+      await flush();
+      const field = root.querySelector(".condition-field");
+      expect(field.options.map((o) => o.label)).toEqual(["Created Date", "Task ID", "A field on a related record…"]);
+      field.dispatchEvent(new CustomEvent("change", { detail: { value: "__related__" } }));
+      await settle();
+      const picker = root.querySelector("c-time-shift-field-picker");
+      expect(picker).not.toBeNull();
+      expect(names(root)).toEqual(["TaskId"]);
+      picker.shadowRoot.querySelector('.token-result[data-name="TaskId"]').click();
+      await settle();
+      picker.shadowRoot.querySelector('.token-result[data-name="TaskSubtype"]').click();
+      await settle();
+      expect(root.querySelector("c-time-shift-field-picker")).toBeNull();
+      const chosen = root.querySelector(".condition-field");
+      expect(chosen.value).toBe("Task.TaskSubtype");
+      expect(chosen.options.map((o) => o.label)).toContain("Task › Task Subtype");
+      // Its values are the task's own, as a picklist.
+      expect(root.querySelector(".condition-value lightning-combobox").options.map((o) => o.value)).toEqual([
+        "Call",
+        "Email"
+      ]);
+    });
   });
 
   it("won't go past Look with a colour the white icon can't be seen on", async () => {

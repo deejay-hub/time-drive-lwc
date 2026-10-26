@@ -234,8 +234,9 @@ public with sharing class TimeShiftSetupController {
   };
 
   // Junction objects whose date (and title, filter) are the related record's,
-  // read across it by path (Task.ActivityDate), and that record's object: a
-  // source's fields in the wizard include it, and it opens the record.
+  // read across it by path (Task.ActivityDate), and that record's object: the
+  // source opens that record. (The wizard reaches its fields by following the
+  // lookup, one object at a time.)
   private static final Map<String, String> RELATION_RECORDS = new Map<String, String>{
     'TaskRelation' => 'Task',
     'TaskWhoRelation' => 'Task',
@@ -554,25 +555,6 @@ public with sharing class TimeShiftSetupController {
       Schema.DescribeFieldResult fd = f.getDescribe();
       if (fd.isAccessible()) {
         out.add(new FieldInfo(fd));
-      }
-    }
-    // A relation object (TaskRelation) has next to no fields of its own: its
-    // task's come too, by path (Task.ActivityDate, Task.TaskSubtype).
-    String record = RELATION_RECORDS.get(describe(objectName).getName());
-    if (record != null && describe(objectName).fields.getMap().containsKey(record.toLowerCase() + 'id') && TimeShiftConfig.sObjectType(record) != null) {
-      for (Schema.SObjectField f : describe(record).fields.getMap().values()) {
-        Schema.DescribeFieldResult fd = f.getDescribe();
-        if (fd.isAccessible()) {
-          FieldInfo byPath = new FieldInfo(fd);
-          byPath.name = record + '.' + fd.getName();
-          byPath.label = record + ' › ' + fd.getLabel();
-          // Followed no further than this.
-          byPath.referenceTo = null;
-          byPath.relationshipName = null;
-          byPath.referenceLabel = null;
-          byPath.referencePlural = null;
-          out.add(byPath);
-        }
       }
     }
     out.sort();

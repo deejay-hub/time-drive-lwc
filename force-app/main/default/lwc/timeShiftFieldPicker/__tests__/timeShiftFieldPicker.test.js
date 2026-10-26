@@ -47,11 +47,53 @@ describe("c-time-shift-field-picker", () => {
     expect(root.querySelector(".token-crumb").textContent).toBe("Campaign");
 
     root.querySelector('.token-result[data-name="Name"]').click();
-    expect(picks).toEqual([{ path: "Campaign.Name", label: "Campaign › Campaign Name", type: "string" }]);
+    expect(picks).toEqual([
+      {
+        path: "Campaign.Name",
+        label: "Campaign › Campaign Name",
+        type: "string",
+        field: { name: "Name", label: "Campaign Name", type: "string" }
+      }
+    ]);
 
     // Back up to the object's own fields.
     root.querySelector(".token-up").click();
     await flush();
     expect(root.querySelector(".token-crumb")).toBeNull();
+  });
+
+  it("can start from the lookups alone and list only the types asked for beyond them", async () => {
+    getFields.mockResolvedValue([
+      { name: "Subject", label: "Subject", type: "string" },
+      { name: "ActivityDate", label: "Due Date", type: "date" },
+      { name: "CreatedDate", label: "Created Date", type: "datetime" },
+      { name: "OwnerId", label: "Owner ID", type: "reference", referenceTo: "User", relationshipName: "Owner" }
+    ]);
+    const element = createElement("c-time-shift-field-picker", { is: TimeShiftFieldPicker });
+    element.fields = [
+      { name: "CreatedDate", label: "Created Date", type: "datetime" },
+      { name: "TaskId", label: "Task ID", type: "reference", referenceTo: "Task", relationshipName: "Task" },
+      { name: "Type", label: "Type", type: "string" }
+    ];
+    element.rootLookupsOnly = true;
+    element.types = ["date", "datetime"];
+    const picks = [];
+    element.addEventListener("pick", (e) => picks.push(e.detail));
+    document.body.appendChild(element);
+    await flush();
+    const root = element.shadowRoot;
+    const names = () => [...root.querySelectorAll(".token-result")].map((b) => b.dataset.name);
+
+    // The object first: only the lookup, none of the object's own fields.
+    expect(names()).toEqual(["TaskId"]);
+
+    // Then its fields: dates, and lookups that lead on; not the text field.
+    root.querySelector('.token-result[data-name="TaskId"]').click();
+    await flush();
+    await flush();
+    expect(names()).toEqual(["ActivityDate", "CreatedDate", "OwnerId"]);
+
+    root.querySelector('.token-result[data-name="ActivityDate"]').click();
+    expect(picks.map((p) => [p.path, p.type])).toEqual([["Task.ActivityDate", "date"]]);
   });
 });

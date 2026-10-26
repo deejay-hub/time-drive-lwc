@@ -23,6 +23,12 @@ export default class TimeShiftFieldPicker extends LightningElement {
   @api label = "Search fields";
   // Leave out lookups (a detail field, say, can still be one of them).
   @api noLookups = false;
+  // Start from the lookups alone, so the object is chosen first and its
+  // fields second: the first list stays short.
+  @api rootLookupsOnly = false;
+  // Only fields of these types (date, datetime ...) are listed beside the
+  // lookups, which lead on to more of them.
+  @api types = [];
 
   query = "";
   // The lookups followed so far: [{ relationshipName, objectName, label }].
@@ -53,6 +59,7 @@ export default class TimeShiftFieldPicker extends LightningElement {
     const deep = this.trail.length >= MAX_DEPTH - 1;
     return this.current
       .filter((f) => f.type !== "address" && f.type !== "location")
+      .filter((f) => this.listed(f))
       .filter((f) => !term || f.label.toLowerCase().includes(term) || f.name.toLowerCase().includes(term))
       .slice(0, 40)
       .map((f) => {
@@ -71,6 +78,15 @@ export default class TimeShiftFieldPicker extends LightningElement {
           ariaLabel: follows ? `${label}: show its fields` : label
         };
       });
+  }
+
+  // Whether a field is on the list: a lookup always (unless lookups are off),
+  // another field unless the root is lookups only or its type isn't asked for.
+  listed(f) {
+    const lookup = Boolean(f.referenceTo && f.relationshipName) && !this.noLookups;
+    if (lookup) return true;
+    if (this.atRoot && this.rootLookupsOnly) return false;
+    return !this.types?.length || this.types.includes(f.type);
   }
 
   get empty() {
@@ -112,7 +128,7 @@ export default class TimeShiftFieldPicker extends LightningElement {
     }
     const path = [...this.trail.map((t) => t.relationshipName), field.name].join(".");
     const label = [...this.trail.map((t) => t.label), field.label].join(" › ");
-    this.dispatchEvent(new CustomEvent("pick", { detail: { path, label, type: field.type } }));
+    this.dispatchEvent(new CustomEvent("pick", { detail: { path, label, type: field.type, field } }));
   }
 
   async follow(field) {

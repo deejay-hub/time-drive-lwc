@@ -1446,6 +1446,28 @@
                     </div>
                   </template>
 
+                  <template lwc:if={showRelatedDate}>
+                    <div class="related-date">
+                      <lightning-button
+                        variant="base"
+                        icon-name="utility:link"
+                        label="A date on a related record"
+                        aria-expanded={relatedDateOpen}
+                        onclick={handleRelatedDateToggle}
+                      ></lightning-button>
+                      <template lwc:if={relatedDateOpen}>
+                        <c-time-shift-field-picker
+                          fields={fields}
+                          label="Search related records"
+                          root-lookups-only="true"
+                          types={dateTypes}
+                          onpick={handleRelatedDatePick}
+                          onclose={handleRelatedDateClose}
+                        ></c-time-shift-field-picker>
+                      </template>
+                    </div>
+                  </template>
+
                   <!-- Data 360: the field that holds the individual, under the object -->
                   <template lwc:if={isIndividualStep}>
                     <h3 class="second-question link-question">{individualQuestion}</h3>
@@ -1669,6 +1691,15 @@
                             </li>
                           </template>
                         </ul>
+                        <template lwc:if={relatedFilterOpen}>
+                          <c-time-shift-field-picker
+                            fields={fields}
+                            label="Search related records"
+                            root-lookups-only="true"
+                            onpick={handleRelatedFilterPick}
+                            onclose={handleRelatedFilterClose}
+                          ></c-time-shift-field-picker>
+                        </template>
                         <div class="box-actions">
                           <lightning-button
                             variant="base"

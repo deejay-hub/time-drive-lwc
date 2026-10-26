@@ -375,26 +375,29 @@ private class TimeShiftSetupControllerTest {
   }
 
   @IsTest
-  static void aRelationObjectOffersItsRecordsFieldsByPath() {
-    // EventRelation has next to no dates of its own: its event's come too.
+  static void aRelationObjectLeadsToItsRecordThroughItsLookup() {
+    // EventRelation has next to no dates of its own: the wizard follows its
+    // Event lookup to the event's fields, one object at a time, so the first
+    // list stays short.
     Map<String, TimeShiftSetupController.FieldInfo> byName = new Map<String, TimeShiftSetupController.FieldInfo>();
     for (TimeShiftSetupController.FieldInfo f : TimeShiftSetupController.getFields('EventRelation')) {
       byName.put(f.name, f);
     }
-    Assert.isTrue(byName.containsKey('EventId'), 'its own fields stay');
-    TimeShiftSetupController.FieldInfo start = byName.get('Event.StartDateTime');
-    Assert.isNotNull(start, 'the event\'s start is offered by path');
-    Assert.areEqual('datetime', start.type);
-    Assert.isTrue(start.label.startsWith('Event › '), start.label);
-    Assert.isNull(start.referenceTo, 'paths are followed no further');
-    Assert.isNull(start.referencePlural);
-    Assert.areEqual('Events', byName.get('EventId').referencePlural, 'a lookup says what its object is called');
-    Assert.areEqual('Event', byName.get('EventId').referenceLabel);
-    Assert.isTrue(byName.containsKey('Event.Subject'));
-    // Other objects are as they were.
-    for (TimeShiftSetupController.FieldInfo f : TimeShiftSetupController.getFields('Task')) {
-      Assert.isFalse(f.name.contains('.'), 'no paths on a Task');
+    for (String name : byName.keySet()) {
+      Assert.isFalse(name.contains('.'), 'no related fields in the first list: ' + name);
     }
+    TimeShiftSetupController.FieldInfo event = byName.get('EventId');
+    Assert.isNotNull(event);
+    Assert.areEqual('Event', event.referenceTo, 'the lookup says where it leads');
+    Assert.areEqual('Event', event.relationshipName);
+    Assert.areEqual('Events', event.referencePlural, 'and what that is called');
+    Assert.areEqual('Event', event.referenceLabel);
+    // Its own fields are short of dates; the event's are one step in.
+    Boolean eventHasStart = false;
+    for (TimeShiftSetupController.FieldInfo f : TimeShiftSetupController.getFields('Event')) {
+      eventHasStart = eventHasStart || (f.name == 'StartDateTime' && f.type == 'datetime');
+    }
+    Assert.isTrue(eventHasStart);
   }
 
   @IsTest

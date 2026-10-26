@@ -49,6 +49,9 @@ const THIS_SOURCE = "__this__";
 const LABEL_PREFIX = "$Label.";
 // A legend name that is another object's (translated) name: $Object.Task.
 const OBJECT_PREFIX = "$Object.";
+// The filter builder's last field choice: one on a related record, picked object first.
+const RELATED_FIELD = "__related__";
+const DATE_TYPES = ["date", "datetime"];
 // A new source's colour until one is picked: SLDS Blue 40.
 const DEFAULT_COLOUR = "#0B5CAB";
 // Sample record names for the previews, by object.
@@ -2500,6 +2503,34 @@ export default class TimeShiftSetup extends LightningElement {
       ? "Which field holds the account?"
       : `How do they link to the ${this.parentLabel}?`;
   }
+  // A date on a related record (a Task's due date, for a TaskRelation): the
+  // object first, then its date, so the list above stays the object's own.
+  relatedDateOpen = false;
+
+  get dateTypes() {
+    return DATE_TYPES;
+  }
+
+  get showRelatedDate() {
+    return this.stepKey === "date" && this.isSalesforce && this.hasLookups && !this.showPickerResults;
+  }
+
+  handleRelatedDateToggle() {
+    this.relatedDateOpen = !this.relatedDateOpen;
+  }
+
+  handleRelatedDatePick(event) {
+    const { path, label } = event.detail;
+    this.relatedDateOpen = false;
+    this.pathLabels = { ...this.pathLabels, [path]: label };
+    this.update({ dateField: path });
+    this.afterPick();
+  }
+
+  handleRelatedDateClose() {
+    this.relatedDateOpen = false;
+  }
+
   // Under the date (Apex classes, which have none, set it with their name).
   get isLensStep() {
     return this.stepKey === "date" && Boolean(this.draft.dateField) && !this.showPickerResults;
@@ -2922,7 +2953,10 @@ export default class TimeShiftSetup extends LightningElement {
 
   get pickerSelectedLabel() {
     const value = this.pickerValue;
-    return value ? (this.pickerItems.find((i) => i.value === value)?.label ?? value) : "";
+    if (!value) return "";
+    const listed = this.pickerItems.find((i) => i.value === value)?.label;
+    // A date on a related record (Task.ActivityDate) isn't in the list: it reads Task › Due Date.
+    return listed ?? (this.stepKey === "date" ? this.fieldLabel(value) : value);
   }
 
   // The box shows the choice when closed, and what's typed when open.
@@ -3138,6 +3172,10 @@ export default class TimeShiftSetup extends LightningElement {
       if (objectName !== this.draft.objectName) return;
       this.fields = fields;
       this.links = links;
+      // The related records a saved source reads fields from, for their labels.
+      for (const path of [this.draft.dateField, ...(this.draft.conditions ?? []).map((c) => c.field)]) {
+        if (path?.includes(".")) this.loadPathFields(path);
+      }
     } catch (e) {
       this.stepError = plainError(e);
     } finally {
@@ -3352,8 +3390,7 @@ export default class TimeShiftSetup extends LightningElement {
 
   get dateOptions() {
     const dates = (this.fields ?? []).filter((f) => f.type === "date" || f.type === "datetime");
-    // The object's own dates before the system's (Created, Last Modified…),
-    // those of a record reached by path (Task.CreatedDate) included.
+    // The object's own dates before the system's (Created, Last Modified…).
     const system =
       /^(\w+\.)?(CreatedDate|LastModifiedDate|SystemModstamp|LastActivityDate|LastViewedDate|LastReferencedDate)$/;
     const rank = (f) => (system.test(f.name) ? 1 : 0);
@@ -3413,9 +3450,51 @@ export default class TimeShiftSetup extends LightningElement {
   }
 
   get conditionFieldOptions() {
-    return (this.fields ?? [])
+    const own = (this.fields ?? [])
       .filter((f) => f.filterable && f.type !== "textarea" && f.type !== "multipicklist" && f.type !== "address")
       .map((f) => ({ label: f.label, value: f.name }));
+    // The related fields already chosen show as chosen; a new one is picked
+    // object first, then field, so this list stays the object's own.
+    const chosen = [...new Set((this.draft.conditions ?? []).map((c) => c.field).filter((f) => f?.includes(".")))].map(
+      (path) => ({ label: this.fieldLabel(path), value: path })
+    );
+    const related = this.hasLookups ? [{ label: "A field on a related record…", value: RELATED_FIELD }] : [];
+    return [...own, ...chosen, ...related];
+  }
+
+  get hasLookups() {
+    return (this.fields ?? []).some((f) => f.referenceTo && f.relationshipName);
+  }
+
+  // The condition whose related field is being picked (the picker shows under the list).
+  relatedFilterIndex;
+
+  get relatedFilterOpen() {
+    return this.relatedFilterIndex !== undefined;
+  }
+
+  handleRelatedFilterPick(event) {
+    const { path, label, field } = event.detail;
+    const index = this.relatedFilterIndex;
+    this.relatedFilterIndex = undefined;
+    this.pathLabels = { ...this.pathLabels, [path]: label };
+    this.pathInfo = { ...this.pathInfo, [path]: { ...field, name: path } };
+    const valueType = valueTypeOf(field.type);
+    const conditions = this.draft.conditions.map((c, i) => {
+      if (i !== index) return c;
+      return {
+        ...c,
+        field: path,
+        valueType,
+        operator: valueType === "datetime" ? "greater" : "equals",
+        value: valueType === "boolean" ? "true" : ""
+      };
+    });
+    this.update({ conditions });
+  }
+
+  handleRelatedFilterClose() {
+    this.relatedFilterIndex = undefined;
   }
 
   get conditionRows() {
@@ -3451,9 +3530,16 @@ export default class TimeShiftSetup extends LightningElement {
     const index = Number(event.target.dataset.index);
     const part = event.target.dataset.part;
     const value = event.detail.value ?? event.target.value;
+    if (part === "field" && value === RELATED_FIELD) {
+      this.relatedFilterIndex = index;
+      // Back to what was chosen, so the box doesn't read as the new choice.
+      this.update({ conditions: [...this.draft.conditions] });
+      return;
+    }
     const conditions = this.draft.conditions.map((c, i) => {
       if (i !== index) return c;
       if (part === "field") {
+        if (value === RELATED_FIELD) return c;
         const valueType = valueTypeOf(this.fieldInfo(value)?.type);
         const operator = valueType === "datetime" ? "greater" : "equals";
         return { ...c, field: value, valueType, operator, value: valueType === "boolean" ? "true" : "" };
@@ -4932,8 +5018,13 @@ export default class TimeShiftSetup extends LightningElement {
   // ---- helpers -------------------------------------------------------------
 
   fieldInfo(name) {
+    if (name?.includes(".")) return this.pathInfo[name];
     return name ? this.fields?.find((f) => f.name === name) : undefined;
   }
+
+  // What the picker said of the fields chosen through lookups (Task.Subject):
+  // their type and values, for the filter's operators and value box.
+  pathInfo = {};
 
   // A field's label; a path through lookups reads "Campaign › Name".
   fieldLabel(name) {
@@ -4941,7 +5032,12 @@ export default class TimeShiftSetup extends LightningElement {
       if (this.pathLabels[name]) return this.pathLabels[name];
       const steps = name.split(".");
       const lookup = (this.fields ?? []).find((f) => f.relationshipName === steps[0]);
-      return [lookup ? lookupLabel(lookup) : steps[0], ...steps.slice(1)].join(" › ");
+      // One step in, the related object's field is known once its fields are read.
+      const field =
+        steps.length === 2 && lookup?.referenceTo
+          ? this.previewFields[lookup.referenceTo]?.find((f) => f.name === steps[1])
+          : undefined;
+      return [lookup ? lookupLabel(lookup) : steps[0], ...(field ? [field.label] : steps.slice(1))].join(" › ");
     }
     return this.fieldInfo(name)?.label ?? name ?? "";
   }
