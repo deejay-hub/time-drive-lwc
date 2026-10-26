@@ -1349,7 +1349,19 @@ public with sharing class TimeShiftController {
           TimeShiftContext context = context(i);
           context.ranges = new List<TimeWindow>{ window };
           context.pageSize = size + 1;
-          context.columnPaths = columnPaths(sources[i].Object_Name__c, fields);
+          // The columns are the date's object's (Task for a TaskRelation source),
+          // read across the junction.
+          String reach = TimeShiftConfig.datePrefix(sources[i]);
+          Map<String, String> columns = columnPaths(
+            reach == '' ? sources[i].Object_Name__c : TimeShiftConfig.dateOwner(sources[i]),
+            fields
+          );
+          if (reach != '') {
+            for (String column : new List<String>(columns.keySet())) {
+              columns.put(column, reach + columns.get(column));
+            }
+          }
+          context.columnPaths = columns;
           List<String> after = cursors.get(name);
           if (after != null) {
             context.pageAt = Datetime.newInstance(Long.valueOf(after[0]));

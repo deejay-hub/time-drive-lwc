@@ -45,7 +45,8 @@ public with sharing class TimeShiftHighlights {
         continue;
       }
       Rule r = new Rule();
-      r.field = fd.getName();
+      // A field reached through a lookup keeps its path (Task.IsClosed).
+      r.field = (TimeShiftConfig.pathField(objectName, h.Field__c)?.prefix ?? '') + fd.getName();
       r.icon = String.isBlank(h.Icon__c) ? 'dot' : h.Icon__c;
       r.colour = String.isBlank(h.Colour__c) ? null : h.Colour__c;
       r.fieldLabel = fd.getLabel();

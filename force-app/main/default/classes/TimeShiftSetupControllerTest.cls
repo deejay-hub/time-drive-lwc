@@ -375,6 +375,80 @@ private class TimeShiftSetupControllerTest {
   }
 
   @IsTest
+  static void aRelationObjectOffersItsRecordsFieldsByPath() {
+    // EventRelation has next to no dates of its own: its event's come too.
+    Map<String, TimeShiftSetupController.FieldInfo> byName = new Map<String, TimeShiftSetupController.FieldInfo>();
+    for (TimeShiftSetupController.FieldInfo f : TimeShiftSetupController.getFields('EventRelation')) {
+      byName.put(f.name, f);
+    }
+    Assert.isTrue(byName.containsKey('EventId'), 'its own fields stay');
+    TimeShiftSetupController.FieldInfo start = byName.get('Event.StartDateTime');
+    Assert.isNotNull(start, 'the event\'s start is offered by path');
+    Assert.areEqual('datetime', start.type);
+    Assert.isTrue(start.label.startsWith('Event › '), start.label);
+    Assert.isNull(start.referenceTo, 'paths are followed no further');
+    Assert.isTrue(byName.containsKey('Event.Subject'));
+    // Other objects are as they were.
+    for (TimeShiftSetupController.FieldInfo f : TimeShiftSetupController.getFields('Task')) {
+      Assert.isFalse(f.name.contains('.'), 'no paths on a Task');
+    }
+  }
+
+  @IsTest
+  static void aRelationObjectIsOfferedAsASourceOfItsOwn() {
+    TimeShiftConfig.testSources = new List<Time_Shift_Source__mdt>{
+      fitted('Every', 'Contact', 'SharedActivities', null, true)
+    };
+    // Where the org links event relations to a Contact (Shared Activities).
+    List<TimeShiftSetupController.Link> eventLinks = TimeShiftSetupController.getLinks('Contact', 'Event');
+    if (eventLinks.isEmpty() || eventLinks[0].junctionObject != 'EventRelation') {
+      return;
+    }
+    List<TimeShiftSetupController.Link> own = TimeShiftSetupController.getLinks('Contact', 'EventRelation');
+    Assert.isFalse(own.isEmpty(), 'EventRelation is a choice of its own');
+    Assert.areEqual('RelationId', own[0].parentField);
+    Assert.isNull(own[0].junctionObject, 'it is linked directly, by its own lookup');
+    Assert.isTrue(own[0].note.contains('Event'), own[0].note);
+    Boolean listed = false;
+    for (TimeShiftSetupController.Option o : TimeShiftSetupController.getObjects('standard', 'Contact', null)) {
+      listed = listed || o.value == 'EventRelation';
+    }
+    Assert.isTrue(listed, 'the object list has it');
+  }
+
+  @IsTest
+  static void aRelationSourceWhoseDateIsItsRecordsOpensThatRecord() {
+    TimeShiftSetupController.SourceDraft d = new TimeShiftSetupController.SourceDraft();
+    d.developerName = 'Shared_Events';
+    d.label = 'Shared events';
+    d.kind = TimeShiftContext.KIND_SALESFORCE;
+    d.objectName = 'EventRelation';
+    d.parentField = 'RelationId';
+    d.dateField = 'Event.StartDateTime';
+    Time_Shift_Source__mdt s = d.toRecord();
+    Assert.areEqual('EventId', s.Record_Id_Field__c, 'it opens the event');
+    Assert.areEqual('EventId', s.Details_Record_Field__c);
+    d.recordIdField = 'Id';
+    Assert.areEqual('Id', d.toRecord().Record_Id_Field__c, 'unless the source says otherwise');
+    // A relation read by its own date opens itself, as before.
+    d.recordIdField = null;
+    d.dateField = 'CreatedDate';
+    Assert.isNull(d.toRecord().Record_Id_Field__c);
+  }
+
+  @IsTest
+  static void aHighlightOnARelatedRecordsFieldKeepsItsPath() {
+    List<Time_Shift_Highlight__mdt> stored = new List<Time_Shift_Highlight__mdt>{
+      new Time_Shift_Highlight__mdt(Field__c = 'Event.IsAllDayEvent', Icon__c = 'dot')
+    };
+    List<TimeShiftHighlights.Rule> rules = TimeShiftHighlights.rulesFor('EventRelation', stored);
+    Assert.areEqual(1, rules.size());
+    Assert.areEqual('Event.IsAllDayEvent', rules[0].field, 'the query reads it across the relation');
+    stored = new List<Time_Shift_Highlight__mdt>{ new Time_Shift_Highlight__mdt(Field__c = 'isalldayevent') };
+    Assert.areEqual('IsAllDayEvent', TimeShiftHighlights.rulesFor('Event', stored)[0].field, 'a plain field is as before');
+  }
+
+  @IsTest
   static void accountAndPersonAccountPagesLinkTheirOwnWays() {
     Set<String> forAccounts = new Set<String>();
     for (TimeShiftSetupController.Option o : TimeShiftSetupController.getObjects('standard', 'Account', null)) {

@@ -3350,8 +3350,9 @@ export default class TimeShiftSetup extends LightningElement {
 
   get dateOptions() {
     const dates = (this.fields ?? []).filter((f) => f.type === "date" || f.type === "datetime");
-    // The object's own dates before the system's (Created, Last Modified…).
-    const system = /^(CreatedDate|LastModifiedDate|SystemModstamp|LastActivityDate|LastViewedDate|LastReferencedDate)$/;
+    // The object's own dates before the system's (Created, Last Modified…),
+    // those of a record reached by path (Task.CreatedDate) included.
+    const system = /^(\w+\.)?(CreatedDate|LastModifiedDate|SystemModstamp|LastActivityDate|LastViewedDate|LastReferencedDate)$/;
     const rank = (f) => (system.test(f.name) ? 1 : 0);
     return [...dates]
       .sort((a, b) => rank(a) - rank(b))

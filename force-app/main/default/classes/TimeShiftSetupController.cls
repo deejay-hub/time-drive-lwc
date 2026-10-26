@@ -233,6 +233,21 @@ public with sharing class TimeShiftSetupController {
     'EventWhoRelation' => 'EventId'
   };
 
+  // Junction objects whose date (and title, filter) are the related record's,
+  // read across it by path (Task.ActivityDate), and that record's object: a
+  // source's fields in the wizard include it, and it opens the record.
+  private static final Map<String, String> RELATION_RECORDS = new Map<String, String>{
+    'TaskRelation' => 'Task',
+    'TaskWhoRelation' => 'Task',
+    'EventRelation' => 'Event',
+    'EventWhoRelation' => 'Event',
+    'CampaignMember' => 'Campaign',
+    'OpportunityContactRole' => 'Opportunity',
+    'CaseRelatedIssue' => 'Case',
+    'ChangeRequestRelatedIssue' => 'ChangeRequest',
+    'MaintenanceAsset' => 'MaintenancePlan'
+  };
+
   // Setup records a junction can require, which aren't engagement.
   private static final Set<String> SETUP_OBJECTS = new Set<String>{
     'User',
@@ -289,6 +304,31 @@ public with sharing class TimeShiftSetupController {
           List<Link> ways = out.containsKey(target) ? out.get(target) : new List<Link>();
           ways.add(0, every);
           out.put(target, ways);
+        }
+        // The relation object as a source of its own (TaskRelation): one row
+        // for each contact on a task, its date and filter read from the task
+        // by path (Task.ActivityDate), counted from the relation, which is
+        // faster than from the task for a contact on a great many.
+        if (RELATION_RECORDS.containsKey(childName) && child.isQueryable() && seen.add(childName + '.' + lookup.getName() + '.own')) {
+          Link own = new Link(
+            lookup.getName(),
+            child.getLabelPlural() + ' whose ' + lookup.getLabel().removeEnd(' ID') + ' (' + lookup.getName() + ') is this ' + parent.getLabel()
+          );
+          own.how = 'One for each ' + parent.getLabel() + ' on a ' + RELATION_RECORDS.get(childName).toLowerCase();
+          own.everyContact = true;
+          own.note =
+            'Each is one ' +
+            parent.getLabel().toLowerCase() +
+            ' on a ' +
+            RELATION_RECORDS.get(childName).toLowerCase() +
+            '. Choose its ' +
+            RELATION_RECORDS.get(childName).toLowerCase() +
+            '\'s fields by path (' +
+            RELATION_RECORDS.get(childName) +
+            ' › ...), and it opens the ' +
+            RELATION_RECORDS.get(childName).toLowerCase() +
+            '.';
+          addLink(out, childName, own);
         }
         continue;
       }
@@ -514,6 +554,23 @@ public with sharing class TimeShiftSetupController {
         out.add(new FieldInfo(fd));
       }
     }
+    // A relation object (TaskRelation) has next to no fields of its own: its
+    // task's come too, by path (Task.ActivityDate, Task.TaskSubtype).
+    String record = RELATION_RECORDS.get(describe(objectName).getName());
+    if (record != null && describe(objectName).fields.getMap().containsKey(record.toLowerCase() + 'id') && TimeShiftConfig.sObjectType(record) != null) {
+      for (Schema.SObjectField f : describe(record).fields.getMap().values()) {
+        Schema.DescribeFieldResult fd = f.getDescribe();
+        if (fd.isAccessible()) {
+          FieldInfo byPath = new FieldInfo(fd);
+          byPath.name = record + '.' + fd.getName();
+          byPath.label = record + ' › ' + fd.getLabel();
+          // Followed no further than this.
+          byPath.referenceTo = null;
+          byPath.relationshipName = null;
+          out.add(byPath);
+        }
+      }
+    }
     out.sort();
     return out;
   }
@@ -620,16 +677,21 @@ public with sharing class TimeShiftSetupController {
       return v;
     }
     Schema.DescribeSObjectResult target = describe(d.objectName);
-    Schema.SObjectField dateField = target.fields.getMap().get(d.dateField.toLowerCase());
-    if (dateField == null) {
+    // The date may be reached through a lookup (Task.ActivityDate on TaskRelation).
+    Schema.DescribeFieldResult dateInfo = TimeShiftConfig.fieldDescribe(target.getName(), d.dateField);
+    if (dateInfo == null) {
       return v;
     }
-    Boolean dateOnly = dateField.getDescribe().getType() == Schema.DisplayType.DATE;
+    TimeShiftConfig.PathField datePath = TimeShiftConfig.pathField(target.getName(), d.dateField);
+    Boolean dateOnly = dateInfo.getType() == Schema.DisplayType.DATE;
     String filter = d.filterText();
     String base = 'SELECT COUNT() FROM ' + target.getName();
     // Archived Tasks and Events count too, as the timeline plots them.
-    archived = TimeShiftSoqlProvider.ARCHIVED_OBJECTS.contains(target.getName());
-    String scope = archived ? 'IsDeleted = false' : '';
+    archived = TimeShiftSoqlProvider.ARCHIVED_OBJECTS.contains(datePath?.owner ?? target.getName());
+    String reach = datePath?.prefix ?? '';
+    String scope = archived
+      ? (reach != '' && target.fields.getMap().containsKey('isdeleted') ? 'IsDeleted = false AND ' : '') + reach + 'IsDeleted = false'
+      : '';
     scope += String.isBlank(filter) ? '' : (String.isBlank(scope) ? '' : ' AND ') + '(' + filter + ')';
     v.total = count(base, scope, new Map<String, Object>());
     v.more = v.total != null && v.total > COUNT_CAP;
@@ -1353,12 +1415,12 @@ public with sharing class TimeShiftSetupController {
       'Icon__c' => d.icon,
       'Icon_Colour__c' => d.iconColour,
       'Use_Compact_Layout__c' => d.useCompactLayout == true,
-      'Record_Id_Field__c' => d.recordIdField,
+      'Record_Id_Field__c' => d.recordIdFieldOrRelated(),
       'Org_Fit__c' => d.orgFit == true,
       'Requires__c' => d.requires,
       'Variant_Group__c' => d.variantGroup,
-      'Details_Record_Field__c' => d.detailsRecordField,
-      'Details_Object__c' => String.isBlank(d.detailsRecordField) ? null : d.detailsObject,
+      'Details_Record_Field__c' => d.detailsRecordFieldOrRelated(),
+      'Details_Object__c' => String.isBlank(d.detailsRecordFieldOrRelated()) ? null : d.detailsObject,
       'Provider_Class__c' => d.providerClass,
       'Sequence__c' => d.sequence == null ? 50 : d.sequence
     };
@@ -1865,6 +1927,21 @@ public with sharing class TimeShiftSetupController {
       sequence = s.Sequence__c;
     }
 
+    // A relation object whose date is its record's (TaskRelation, Task.ActivityDate)
+    // opens that record, its task: the lookup to it, unless the source says otherwise.
+    private String relatedRecordField() {
+      String record = RELATION_RECORDS.get(objectName);
+      return record != null && String.isNotBlank(dateField) && dateField.startsWith(record + '.') ? record + 'Id' : null;
+    }
+
+    public String recordIdFieldOrRelated() {
+      return String.isBlank(recordIdField) ? relatedRecordField() : recordIdField;
+    }
+
+    public String detailsRecordFieldOrRelated() {
+      return String.isBlank(detailsRecordField) ? relatedRecordField() : detailsRecordField;
+    }
+
     // The conditions as a SOQL filter (values bound as literals, quoted and
     // escaped by type), or the filter text written by hand.
     public String filterText() {
@@ -1909,8 +1986,8 @@ public with sharing class TimeShiftSetupController {
         Icon__c = icon,
         Icon_Colour__c = iconColour,
         Use_Compact_Layout__c = useCompactLayout == true,
-        Record_Id_Field__c = recordIdField,
-        Details_Record_Field__c = detailsRecordField,
+        Record_Id_Field__c = recordIdFieldOrRelated(),
+        Details_Record_Field__c = detailsRecordFieldOrRelated(),
         Details_Object__c = detailsObject,
         Provider_Class__c = providerClass
       );
