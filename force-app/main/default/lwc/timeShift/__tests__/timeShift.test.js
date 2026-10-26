@@ -447,6 +447,7 @@ describe("c-time-shift", () => {
     const root = element.shadowRoot;
     expect(root.querySelectorAll(".event-time").length).toBeGreaterThan(0);
     const button = root.querySelector(".lite-button");
+    expect(button.iconName).toBe("utility:hide");
     expect(button.selected).toBe(false);
     expect(button.title).toBe("Titles only");
     button.click();
