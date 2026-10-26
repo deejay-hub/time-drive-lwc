@@ -472,6 +472,71 @@ describe("c-time-shift-setup", () => {
     expect(checked()).toBe("auto");
   });
 
+  it("names a junction source after the object it joins", async () => {
+    getObjects.mockResolvedValue([{ value: "TaskRelation", label: "Task Relation", detail: "TaskRelation" }]);
+    getSource.mockResolvedValue({
+      developerName: "Order_Placed",
+      label: "Task Relations",
+      kind: "Salesforce",
+      parentObject: "Contact",
+      objectName: "TaskRelation",
+      parentField: "RelationId",
+      dateField: "Task.ActivityDate",
+      title: "{Task.Subject}",
+      active: true,
+      details: []
+    });
+    getFields.mockResolvedValue([
+      {
+        name: "TaskId",
+        label: "Task ID",
+        type: "reference",
+        referenceTo: "Task",
+        relationshipName: "Task",
+        referenceLabel: "Task",
+        referencePlural: "Tasks",
+        values: []
+      },
+      {
+        name: "CreatedById",
+        label: "Created By ID",
+        type: "reference",
+        referenceTo: "User",
+        relationshipName: "CreatedBy",
+        referenceLabel: "User",
+        referencePlural: "Users",
+        values: []
+      },
+      { name: "Task.ActivityDate", label: "Task › Due Date", type: "date", filterable: true, values: [] }
+    ]);
+    getLinks.mockResolvedValue([
+      { key: "RelationId", parentField: "RelationId", label: "Task Relations whose Relation is this Contact" }
+    ]);
+    const element = mount();
+    await splash();
+    const root = element.shadowRoot;
+    await toPages(root);
+    root.querySelector("button.pcard").click();
+    await flush();
+    root.querySelector('.row-main[data-name="Order_Placed"]').click();
+    await flush();
+    root.querySelector(".head-actions .primary").click();
+    await flush();
+    await flush();
+    root.querySelector('.knot-button[data-step="name"]').click();
+    await flush();
+    const checked = () => root.querySelector(".tune .options .option_on")?.dataset.value;
+
+    // The object's own name, or the object it joins: not who created it.
+    root.querySelector('.tune .option[data-value="related"]').click();
+    await flush();
+    expect(checked()).toBe("related");
+    const chips = [...root.querySelectorAll('.chips[aria-label="The related object to name it after"] button')];
+    expect(chips.map((c) => c.textContent.trim())).toEqual(["Tasks"]);
+    expect(chips[0].getAttribute("aria-pressed")).toBe("true");
+    expect(root.querySelector(".legend-row_mine .legend-name").textContent).toBe("Tasks");
+  });
+
   it("won't go past Look with a colour the white icon can't be seen on", async () => {
     getObjects.mockResolvedValue([{ value: "Invoice__c", label: "Invoice", detail: "Invoice__c" }]);
     getSource.mockResolvedValue({

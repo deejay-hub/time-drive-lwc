@@ -1793,6 +1793,23 @@
                             </button>
                           </template>
                         </div>
+                        <template lwc:if={isLegendRelated}>
+                          <div class="chips" role="group" aria-label="The related object to name it after">
+                            <template for:each={relatedChoices} for:item="r">
+                              <button
+                                key={r.value}
+                                class={r.className}
+                                type="button"
+                                title={r.title}
+                                aria-pressed={r.pressed}
+                                data-value={r.value}
+                                onclick={handleRelatedObject}
+                              >
+                                {r.label}
+                              </button>
+                            </template>
+                          </div>
+                        </template>
                         <template lwc:if={isLegendLabel}>
                           <div class="label-box">
                             <lightning-input

@@ -387,6 +387,9 @@ private class TimeShiftSetupControllerTest {
     Assert.areEqual('datetime', start.type);
     Assert.isTrue(start.label.startsWith('Event › '), start.label);
     Assert.isNull(start.referenceTo, 'paths are followed no further');
+    Assert.isNull(start.referencePlural);
+    Assert.areEqual('Events', byName.get('EventId').referencePlural, 'a lookup says what its object is called');
+    Assert.areEqual('Event', byName.get('EventId').referenceLabel);
     Assert.isTrue(byName.containsKey('Event.Subject'));
     // Other objects are as they were.
     for (TimeShiftSetupController.FieldInfo f : TimeShiftSetupController.getFields('Task')) {

@@ -124,6 +124,9 @@ public with sharing class TimeShiftConfig {
 
   // A legend name that's a custom label: $Label.Timeline_Follow_ups.
   public static final String LABEL_PREFIX = '$Label.';
+  // Or another object's name, as Salesforce translates it: $Object.Task (a
+  // TaskRelation source reading "Tasks").
+  public static final String OBJECT_PREFIX = '$Object.';
   private static Map<String, String> legendLabels = new Map<String, String>();
 
   /**
@@ -144,6 +147,8 @@ public with sharing class TimeShiftConfig {
     String out;
     if (String.isNotBlank(raw) && raw.startsWith(LABEL_PREFIX)) {
       out = customLabel(raw.substring(LABEL_PREFIX.length()));
+    } else if (String.isNotBlank(raw) && raw.startsWith(OBJECT_PREFIX)) {
+      out = objectPlural(raw.substring(OBJECT_PREFIX.length()).trim());
     } else if (String.isNotBlank(raw)) {
       out = raw;
     } else if (new TimeShiftContext(null, null, null, s, null, null).kind() == TimeShiftContext.KIND_SALESFORCE) {

@@ -314,19 +314,21 @@ public with sharing class TimeShiftSetupController {
             lookup.getName(),
             child.getLabelPlural() + ' whose ' + lookup.getLabel().removeEnd(' ID') + ' (' + lookup.getName() + ') is this ' + parent.getLabel()
           );
-          own.how = 'One for each ' + parent.getLabel() + ' on a ' + RELATION_RECORDS.get(childName).toLowerCase();
+          String recordWord = RELATION_RECORDS.get(childName).toLowerCase();
+          String aRecordWord = (recordWord.left(1).containsAny('aeiou') ? 'an ' : 'a ') + recordWord;
+          own.how = 'One for each ' + parent.getLabel() + ' on ' + aRecordWord;
           own.everyContact = true;
           own.note =
             'Each is one ' +
             parent.getLabel().toLowerCase() +
-            ' on a ' +
-            RELATION_RECORDS.get(childName).toLowerCase() +
+            ' on ' +
+            aRecordWord +
             '. Choose its ' +
-            RELATION_RECORDS.get(childName).toLowerCase() +
+            recordWord +
             '\'s fields by path (' +
             RELATION_RECORDS.get(childName) +
             ' › ...), and it opens the ' +
-            RELATION_RECORDS.get(childName).toLowerCase() +
+            recordWord +
             '.';
           addLink(out, childName, own);
         }
@@ -567,6 +569,8 @@ public with sharing class TimeShiftSetupController {
           // Followed no further than this.
           byPath.referenceTo = null;
           byPath.relationshipName = null;
+          byPath.referenceLabel = null;
+          byPath.referencePlural = null;
           out.add(byPath);
         }
       }
@@ -2221,6 +2225,12 @@ public with sharing class TimeShiftSetupController {
     public String referenceTo;
     @AuraEnabled
     public String relationshipName;
+    // That object's names, for a source named after it (a TaskRelation
+    // source reading "Tasks").
+    @AuraEnabled
+    public String referenceLabel;
+    @AuraEnabled
+    public String referencePlural;
 
     public FieldInfo(Schema.DescribeFieldResult fd) {
       name = fd.getName();
@@ -2229,7 +2239,10 @@ public with sharing class TimeShiftSetupController {
       filterable = fd.isFilterable();
       List<Schema.SObjectType> targets = fd.getReferenceTo();
       if (targets.size() == 1 && String.isNotBlank(fd.getRelationshipName())) {
-        referenceTo = targets[0].getDescribe().getName();
+        Schema.DescribeSObjectResult target = targets[0].getDescribe();
+        referenceTo = target.getName();
+        referenceLabel = target.getLabel();
+        referencePlural = target.getLabelPlural();
         relationshipName = fd.getRelationshipName();
       }
       if (fd.getType() == Schema.DisplayType.PICKLIST || fd.getType() == Schema.DisplayType.MULTIPICKLIST) {

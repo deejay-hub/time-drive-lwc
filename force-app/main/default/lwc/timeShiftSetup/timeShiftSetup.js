@@ -47,6 +47,8 @@ import { BUNDLED_DOCS } from "./bundledDocs";
 const THIS_SOURCE = "__this__";
 // A legend name that's a custom label: $Label.Timeline_Follow_ups.
 const LABEL_PREFIX = "$Label.";
+// A legend name that is another object's (translated) name: $Object.Task.
+const OBJECT_PREFIX = "$Object.";
 // A new source's colour until one is picked: SLDS Blue 40.
 const DEFAULT_COLOUR = "#0B5CAB";
 // Sample record names for the previews, by object.
@@ -3352,7 +3354,8 @@ export default class TimeShiftSetup extends LightningElement {
     const dates = (this.fields ?? []).filter((f) => f.type === "date" || f.type === "datetime");
     // The object's own dates before the system's (Created, Last Modified…),
     // those of a record reached by path (Task.CreatedDate) included.
-    const system = /^(\w+\.)?(CreatedDate|LastModifiedDate|SystemModstamp|LastActivityDate|LastViewedDate|LastReferencedDate)$/;
+    const system =
+      /^(\w+\.)?(CreatedDate|LastModifiedDate|SystemModstamp|LastActivityDate|LastViewedDate|LastReferencedDate)$/;
     const rank = (f) => (system.test(f.name) ? 1 : 0);
     return [...dates]
       .sort((a, b) => rank(a) - rank(b))
@@ -4372,6 +4375,8 @@ export default class TimeShiftSetup extends LightningElement {
     switch (this.legendMode) {
       case "auto":
         return this.objectPlural || this.objectLabel || this.draft.label || "New source";
+      case "related":
+        return this.relatedPlural || this.objectPlural || this.draft.label || "New source";
       case "label":
         return this.labelText || (this.customLabelName ? `$Label.${this.customLabelName}` : "Custom label");
       default:
@@ -4472,6 +4477,8 @@ export default class TimeShiftSetup extends LightningElement {
   get legendMode() {
     const value = this.draft.eventLabel?.trim() ?? "";
     if (value.startsWith(LABEL_PREFIX)) return "label";
+    if (value.startsWith(OBJECT_PREFIX)) return "related";
+    if (this.legendModeChoice === "related") return "related";
     if (this.legendModeChoice) return this.legendModeChoice;
     if (value) return "text";
     return this.isSalesforce ? "auto" : "text";
@@ -4488,6 +4495,14 @@ export default class TimeShiftSetup extends LightningElement {
         salesforce: true
       },
       {
+        value: "related",
+        title: "A related object's name",
+        text: `Shown as “${this.relatedPlural || "its name"}”, in each person's language. For a junction like ${this.objectLabel || "this object"}, pick the object it joins.`,
+        icon: "utility:link",
+        salesforce: true,
+        needsRelated: true
+      },
+      {
         value: "label",
         title: "A custom label, for several languages",
         text: "Your own words, translated for each person.",
@@ -4500,12 +4515,64 @@ export default class TimeShiftSetup extends LightningElement {
         icon: "utility:edit"
       }
     ]
-      .filter((m) => this.isSalesforce || !m.salesforce)
+      .filter((m) => (this.isSalesforce || !m.salesforce) && (!m.needsRelated || this.relatedObjects.length > 0))
       .map((m) => ({
         ...m,
         checked: String(this.legendDecided && m.value === this.legendMode),
         className: `option option_small${this.legendDecided && m.value === this.legendMode ? " option_on" : ""}`
       }));
+  }
+
+  // The objects this one points to, whose names it could take: a junction's
+  // record (Task for a TaskRelation), its date's first. Not who made it or
+  // owns it.
+  get relatedObjects() {
+    const skip = new Set(["CreatedById", "LastModifiedById", "OwnerId", "RecordTypeId"]);
+    const seen = new Set();
+    const found = [];
+    for (const f of this.fields ?? []) {
+      if (!f.referenceTo || !f.relationshipName || skip.has(f.name) || seen.has(f.referenceTo)) continue;
+      if (f.referenceTo === "User" || f.referenceTo === "Group") continue;
+      seen.add(f.referenceTo);
+      found.push({
+        value: f.referenceTo,
+        plural: f.referencePlural || f.referenceLabel || f.referenceTo,
+        via: f.label,
+        first: this.draft.dateField?.startsWith(`${f.relationshipName}.`) ? 0 : 1
+      });
+    }
+    return found.sort((a, b) => a.first - b.first);
+  }
+
+  get relatedName() {
+    const value = this.draft.eventLabel?.trim() ?? "";
+    return value.startsWith(OBJECT_PREFIX) ? value.slice(OBJECT_PREFIX.length) : "";
+  }
+
+  get relatedPlural() {
+    const objects = this.relatedObjects;
+    const chosen = objects.find((o) => o.value === this.relatedName) ?? (this.relatedName ? null : objects[0]);
+    return chosen?.plural ?? "";
+  }
+
+  get relatedChoices() {
+    const current = this.relatedName;
+    return this.relatedObjects.map((o) => ({
+      value: o.value,
+      label: o.plural,
+      title: `Through ${o.via}`,
+      pressed: String(o.value === current),
+      className: `chip-choice${o.value === current ? " chip-choice_on" : ""}`
+    }));
+  }
+
+  get isLegendRelated() {
+    return this.legendDecided && this.legendMode === "related";
+  }
+
+  handleRelatedObject(event) {
+    this.update({ eventLabel: `${OBJECT_PREFIX}${event.currentTarget.dataset.value}` });
+    this.syncLabel();
   }
 
   get isLegendLabel() {
@@ -4565,8 +4632,16 @@ export default class TimeShiftSetup extends LightningElement {
     const mode = event.currentTarget.dataset.value;
     this.legendModeChoice = mode === "auto" ? undefined : mode;
     if (mode === "auto") this.update({ eventLabel: "" });
-    else if (mode === "label") this.update({ eventLabel: `${LABEL_PREFIX}${this.customLabelName}` });
-    else if (this.draft.eventLabel?.trim().startsWith(LABEL_PREFIX) || !this.draft.eventLabel) {
+    else if (mode === "related") {
+      // The object it joins, to start with (the one its date is read from).
+      const first = this.relatedObjects[0]?.value;
+      this.update({ eventLabel: first ? `${OBJECT_PREFIX}${first}` : "" });
+    } else if (mode === "label") this.update({ eventLabel: `${LABEL_PREFIX}${this.customLabelName}` });
+    else if (
+      this.draft.eventLabel?.trim().startsWith(LABEL_PREFIX) ||
+      this.draft.eventLabel?.trim().startsWith(OBJECT_PREFIX) ||
+      !this.draft.eventLabel
+    ) {
       // Off a custom label (even one with no name yet, which is still the
       // "$Label." prefix and reads as a label), back to typed words.
       this.update({ eventLabel: this.draft.label || "" });

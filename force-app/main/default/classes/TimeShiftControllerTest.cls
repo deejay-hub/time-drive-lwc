@@ -1968,6 +1968,22 @@ private class TimeShiftControllerTest {
   }
 
   @IsTest
+  static void theLegendNameCanBeAnotherObjectsPluralName() {
+    Time_Shift_Source__mdt s = source('Roles', 'OpportunityContactRole', 'Opportunity.CloseDate', 'ContactId');
+    s.Event_Label__c = '$Object.Opportunity';
+    Assert.areEqual(Opportunity.SObjectType.getDescribe().getLabelPlural(), TimeShiftConfig.legendLabel(s));
+    s = source('Roles2', 'OpportunityContactRole', 'Opportunity.CloseDate', 'ContactId');
+    s.Event_Label__c = '$Object.NoSuchObject';
+    Assert.areEqual('Roles2', TimeShiftConfig.legendLabel(s), 'an object that is not there falls back to the source\'s name');
+    s = source('Roles3', 'OpportunityContactRole', 'Opportunity.CloseDate', 'ContactId');
+    Assert.areEqual(
+      Opportunity.SObjectType.getDescribe().getLabelPlural(),
+      TimeShiftConfig.legendLabel(s),
+      'with no name set, a source dated by its record is named after it'
+    );
+  }
+
+  @IsTest
   static void filtersAreRewrittenToReachTheirFieldsAcrossARelationship() {
     String t = 'Task';
     Assert.areEqual(
