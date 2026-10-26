@@ -3029,7 +3029,7 @@ a.guided-button lightning-icon {
   position: absolute;
   top: calc(100% - 0.125rem);
   inset-inline: 0;
-  z-index: 4;
+  z-index: 10;
   max-height: 22.5rem;
   margin: 0;
   padding: calc(0.25rem * var(--d));
@@ -3300,7 +3300,7 @@ a.guided-button lightning-icon {
   position: absolute;
   top: calc(100% + 0.375rem);
   right: 0;
-  z-index: 3;
+  z-index: 10;
   display: grid;
   gap: calc(0.375rem * var(--d));
   width: min(22rem, 100%);
@@ -3514,6 +3514,24 @@ a.guided-button lightning-icon {
 }
 
 /* Filter conditions. */
+/* Popups open over what comes after them. A box that animates in is a layer of
+   its own, and a later layer paints over an earlier one, so a popup inside it (a
+   dropdown, a list of fields) would sit under the next box. The box that has
+   focus in it, with its popup open, goes above its neighbours. */
+.conditions-box,
+.details-box,
+.related-date,
+.related-filter {
+  position: relative;
+}
+
+.conditions-box:focus-within,
+.details-box:focus-within,
+.related-date:focus-within,
+.related-filter:focus-within {
+  z-index: 10;
+}
+
 .conditions-box,
 .details-box {
   display: grid;
@@ -3550,6 +3568,11 @@ a.guided-button lightning-icon {
   display: grid;
   gap: var(--space);
   margin-top: var(--space);
+}
+
+/* The field list opens from here, over the conditions below it. */
+.related-filter {
+  min-height: 0;
 }
 
 .box-actions {

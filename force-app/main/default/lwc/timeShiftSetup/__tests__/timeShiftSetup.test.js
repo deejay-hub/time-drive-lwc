@@ -627,6 +627,7 @@ describe("c-time-shift-setup", () => {
       await flush();
       const picker = root.querySelector("c-time-shift-field-picker");
       expect(picker).not.toBeNull();
+      expect(picker.closest(".related-date")).not.toBeNull();
       // The lookup alone, first.
       expect(names(root)).toEqual(["TaskId"]);
       picker.shadowRoot.querySelector('.token-result[data-name="TaskId"]').click();
@@ -688,6 +689,8 @@ describe("c-time-shift-setup", () => {
       await settle();
       const picker = root.querySelector("c-time-shift-field-picker");
       expect(picker).not.toBeNull();
+      // The list opens from a box of its own, so it has something to hang from.
+      expect(picker.closest(".related-filter")).not.toBeNull();
       expect(names(root)).toEqual(["TaskId"]);
       picker.shadowRoot.querySelector('.token-result[data-name="TaskId"]').click();
       await settle();

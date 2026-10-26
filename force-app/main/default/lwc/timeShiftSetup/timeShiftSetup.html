@@ -1692,13 +1692,15 @@
                           </template>
                         </ul>
                         <template lwc:if={relatedFilterOpen}>
-                          <c-time-shift-field-picker
-                            fields={fields}
-                            label="Search related records"
-                            root-lookups-only="true"
-                            onpick={handleRelatedFilterPick}
-                            onclose={handleRelatedFilterClose}
-                          ></c-time-shift-field-picker>
+                          <div class="related-filter">
+                            <c-time-shift-field-picker
+                              fields={fields}
+                              label="Search related records"
+                              root-lookups-only="true"
+                              onpick={handleRelatedFilterPick}
+                              onclose={handleRelatedFilterClose}
+                            ></c-time-shift-field-picker>
+                          </div>
                         </template>
                         <div class="box-actions">
                           <lightning-button
