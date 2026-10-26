@@ -1984,6 +1984,35 @@ private class TimeShiftControllerTest {
   }
 
   @IsTest
+  static void aFilesItemStandsForItsDocument() {
+    Time_Shift_Source__mdt files = source('Files', 'ContentDocumentLink', 'SystemModstamp', 'LinkedEntityId');
+    Assert.areEqual(
+      'ContentDocumentId',
+      new TimeShiftContext(null, 'Contact', null, files, null, null).recordIdField(),
+      'a click opens the document, whatever the file is dated by'
+    );
+    files.Record_Id_Field__c = 'Id';
+    Assert.areEqual('Id', new TimeShiftContext(null, 'Contact', null, files, null, null).recordIdField(), 'unless it says otherwise');
+    Assert.areEqual(
+      'Id',
+      new TimeShiftContext(null, 'Contact', null, source('Cases', 'Case', 'CreatedDate', 'ContactId'), null, null).recordIdField(),
+      'other objects are as they were'
+    );
+  }
+
+  @IsTest
+  static void aFilesSourceIsNamedWithItsTranslatableLabelUnlessItSaysOtherwise() {
+    Time_Shift_Source__mdt s = source('Files', 'ContentDocumentLink', 'ContentDocument.CreatedDate', 'LinkedEntityId');
+    Assert.areEqual(Label.Time_Shift_Legend_Files, TimeShiftConfig.legendLabel(s), 'Files & Notes, in the viewer\'s language');
+    Assert.areEqual('Files & Notes', Label.Time_Shift_Legend_Files);
+    s = source('Files2', 'ContentDocumentLink', 'ContentDocument.CreatedDate', 'LinkedEntityId');
+    s.Event_Label__c = 'Attachments';
+    Assert.areEqual('Attachments', TimeShiftConfig.legendLabel(s), 'a name of its own wins');
+    s = source('Cases', 'Case', 'CreatedDate', 'ContactId');
+    Assert.areEqual(Case.SObjectType.getDescribe().getLabelPlural(), TimeShiftConfig.legendLabel(s), 'other objects are named as before');
+  }
+
+  @IsTest
   static void theLegendNameCanBeAnotherObjectsPluralName() {
     Time_Shift_Source__mdt s = source('Roles', 'OpportunityContactRole', 'Opportunity.CloseDate', 'ContactId');
     s.Event_Label__c = '$Object.Opportunity';

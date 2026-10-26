@@ -1457,6 +1457,14 @@
         <value>Event types</value>
     </labels>
     <labels>
+        <fullName>Time_Shift_Legend_Files</fullName>
+        <categories>Time Trail</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Time Trail: a Files source's legend name</shortDescription>
+        <value>Files &amp; Notes</value>
+    </labels>
+    <labels>
         <fullName>Time_Shift_Group_Loading</fullName>
         <categories>Time Trail</categories>
         <language>en_US</language>

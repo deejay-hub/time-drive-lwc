@@ -70,6 +70,14 @@ export function fieldsOf(layout) {
   return out;
 }
 
+// Where an item's link goes: its page, or for a file (a ContentDocument, key
+// prefix 069) its document. The same as the timeline's.
+function recordHref(id) {
+  return typeof id === "string" && id.startsWith("069")
+    ? `/lightning/r/ContentDocument/${id}/view`
+    : `/lightning/r/${id}/view`;
+}
+
 export default class TimeShiftGroup extends NavigationMixin(LightningElement) {
   labels = LABELS;
 
@@ -298,7 +306,7 @@ export default class TimeShiftGroup extends NavigationMixin(LightningElement) {
       const row = {
         id: item.id,
         title: item.title,
-        recordUrl: item.recordId ? `/lightning/r/${item.recordId}/view` : null,
+        recordUrl: item.recordId ? recordHref(item.recordId) : null,
         subtitle: item.subtitle,
         when: this.whenText(item)
       };

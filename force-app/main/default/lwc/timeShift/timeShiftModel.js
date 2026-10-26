@@ -587,3 +587,23 @@ export function percentAtDay(cells, day) {
   const span = cell.to - cell.from + 1;
   return cell.left + Math.min(1, (day - cell.from) / span) * cell.width;
 }
+
+// A file (a ContentDocument, key prefix 069) opens Salesforce's file preview,
+// not a record page, as it does anywhere else in Lightning.
+export function isFileId(id) {
+  return typeof id === "string" && id.startsWith("069");
+}
+
+/** Where an item's link goes in a new tab or a copied link: its page, or for a file its document. */
+export function recordHref(id) {
+  return isFileId(id) ? `/lightning/r/ContentDocument/${id}/view` : `/lightning/r/${id}/view`;
+}
+
+/** The file preview page reference (the document's Id as the selected record). */
+export function filePreviewRef(id) {
+  return {
+    type: "standard__namedPage",
+    attributes: { pageName: "filePreview" },
+    state: { selectedRecordId: id }
+  };
+}

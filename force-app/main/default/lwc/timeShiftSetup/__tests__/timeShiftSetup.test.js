@@ -11,6 +11,7 @@ import setActive from "@salesforce/apex/TimeShiftSetupController.setActive";
 import save from "@salesforce/apex/TimeShiftSetupController.save";
 import TimeShiftConfirm from "c/timeShiftConfirm";
 import { subscribe } from "lightning/empApi";
+import getLabelText from "@salesforce/apex/TimeShiftSetupController.getLabelText";
 import getOrgFit from "@salesforce/apex/TimeShiftSetupController.getOrgFit";
 import applyOrgFit from "@salesforce/apex/TimeShiftSetupController.applyOrgFit";
 
@@ -43,6 +44,9 @@ jest.mock("@salesforce/apex/TimeShiftSetupController.getApexProviders", () => ({
 });
 jest.mock("@salesforce/apex/TimeShiftSetupController.getLinks", () => ({ default: jest.fn() }), { virtual: true });
 jest.mock("@salesforce/apex/TimeShiftSetupController.getFields", () => ({ default: jest.fn() }), {
+  virtual: true
+});
+jest.mock("@salesforce/apex/TimeShiftSetupController.getLabelText", () => ({ default: jest.fn() }), {
   virtual: true
 });
 jest.mock("@salesforce/apex/TimeShiftSetupController.getVolumes", () => ({ default: jest.fn() }), {
@@ -635,6 +639,28 @@ describe("c-time-shift-setup", () => {
       expect(root.querySelector(".picker-input").value).toBe("Task › Due Date");
     });
 
+    it("fixes a file's opening and click: its chosen fields, and the file preview", async () => {
+      const root = await openStep("open", {
+        objectName: "ContentDocumentLink",
+        parentField: "LinkedEntityId",
+        dateField: "ContentDocument.CreatedDate",
+        title: "{ContentDocument.Title}",
+        useCompactLayout: true,
+        recordIdField: null,
+        details: [{ field: "ContentDocument.Title", label: "", format: "Text" }]
+      });
+      await settle();
+      // Opening: fields only. Nothing to choose between, so one option, no layouts.
+      const opens = [...root.querySelectorAll('[role="radiogroup"][aria-label="What opening an item shows"] .option')];
+      expect(opens.map((o) => o.dataset.value)).toEqual(["fields"]);
+      // A click: the file preview, as the one answer, and no way to take it back.
+      const clicks = [...root.querySelectorAll('[aria-label="What a click opens"] .option')];
+      expect(clicks.map((o) => o.dataset.value)).toEqual(["file"]);
+      expect(root.textContent).toContain("The file preview");
+      expect(root.querySelector(".link-chosen .link-close")).toBeNull();
+      expect(root.textContent).not.toContain("A related record");
+    });
+
     it("says it's access, not dates, when none of the object's fields can be read", async () => {
       const root = await openStep("date", { objectName: "Claim", dateField: null }, () => []);
       await settle();
@@ -1023,6 +1049,72 @@ describe("c-time-shift-setup", () => {
     await flush();
     expect(element.shadowRoot.querySelector(".pending")).toBeNull();
     expect(element.shadowRoot.querySelector('lightning-input[data-name="Order_Placed"]').checked).toBe(false);
+  });
+
+  it("starts a Files source named with its custom label, chosen, and takes that back for another object", async () => {
+    getObjects.mockResolvedValue([
+      { value: "ContentDocumentLink", label: "Content Document Link", detail: "Linked by Linked Entity" },
+      { value: "Case", label: "Case", detail: "Linked by Contact" }
+    ]);
+    getFields.mockResolvedValue([
+      { name: "CreatedDate", label: "Created Date", type: "datetime", filterable: true, values: [] },
+      { name: "SystemModstamp", label: "System Modstamp", type: "datetime", filterable: true, values: [] }
+    ]);
+    getLinks.mockResolvedValue([
+      { key: "LinkedEntityId", parentField: "LinkedEntityId", label: "Files linked to this Contact" }
+    ]);
+    getLabelText.mockResolvedValue("Files & Notes");
+    const element = mount();
+    await flush();
+    const root = element.shadowRoot;
+    const wait = () => new Promise((resolve) => setTimeout(resolve, 300)); // eslint-disable-line @lwc/lwc/no-async-operation
+    await splash();
+    await toPages(root);
+    root.querySelector("button.pcard").click();
+    await flush();
+    root.querySelector(".page-head .primary").click();
+    await flush();
+    root.querySelector('.option[data-value="standard"]').click();
+    await wait();
+    root.querySelector(".wz-foot .primary").click();
+    await wait();
+    const pickObject = async (term) => {
+      const search = root.querySelector(".picker-input");
+      search.value = term;
+      search.dispatchEvent(new CustomEvent("input"));
+      await flush();
+      search.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
+      await wait();
+    };
+    const toName = async () => {
+      root.querySelector(".wz-foot .primary").click();
+      await wait();
+      // A file starts with its date answered; any other object asks for one.
+      root.querySelector(".result")?.click();
+      await flush();
+      root.querySelector(".wz-foot .primary").click();
+      await wait();
+    };
+    await pickObject("content");
+    root.querySelector(".wz-foot .primary").click();
+    await wait();
+    // Dated by when the document was created, already.
+    expect(root.querySelector(".picker-input").value).toBe("Content Document › Created Date");
+    root.querySelector(".wz-foot .primary").click();
+    await wait();
+    const checked = () => root.querySelector(".tune .options .option_on")?.dataset.value;
+    // Chosen already: "A custom label", with its API name and what it reads as.
+    expect(checked()).toBe("label");
+    expect(root.querySelector(".custom-label-input").value).toBe("Time_Shift_Legend_Files");
+    expect(getLabelText).toHaveBeenCalledWith({ name: "Time_Shift_Legend_Files" });
+    expect(root.querySelector(".legend-row_mine .legend-name").textContent).toBe("Files & Notes");
+
+    // Back to the object: another one takes the choice back.
+    root.querySelector('.knot-button[data-step="object"]').click();
+    await flush();
+    await pickObject("case");
+    await toName();
+    expect(checked()).toBeUndefined();
   });
 
   it("asks one question at a time and threads the answers along the top", async () => {

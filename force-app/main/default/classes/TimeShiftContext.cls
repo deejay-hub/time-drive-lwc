@@ -156,6 +156,10 @@ public with sharing class TimeShiftContext {
     if (String.isNotBlank(source?.Record_Id_Field__c)) {
       return source.Record_Id_Field__c;
     }
+    // A file's link stands for its document, which is what a click opens.
+    if (kind() == KIND_SALESFORCE && 'ContentDocumentLink'.equalsIgnoreCase(source?.Object_Name__c)) {
+      return 'ContentDocumentId';
+    }
     return kind() == KIND_SALESFORCE ? 'Id' : null;
   }
 

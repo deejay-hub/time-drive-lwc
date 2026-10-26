@@ -49,6 +49,9 @@ const THIS_SOURCE = "__this__";
 const LABEL_PREFIX = "$Label.";
 // A legend name that is another object's (translated) name: $Object.Task.
 const OBJECT_PREFIX = "$Object.";
+// Objects whose own name says little, and the custom label a source of theirs
+// starts out named with (see TimeShiftConfig.DEFAULT_LEGEND_LABELS).
+const DEFAULT_LEGEND_LABELS = { contentdocumentlink: "Time_Shift_Legend_Files" };
 // The filter builder's last field choice: one on a related record, picked object first.
 const RELATED_FIELD = "__related__";
 const DATE_TYPES = ["date", "datetime"];
@@ -556,6 +559,19 @@ const ACTIVITY_DETAILS = [
   { field: "What.Name", label: "", format: "Text" },
   { field: "Owner.Name", label: "", format: "Text" }
 ];
+
+// Files (ContentDocumentLink) open with fields chosen here, and a click opens
+// Salesforce's file preview, as it does everywhere else: nothing to choose
+// between. They start with the file's own title, type and size, dated by when
+// the document was created.
+const FILE_OBJECT = "contentdocumentlink";
+const FILE_DETAILS = [
+  { field: "ContentDocument.Title", label: "", format: "Text" },
+  { field: "ContentDocument.FileType", label: "", format: "Text" },
+  { field: "ContentDocument.ContentSize", label: "", format: "Number" }
+];
+const FILE_DATE = "ContentDocument.CreatedDate";
+const FILE_DATE_LABEL = "Content Document › Created Date";
 
 // Highlights: the icons and colours to choose from. Utility icons, which
 // take a colour well and read at a small size, and a plain dot.
@@ -2258,6 +2274,7 @@ export default class TimeShiftSetup extends LightningElement {
 
   resetWizard() {
     this.legendModeChoice = undefined;
+    this.legendDefaulted = false;
     this.legendPicked = false;
     this.legendCleared = false;
     this.openPicked = false;
@@ -3133,6 +3150,9 @@ export default class TimeShiftSetup extends LightningElement {
     // Answers that came from the previous object no longer apply; names the
     // wizard suggested follow the new one.
     const suggested = (text) => !text || text === previous;
+    const defaultLegend = this.isSalesforce ? DEFAULT_LEGEND_LABELS[value.toLowerCase()] : undefined;
+    const file = this.isSalesforce && value.toLowerCase() === FILE_OBJECT;
+    if (file) this.pathLabels = { ...this.pathLabels, [FILE_DATE]: FILE_DATE_LABEL };
     this.update({
       objectName: value,
       parentField: null,
@@ -3140,27 +3160,58 @@ export default class TimeShiftSetup extends LightningElement {
       junctionParentField: null,
       junctionRecordField: null,
       individualField: null,
-      dateField: null,
+      dateField: file ? FILE_DATE : null,
       conditions: [],
       filter: null,
-      details: this.isSalesforce && ACTIVITY_OBJECTS.has(value.toLowerCase()) ? ACTIVITY_DETAILS.map(keyed) : [],
+      details: file
+        ? FILE_DETAILS.map(keyed)
+        : this.isSalesforce && ACTIVITY_OBJECTS.has(value.toLowerCase())
+          ? ACTIVITY_DETAILS.map(keyed)
+          : [],
       highlights: [],
-      useCompactLayout: this.isSalesforce ? !ACTIVITY_OBJECTS.has(value.toLowerCase()) : d.useCompactLayout,
+      useCompactLayout: this.isSalesforce ? !file && !ACTIVITY_OBJECTS.has(value.toLowerCase()) : d.useCompactLayout,
       detailsRecordField: null,
       detailsObject: null,
+      // A file's click opens its document, whatever the link says.
+      recordIdField: file ? "ContentDocumentId" : null,
       label: suggested(d.label) ? object.label : d.label,
-      // Salesforce objects: blank is the object's own (translated) name.
-      eventLabel: this.isDmo && suggested(d.eventLabel) ? object.label : this.isDmo ? d.eventLabel : "",
-      title: suggested(d.title) ? object.label : d.title,
-      subtitle: this.isDmo ? d.subtitle : suggested(d.subtitle) ? "{Name}" : d.subtitle,
+      // Salesforce objects: blank is the object's own (translated) name; a few
+      // start on a custom label of ours, which is translated too.
+      eventLabel: this.isDmo
+        ? suggested(d.eventLabel)
+          ? object.label
+          : d.eventLabel
+        : defaultLegend
+          ? `${LABEL_PREFIX}${defaultLegend}`
+          : "",
+      title: file ? "{ContentDocument.Title}" : suggested(d.title) ? object.label : d.title,
+      subtitle: file
+        ? "{ContentDocument.FileType}"
+        : this.isDmo
+          ? d.subtitle
+          : suggested(d.subtitle)
+            ? "{Name}"
+            : d.subtitle,
       icon: d.icon ?? OBJECT_ICONS[value.toLowerCase()] ?? (this.isDmo ? "utility:world" : "utility:record")
     });
     this.reached = this.stepIndex;
     this.filterMode = "all";
     this.volumes = undefined;
+    // Its name starts on the custom label, chosen, with what it reads as; going
+    // on to another object takes that choice back.
+    if (defaultLegend) {
+      this.legendPicked = true;
+      this.legendCleared = false;
+      this.legendDefaulted = true;
+      this.lookUpLabel();
+    } else if (this.legendDefaulted) {
+      this.legendPicked = false;
+      this.legendDefaulted = false;
+    }
     await this.loadSchema();
     this.suggestAnswers();
   }
+  legendDefaulted = false;
 
   // Fields and links for the chosen object.
   async loadSchema() {
@@ -3937,7 +3988,7 @@ export default class TimeShiftSetup extends LightningElement {
   // (a member's Campaign), or fields chosen here. Data 360 and Apex items
   // aren't Salesforce records: chosen fields only.
   get openChoice() {
-    if (!this.isSalesforce || this.isActivity || !this.draft.useCompactLayout) return "fields";
+    if (!this.isSalesforce || this.isActivity || this.isFile || !this.draft.useCompactLayout) return "fields";
     return this.draft.detailsRecordField ? "related" : "own";
   }
 
@@ -3965,7 +4016,7 @@ export default class TimeShiftSetup extends LightningElement {
         text: "Pick the fields, in order, through lookups too.",
         icon: "utility:list"
       }
-    ].filter((o) => (this.isSalesforce && !this.isActivity) || !o.salesforce);
+    ].filter((o) => (this.isSalesforce && !this.isActivity && !this.isFile) || !o.salesforce);
     return options.map((o) => ({
       ...o,
       checked: String(this.openDecided && o.value === this.openChoice),
@@ -3992,7 +4043,14 @@ export default class TimeShiftSetup extends LightningElement {
   // choice). The X clears the choice, so it is made again.
   get openDecided() {
     // One way only (Data 360, Apex): nothing to choose between.
-    return !this.isSalesforce || this.isActivity || ((this.openPicked || this.editing) && !this.openCleared);
+    return (
+      !this.isSalesforce || this.isActivity || this.isFile || ((this.openPicked || this.editing) && !this.openCleared)
+    );
+  }
+
+  // Files: fields only, and a click opens the file preview (see FILE_OBJECT).
+  get isFile() {
+    return this.isSalesforce && String(this.draft.objectName ?? "").toLowerCase() === FILE_OBJECT;
   }
 
   // Tasks and events: fields only, nothing to choose between (see ACTIVITY_OBJECTS).
@@ -4001,7 +4059,7 @@ export default class TimeShiftSetup extends LightningElement {
   }
 
   get openFocused() {
-    return this.isSalesforce && !this.isActivity && this.openDecided;
+    return this.isSalesforce && !this.isActivity && !this.isFile && this.openDecided;
   }
 
   get chosenOpen() {
@@ -4018,7 +4076,12 @@ export default class TimeShiftSetup extends LightningElement {
   }
 
   get clickDecided() {
-    return (this.clickPicked || this.editing) && !this.clickCleared;
+    return this.isFile || ((this.clickPicked || this.editing) && !this.clickCleared);
+  }
+
+  // A file's click has one answer: nothing to take back.
+  get clickChangeable() {
+    return !this.isFile;
   }
 
   get clickFocused() {
@@ -4097,11 +4160,24 @@ export default class TimeShiftSetup extends LightningElement {
 
   // What a click opens: the item's own record, or a related one.
   get clickChoice() {
+    if (this.isFile) return "file";
     return this.draft.recordIdField ? "related" : "own";
   }
 
   get clickOptions() {
     const own = this.objectLabelOf(this.draft.objectName) || "record";
+    if (this.isFile) {
+      return [
+        {
+          value: "file",
+          title: "The file preview",
+          text: "Opens the file in Salesforce's file preview, as it does anywhere else.",
+          icon: "doctype:attachment",
+          checked: "true",
+          className: "option option_choice option_on"
+        }
+      ];
+    }
     return [
       {
         value: "own",
@@ -4128,6 +4204,7 @@ export default class TimeShiftSetup extends LightningElement {
   }
 
   handleClickChoice(event) {
+    if (this.isFile) return;
     this.clickPicked = true;
     this.clickCleared = false;
     const value = event.currentTarget.dataset.value;
@@ -4149,6 +4226,8 @@ export default class TimeShiftSetup extends LightningElement {
   }
 
   get clickTarget() {
+    // A file lands on the preview, which has no layout to read.
+    if (this.isFile) return { field: "ContentDocumentId", objectName: undefined, label: "file preview" };
     const path = this.draft.recordIdField;
     if (!path)
       return { field: null, objectName: this.draft.objectName, label: this.objectLabelOf(this.draft.objectName) };
@@ -4166,6 +4245,7 @@ export default class TimeShiftSetup extends LightningElement {
   }
 
   get clickAnswer() {
+    if (this.isFile) return "The file preview";
     return this.clickChoice === "own" ? "Its own record" : `Its ${this.clickTarget.label}`;
   }
 

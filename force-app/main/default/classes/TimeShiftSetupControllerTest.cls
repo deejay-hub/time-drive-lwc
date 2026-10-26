@@ -463,6 +463,12 @@ private class TimeShiftSetupControllerTest {
     d.recordIdField = null;
     d.dateField = 'CreatedDate';
     Assert.isNull(d.toRecord().Record_Id_Field__c);
+    // A file always opens its document, dated by whatever.
+    d.objectName = 'ContentDocumentLink';
+    d.parentField = 'LinkedEntityId';
+    d.dateField = 'SystemModstamp';
+    Assert.areEqual('ContentDocumentId', d.toRecord().Record_Id_Field__c);
+    Assert.areEqual('ContentDocumentId', d.toRecord().Details_Record_Field__c);
   }
 
   @IsTest

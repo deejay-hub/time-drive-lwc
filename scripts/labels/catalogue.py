@@ -196,6 +196,8 @@ LABELS = [
     ("Filters_Apply", "apply the filters", "Apply", "Aplicar", "تطبيق"),
     ("Filters_Close", "close the filters panel", "Close", "Cerrar", "إغلاق"),
     ("Filters_Event_Types", "the event types group", "Event types", "Tipos de evento", "أنواع الأحداث"),
+    # ---- legend names a source can start with
+    ("Legend_Files", "a Files source's legend name", "Files & Notes", "Archivos y notas", "الملفات والملاحظات"),
     # ---- the View all page
     ("Group_Loading", "the list page loading", "Loading", "Cargando", "جارٍ التحميل"),
     ("Group_Nothing", "heading: the list is empty", "Nothing to show", "Nada que mostrar", "لا شيء لعرضه"),

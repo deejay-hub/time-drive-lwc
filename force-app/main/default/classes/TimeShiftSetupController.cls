@@ -1934,6 +1934,10 @@ public with sharing class TimeShiftSetupController {
     // A relation object whose date is its record's (TaskRelation, Task.ActivityDate)
     // opens that record, its task: the lookup to it, unless the source says otherwise.
     private String relatedRecordField() {
+      // A file always opens its document, whatever it is dated by.
+      if ('ContentDocumentLink'.equalsIgnoreCase(objectName)) {
+        return 'ContentDocumentId';
+      }
       String record = RELATION_RECORDS.get(objectName);
       return record != null && String.isNotBlank(dateField) && dateField.startsWith(record + '.') ? record + 'Id' : null;
     }

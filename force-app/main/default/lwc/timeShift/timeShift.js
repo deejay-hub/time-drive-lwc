@@ -6,6 +6,7 @@
  */
 import { LightningElement, api, wire } from "lwc";
 import { NavigationMixin } from "lightning/navigation";
+import { IsConsoleNavigation, openTab } from "lightning/platformWorkspaceApi";
 import { LABELS, format } from "c/timeShiftLabels";
 import getTimeline from "@salesforce/apex/TimeShiftController.getTimeline";
 import getTimelineDiagnosed from "@salesforce/apex/TimeShiftController.getTimelineDiagnosed";
@@ -29,6 +30,9 @@ import {
   EVENT_TYPES,
   VIEWS,
   FORMATS,
+  filePreviewRef,
+  isFileId,
+  recordHref,
   buildMinimap,
   dayAtPercent,
   currentPeriodKey,
@@ -1506,7 +1510,7 @@ export default class TimeShift extends NavigationMixin(LightningElement) {
       toggleTitle: open ? LABELS.detailsHide : LABELS.detailsShow,
       iconLabel: this.iconLabelFor(event, event.typeLabel || info.label),
       // CRM events link to their record; Data 360 events don't.
-      recordUrl: event.recordId ? `/lightning/r/${event.recordId}/view` : null
+      recordUrl: event.recordId ? recordHref(event.recordId) : null
     };
   }
   // An event's colour: its source's, else its type's tone.
@@ -2203,12 +2207,22 @@ export default class TimeShift extends NavigationMixin(LightningElement) {
     }
   }
 
+  // In a console app, a file's preview opens in a tab of its own.
+  @wire(IsConsoleNavigation) isConsoleNavigation;
+
   openRecord(event) {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.button === 1) return;
     event.preventDefault();
+    const recordId = event.currentTarget.dataset.record;
+    if (isFileId(recordId)) {
+      const ref = filePreviewRef(recordId);
+      if (this.isConsoleNavigation) openTab({ pageReference: ref, focus: true });
+      else this[NavigationMixin.Navigate](ref);
+      return;
+    }
     this[NavigationMixin.Navigate]({
       type: "standard__recordPage",
-      attributes: { recordId: event.currentTarget.dataset.record, actionName: "view" }
+      attributes: { recordId, actionName: "view" }
     });
   }
   // View all for a grouped row: its items a page at a time

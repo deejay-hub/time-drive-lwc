@@ -159,6 +159,7 @@ import filtersCancel from "@salesforce/label/c.Time_Shift_Filters_Cancel";
 import filtersApply from "@salesforce/label/c.Time_Shift_Filters_Apply";
 import filtersClose from "@salesforce/label/c.Time_Shift_Filters_Close";
 import filtersEventTypes from "@salesforce/label/c.Time_Shift_Filters_Event_Types";
+import legendFiles from "@salesforce/label/c.Time_Shift_Legend_Files";
 import groupLoading from "@salesforce/label/c.Time_Shift_Group_Loading";
 import groupNothing from "@salesforce/label/c.Time_Shift_Group_Nothing";
 import groupNothingBody from "@salesforce/label/c.Time_Shift_Group_Nothing_Body";
@@ -335,6 +336,7 @@ export const LABELS = Object.freeze({
   filtersApply,
   filtersClose,
   filtersEventTypes,
+  legendFiles,
   groupLoading,
   groupNothing,
   groupNothingBody,

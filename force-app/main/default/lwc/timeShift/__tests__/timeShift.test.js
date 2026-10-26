@@ -11,6 +11,7 @@ import getActivityActions from "@salesforce/apex/TimeShiftController.getActivity
 import TimeShiftConfirm from "c/timeShiftConfirm";
 import { deleteRecord } from "lightning/uiRecordApi";
 import { navigated } from "lightning/navigation";
+import { IsConsoleNavigation, openTab } from "lightning/platformWorkspaceApi";
 import {
   ago,
   buildMinimap,
@@ -1301,6 +1302,71 @@ describe("c-time-shift filters panel", () => {
     await flush();
     expect(summary().querySelector(".skeleton_summary")).toBeNull();
     expect(summary().textContent).toMatch(/2 of \d+ types · 2 items/);
+  });
+});
+
+describe("c-time-shift a file", () => {
+  afterEach(() => {
+    while (document.body.firstChild) document.body.removeChild(document.body.firstChild);
+    jest.clearAllMocks();
+  });
+
+  const mountWith = async (events) => {
+    const element = createElement("c-time-shift", { is: TimeShift });
+    element.recordId = "003000000000001AAA";
+    element.layout = "Vertical";
+    document.body.appendChild(element);
+    emitEvents({ events, warnings: [] });
+    await flush();
+    return element.shadowRoot;
+  };
+  const FILE = {
+    ...EVENTS[0],
+    id: "f1",
+    recordId: "069000000000001AAA",
+    title: "Contract.pdf",
+    sourceObject: "ContentDocumentLink"
+  };
+
+  it("opens the file preview from its title, as Salesforce does, not a record page", async () => {
+    const root = await mountWith([FILE]);
+    const link = root.querySelector(".event-link");
+    // A copied link or a new tab goes to the document.
+    expect(link.getAttribute("href")).toBe("/lightning/r/ContentDocument/069000000000001AAA/view");
+    link.click();
+    expect(navigated).toHaveBeenLastCalledWith({
+      type: "standard__namedPage",
+      attributes: { pageName: "filePreview" },
+      state: { selectedRecordId: "069000000000001AAA" }
+    });
+    expect(openTab).not.toHaveBeenCalled();
+  });
+
+  it("opens the preview in a tab of its own in a console app", async () => {
+    const root = await mountWith([FILE]);
+    IsConsoleNavigation.emit(true);
+    await flush();
+    navigated.mockClear();
+    root.querySelector(".event-link").click();
+    expect(openTab).toHaveBeenCalledWith({
+      pageReference: {
+        type: "standard__namedPage",
+        attributes: { pageName: "filePreview" },
+        state: { selectedRecordId: "069000000000001AAA" }
+      },
+      focus: true
+    });
+    expect(navigated).not.toHaveBeenCalled();
+  });
+
+  it("leaves every other record going to its page", async () => {
+    const root = await mountWith([EVENTS[0]]);
+    root.querySelector(".event-link").click();
+    expect(navigated).toHaveBeenLastCalledWith({
+      type: "standard__recordPage",
+      attributes: { recordId: "a01000000000001AAA", actionName: "view" }
+    });
+    expect(root.querySelector(".event-link").getAttribute("href")).toBe("/lightning/r/a01000000000001AAA/view");
   });
 });
 

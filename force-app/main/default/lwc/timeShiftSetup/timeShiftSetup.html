@@ -2351,14 +2351,16 @@
                                   <span class="option-label">{chosenClick.title}</span>
                                   <span class="option-detail">{chosenClick.text}</span>
                                 </span>
-                                <lightning-button-icon
-                                  class="link-close"
-                                  icon-name="utility:close"
-                                  variant="bare"
-                                  alternative-text="Show every option"
-                                  title="Show every option"
-                                  onclick={handleClickChange}
-                                ></lightning-button-icon>
+                                <template lwc:if={clickChangeable}>
+                                  <lightning-button-icon
+                                    class="link-close"
+                                    icon-name="utility:close"
+                                    variant="bare"
+                                    alternative-text="Show every option"
+                                    title="Show every option"
+                                    onclick={handleClickChange}
+                                  ></lightning-button-icon>
+                                </template>
                               </div>
                             </div>
                           </template>

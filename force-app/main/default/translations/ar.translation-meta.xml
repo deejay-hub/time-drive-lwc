@@ -421,6 +421,10 @@
         <name>Time_Shift_Label_To_Fix</name>
     </customLabels>
     <customLabels>
+        <label>الملفات والملاحظات</label>
+        <name>Time_Shift_Legend_Files</name>
+    </customLabels>
+    <customLabels>
         <label>عناصر التطبيق</label>
         <name>Time_Shift_Many_App</name>
     </customLabels>

@@ -124,6 +124,12 @@ public with sharing class TimeShiftConfig {
 
   // A legend name that's a custom label: $Label.Timeline_Follow_ups.
   public static final String LABEL_PREFIX = '$Label.';
+  // Objects whose plural name says little (Content Document Links), and the
+  // custom label a source of theirs is named with unless it says otherwise.
+  // Setup starts such a source on it too.
+  public static final Map<String, String> DEFAULT_LEGEND_LABELS = new Map<String, String>{
+    'contentdocumentlink' => 'Time_Shift_Legend_Files'
+  };
   // Or another object's name, as Salesforce translates it: $Object.Task (a
   // TaskRelation source reading "Tasks").
   public static final String OBJECT_PREFIX = '$Object.';
@@ -152,7 +158,11 @@ public with sharing class TimeShiftConfig {
     } else if (String.isNotBlank(raw)) {
       out = raw;
     } else if (new TimeShiftContext(null, null, null, s, null, null).kind() == TimeShiftContext.KIND_SALESFORCE) {
-      out = objectPlural(dateOwner(s));
+      String defaultLabel = String.isBlank(s.Object_Name__c) ? null : DEFAULT_LEGEND_LABELS.get(s.Object_Name__c.toLowerCase());
+      out = defaultLabel == null ? null : customLabel(defaultLabel);
+      if (String.isBlank(out)) {
+        out = objectPlural(dateOwner(s));
+      }
     }
     if (String.isBlank(out)) {
       out = s.Label;
