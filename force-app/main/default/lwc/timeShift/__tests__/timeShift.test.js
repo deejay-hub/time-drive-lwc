@@ -1303,6 +1303,71 @@ describe("c-time-shift filters panel", () => {
   });
 });
 
+describe("c-time-shift a new filter", () => {
+  afterEach(() => {
+    while (document.body.firstChild) document.body.removeChild(document.body.firstChild);
+  });
+
+  const buttonByLabel = (panel, label) =>
+    [...panel.querySelectorAll("lightning-button")].find((b) => b.label === label);
+
+  const applyTypes = async (root, value) => {
+    root.querySelector(".filter-button").click();
+    await flush();
+    filtersRoot(root)
+      .querySelector("lightning-checkbox-group")
+      .dispatchEvent(new CustomEvent("change", { detail: { value } }));
+    await flush();
+    buttonByLabel(filtersRoot(root).querySelector(".filter-panel"), "Apply").click();
+    // Apply goes out after the panel is painted (a frame, then a task).
+    // eslint-disable-next-line @lwc/lwc/no-async-operation
+    await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
+    await Promise.resolve();
+  };
+
+  it("puts the days into the loading skeleton at once, as the counts do, until the new ones land", async () => {
+    const element = createElement("c-time-shift", { is: TimeShift });
+    element.recordId = "003000000000001AAA";
+    element.layout = "Vertical";
+    document.body.appendChild(element);
+    emitEvents({ events: EVENTS, warnings: [] });
+    await flush();
+    const root = element.shadowRoot;
+    expect(root.querySelector(".skeleton-frame")).toBeNull();
+    expect(root.querySelectorAll(".event").length).toBeGreaterThan(0);
+
+    await applyTypes(root, ["purchase", "web"]);
+    // Asked, not answered: the counts are a skeleton, and so are the days.
+    expect(root.querySelector(".summary .skeleton_summary")).not.toBeNull();
+    expect(root.querySelector(".skeleton-frame")).not.toBeNull();
+    expect(root.querySelectorAll(".event")).toHaveLength(0);
+
+    reemit();
+    await flush();
+    expect(root.querySelector(".skeleton-frame")).toBeNull();
+    expect([...root.querySelectorAll(".chevron-button")].map((r) => r.dataset.id)).toEqual(["o1", "w1"]);
+  });
+
+  it("shows nothing new when Apply changes nothing", async () => {
+    const element = createElement("c-time-shift", { is: TimeShift });
+    element.recordId = "003000000000001AAA";
+    element.layout = "Vertical";
+    document.body.appendChild(element);
+    emitEvents({ events: EVENTS, warnings: [] });
+    await flush();
+    const root = element.shadowRoot;
+    root.querySelector(".filter-button").click();
+    await flush();
+    const all = filtersRoot(root)
+      .querySelector("lightning-checkbox-group")
+      .options.map((o) => o.value);
+    // The same types back again: the panel offers nothing to apply, and the days stay.
+    expect(buttonByLabel(filtersRoot(root).querySelector(".filter-panel"), "Apply")).toBeUndefined();
+    expect(all.length).toBeGreaterThan(0);
+    expect(root.querySelector(".skeleton-frame")).toBeNull();
+  });
+});
+
 describe("c-time-shift all types", () => {
   afterEach(() => {
     while (document.body.firstChild) document.body.removeChild(document.body.firstChild);

@@ -748,6 +748,7 @@ export default class TimeShift extends NavigationMixin(LightningElement) {
       .catch((error) => {
         if (seq !== this._timelineSeq) return;
         this.summaryPending = false;
+        this.refreshHeight = null;
         this.error = this.reportError(error);
         this.loaded = true;
         this.firstLoad = false;
@@ -780,6 +781,7 @@ export default class TimeShift extends NavigationMixin(LightningElement) {
     const data = load?.summary;
     if (!data) return;
     this.summaryPending = false;
+    this.refreshHeight = null;
     this.error = undefined;
     this.summary = data;
     this.daysVersion++;
@@ -850,6 +852,18 @@ export default class TimeShift extends NavigationMixin(LightningElement) {
     this.queryCategories = next.categories;
     this.queryHidden = next.hidden;
     this.requestTimeline();
+    return changed;
+  }
+  // A new filter or view: the page says so at once. The days under the header
+  // go to the loading skeleton, at the height they had, as the counts above
+  // them already do, instead of showing the old days until the new ones land.
+  // The same query again changes nothing, so it shows nothing.
+  applyQueryChange() {
+    this.resetPaging();
+    if (this.syncQuery()) {
+      this.holdHeight();
+      this.loaded = false;
+    }
   }
   // A filter or view applied, its summary not back yet.
   summaryPending = false;
@@ -1946,8 +1960,7 @@ export default class TimeShift extends NavigationMixin(LightningElement) {
     if (value === this.view) return;
     this.view = value;
     this.hiddenTypes = new Set();
-    this.resetPaging();
-    this.syncQuery();
+    this.applyQueryChange();
   }
   get filtersPanel() {
     return this.template.querySelector("c-time-shift-filters");
@@ -1975,8 +1988,7 @@ export default class TimeShift extends NavigationMixin(LightningElement) {
   handleFiltersApply(event) {
     const shown = new Set(event.detail.shown);
     this.hiddenTypes = new Set(this.typeOptions.map((o) => o.value).filter((type) => !shown.has(type)));
-    this.resetPaging();
-    this.syncQuery();
+    this.applyQueryChange();
   }
   // Refresh in place: what's on screen stays until the fresh summary and
   // days replace it (no loading skeleton, so the card doesn't jump). After
@@ -1990,14 +2002,7 @@ export default class TimeShift extends NavigationMixin(LightningElement) {
     // day at the view's left edge, and how far into it, to come back to.
     this._restoreAcross = failed ? null : this.placeAcross();
     this.error = undefined;
-    // The body's content height: the skeleton sits inside its padding.
-    const body = this.template.querySelector(".body");
-    let height = null;
-    if (body && !failed) {
-      const style = getComputedStyle(body);
-      height = body.clientHeight - parseFloat(style.paddingTop || 0) - parseFloat(style.paddingBottom || 0);
-    }
-    this.refreshHeight = height > 0 ? height : null;
+    this.holdHeight(!failed);
     this.loaded = false;
     this._keepStale = !failed;
     this.refreshing = true;
@@ -2006,6 +2011,18 @@ export default class TimeShift extends NavigationMixin(LightningElement) {
       this.loaded = true;
       this.refreshHeight = null;
     });
+  }
+  // The body's content height, which the skeleton keeps (it sits inside the
+  // body's padding), so the card doesn't jump. Not measured after an error:
+  // the error's height isn't the timeline's.
+  holdHeight(measure = true) {
+    const body = measure ? this.template.querySelector(".body") : null;
+    let height = null;
+    if (body) {
+      const style = getComputedStyle(body);
+      height = body.clientHeight - parseFloat(style.paddingTop || 0) - parseFloat(style.paddingBottom || 0);
+    }
+    this.refreshHeight = height > 0 ? height : null;
   }
   refreshing = false;
   refreshHeight = null;
@@ -2243,8 +2260,7 @@ export default class TimeShift extends NavigationMixin(LightningElement) {
   showEverything() {
     this.view = "All";
     this.hiddenTypes = new Set();
-    this.resetPaging();
-    this.syncQuery();
+    this.applyQueryChange();
   }
   showMore() {
     const from = this.windowFrom + this.visibleDays;
