@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>The timeline's views: the header's picker and each source's Timeline View. Sources name a view by its DeveloperName, so renaming one changes only its labels.</description>
+    <label>Time Trail View</label>
+    <pluralLabel>Time Trail Views</pluralLabel>
+    <visibility>Public</visibility>
+</CustomObject>

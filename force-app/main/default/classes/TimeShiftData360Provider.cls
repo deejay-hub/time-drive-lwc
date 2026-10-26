@@ -1,0 +1,567 @@
+/**
+ * Real digital engagement from Data 360: rows of one engagement data model
+ * object (DMO) per Time Trail Source record of Kind Data 360, for every
+ * Individual linked to the Contact's unified profile. TimeShiftPlotter
+ * turns them into events like any other source.
+ *
+ * How the Contact is found in Data 360:
+ *   1. The Sales Cloud connector maps Contact to Individual, so the Contact Id
+ *      is an Individual Id (ssot__Individual__dlm.ssot__Id__c).
+ *   2. Identity resolution links that Individual to a Unified Individual. The
+ *      identity link DMO (Time Trail Setting, Default; else the ruleset's
+ *      UnifiedLinkssotIndividual...__dlm) gives the Unified Id and every other
+ *      source Individual (web, app, Marketing Cloud subscriber) merged into
+ *      the same person.
+ *   3. The source's DMO is queried by its Individual Field IN those Ids: the
+ *      Unified Id, for DMOs keyed by the unified profile, and the source
+ *      Individuals', for DMOs keyed by those.
+ *
+ * Rows also offer {Action}: the channel action read naturally ("opened",
+ * "clicked"), for titles like "Email {Action}".
+ *
+ * Queries are dynamic so this class deploys to orgs without Data 360; a DMO
+ * that doesn't exist, isn't mapped or isn't readable adds a warning instead.
+ */
+public with sharing class TimeShiftData360Provider implements TimeShiftRowProvider, TimeShiftCountProvider {
+  private static final String ACTION_FIELD = 'ssot__EngagementChannelActionId__c';
+  // A DMO query returning more rows than this fails ("too many rows for
+  // direct assignment"), whatever the source's Max Records.
+  public static final Integer MAX_DMO_ROWS = 2000;
+  // Names that go into SQL as they are: letters, digits and underscores.
+  private static final Pattern PLAIN_NAME = Pattern.compile('[A-Za-z][A-Za-z0-9_]*');
+  // Runs the counts' SQL; deployed (force-app-data360) only to orgs with
+  // Data 360, as ConnectApi.CdpQuery doesn't compile without it.
+  private static final String SQL_RUNNER_CLASS = 'TimeShiftData360SqlRunner';
+
+  @TestVisible
+  private static Time_Shift_Setting__mdt testSetting;
+  // Tests stand in for Data 360's query API here.
+  @TestVisible
+  private static SqlRunner sqlRunner;
+
+  // Identity resolution's link DMOs are named for their ruleset.
+  private static final Pattern RULESET_LINK = Pattern.compile('(?i)UnifiedLinkssotIndividual[A-Za-z0-9_]*__dlm');
+  // Tests stand in for Data 360's list of DMOs here.
+  @TestVisible
+  private static List<String> testDmoNames;
+
+  // Individual Ids per Contact and data space, worked out once a request for
+  // all the DMO sources (and kept 15 minutes, see TimeShiftCache).
+  private static Map<String, Set<String>> individualIdsByRecord = new Map<String, Set<String>>();
+
+  public List<TimeShiftRow> getRows(TimeShiftContext context) {
+    // Empty on purpose: objects are looked up by name (see objectIn), not by
+    // reading the org's whole global describe.
+    realModel = new Map<String, Schema.SObjectType>();
+    return getRows(context, realModel);
+  }
+
+  // The org's data model is passed in so tests can stand in for Data 360.
+  @TestVisible
+  private List<TimeShiftRow> getRows(TimeShiftContext context, Map<String, Schema.SObjectType> objects) {
+    List<TimeShiftRow> rows = new List<TimeShiftRow>();
+    Time_Shift_Source__mdt s = context.source;
+    if (objectIn(objects, 'ssot__Individual__dlm') == null) {
+      context.warn(Label.Time_Shift_Server_Data360_Missing);
+      return rows;
+    }
+    Schema.SObjectType dmo = objectIn(objects, s.Object_Name__c);
+    if (dmo == null) {
+      context.warn(String.format(Label.Time_Shift_Server_Dmo_Missing, new List<String>{ s.Label, s.Object_Name__c }));
+      return rows;
+    }
+    Schema.DescribeSObjectResult describe = TimeShiftConfig.describeType(dmo);
+    Map<String, Schema.SObjectField> dmoFields = TimeShiftConfig.fieldMap(describe.getName());
+    context.sourceObject = s.Object_Name__c;
+    context.sourceLabel = 'Data 360' + TimeShiftPlotter.SEPARATOR + describe.getLabel();
+    s = fitIdField(context, dmoFields);
+
+    String individualField = String.isBlank(s.Individual_Field__c) ? 'ssot__IndividualId__c' : s.Individual_Field__c;
+    String dateField = context.dateField();
+    Boolean hasAction = dmoFields.containsKey(ACTION_FIELD.toLowerCase());
+
+    Set<String> fields = new Set<String>{ context.idField(), dateField };
+    if (hasAction) {
+      fields.add(ACTION_FIELD);
+    }
+    fields.addAll(TimeShiftPlotter.tokens(s.Title__c));
+    fields.addAll(TimeShiftPlotter.tokens(s.Subtitle__c));
+    fields.remove('Action');
+    for (String extra : new List<String>{ s.Record_Id_Field__c, context.detailsRecordFieldIfSet() }) {
+      fields.add(extra);
+    }
+    for (Time_Shift_Detail_Field__mdt d : context.detailFields()) {
+      fields.add(d.Field__c);
+    }
+
+    List<TimeShiftController.TimeWindow> spans = context.spans();
+    if (spans.isEmpty()) {
+      return rows;
+    }
+    // A Date field is compared with days, a Date/Time one with instants.
+    Boolean byDay = isDate(dmoFields, dateField);
+    Map<String, Object> binds = new Map<String, Object>{
+      'individualIds' => new List<String>(individualIdsFor(context.contactId(), objects, context))
+    };
+    // Only the spans asked for (a page's quiet days), not the whole window,
+    // so Max Records never cuts off days further back.
+    String soql =
+      'SELECT ' +
+      String.join(TimeShiftSoqlProvider.unique(fields), ', ') +
+      ' FROM ' +
+      s.Object_Name__c +
+      ' WHERE ' +
+      individualField +
+      ' IN :individualIds AND (' +
+      within(dateField, spans, byDay, binds) +
+      ')' +
+      (String.isBlank(s.Filter__c) ? '' : ' AND (' + s.Filter__c + ')') +
+      ' ORDER BY ' +
+      dateField +
+      ' DESC LIMIT ' +
+      Math.min(context.maxRecords(), MAX_DMO_ROWS);
+    Long startedAt = TimeShiftDiagnostics.clock();
+    try {
+      List<SObject> found = Database.queryWithBinds(soql, binds, AccessLevel.USER_MODE);
+      TimeShiftDiagnostics.query(s.DeveloperName, 'rows', soql, binds, found.size(), startedAt, null);
+      for (SObject row : found) {
+        rows.add(
+          new TimeShiftRow(row).put('Action', hasAction ? actionText((String) row.get(ACTION_FIELD)) : null)
+        );
+      }
+    } catch (Exception e) {
+      TimeShiftDiagnostics.query(s.DeveloperName, 'rows', soql, binds, 0, startedAt, e.getMessage());
+      context.fail(s.Label, e);
+    }
+    return rows;
+  }
+
+  /**
+   * Items per hour, day, week or month, counted in Data 360 (SQL, GROUP BY):
+   * no rows come back to Apex but the counts, and no SOQL query rows are
+   * used, however many engagement records there are. Periods are worked out
+   * in the user's time zone, as the SOQL provider's convertTimezone() does.
+   * A count that can't run (the SQL isn't accepted, the DMO isn't there)
+   * throws, and the source is read as rows instead.
+   */
+  public List<TimeShiftContext.DayCount> countDays(TimeShiftContext context, String unit) {
+    realModel = new Map<String, Schema.SObjectType>();
+    return countDays(context, unit, realModel);
+  }
+
+  @TestVisible
+  private List<TimeShiftContext.DayCount> countDays(
+    TimeShiftContext context,
+    String unit,
+    Map<String, Schema.SObjectType> objects
+  ) {
+    Time_Shift_Source__mdt s = context.source;
+    if (objectIn(objects, 'ssot__Individual__dlm') == null || String.isBlank(s.Object_Name__c)) {
+      throw new CountException('No Data 360.');
+    }
+    Schema.SObjectType dmo = objectIn(objects, s.Object_Name__c);
+    if (dmo == null) {
+      throw new CountException('No such data model object.');
+    }
+    Schema.DescribeSObjectResult describe = TimeShiftConfig.describeType(dmo);
+    Map<String, Schema.SObjectField> dmoFields = TimeShiftConfig.fieldMap(describe.getName());
+    context.sourceObject = s.Object_Name__c;
+    context.sourceLabel = 'Data 360' + TimeShiftPlotter.SEPARATOR + describe.getLabel();
+    String individualField = String.isBlank(s.Individual_Field__c) ? 'ssot__IndividualId__c' : s.Individual_Field__c;
+    String dateField = context.dateField();
+    for (String name : new List<String>{ s.Object_Name__c, individualField, dateField }) {
+      if (!PLAIN_NAME.matcher(name).matches()) {
+        throw new CountException('Not a plain name: ' + name);
+      }
+    }
+    Boolean byDay = isDate(dmoFields, dateField);
+
+    List<String> ids = new List<String>();
+    for (String id : individualIdsFor(context.contactId(), objects, context)) {
+      ids.add(quoted(id));
+    }
+    List<String> dates = new List<String>();
+    for (TimeShiftController.TimeWindow span : context.spans()) {
+      dates.add(
+        '(' +
+          dateField +
+          ' >= ' +
+          bound(span.since, byDay) +
+          (span.until == null ? '' : ' AND ' + dateField + ' <= ' + bound(span.until, byDay)) +
+          ')'
+      );
+    }
+    String sql =
+      'SELECT ' +
+      String.join(selected(dateField, unit, byDay), ', ') +
+      ', COUNT(*) AS n FROM ' +
+      s.Object_Name__c +
+      ' WHERE ' +
+      individualField +
+      ' IN (' +
+      String.join(ids, ', ') +
+      ') AND (' +
+      String.join(dates, ' OR ') +
+      ')' +
+      (String.isBlank(s.Filter__c) ? '' : ' AND (' + s.Filter__c + ')') +
+      ' GROUP BY ' +
+      String.join(grouped(dateField, unit, byDay), ', ');
+
+    List<TimeShiftContext.DayCount> counts = new List<TimeShiftContext.DayCount>();
+    for (List<Object> row : runner().run(sql, s.Data_Space__c)) {
+      counts.add(
+        new TimeShiftContext.DayCount(
+          String.valueOf(row[0]).left(10),
+          unit == TimeShiftContext.UNIT_HOUR ? Integer.valueOf(String.valueOf(row[1])) : null,
+          Integer.valueOf(String.valueOf(row[row.size() - 1]))
+        )
+      );
+    }
+    return counts;
+  }
+
+  // The engagement time in the user's time zone; a day is the same day
+  // everywhere, so a Date field is taken as it is.
+  private static String local(String dateField, Boolean byDay) {
+    if (byDay) {
+      return 'CAST(' + dateField + ' AS TIMESTAMP)';
+    }
+    return '(CAST(' +
+      dateField +
+      ' AS TIMESTAMP WITH TIME ZONE) AT TIME ZONE ' +
+      quoted(UserInfo.getTimeZone().getID()) +
+      ')';
+  }
+
+  // The period's first day (as text, yyyy-MM-dd) and, by hour, the hour.
+  private static List<String> grouped(String dateField, String unit, Boolean byDay) {
+    String at = local(dateField, byDay);
+    String first;
+    if (unit == TimeShiftContext.UNIT_WEEK) {
+      // Weeks from 1 January, as SOQL's WEEK_IN_YEAR.
+      first =
+        'date_trunc(\'year\', ' +
+        at +
+        ') + CAST(floor((EXTRACT(DOY FROM ' +
+        at +
+        ') - 1) / 7) * 7 AS INTEGER) * INTERVAL \'1\' DAY';
+    } else if (unit == TimeShiftContext.UNIT_MONTH) {
+      first = 'date_trunc(\'month\', ' + at + ')';
+    } else {
+      first = 'date_trunc(\'day\', ' + at + ')';
+    }
+    List<String> groups = new List<String>{ 'to_char(' + first + ', \'YYYY-MM-DD\')' };
+    if (unit == TimeShiftContext.UNIT_HOUR) {
+      groups.add('CAST(EXTRACT(HOUR FROM ' + at + ') AS INTEGER)');
+    }
+    return groups;
+  }
+
+  private static List<String> selected(String dateField, String unit, Boolean byDay) {
+    List<String> groups = grouped(dateField, unit, byDay);
+    List<String> result = new List<String>();
+    for (Integer i = 0; i < groups.size(); i++) {
+      result.add(groups[i] + ' AS g' + i);
+    }
+    return result;
+  }
+
+  private static String quoted(String value) {
+    return '\'' + value.replace('\'', '\'\'') + '\'';
+  }
+
+  // The spans as SOQL conditions on the date field, their bounds bound as
+  // days (a Date field) or instants.
+  @TestVisible
+  private static String within(
+    String dateField,
+    List<TimeShiftController.TimeWindow> spans,
+    Boolean byDay,
+    Map<String, Object> binds
+  ) {
+    List<String> out = new List<String>();
+    for (Integer i = 0; i < spans.size(); i++) {
+      TimeShiftController.TimeWindow span = spans[i];
+      binds.put('since' + i, byDay ? (Object) span.since.date() : span.since);
+      String condition = dateField + ' >= :since' + i;
+      if (span.until != null) {
+        binds.put('until' + i, byDay ? (Object) span.until.date() : span.until);
+        condition += ' AND ' + dateField + ' <= :until' + i;
+      }
+      out.add('(' + condition + ')');
+    }
+    return String.join(out, ' OR ');
+  }
+
+  // A bound as a date literal (the user's day) or a UTC timestamp literal.
+  @TestVisible
+  private static String bound(Datetime at, Boolean byDay) {
+    return byDay ? 'DATE ' + quoted(at.format('yyyy-MM-dd')) : stamp(at);
+  }
+
+  @TestVisible
+  private static Boolean isDate(Map<String, Schema.SObjectField> fields, String name) {
+    Schema.SObjectField f = fields.get(name.toLowerCase());
+    return f != null && f.getDescribe().getType() == Schema.DisplayType.DATE;
+  }
+
+  /**
+   * Data 360's standard DMOs key rows by ssot__Id__c; a custom one may have
+   * only Id. With no Id Field set, the one the DMO has is used.
+   */
+  @TestVisible
+  private static Time_Shift_Source__mdt fitIdField(
+    TimeShiftContext context,
+    Map<String, Schema.SObjectField> fields
+  ) {
+    Time_Shift_Source__mdt s = context.source;
+    if (String.isNotBlank(s.Id_Field__c) || fields.containsKey(context.idField().toLowerCase())) {
+      return s;
+    }
+    s = s.clone(true);
+    s.Id_Field__c = 'Id';
+    context.source = s;
+    return s;
+  }
+
+  // An instant as a UTC timestamp literal.
+  private static String stamp(Datetime at) {
+    return 'TIMESTAMP ' + quoted(at.formatGmt('yyyy-MM-dd HH:mm:ss.SSS'));
+  }
+
+  public class CountException extends Exception {
+  }
+
+  /**
+   * Runs Data 360 SQL; each row is its columns' values, in order. The org's
+   * runner is TimeShiftData360SqlRunner (force-app-data360), found by name.
+   */
+  public interface SqlRunner {
+    List<List<Object>> run(String sql, String dataSpace);
+  }
+
+  /**
+   * Data 360's data model objects by name. Apex's global describe doesn't
+   * list them in every org; TimeShiftData360Catalog (force-app-data360) asks
+   * Data 360, found by name.
+   */
+  public interface Catalog {
+    List<String> dmoNames(String dataSpace);
+  }
+
+  // A data model object by name: from the model given (the org's, or a
+  // test's), else described by name (DMOs can be, though the global
+  // describe may not list them).
+  @TestVisible
+  private static Schema.SObjectType objectIn(Map<String, Schema.SObjectType> objects, String name) {
+    if (String.isBlank(name)) {
+      return null;
+    }
+    Schema.SObjectType t = objects.get(name.toLowerCase());
+    return t != null || objects !== realModel ? t : TimeShiftConfig.sObjectType(name);
+  }
+  // The org's own model, as passed in by getRows and countDays.
+  private static Map<String, Schema.SObjectType> realModel;
+
+  /**
+   * Data 360's DMO names in a data space (blank: the default), from
+   * TimeShiftData360Catalog where force-app-data360 is deployed; none if it
+   * isn't, or Data 360 couldn't be asked.
+   */
+  public static List<String> dmoNames(String dataSpace) {
+    if (testDmoNames != null) {
+      return testDmoNames;
+    }
+    try {
+      Type catalogType = Type.forName('TimeShiftData360Catalog');
+      Object catalog = catalogType == null ? null : catalogType.newInstance();
+      if (catalog instanceof Catalog) {
+        return ((Catalog) catalog).dmoNames(dataSpace);
+      }
+    } catch (Exception e) {
+      // Data 360 couldn't be asked.
+    }
+    return new List<String>();
+  }
+
+  // The identity link DMO: the one set, else the ruleset's in the source's
+  // data space (identity resolution runs per data space).
+  @TestVisible
+  private static String linkObjectIn(Map<String, Schema.SObjectType> objects, String configured, String dataSpace) {
+    if (objectIn(objects, configured) != null) {
+      return configured;
+    }
+    // Which ruleset link object a data space has: Data 360's metadata is
+    // asked at most once every 15 minutes.
+    String cacheKey = TimeShiftCache.key(new List<String>{ 'link', dataSpace });
+    Object kept = TimeShiftCache.get(cacheKey);
+    if (kept instanceof String && objectIn(objects, (String) kept) != null) {
+      return (String) kept;
+    }
+    List<String> rulesets = new List<String>();
+    for (String name : dmoNames(dataSpace)) {
+      if (RULESET_LINK.matcher(name).matches() && objectIn(objects, name) != null) {
+        rulesets.add(name);
+      }
+    }
+    rulesets.sort();
+    if (rulesets.isEmpty()) {
+      return null;
+    }
+    TimeShiftCache.put(cacheKey, rulesets[0]);
+    return rulesets[0];
+  }
+
+  /**
+   * Whether the Data 360 add-on (force-app-data360) is deployed: its runner
+   * and catalog are found by name and are what this class expects.
+   */
+  public static Boolean addOnInstalled() {
+    if (sqlRunner != null || testDmoNames != null) {
+      return true;
+    }
+    try {
+      Type runnerType = Type.forName(SQL_RUNNER_CLASS);
+      Type catalogType = Type.forName('TimeShiftData360Catalog');
+      return runnerType != null &&
+        catalogType != null &&
+        runnerType.newInstance() instanceof SqlRunner &&
+        catalogType.newInstance() instanceof Catalog;
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+  private static SqlRunner runner() {
+    if (sqlRunner == null) {
+      Type runnerType = Type.forName(SQL_RUNNER_CLASS);
+      Object instance = runnerType == null ? null : runnerType.newInstance();
+      if (!(instance instanceof SqlRunner)) {
+        throw new CountException(SQL_RUNNER_CLASS + ' isn\'t deployed (force-app-data360).');
+      }
+      sqlRunner = (SqlRunner) instance;
+    }
+    return sqlRunner;
+  }
+
+  /**
+   * The Contact's own Individual Id, its Unified Individual's Id, and every
+   * source Individual merged into the same Unified Individual.
+   */
+  @TestVisible
+  private static Set<String> individualIdsFor(
+    Id contactId,
+    Map<String, Schema.SObjectType> objects,
+    TimeShiftContext context
+  ) {
+    List<String> warnings = context.warnings;
+    String dataSpace = context.source?.Data_Space__c;
+    String memo = contactId + '|' + dataSpace;
+    if (individualIdsByRecord.containsKey(memo)) {
+      return individualIdsByRecord.get(memo);
+    }
+    Set<String> ids = new Set<String>{ String.valueOf(contactId), String.valueOf(contactId).left(15) };
+    individualIdsByRecord.put(memo, ids);
+    // An Account page: the object's field holds the Account's Id itself
+    // (identity links are for individuals; unified accounts aren't followed).
+    if (context.parentObject == 'Account') {
+      return ids;
+    }
+    // Looked up in the last 15 minutes: identity resolution rarely changes.
+    String cacheKey = TimeShiftCache.key(new List<String>{ 'ids', contactId, dataSpace });
+    Set<String> kept = keptIds(TimeShiftCache.get(cacheKey));
+    if (kept != null) {
+      ids.addAll(kept);
+      return ids;
+    }
+
+    Time_Shift_Setting__mdt setting = setting();
+    String linkObject = linkObjectIn(objects, setting.Identity_Link_Object__c, dataSpace);
+    String sourceField = setting.Link_Source_Field__c;
+    String unifiedField = setting.Link_Unified_Field__c;
+    if (linkObject == null) {
+      warnings.add(String.format(Label.Time_Shift_Server_No_Identity_Link, new List<String>{ String.valueOf(setting.Identity_Link_Object__c) }));
+      return ids;
+    }
+    try {
+      Map<String, Object> binds = new Map<String, Object>{ 'sourceIds' => new List<String>(ids) };
+      Set<String> unifiedIds = new Set<String>();
+      for (
+        SObject row : Database.queryWithBinds(
+          'SELECT ' + unifiedField + ' FROM ' + linkObject + ' WHERE ' + sourceField + ' IN :sourceIds LIMIT 10',
+          binds,
+          AccessLevel.USER_MODE
+        )
+      ) {
+        unifiedIds.add((String) row.get(unifiedField));
+      }
+      unifiedIds.remove(null);
+      if (!unifiedIds.isEmpty()) {
+        // DMOs keyed by the unified profile hold the Unified Id.
+        ids.addAll(unifiedIds);
+        binds = new Map<String, Object>{ 'unifiedIds' => new List<String>(unifiedIds) };
+        for (
+          SObject row : Database.queryWithBinds(
+            'SELECT ' + sourceField + ' FROM ' + linkObject + ' WHERE ' + unifiedField + ' IN :unifiedIds LIMIT 200',
+            binds,
+            AccessLevel.USER_MODE
+          )
+        ) {
+          ids.add((String) row.get(sourceField));
+        }
+      }
+      ids.remove(null);
+      // Kept only once the links were read without a failure.
+      TimeShiftCache.put(cacheKey, ids);
+    } catch (Exception e) {
+      context.fail(Label.Time_Shift_Server_Identity_Links, e);
+    }
+    return ids;
+  }
+
+  // A cache entry as Ids, or null if it isn't one.
+  private static Set<String> keptIds(Object kept) {
+    try {
+      return kept == null ? null : (Set<String>) kept;
+    } catch (TypeException e) {
+      return null;
+    }
+  }
+
+  // The Default Time Trail Setting, with the standard names filled in.
+  private static Time_Shift_Setting__mdt setting() {
+    Time_Shift_Setting__mdt found = testSetting != null
+      ? testSetting
+      : Time_Shift_Setting__mdt.getInstance('Default');
+    Time_Shift_Setting__mdt s = found == null ? new Time_Shift_Setting__mdt() : found.clone();
+    if (String.isBlank(s.Identity_Link_Object__c)) {
+      s.Identity_Link_Object__c = 'IndividualIdentityLink__dlm';
+    }
+    if (String.isBlank(s.Link_Source_Field__c)) {
+      s.Link_Source_Field__c = 'SourceRecordId__c';
+    }
+    if (String.isBlank(s.Link_Unified_Field__c)) {
+      s.Link_Unified_Field__c = 'UnifiedRecordId__c';
+    }
+    return s;
+  }
+
+  // "Open" -> "opened", "Page View" -> "page view"; others as they are.
+  @TestVisible
+  private static String actionText(String action) {
+    Map<String, String> past = new Map<String, String>{
+      'send' => 'sent',
+      'open' => 'opened',
+      'click' => 'clicked',
+      'view' => 'viewed',
+      'pageview' => 'page view',
+      'add' => 'added to',
+      'abandon' => 'abandoned'
+    };
+    if (String.isBlank(action)) {
+      return null;
+    }
+    String key = action.toLowerCase().replaceAll('[^a-z]', '');
+    return past.containsKey(key) ? past.get(key) : action;
+  }
+}

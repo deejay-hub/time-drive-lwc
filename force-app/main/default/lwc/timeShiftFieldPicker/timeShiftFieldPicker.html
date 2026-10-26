@@ -1,0 +1,45 @@
+<template>
+  <div class="token-picker">
+    <div lwc:if={crumbs.length} class="token-trail">
+      <button class="token-up" type="button" aria-label="Back to the previous fields" onclick={handleUp}>
+        <lightning-icon icon-name="utility:chevronleft" size="xx-small"></lightning-icon>
+      </button>
+      <template for:each={crumbs} for:item="c">
+        <span key={c.key} class="token-crumb">{c.label}</span>
+      </template>
+    </div>
+    <input
+      class="token-input"
+      type="text"
+      aria-label={label}
+      placeholder="Search fields"
+      autocomplete="off"
+      oninput={handleQuery}
+      onkeydown={handleKeydown}
+    />
+    <p lwc:if={loading} class="token-note" role="status">Loading fields…</p>
+    <p lwc:if={failed} class="token-note" role="alert">These fields couldn't be read.</p>
+    <p lwc:if={empty} class="token-note">No fields match.</p>
+    <ul class="token-results">
+      <template for:each={results} for:item="t">
+        <li key={t.key}>
+          <button class={t.className} type="button" data-name={t.name} aria-label={t.ariaLabel} onclick={handleResult}>
+            <span>{t.before}<mark lwc:if={t.match}>{t.match}</mark>{t.after}</span>
+            <span class="result-detail">{t.detail}</span>
+            <lightning-icon
+              lwc:if={t.follows}
+              class="token-go"
+              icon-name="utility:chevronright"
+              size="xx-small"
+              aria-hidden="true"
+            ></lightning-icon>
+          </button>
+        </li>
+      </template>
+    </ul>
+    <p lwc:if={atRoot} class="token-hint">
+      <lightning-icon icon-name="utility:chevronright" size="xx-small" aria-hidden="true"></lightning-icon>
+      <span>Lookups lead to a related record's fields, like a member's Campaign › Name.</span>
+    </p>
+  </div>
+</template>

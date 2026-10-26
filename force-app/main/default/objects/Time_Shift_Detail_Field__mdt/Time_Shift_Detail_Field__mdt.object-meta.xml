@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>The fields shown, in order, when a Time Trail event is expanded. Required for Data 360 sources. Optional for Salesforce sources, which otherwise use the object compact layout.</description>
+    <label>Time Trail Detail Field</label>
+    <pluralLabel>Time Trail Detail Fields</pluralLabel>
+    <visibility>Public</visibility>
+</CustomObject>

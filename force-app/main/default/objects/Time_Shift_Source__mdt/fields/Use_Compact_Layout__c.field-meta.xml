@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Use_Compact_Layout__c</fullName>
+    <fieldManageability>SubscriberControlled</fieldManageability>
+    <inlineHelpText>Expand a record with its object compact layout (read-only, respects field-level security).</inlineHelpText>
+    <label>Use Compact Layout</label>
+    <defaultValue>true</defaultValue>
+    <type>Checkbox</type>
+</CustomField>

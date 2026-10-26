@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Org_Fit__c</fullName>
+    <fieldManageability>SubscriberControlled</fieldManageability>
+    <inlineHelpText>Ships with the timeline for Guided setup to turn on where it fits the org (Fit the timeline to your org).</inlineHelpText>
+    <label>Org Fit</label>
+    <defaultValue>false</defaultValue>
+    <type>Checkbox</type>
+</CustomField>

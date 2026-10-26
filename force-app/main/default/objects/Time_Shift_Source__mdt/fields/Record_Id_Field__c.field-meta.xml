@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Record_Id_Field__c</fullName>
+    <fieldManageability>SubscriberControlled</fieldManageability>
+    <inlineHelpText>Where a click on an item goes: a field holding a record Id, through lookups if need be (CampaignId, Campaign.Id). Blank: Id for Salesforce sources, none otherwise.</inlineHelpText>
+    <label>Record Id Field</label>
+    <length>255</length>
+    <required>false</required>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

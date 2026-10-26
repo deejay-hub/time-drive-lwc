@@ -1,0 +1,3 @@
+illustrations/empty-state-events.svg is the "Empty State: Events" illustration
+from the Salesforce Lightning Design System (@salesforce-ux/design-system
+2.264.1), Copyright (c) Salesforce, Inc., used under the BSD 3-Clause License.

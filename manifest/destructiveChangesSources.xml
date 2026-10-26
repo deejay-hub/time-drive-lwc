@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>Time_Shift_Source.Fit_Account_Tasks_Shared</members>
+        <members>Time_Shift_Source.Fit_Account_Calls_Shared</members>
+        <members>Time_Shift_Source.Fit_Account_Emails_Shared</members>
+        <members>Time_Shift_Source.Fit_Account_Events_Shared</members>
+        <name>CustomMetadata</name>
+    </types>
+    <version>67.0</version>
+</Package>

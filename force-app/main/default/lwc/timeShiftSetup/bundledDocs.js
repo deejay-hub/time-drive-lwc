@@ -1,0 +1,9 @@
+// Mock docs bundled with Setup, read in place of GitHub while the docs repo
+// isn't public. They go through the same markdown reader as the real thing.
+// Copies of docs/*.md; set BUNDLED_DOCS to null to read from GitHub.
+export const BUNDLED_DOCS = {
+  "config-guide.md":
+    "# Config Guide\n\nA short mock guide, to check that Time Trail Setup reads markdown from GitHub. Replace it with the real guide.\n\n## Before you start\n\nYou need the **Customize Application** permission to add and change sources.\n\n- Two permission sets come with the timeline.\n- Data 360 is *optional*.\n\n## Assign the permission sets\n\n1. In Setup, open **Permission Sets**.\n2. Assign `Time Trail` to people who see the timeline.\n3. Assign `Time Trail Setup` to admins who manage it.\n\n> [!NOTE]\n> What each person sees still depends on the objects and fields they can read.\n\n## Add a source\n\nOpen **Customize**, choose the record page, then **Add a source**. See the [FAQs](faqs.md#why-does-saving-take-a-few-seconds) for why saving takes a moment.\n\n## Apex sources\n\n```apex\npublic with sharing class LoyaltyProvider implements TimeShiftProvider {\n  public List<TimeShiftController.EngagementEvent> getEvents(TimeShiftContext context) {\n    return new List<TimeShiftController.EngagementEvent>();\n  }\n}\n```\n\n---\n\nQuestions? Read the [FAQs](faqs.md), or go back to [Before you start](#before-you-start).\n",
+  "faqs.md":
+    "# FAQs\n\n## Who can use Time Trail Setup?\n\nAdmins with the **Customize Application** permission. Everyone else sees the timeline on record pages.\n\n## Will people see records they can't access?\n\nNo. Every query runs as the person looking.\n\n## Why does saving take a few seconds?\n\nSources are custom metadata, so saving deploys them. See [Add a source](config-guide.md#add-a-source) in the Config Guide.\n"
+};

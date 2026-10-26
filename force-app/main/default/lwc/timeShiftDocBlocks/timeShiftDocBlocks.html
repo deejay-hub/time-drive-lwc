@@ -1,0 +1,41 @@
+<template>
+  <template for:each={blocks} for:item="b">
+    <div key={b.key} class="doc-block">
+      <template lwc:if={b.isHeading}>
+        <h3 class="doc-h3"><c-time-shift-doc-text parts={b.parts}></c-time-shift-doc-text></h3>
+      </template>
+      <template lwc:elseif={b.isP}>
+        <p class="doc-p"><c-time-shift-doc-text parts={b.parts}></c-time-shift-doc-text></p>
+      </template>
+      <template lwc:elseif={b.isUl}>
+        <ul class="doc-list">
+          <template for:each={b.items} for:item="item">
+            <li key={item.key}><c-time-shift-doc-text parts={item.parts}></c-time-shift-doc-text></li>
+          </template>
+        </ul>
+      </template>
+      <template lwc:elseif={b.isOl}>
+        <ol class="doc-list doc-list_steps">
+          <template for:each={b.items} for:item="item">
+            <li key={item.key}><c-time-shift-doc-text parts={item.parts}></c-time-shift-doc-text></li>
+          </template>
+        </ol>
+      </template>
+      <template lwc:elseif={b.isNote}>
+        <p class="doc-note">
+          <lightning-icon icon-name="utility:info" size="x-small" aria-hidden="true"></lightning-icon>
+          <span><c-time-shift-doc-text parts={b.parts}></c-time-shift-doc-text></span>
+        </p>
+      </template>
+      <template lwc:elseif={b.isCode}>
+        <pre class="doc-pre"><code>{b.text}</code></pre>
+      </template>
+      <template lwc:elseif={b.isImage}>
+        <img class="doc-image" src={b.src} alt={b.alt} loading="lazy" />
+      </template>
+      <template lwc:elseif={b.isRule}>
+        <hr class="doc-rule" />
+      </template>
+    </div>
+  </template>
+</template>

@@ -1,0 +1,127 @@
+/**
+ * One row a provider hands back for plotting: a queried record (Salesforce or
+ * Data 360) or a map of values (an Apex provider). Its Time Trail Source
+ * record says which values are the date, title and details, so every
+ * kind of source is plotted the same way.
+ */
+public with sharing class TimeShiftRow {
+  private SObject record;
+  // An object's fields by lower-case name, and the labels worked out for its
+  // paths, kept for the request: describing an object builds its whole field
+  // map, and a page of rows would otherwise do it for every row.
+  private static Map<Schema.SObjectType, Map<String, Schema.SObjectField>> fieldMaps = new Map<Schema.SObjectType, Map<String, Schema.SObjectField>>();
+  private static Map<String, String> labels = new Map<String, String>();
+
+  private static Map<String, Schema.SObjectField> fieldsOf(Schema.SObjectType type) {
+    Map<String, Schema.SObjectField> found = fieldMaps.get(type);
+    if (found == null) {
+      found = TimeShiftConfig.fieldMap(TimeShiftConfig.describeType(type).getName());
+      fieldMaps.put(type, found);
+    }
+    return found;
+  }
+
+  // Lower-case keys, so templates and detail fields match any case.
+  private Map<String, Object> values = new Map<String, Object>();
+
+  public TimeShiftRow(SObject record) {
+    this.record = record;
+  }
+
+  public TimeShiftRow(Map<String, Object> values) {
+    if (values != null) {
+      for (String key : values.keySet()) {
+        put(key, values.get(key));
+      }
+    }
+  }
+
+  // Adds or overrides a value, e.g. the {Action} Data 360 rows offer.
+  public TimeShiftRow put(String key, Object value) {
+    values.put(key.toLowerCase(), value);
+    return this;
+  }
+
+  // A value by name or path, following relationships on records:
+  // Account.Owner.Name.
+  public Object get(String path) {
+    if (String.isBlank(path)) {
+      return null;
+    }
+    String key = path.toLowerCase();
+    if (values.containsKey(key) || record == null) {
+      return values.get(key);
+    }
+    List<String> steps = path.split('\\.');
+    SObject current = record;
+    for (Integer i = 0; i < steps.size() - 1; i++) {
+      current = current?.getSObject(steps[i]);
+    }
+    return current?.get(steps[steps.size() - 1]);
+  }
+
+  // A field's label in the user's language, for a detail with no label of
+  // its own: the field's, or for a path through a lookup the lookup's
+  // ("Who.Name" reads "Name", "What.Name" "Related To") when it ends at Name,
+  // else the last field's. Never prefixed with an object's name.
+  public String labelOf(String path) {
+    if (record == null || String.isBlank(path)) {
+      return path;
+    }
+    String cacheKey = String.valueOf(record.getSObjectType()) + '|' + path;
+    String cached = labels.get(cacheKey);
+    if (cached == null) {
+      cached = worksOutLabel(path);
+      labels.put(cacheKey, cached);
+    }
+    return cached;
+  }
+
+  private String worksOutLabel(String path) {
+    Schema.DescribeFieldResult own = describe(path);
+    if (own != null) {
+      return own.getLabel();
+    }
+    if (record == null || String.isBlank(path) || !path.contains('.')) {
+      return path;
+    }
+    List<String> steps = path.split('\\.');
+    Schema.SObjectType type = record.getSObjectType();
+    Schema.DescribeFieldResult lookup;
+    for (Integer i = 0; i < steps.size() - 1; i++) {
+      lookup = null;
+      for (Schema.SObjectField f : fieldsOf(type).values()) {
+        Schema.DescribeFieldResult d = f.getDescribe();
+        if (d.getRelationshipName() != null && d.getRelationshipName().equalsIgnoreCase(steps[i])) {
+          lookup = d;
+          break;
+        }
+      }
+      if (lookup == null) {
+        return path;
+      }
+      if (i < steps.size() - 2) {
+        if (lookup.getReferenceTo().size() != 1) {
+          return path;
+        }
+        type = lookup.getReferenceTo()[0];
+      }
+    }
+    String last = steps[steps.size() - 1];
+    if (last.equalsIgnoreCase('Name') || lookup.getReferenceTo().size() != 1) {
+      return lookup.getLabel();
+    }
+    Schema.SObjectField target = fieldsOf(lookup.getReferenceTo()[0]).get(last.toLowerCase());
+    return target == null ? lookup.getLabel() : target.getDescribe().getLabel();
+  }
+
+  // The row's field, when it's a record and the path is one of its own
+  // fields; used to format currency and default detail labels.
+  public Schema.DescribeFieldResult describe(String path) {
+    if (record == null || String.isBlank(path) || path.contains('.')) {
+      return null;
+    }
+    Schema.SObjectField field = fieldsOf(record.getSObjectType()).get(path.toLowerCase());
+    return field?.getDescribe();
+  }
+}

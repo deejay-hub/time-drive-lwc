@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Org-wide settings for Time Trail. The Default record is used.</description>
+    <label>Time Trail Setting</label>
+    <pluralLabel>Time Trail Settings</pluralLabel>
+    <visibility>Public</visibility>
+</CustomObject>

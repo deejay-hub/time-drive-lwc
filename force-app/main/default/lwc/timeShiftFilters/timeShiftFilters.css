@@ -1,0 +1,85 @@
+/* The Filters panel, under the toolbar's end (positioned against the
+   timeline's header row: this component's host isn't positioned). Its
+   colours and spacing come from the timeline's custom properties, which
+   reach in through the shadow boundary. */
+:host {
+  display: contents;
+}
+
+.filter-panel {
+  position: absolute;
+  top: calc(100% + 0.375rem);
+  inset-inline-end: 0;
+  z-index: 20;
+  display: grid;
+  gap: calc(0.75 * var(--time-shift-space));
+  width: min(18rem, 100%);
+  padding: calc(0.75 * var(--time-shift-space)) calc(1 * var(--time-shift-space));
+  border-radius: 0.75rem;
+  background: var(--surface);
+  box-shadow:
+    0 0 0 1px var(--time-shift-rule),
+    0 12px 28px -12px color-mix(in srgb, var(--shade) 35%, transparent);
+}
+
+.filter-heading {
+  margin-bottom: calc(-0.5 * var(--time-shift-space));
+  color: var(--slds-g-color-on-surface-2, #444);
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+}
+
+/* "All types" sits apart from the individual types below it. */
+.all-types {
+  padding-bottom: calc(0.375 * var(--time-shift-space));
+  border-bottom: 1px solid var(--time-shift-rule);
+}
+
+/* Cancel and Apply at the top, always in reach; the options scroll below. */
+.filter-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  /* The same height with the title as with the buttons, so nothing moves when
+     they swap. */
+  min-height: 2.25rem;
+  gap: calc(0.5 * var(--time-shift-space));
+  padding-bottom: calc(0.625 * var(--time-shift-space));
+  border-bottom: 1px solid var(--time-shift-rule);
+}
+
+/* The close icon sits at the end, a little in from the edge. */
+.filter-close {
+  flex: none;
+  margin-inline-start: auto;
+}
+
+.filter-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.25rem;
+}
+
+.filter-body {
+  display: grid;
+  gap: calc(0.75 * var(--time-shift-space));
+  max-height: 20rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* A scrolling box clips what spills past its edges, and a checkbox's focus
+     ring does (the left of "All types"): room for the ring, taken back with
+     the negative margin so nothing moves. */
+  padding: 0.25rem;
+  margin: -0.25rem;
+}
+
+.filter-none {
+  margin: 0;
+  color: var(--time-shift-muted);
+  font-size: 0.8125rem;
+}
+
+/* SLDS 1's corners. */
+.filter-panel_slds1 {
+  border-radius: 0.25rem;
+}

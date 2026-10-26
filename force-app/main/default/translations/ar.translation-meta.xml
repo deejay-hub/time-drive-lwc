@@ -1,0 +1,795 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Translations xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customLabels>
+        <label>حذف</label>
+        <name>Time_Shift_Action_Delete</name>
+    </customLabels>
+    <customLabels>
+        <label>تعديل</label>
+        <name>Time_Shift_Action_Edit</name>
+    </customLabels>
+    <customLabels>
+        <label>بريد إلكتروني</label>
+        <name>Time_Shift_Action_Email</name>
+    </customLabels>
+    <customLabels>
+        <label>تسجيل مكالمة</label>
+        <name>Time_Shift_Action_Log_Call</name>
+    </customLabels>
+    <customLabels>
+        <label>حدث جديد</label>
+        <name>Time_Shift_Action_New_Event</name>
+    </customLabels>
+    <customLabels>
+        <label>مهمة جديدة</label>
+        <name>Time_Shift_Action_New_Task</name>
+    </customLabels>
+    <customLabels>
+        <label>طوال اليوم</label>
+        <name>Time_Shift_All_Day</name>
+    </customLabels>
+    <customLabels>
+        <label>تمت إضافة {0}</label>
+        <name>Time_Shift_Announce_Added</name>
+    </customLabels>
+    <customLabels>
+        <label>تمت إضافة من {0} إلى {1}</label>
+        <name>Time_Shift_Announce_Added_Range</name>
+    </customLabels>
+    <customLabels>
+        <label>عرض {0}</label>
+        <name>Time_Shift_Announce_Showing</name>
+    </customLabels>
+    <customLabels>
+        <label>عرض من {0} إلى {1}</label>
+        <name>Time_Shift_Announce_Showing_Range</name>
+    </customLabels>
+    <customLabels>
+        <label>عرض اليوم</label>
+        <name>Time_Shift_Announce_Today</name>
+    </customLabels>
+    <customLabels>
+        <label>لا شيء بين {0} و{1}</label>
+        <name>Time_Shift_Between</name>
+    </customLabels>
+    <customLabels>
+        <label>إظهار الأوقات والتواريخ</label>
+        <name>Time_Shift_Button_Lite_Off</name>
+    </customLabels>
+    <customLabels>
+        <label>العناوين فقط</label>
+        <name>Time_Shift_Button_Lite_On</name>
+    </customLabels>
+    <customLabels>
+        <label>تحديث</label>
+        <name>Time_Shift_Button_Refresh</name>
+    </customLabels>
+    <customLabels>
+        <label>عرض الكل</label>
+        <name>Time_Shift_Button_Show_Everything</name>
+    </customLabels>
+    <customLabels>
+        <label>اليوم</label>
+        <name>Time_Shift_Button_Today</name>
+    </customLabels>
+    <customLabels>
+        <label>حاول مرة أخرى</label>
+        <name>Time_Shift_Button_Try_Again</name>
+    </customLabels>
+    <customLabels>
+        <label>طيّ الكل</label>
+        <name>Time_Shift_Collapse_All</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} يوم</label>
+        <name>Time_Shift_Days_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>يوم واحد</label>
+        <name>Time_Shift_Days_One</name>
+    </customLabels>
+    <customLabels>
+        <label>هل أنت متأكد أنك تريد حذف هذا {0}؟</label>
+        <name>Time_Shift_Delete_Confirm</name>
+    </customLabels>
+    <customLabels>
+        <label>تم الحذف</label>
+        <name>Time_Shift_Delete_Done</name>
+    </customLabels>
+    <customLabels>
+        <label>تعذر الحذف</label>
+        <name>Time_Shift_Delete_Failed</name>
+    </customLabels>
+    <customLabels>
+        <label>عنصر</label>
+        <name>Time_Shift_Delete_Item</name>
+    </customLabels>
+    <customLabels>
+        <label>حذف {0}</label>
+        <name>Time_Shift_Delete_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>إخفاء التفاصيل</label>
+        <name>Time_Shift_Details_Hide</name>
+    </customLabels>
+    <customLabels>
+        <label>عرض التفاصيل</label>
+        <name>Time_Shift_Details_Show</name>
+    </customLabels>
+    <customLabels>
+        <label>التفاصيل: {0}</label>
+        <name>Time_Shift_Details_Toggle</name>
+    </customLabels>
+    <customLabels>
+        <label>مرتد</label>
+        <name>Time_Shift_Email_Bounced</name>
+    </customLabels>
+    <customLabels>
+        <label>تم الفتح</label>
+        <name>Time_Shift_Email_Opened</name>
+    </customLabels>
+    <customLabels>
+        <label>لم يُفتح بعد</label>
+        <name>Time_Shift_Email_Unopened</name>
+    </customLabels>
+    <customLabels>
+        <label>لا يوجد تفاعل بعد لهذا العميل.</label>
+        <name>Time_Shift_Empty_Customer</name>
+    </customLabels>
+    <customLabels>
+        <label>لا يوجد تفاعل بعد</label>
+        <name>Time_Shift_Empty_No_Engagement</name>
+    </customLabels>
+    <customLabels>
+        <label>لا توجد نتائج مطابقة</label>
+        <name>Time_Shift_Empty_No_Match</name>
+    </customLabels>
+    <customLabels>
+        <label>لا شيء.</label>
+        <name>Time_Shift_Empty_Nothing</name>
+    </customLabels>
+    <customLabels>
+        <label>لا شيء في {0}.</label>
+        <name>Time_Shift_Empty_Nothing_In</name>
+    </customLabels>
+    <customLabels>
+        <label>خطأ في الإعداد</label>
+        <name>Time_Shift_Empty_Setup_Heading</name>
+    </customLabels>
+    <customLabels>
+        <label>لم يتم العثور على بيانات بين {0} و{1}. تحقق من عوامل التصفية وحاول مرة أخرى.</label>
+        <name>Time_Shift_Empty_Window</name>
+    </customLabels>
+    <customLabels>
+        <label>ليس لديك صلاحية الوصول إلى بعض البيانات التي يحتاجها هذا.</label>
+        <name>Time_Shift_Err_Access</name>
+    </customLabels>
+    <customLabels>
+        <label>ربما لم تُسنَد إليك مجموعة أذونات تمنح الوصول إلى الكائنات أو الحقول التي يقرؤها.</label>
+        <name>Time_Shift_Err_Access_Cause</name>
+    </customLabels>
+    <customLabels>
+        <label>استغرق التحميل وقتاً طويلاً.</label>
+        <name>Time_Shift_Err_Busy</name>
+    </customLabels>
+    <customLabels>
+        <label>ربما يوجد الكثير من السجل لقراءته، أو أن Salesforce مشغول. حاول مرة أخرى بعد قليل.</label>
+        <name>Time_Shift_Err_Busy_Cause</name>
+    </customLabels>
+    <customLabels>
+        <label>هذا السجل غير متاح.</label>
+        <name>Time_Shift_Err_Not_Found</name>
+    </customLabels>
+    <customLabels>
+        <label>ربما تم حذفه أو دمجه، أو لم تعد تتم مشاركته معك.</label>
+        <name>Time_Shift_Err_Not_Found_Cause</name>
+    </customLabels>
+    <customLabels>
+        <label>تعذّر الاتصال بـ Salesforce.</label>
+        <name>Time_Shift_Err_Offline</name>
+    </customLabels>
+    <customLabels>
+        <label>ربما انقطع اتصالك. تحقق منه ثم حاول مرة أخرى.</label>
+        <name>Time_Shift_Err_Offline_Cause</name>
+    </customLabels>
+    <customLabels>
+        <label>شيء يحتاجه هذا غير مُعدّ في هذه المؤسسة.</label>
+        <name>Time_Shift_Err_Setup</name>
+    </customLabels>
+    <customLabels>
+        <label>كائن أو حقل يقرؤه مفقود. اطلب من مسؤول Salesforce التحقق من التثبيت.</label>
+        <name>Time_Shift_Err_Setup_Cause</name>
+    </customLabels>
+    <customLabels>
+        <label>حدث خطأ ما.</label>
+        <name>Time_Shift_Err_Unknown</name>
+    </customLabels>
+    <customLabels>
+        <label>ربما تكون مشكلة عابرة. حاول مرة أخرى، وإذا استمرت فأخبر مسؤول Salesforce.</label>
+        <name>Time_Shift_Err_Unknown_Cause</name>
+    </customLabels>
+    <customLabels>
+        <label>تعذّر تحميل الجدول الزمني</label>
+        <name>Time_Shift_Error_Load_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>تعذّر عرض بعض العناصر</label>
+        <name>Time_Shift_Error_Partial_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>تعذّرت قراءة الجدول الزمني</label>
+        <name>Time_Shift_Error_Read_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>المتابعات</label>
+        <name>Time_Shift_Example_Legend</name>
+    </customLabels>
+    <customLabels>
+        <label>توسيع الكل</label>
+        <name>Time_Shift_Expand_All</name>
+    </customLabels>
+    <customLabels>
+        <label>لا شيء لتصفيته في هذا العرض.</label>
+        <name>Time_Shift_Filter_None</name>
+    </customLabels>
+    <customLabels>
+        <label>عوامل التصفية</label>
+        <name>Time_Shift_Filters</name>
+    </customLabels>
+    <customLabels>
+        <label>عوامل التصفية، {0} نشطة</label>
+        <name>Time_Shift_Filters_Active</name>
+    </customLabels>
+    <customLabels>
+        <label>تطبيق</label>
+        <name>Time_Shift_Filters_Apply</name>
+    </customLabels>
+    <customLabels>
+        <label>إلغاء</label>
+        <name>Time_Shift_Filters_Cancel</name>
+    </customLabels>
+    <customLabels>
+        <label>إغلاق</label>
+        <name>Time_Shift_Filters_Close</name>
+    </customLabels>
+    <customLabels>
+        <label>أنواع الأحداث</label>
+        <name>Time_Shift_Filters_Event_Types</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} يوم هادئ</label>
+        <name>Time_Shift_Gap_Day_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>يوم هادئ واحد</label>
+        <name>Time_Shift_Gap_Day_One</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} أنصاف سنة هادئة</label>
+        <name>Time_Shift_Gap_Half_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>نصف سنة هادئ واحد</label>
+        <name>Time_Shift_Gap_Half_One</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} شهر هادئ</label>
+        <name>Time_Shift_Gap_Month_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>شهر هادئ واحد</label>
+        <name>Time_Shift_Gap_Month_One</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} ربع هادئ</label>
+        <name>Time_Shift_Gap_Quarter_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>ربع هادئ واحد</label>
+        <name>Time_Shift_Gap_Quarter_One</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} أسبوع هادئ</label>
+        <name>Time_Shift_Gap_Week_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>أسبوع هادئ واحد</label>
+        <name>Time_Shift_Gap_Week_One</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} سنة هادئة</label>
+        <name>Time_Shift_Gap_Year_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>سنة هادئة واحدة</label>
+        <name>Time_Shift_Gap_Year_One</name>
+    </customLabels>
+    <customLabels>
+        <label>العودة إلى {0}</label>
+        <name>Time_Shift_Group_Back</name>
+    </customLabels>
+    <customLabels>
+        <label>العودة إلى السجل</label>
+        <name>Time_Shift_Group_Back_Record</name>
+    </customLabels>
+    <customLabels>
+        <label>التاريخ</label>
+        <name>Time_Shift_Group_Col_Date</name>
+    </customLabels>
+    <customLabels>
+        <label>التاريخ والوقت</label>
+        <name>Time_Shift_Group_Col_Date_Time</name>
+    </customLabels>
+    <customLabels>
+        <label>الاسم</label>
+        <name>Time_Shift_Group_Col_Name</name>
+    </customLabels>
+    <customLabels>
+        <label>الملخص</label>
+        <name>Time_Shift_Group_Col_Summary</name>
+    </customLabels>
+    <customLabels>
+        <label>أكثر من {0} عنصر</label>
+        <name>Time_Shift_Group_Count_More</name>
+    </customLabels>
+    <customLabels>
+        <label>من</label>
+        <name>Time_Shift_Group_From</name>
+    </customLabels>
+    <customLabels>
+        <label>العناصر</label>
+        <name>Time_Shift_Group_Heading</name>
+    </customLabels>
+    <customLabels>
+        <label>جارٍ التحميل</label>
+        <name>Time_Shift_Group_Loading</name>
+    </customLabels>
+    <customLabels>
+        <label>جارٍ تحميل المزيد من العناصر</label>
+        <name>Time_Shift_Group_Loading_More</name>
+    </customLabels>
+    <customLabels>
+        <label>لا شيء لعرضه</label>
+        <name>Time_Shift_Group_Nothing</name>
+    </customLabels>
+    <customLabels>
+        <label>ربما تغيّرت هذه العناصر منذ رسم الجدول الزمني. حدّث الصفحة أو ارجع إلى الجدول الزمني.</label>
+        <name>Time_Shift_Group_Nothing_Body</name>
+    </customLabels>
+    <customLabels>
+        <label>تعرض العناصر الموجودة وراء أحد الصفوف المجمّعة في جدول زمني.</label>
+        <name>Time_Shift_Group_Open_Body</name>
+    </customLabels>
+    <customLabels>
+        <label>افتح هذه الصفحة من جدول زمني</label>
+        <name>Time_Shift_Group_Open_From</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} عنصر معروض</label>
+        <name>Time_Shift_Group_Shown</name>
+    </customLabels>
+    <customLabels>
+        <label>مرتبة حسب التاريخ</label>
+        <name>Time_Shift_Group_Sorted</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} سجل مجمّع</label>
+        <name>Time_Shift_Group_Summary_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>سجل واحد مجمّع</label>
+        <name>Time_Shift_Group_Summary_One</name>
+    </customLabels>
+    <customLabels>
+        <label>إلى</label>
+        <name>Time_Shift_Group_To</name>
+    </customLabels>
+    <customLabels>
+        <label>عرض كل {0} {1}</label>
+        <name>Time_Shift_Group_View_All</name>
+    </customLabels>
+    <customLabels>
+        <label>النصف {0} {1}</label>
+        <name>Time_Shift_Half</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} في {1}</label>
+        <name>Time_Shift_Heat_On_Days</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: {1}</label>
+        <name>Time_Shift_Heat_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>انقر لتمرير الجدول الزمني</label>
+        <name>Time_Shift_Hint_Scroll</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} عنصر</label>
+        <name>Time_Shift_Items_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>عنصر واحد</label>
+        <name>Time_Shift_Items_One</name>
+    </customLabels>
+    <customLabels>
+        <label>السبب المحتمل:</label>
+        <name>Time_Shift_Label_Possible_Cause</name>
+    </customLabels>
+    <customLabels>
+        <label>للإصلاح:</label>
+        <name>Time_Shift_Label_To_Fix</name>
+    </customLabels>
+    <customLabels>
+        <label>عناصر التطبيق</label>
+        <name>Time_Shift_Many_App</name>
+    </customLabels>
+    <customLabels>
+        <label>عناصر السلة</label>
+        <name>Time_Shift_Many_Cart</name>
+    </customLabels>
+    <customLabels>
+        <label>تحديثات الحالات</label>
+        <name>Time_Shift_Many_Case</name>
+    </customLabels>
+    <customLabels>
+        <label>عناصر البريد الإلكتروني</label>
+        <name>Time_Shift_Many_Email</name>
+    </customLabels>
+    <customLabels>
+        <label>رسائل الإشعارات والرسائل النصية</label>
+        <name>Time_Shift_Many_Message</name>
+    </customLabels>
+    <customLabels>
+        <label>تحديثات الفرص</label>
+        <name>Time_Shift_Many_Opportunity</name>
+    </customLabels>
+    <customLabels>
+        <label>العناصر</label>
+        <name>Time_Shift_Many_Other</name>
+    </customLabels>
+    <customLabels>
+        <label>عمليات بحث الويب</label>
+        <name>Time_Shift_Many_Search</name>
+    </customLabels>
+    <customLabels>
+        <label>مشاهدات الصفحات</label>
+        <name>Time_Shift_Many_Web</name>
+    </customLabels>
+    <customLabels>
+        <label>نشاط جديد</label>
+        <name>Time_Shift_Menu_New_Activity</name>
+    </customLabels>
+    <customLabels>
+        <label>طرق العرض</label>
+        <name>Time_Shift_Menu_Views</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} عنصر إضافي: مرّر للأسفل</label>
+        <name>Time_Shift_More_Aria_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} عنصر إضافي في {1}: مرّر للأسفل</label>
+        <name>Time_Shift_More_Aria_Many_On</name>
+    </customLabels>
+    <customLabels>
+        <label>عنصر واحد إضافي: مرّر للأسفل</label>
+        <name>Time_Shift_More_Aria_One</name>
+    </customLabels>
+    <customLabels>
+        <label>عنصر واحد إضافي في {0}: مرّر للأسفل</label>
+        <name>Time_Shift_More_Aria_One_On</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} إضافية</label>
+        <name>Time_Shift_More_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>واحد إضافي</label>
+        <name>Time_Shift_More_One</name>
+    </customLabels>
+    <customLabels>
+        <label>الآن</label>
+        <name>Time_Shift_Near_Now</name>
+    </customLabels>
+    <customLabels>
+        <label>هذا الشهر</label>
+        <name>Time_Shift_Near_This_Month</name>
+    </customLabels>
+    <customLabels>
+        <label>هذا الأسبوع</label>
+        <name>Time_Shift_Near_This_Week</name>
+    </customLabels>
+    <customLabels>
+        <label>اليوم</label>
+        <name>Time_Shift_Near_Today</name>
+    </customLabels>
+    <customLabels>
+        <label>لم يقم المسؤول بإعداد هذا الكائن.</label>
+        <name>Time_Shift_No_Sources</name>
+    </customLabels>
+    <customLabels>
+        <label>(بلا عنوان)</label>
+        <name>Time_Shift_No_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>لا شيء هذا الشهر</label>
+        <name>Time_Shift_Nothing_Month</name>
+    </customLabels>
+    <customLabels>
+        <label>لا شيء اليوم</label>
+        <name>Time_Shift_Nothing_Today</name>
+    </customLabels>
+    <customLabels>
+        <label>لا شيء هذا الأسبوع</label>
+        <name>Time_Shift_Nothing_Week</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} طلب</label>
+        <name>Time_Shift_Orders_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>طلب واحد</label>
+        <name>Time_Shift_Orders_One</name>
+    </customLabels>
+    <customLabels>
+        <label>نظرة عامة على الجدول الزمني: اختر يوماً</label>
+        <name>Time_Shift_Overview_Pick_Day</name>
+    </customLabels>
+    <customLabels>
+        <label>مجمّع</label>
+        <name>Time_Shift_Pill_Grouped</name>
+    </customLabels>
+    <customLabels>
+        <label>ربما ليس لديك صلاحية الوصول إلى حقل أو كائن يقرؤونه، أو أنه غير موجود في هذه المؤسسة.</label>
+        <name>Time_Shift_Prob_Access_Cause</name>
+    </customLabels>
+    <customLabels>
+        <label>اطلب من مسؤول Salesforce التحقق من مجموعات الأذونات لديك (مثل Time Trail) وسجلات مصدر Time Trail.</label>
+        <name>Time_Shift_Prob_Access_Fix</name>
+    </customLabels>
+    <customLabels>
+        <label>استغرقت Salesforce وقتاً طويلاً في قراءتها.</label>
+        <name>Time_Shift_Prob_Busy_Cause</name>
+    </customLabels>
+    <customLabels>
+        <label>حاول مرة أخرى بعد قليل.</label>
+        <name>Time_Shift_Prob_Busy_Fix</name>
+    </customLabels>
+    <customLabels>
+        <label>تعذّرت قراءة {0}.</label>
+        <name>Time_Shift_Prob_Message</name>
+    </customLabels>
+    <customLabels>
+        <label>حدث أمر غير متوقع أثناء قراءتها.</label>
+        <name>Time_Shift_Prob_Unknown_Cause</name>
+    </customLabels>
+    <customLabels>
+        <label>حاول مرة أخرى، وإذا استمرت المشكلة فأخبر مسؤول Salesforce.</label>
+        <name>Time_Shift_Prob_Unknown_Fix</name>
+    </customLabels>
+    <customLabels>
+        <label>الربع {0} {1}</label>
+        <name>Time_Shift_Quarter</name>
+    </customLabels>
+    <customLabels>
+        <label>تعذّر تحميل هذه التفاصيل. {0}</label>
+        <name>Time_Shift_Rd_Failed</name>
+    </customLabels>
+    <customLabels>
+        <label>جارٍ تحميل التفاصيل</label>
+        <name>Time_Shift_Rd_Loading</name>
+    </customLabels>
+    <customLabels>
+        <label>لا توجد حقول في التخطيط المضغوط لهذا الكائن مرئية لك.</label>
+        <name>Time_Shift_Rd_No_Fields</name>
+    </customLabels>
+    <customLabels>
+        <label>عناصر التفاعل</label>
+        <name>Time_Shift_Region_Items</name>
+    </customLabels>
+    <customLabels>
+        <label>إجراءات العنصر</label>
+        <name>Time_Shift_Row_Actions</name>
+    </customLabels>
+    <customLabels>
+        <label>جارٍ التحقق مما يمكنك فعله…</label>
+        <name>Time_Shift_Row_Checking</name>
+    </customLabels>
+    <customLabels>
+        <label>لا يمكنك تعديل هذا العنصر أو حذفه.</label>
+        <name>Time_Shift_Row_No_Actions</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: يحتاج مصدر Apex إلى فئة موفّر.</label>
+        <name>Time_Shift_Server_Apex_Needs_Class</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: {1} ليست فئة TimeShiftRowProvider أو TimeShiftProvider.</label>
+        <name>Time_Shift_Server_Bad_Provider</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} «{1}» ليست من القيم 0.25 و0.5 و1 و2 و3 ... 10 سنوات، لذلك لا تُستخدم.</label>
+        <name>Time_Shift_Server_Bad_Years</name>
+    </customLabels>
+    <customLabels>
+        <label>Data 360 غير متاح في هذه المؤسسة، لذلك يتم تخطي مصادره.</label>
+        <name>Time_Shift_Server_Data360_Missing</name>
+    </customLabels>
+    <customLabels>
+        <label>تفاعل {0} غير موجود في نموذج بيانات هذه المؤسسة ({1}).</label>
+        <name>Time_Shift_Server_Dmo_Missing</name>
+    </customLabels>
+    <customLabels>
+        <label>روابط الهوية</label>
+        <name>Time_Shift_Server_Identity_Links</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: يتم عرض {1} عنصرًا فقط (الحد الأقصى للسجلات)، وقد تكون هناك عناصر ناقصة.</label>
+        <name>Time_Shift_Server_Max_Records</name>
+    </customLabels>
+    <customLabels>
+        <label>لا</label>
+        <name>Time_Shift_Server_No</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: لا يحتوي {1} على الحقل {2}.</label>
+        <name>Time_Shift_Server_No_Field</name>
+    </customLabels>
+    <customLabels>
+        <label>لا يوجد كائن ربط للهوية ({0}): يتم عرض تفاعل الفرد الخاص بجهة الاتصال فقط.</label>
+        <name>Time_Shift_Server_No_Identity_Link</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: حدّد حقلًا أصليًا أو كائن ربط لربط السجلات بالصفحة.</label>
+        <name>Time_Shift_Server_No_Link</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: لا يوجد كائن باسم {1}.</label>
+        <name>Time_Shift_Server_No_Object</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: لم يكن لدى {1} من الصفوف {2} ولم يتم عرضها.</label>
+        <name>Time_Shift_Server_Rows_No_Date</name>
+    </customLabels>
+    <customLabels>
+        <label>أُرسل إلى: {0}</label>
+        <name>Time_Shift_Server_Sent_To</name>
+    </customLabels>
+    <customLabels>
+        <label>أُرسل إلى: {0} وشخص آخر</label>
+        <name>Time_Shift_Server_Sent_To_One_Other</name>
+    </customLabels>
+    <customLabels>
+        <label>أُرسل إلى: {0} و{1} آخرين</label>
+        <name>Time_Shift_Server_Sent_To_Others</name>
+    </customLabels>
+    <customLabels>
+        <label>نعم</label>
+        <name>Time_Shift_Server_Yes</name>
+    </customLabels>
+    <customLabels>
+        <label>جارٍ تحميل الجدول الزمني…</label>
+        <name>Time_Shift_Status_Loading</name>
+    </customLabels>
+    <customLabels>
+        <label>جارٍ تحميل هذا اليوم</label>
+        <name>Time_Shift_Status_Loading_Day</name>
+    </customLabels>
+    <customLabels>
+        <label>جارٍ تحديث الأعداد</label>
+        <name>Time_Shift_Status_Updating_Counts</name>
+    </customLabels>
+    <customLabels>
+        <label>أسبوع {0}</label>
+        <name>Time_Shift_The_Week_Of</name>
+    </customLabels>
+    <customLabels>
+        <label>التطبيق</label>
+        <name>Time_Shift_Type_App</name>
+    </customLabels>
+    <customLabels>
+        <label>المكالمات</label>
+        <name>Time_Shift_Type_Call</name>
+    </customLabels>
+    <customLabels>
+        <label>الطلبات الملغاة</label>
+        <name>Time_Shift_Type_Canceled</name>
+    </customLabels>
+    <customLabels>
+        <label>نشاط السلة</label>
+        <name>Time_Shift_Type_Cart</name>
+    </customLabels>
+    <customLabels>
+        <label>الحالات</label>
+        <name>Time_Shift_Type_Case</name>
+    </customLabels>
+    <customLabels>
+        <label>الطلبات المسلّمة</label>
+        <name>Time_Shift_Type_Delivered</name>
+    </customLabels>
+    <customLabels>
+        <label>البريد الإلكتروني</label>
+        <name>Time_Shift_Type_Email</name>
+    </customLabels>
+    <customLabels>
+        <label>الإشعارات والرسائل النصية</label>
+        <name>Time_Shift_Type_Message</name>
+    </customLabels>
+    <customLabels>
+        <label>الفرص الخاسرة</label>
+        <name>Time_Shift_Type_Opp_Lost</name>
+    </customLabels>
+    <customLabels>
+        <label>الفرص المكسوبة</label>
+        <name>Time_Shift_Type_Opp_Won</name>
+    </customLabels>
+    <customLabels>
+        <label>الفرص</label>
+        <name>Time_Shift_Type_Opportunity</name>
+    </customLabels>
+    <customLabels>
+        <label>أخرى</label>
+        <name>Time_Shift_Type_Other</name>
+    </customLabels>
+    <customLabels>
+        <label>الطلبات المقدّمة</label>
+        <name>Time_Shift_Type_Purchase</name>
+    </customLabels>
+    <customLabels>
+        <label>المراجعات</label>
+        <name>Time_Shift_Type_Review</name>
+    </customLabels>
+    <customLabels>
+        <label>رسائل البريد الإلكتروني</label>
+        <name>Time_Shift_Type_Sales_Email</name>
+    </customLabels>
+    <customLabels>
+        <label>بحث الويب</label>
+        <name>Time_Shift_Type_Search</name>
+    </customLabels>
+    <customLabels>
+        <label>موقع الويب</label>
+        <name>Time_Shift_Type_Web</name>
+    </customLabels>
+    <customLabels>
+        <label>كل الأنواع</label>
+        <name>Time_Shift_Types_All</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} من {1} من الأنواع</label>
+        <name>Time_Shift_Types_Some</name>
+    </customLabels>
+    <customLabels>
+        <label>كل العناصر</label>
+        <name>Time_Shift_View_All</name>
+    </customLabels>
+    <customLabels>
+        <label>الجدول الزمني للتجارة</label>
+        <name>Time_Shift_View_Commerce</name>
+    </customLabels>
+    <customLabels>
+        <label>الجدول الزمني الرقمي</label>
+        <name>Time_Shift_View_Digital</name>
+    </customLabels>
+    <customLabels>
+        <label>الجدول الزمني للتسويق</label>
+        <name>Time_Shift_View_Marketing</name>
+    </customLabels>
+    <customLabels>
+        <label>الجدول الزمني للمبيعات</label>
+        <name>Time_Shift_View_Sales</name>
+    </customLabels>
+    <customLabels>
+        <label>الجدول الزمني للخدمة</label>
+        <name>Time_Shift_View_Service</name>
+    </customLabels>
+    <customLabels>
+        <label>أسبوع {0}</label>
+        <name>Time_Shift_Week_Of</name>
+    </customLabels>
+    <customLabels>
+        <label>أسبوع</label>
+        <name>Time_Shift_Week_Of_Word</name>
+    </customLabels>
+</Translations>
