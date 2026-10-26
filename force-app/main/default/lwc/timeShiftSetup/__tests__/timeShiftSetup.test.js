@@ -566,7 +566,11 @@ describe("c-time-shift-setup", () => {
       }
     ];
 
-    async function openStep(step, draft = {}) {
+    async function openStep(
+      step,
+      draft = {},
+      fieldsFor = ({ objectName }) => (objectName === "Task" ? task : relation)
+    ) {
       getObjects.mockResolvedValue([{ value: "TaskRelation", label: "Task Relation", detail: "TaskRelation" }]);
       getSource.mockResolvedValue({
         developerName: "Order_Placed",
@@ -581,7 +585,7 @@ describe("c-time-shift-setup", () => {
         details: [],
         ...draft
       });
-      getFields.mockImplementation(({ objectName }) => Promise.resolve(objectName === "Task" ? task : relation));
+      getFields.mockImplementation((args) => Promise.resolve(fieldsFor(args)));
       getLinks.mockResolvedValue([
         { key: "RelationId", parentField: "RelationId", label: "Task Relations whose Relation is this Contact" }
       ]);
@@ -629,6 +633,17 @@ describe("c-time-shift-setup", () => {
       await settle();
       expect(root.querySelector("c-time-shift-field-picker")).toBeNull();
       expect(root.querySelector(".picker-input").value).toBe("Task › Due Date");
+    });
+
+    it("says it's access, not dates, when none of the object's fields can be read", async () => {
+      const root = await openStep("date", { objectName: "Claim", dateField: null }, () => []);
+      await settle();
+      root.querySelector(".picker-input").click();
+      await flush();
+      const text = [...root.querySelectorAll("p.quiet")].map((p) => p.textContent).join(" ");
+      expect(text).toContain("can't read any of");
+      expect(text).toContain("read access");
+      expect(text).not.toContain("no date fields");
     });
 
     it("reads a saved related date's label once the related fields are in", async () => {

@@ -42,7 +42,6 @@ public with sharing class TimeShiftSetupController {
     'airecordinsight',
     'approvalsubmission',
     'approvalworkitem',
-    'contentdocumentlink',
     'entitysubscription',
     'duplicaterecorditem',
     'flowrecordrelation',
@@ -246,7 +245,8 @@ public with sharing class TimeShiftSetupController {
     'OpportunityContactRole' => 'Opportunity',
     'CaseRelatedIssue' => 'Case',
     'ChangeRequestRelatedIssue' => 'ChangeRequest',
-    'MaintenanceAsset' => 'MaintenancePlan'
+    'MaintenanceAsset' => 'MaintenancePlan',
+    'ContentDocumentLink' => 'ContentDocument'
   };
 
   // Setup records a junction can require, which aren't engagement.
@@ -290,7 +290,7 @@ public with sharing class TimeShiftSetupController {
         String record = ACTIVITY_RELATIONS.get(childName);
         String target = record == 'TaskId' ? 'Task' : 'Event';
         Schema.DescribeSObjectResult targetDescribe = describe(target);
-        if (seen.add(childName + '.' + record) && targetDescribe.isQueryable()) {
+        if (seen.add(childName + '.' + record) && targetDescribe.isQueryable() && targetDescribe.isAccessible()) {
           Link every = new Link(
             childName,
             lookup.getName(),
@@ -310,7 +310,12 @@ public with sharing class TimeShiftSetupController {
         // for each contact on a task, its date and filter read from the task
         // by path (Task.ActivityDate), counted from the relation, which is
         // faster than from the task for a contact on a great many.
-        if (RELATION_RECORDS.containsKey(childName) && child.isQueryable() && seen.add(childName + '.' + lookup.getName() + '.own')) {
+        if (
+          RELATION_RECORDS.containsKey(childName) &&
+          child.isQueryable() &&
+          child.isAccessible() &&
+          seen.add(childName + '.' + lookup.getName() + '.own')
+        ) {
           Link own = new Link(
             lookup.getName(),
             child.getLabelPlural() + ' whose ' + lookup.getLabel().removeEnd(' ID') + ' (' + lookup.getName() + ') is this ' + parent.getLabel()
@@ -338,6 +343,8 @@ public with sharing class TimeShiftSetupController {
       if (
         lookup == null ||
         !child.isQueryable() ||
+        // Not an object this user can see: they couldn't read its fields to set it up.
+        !child.isAccessible() ||
         skipped(childName.toLowerCase()) ||
         !seen.add(childName + '.' + lookup.getName())
       ) {
@@ -350,11 +357,14 @@ public with sharing class TimeShiftSetupController {
       // account's Contact relationships (Task.WhoId) come through the Contact.
       Boolean activity = childName == 'Task' || childName == 'Event';
       Boolean relatedTo = activity && lookup.getName() == 'WhatId';
+      // A file is linked to a record by LinkedEntityId, which can be any of
+      // them: the one lookup that is wider than two objects and still a choice.
+      Boolean file = childName == 'ContentDocumentLink' && lookup.getName() == 'LinkedEntityId';
       if (
         lookup.isFilterable() &&
         child.isCreateable() &&
         lookup.getReferenceTo().contains(parent.getSObjectType()) &&
-        (lookup.getReferenceTo().size() <= 2 || relatedTo)
+        (lookup.getReferenceTo().size() <= 2 || relatedTo || file)
       ) {
         String field = lookup.getLabel().removeEnd(' ID') + ' (' + lookup.getName() + ')';
         Link direct = new Link(
@@ -362,6 +372,13 @@ public with sharing class TimeShiftSetupController {
           child.getLabelPlural() + ' whose ' + field + ' is this ' + parent.getLabel()
         );
         direct.how = 'Linked by ' + lookup.getLabel().removeEnd(' ID');
+        if (file) {
+          direct.note =
+            'Each is one file linked to this ' +
+            parent.getLabel().toLowerCase() +
+            '. A link has no date of its own but when it last changed: choose the file\'s by path ' +
+            '(Content Document › Created Date), and its name with {ContentDocument.Title}.';
+        }
         if (activity && lookup.getName() == 'AccountId') {
           direct.note =
             'Salesforce fills Account (AccountId) itself: from Related To when that\'s this account or one of its records, ' +
@@ -393,6 +410,7 @@ public with sharing class TimeShiftSetupController {
           SETUP_OBJECTS.contains(targetName) ||
           childName == 'User' ||
           !target.isQueryable() ||
+          !target.isAccessible() ||
           skipped(targetName.toLowerCase())
         ) {
           continue;

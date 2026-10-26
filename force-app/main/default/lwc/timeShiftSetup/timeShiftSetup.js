@@ -3019,7 +3019,10 @@ export default class TimeShiftSetup extends LightningElement {
         case "apex":
           return "No class here implements TimeShiftProvider or TimeShiftRowProvider yet. Ask a developer to write one, then come back.";
         case "date":
-          return `${this.objectLabel} has no date fields you can read, so its records can't go on the timeline.`;
+          // Nothing at all to read is a matter of access, not of dates.
+          return this.fields?.length
+            ? `${this.objectLabel} has no date fields you can read, so its records can't go on the timeline.`
+            : `You can't read any of ${this.objectLabel}'s fields, so its records can't go on the timeline. Ask an admin for read access to ${this.objectLabel}, then come back.`;
         default:
           return "There are no fields to choose from.";
       }

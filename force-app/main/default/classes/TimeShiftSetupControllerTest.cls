@@ -401,6 +401,29 @@ private class TimeShiftSetupControllerTest {
   }
 
   @IsTest
+  static void filesLinkedToTheRecordAreOfferedAsAChoice() {
+    // ContentDocumentLink points at any record by LinkedEntityId: wider than the
+    // two objects a direct lookup is otherwise limited to.
+    Boolean listed = false;
+    for (TimeShiftSetupController.Option o : TimeShiftSetupController.getObjects('standard', 'Contact', null)) {
+      listed = listed || o.value == 'ContentDocumentLink';
+    }
+    Assert.isTrue(listed, 'files are an object choice for a Contact');
+    List<TimeShiftSetupController.Link> links = TimeShiftSetupController.getLinks('Contact', 'ContentDocumentLink');
+    Assert.areEqual(1, links.size());
+    Assert.areEqual('LinkedEntityId', links[0].parentField);
+    Assert.isNull(links[0].junctionObject, 'linked directly');
+    Assert.isTrue(links[0].note.contains('Content Document'), links[0].note);
+    // The file's own dates are one step in, through its Content Document.
+    Boolean toDocument = false;
+    for (TimeShiftSetupController.FieldInfo f : TimeShiftSetupController.getFields('ContentDocumentLink')) {
+      toDocument = toDocument || (f.name == 'ContentDocumentId' && f.referenceTo == 'ContentDocument');
+      Assert.isFalse(f.name == 'LinkedEntityId' && f.referenceTo != null, 'a lookup to any record is not followed');
+    }
+    Assert.isTrue(toDocument);
+  }
+
+  @IsTest
   static void aRelationObjectIsOfferedAsASourceOfItsOwn() {
     TimeShiftConfig.testSources = new List<Time_Shift_Source__mdt>{
       fitted('Every', 'Contact', 'SharedActivities', null, true)
