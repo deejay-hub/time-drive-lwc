@@ -818,8 +818,8 @@ describe("c-time-shift-setup", () => {
     root.querySelector('.tune .option[data-value="text"]').click();
     await flush();
     const name = root.querySelector(".legend-name-input");
-    name.value = "Orders";
-    name.dispatchEvent(new CustomEvent("input"));
+    // A lightning-input reports typing as change, with the text in detail.
+    name.dispatchEvent(new CustomEvent("change", { detail: { value: "Orders" } }));
     await flush();
     expect(legend()).toEqual(["Email", "Orders"]);
     expect(root.querySelector(".legend-row_mine .legend-name").textContent).toBe("Orders");

@@ -4541,9 +4541,11 @@ export default class TimeShiftSetup extends LightningElement {
     this.dragKey = undefined;
   }
 
+  // A lightning-input reports typing as change (on each keystroke), not input.
   handleLegendName(event) {
+    const value = event.detail?.value ?? event.target.value ?? "";
     this.legendModeChoice = "text";
-    this.update({ eventLabel: event.target.value, label: event.target.value.trim() });
+    this.update({ eventLabel: value, label: value.trim() });
   }
 
   // The source's own name follows what the legend calls it.
