@@ -8,6 +8,7 @@ import getData360Status from "@salesforce/apex/TimeShiftSetupController.getData3
 import getFields from "@salesforce/apex/TimeShiftSetupController.getFields";
 import getLinks from "@salesforce/apex/TimeShiftSetupController.getLinks";
 import setActive from "@salesforce/apex/TimeShiftSetupController.setActive";
+import setLens from "@salesforce/apex/TimeShiftSetupController.setLens";
 import save from "@salesforce/apex/TimeShiftSetupController.save";
 import TimeShiftConfirm from "c/timeShiftConfirm";
 import { subscribe } from "lightning/empApi";
@@ -99,6 +100,7 @@ jest.mock(
   { virtual: true }
 );
 jest.mock("@salesforce/apex/TimeShiftSetupController.remove", () => ({ default: jest.fn() }), { virtual: true });
+jest.mock("@salesforce/apex/TimeShiftSetupController.setLens", () => ({ default: jest.fn() }), { virtual: true });
 jest.mock("@salesforce/apex/TimeShiftSetupController.setActive", () => ({ default: jest.fn() }), {
   virtual: true
 });
@@ -200,6 +202,7 @@ describe("c-time-shift-setup", () => {
       "Dashboard",
       "Setup",
       "Customize",
+      "Lenses",
       "Diagnostics",
       "Docs"
     ]);
@@ -296,29 +299,14 @@ describe("c-time-shift-setup", () => {
     await tick("video");
     expect(root.querySelector(".guided-count-number").textContent).toBe("3 of 8");
     for (const key of ["perms", "review", "users", "page"]) await tick(key);
-    // Views come from custom labels; Setup only makes them inactive, never All.
-    const viewRows = [...root.querySelectorAll(".view-name-row")];
-    expect(viewRows.map((r) => r.querySelector(".view-name-text").textContent)).toEqual([
-      "All items",
-      "Commerce timeline",
-      "Marketing timeline"
-    ]);
-    expect(viewRows[0].querySelector(".view-label").textContent).toBe("Time_Shift_View_All");
-    expect(viewRows[0].querySelector(".view-active").disabled).toBe(true);
-    const marketing = viewRows[2].querySelector(".view-active");
-    marketing.checked = false;
-    marketing.dispatchEvent(new CustomEvent("change"));
-    await flush();
-    expect(root.querySelector('.guided-step[data-key="views"] .guided-button').textContent.trim()).toBe(
-      "Save the views"
+    // Lenses: a question and a button to them, ticked by you. (They're managed
+    // on the Lenses page.)
+    expect(root.querySelector('.guided-step[data-key="views"] .guided-text').textContent).toBe(
+      "Have you reviewed the categories for your lenses?"
     );
-    marketing.checked = true;
-    marketing.dispatchEvent(new CustomEvent("change"));
-    await flush();
-    // The views stay as they are: saved as they are.
-    root.querySelector('.guided-step[data-key="views"] .guided-button').click();
-    await flush();
-    await flush();
+    expect(root.querySelector('.guided-step[data-key="views"] .view-names')).toBeNull();
+    expect(root.querySelector('.guided-step[data-key="views"] .guided-button').textContent.trim()).toBe("Open Lenses");
+    await tick("views");
     // All done: the bar says so itself; there's no separate banner.
     expect(root.querySelector(".guided-progress_done")).not.toBeNull();
     expect(root.querySelector(".guided-count-number").textContent).toBe("Setup complete");
@@ -1077,6 +1065,155 @@ describe("c-time-shift-setup", () => {
     expect(names()).toEqual(["Order placed", "Email"]);
   });
 
+  describe("the Lenses page", () => {
+    const SOURCES_IN_LENSES = [
+      {
+        developerName: "Order_Placed",
+        parentObject: "Contact",
+        type: "custom",
+        objectName: "Invoice__c",
+        objectLabel: "Invoice",
+        label: "Order placed",
+        kind: "Salesforce",
+        active: true,
+        category: "Commerce",
+        summary: "Invoice records."
+      },
+      {
+        developerName: "Tasks",
+        parentObject: "Contact",
+        type: "standard",
+        objectName: "Task",
+        objectLabel: "Task",
+        label: "Tasks",
+        kind: "Salesforce",
+        active: false,
+        category: "Marketing",
+        summary: "Task records."
+      },
+      {
+        developerName: "Cases",
+        parentObject: "Account",
+        type: "standard",
+        objectName: "Case",
+        objectLabel: "Case",
+        label: "Cases",
+        kind: "Salesforce",
+        active: true,
+        category: null,
+        summary: "Case records."
+      }
+    ];
+
+    async function openLenses() {
+      getSources.mockResolvedValue(SOURCES_IN_LENSES);
+      let deliver;
+      subscribe.mockImplementation((channel, replay, handler) => {
+        deliver = handler;
+        return Promise.resolve({});
+      });
+      const element = mount();
+      await splash();
+      const root = element.shadowRoot;
+      root.querySelector('.site-link[data-to="lenses"]').click();
+      await flush();
+      await flush();
+      return { root, deliver: (payload) => deliver({ data: { payload } }) };
+    }
+    const cards = (root) => [...root.querySelectorAll(".lens")];
+    const card = (root, name) => cards(root).find((c) => c.querySelector(".lens-name").textContent === name);
+
+    it("is in the menu, and the guided step opens it", async () => {
+      const element = mount();
+      await splash();
+      const root = element.shadowRoot;
+      root.querySelector(".site-bar .site-action").click();
+      await flush();
+      root.querySelector('.guided-step[data-key="views"] .guided-button').click();
+      await flush();
+      expect(root.querySelector("h1.page-title").textContent).toBe("Lenses");
+      expect(root.querySelector('.site-link[data-to="lenses"]').getAttribute("aria-current")).toBe("page");
+      expect(root.querySelector(".crumbs")).toBeNull();
+    });
+
+    it("shows each lens's custom label, what it reads, and where to change it", async () => {
+      const { root } = await openLenses();
+      expect(root.querySelector("h1.page-title").textContent).toBe("Lenses");
+      expect(cards(root).map((c) => c.querySelector(".lens-name").textContent)).toEqual([
+        "All items",
+        "Commerce timeline",
+        "Marketing timeline"
+      ]);
+      const commerce = card(root, "Commerce timeline");
+      expect(commerce.querySelector(".lens-label code").textContent).toBe("Time_Shift_View_Commerce");
+      expect(commerce.querySelector(".lens-label-reads").textContent).toBe(
+        "reads \u201cCommerce timeline\u201d in your language"
+      );
+      const links = [...commerce.querySelectorAll(".lens-label a")];
+      expect(links.map((a) => a.textContent.trim())).toEqual(["Edit in Custom Labels", "Translate"]);
+      expect(links.map((a) => a.getAttribute("href"))).toEqual([
+        "/lightning/setup/ExternalStrings/home",
+        "/lightning/setup/LabelWorkbenchTranslate/home"
+      ]);
+      // All shows everything: nothing to add to it, and it can't be switched off.
+      const all = card(root, "All items");
+      expect(all.querySelector(".lens-add")).toBeNull();
+      expect(all.querySelector(".lens-active").disabled).toBe(true);
+    });
+
+    it("lists the sources in a lens by the records they read, with the page they're on", async () => {
+      const { root } = await openLenses();
+      const commerce = card(root, "Commerce timeline");
+      expect(commerce.querySelector(".lens-meta").textContent).toBe("1 source");
+      expect([...commerce.querySelectorAll(".lens-source-name")].map((n) => n.textContent)).toEqual(["Invoice"]);
+      expect(commerce.querySelector(".lens-source-page").textContent).toBe("Contact");
+      // An inactive source is marked.
+      const marketing = card(root, "Marketing timeline");
+      expect(marketing.querySelector(".lens-source .badge_off").textContent).toBe("Inactive");
+    });
+
+    it("adds a configured source to a lens, saves it, and shows it there once saved", async () => {
+      setLens.mockResolvedValue({ jobId: "0Af000000000002AAA", developerName: "Cases" });
+      const { root, deliver } = await openLenses();
+      const commerce = card(root, "Commerce timeline");
+      const pick = commerce.querySelector(".lens-pick");
+      // Sources from every lens are offered, and where each is now.
+      expect(pick.options.map((o) => o.label)).toEqual([
+        "Case \u00b7 Account",
+        "Task \u00b7 Contact (now in Marketing timeline)"
+      ]);
+      expect(commerce.querySelector("lightning-button").disabled).toBe(true);
+      pick.dispatchEvent(new CustomEvent("change", { detail: { value: "Cases" } }));
+      await flush();
+      const add = card(root, "Commerce timeline").querySelector(".lens-add lightning-button");
+      expect(add.disabled).toBe(false);
+      add.click();
+      await flush();
+      expect(setLens).toHaveBeenCalledWith({ developerName: "Cases", lens: "Commerce" });
+      // Saving: the row isn't there until Salesforce says so.
+      getSources.mockResolvedValue(
+        SOURCES_IN_LENSES.map((s) => (s.developerName === "Cases" ? { ...s, category: "Commerce" } : s))
+      );
+      deliver({ Job_Id__c: "0Af000000000002AAA", Status__c: "Succeeded" });
+      await flush();
+      await flush();
+      expect(
+        [...card(root, "Commerce timeline").querySelectorAll(".lens-source-name")].map((n) => n.textContent)
+      ).toEqual(["Case", "Invoice"]);
+    });
+
+    it("takes a source out of a lens", async () => {
+      setLens.mockResolvedValue({ jobId: "0Af000000000003AAA", developerName: "Order_Placed" });
+      const { root } = await openLenses();
+      const remove = card(root, "Commerce timeline").querySelector("lightning-button-icon");
+      expect(remove.alternativeText).toBe("Remove Invoice from Commerce timeline");
+      remove.click();
+      await flush();
+      expect(setLens).toHaveBeenCalledWith({ developerName: "Order_Placed", lens: null });
+      expect(card(root, "Commerce timeline").querySelector(".pending").textContent).toContain("Updating");
+    });
+  });
+
   it("switches a source off in place and waits for the save", async () => {
     setActive.mockResolvedValue({ jobId: "0Af000000000001AAA", developerName: "Order_Placed" });
     let deliver;
@@ -1327,12 +1464,11 @@ describe("c-time-shift-setup", () => {
     );
     expect(root.querySelector(".result-label").textContent).toBe("Order Time");
     expect(root.querySelector(".result-tag").textContent).toBe("Suggested");
-    // Once a date is chosen, its lens is asked under it.
-    expect(root.querySelector(".tune-view .chips")).toBeNull();
+    // The lens isn't asked here: sources are put in lenses on the Lenses page.
     root.querySelector(".result").click();
     await flush();
-    expect(root.querySelector(".link-question").textContent).toBe("Which lens?");
-    expect(root.querySelector(".tune-view .chips")).not.toBeNull();
+    expect(root.querySelector(".tune-view")).toBeNull();
+    expect(root.textContent).not.toContain("Which lens?");
     // The steps along the top name each step; the answers are in So far
     // (and in each step's label, for screen readers).
     const done = [...root.querySelectorAll(".knot_done")];

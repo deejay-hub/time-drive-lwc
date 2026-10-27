@@ -1816,80 +1816,108 @@ button.kd-row:focus-visible {
   margin-top: calc(0.5rem * var(--d));
 }
 
-/* Choose your timeline views: each view's name (a custom label), its
-   sources, and whether the picker offers it. */
-.view-names {
+/* Lenses: a card each, with its custom label, its sources, and a way to add one. */
+.lenses {
   display: grid;
-  gap: calc(0.375rem * var(--d));
-  width: 100%;
-  margin-top: calc(0.5rem * var(--d));
+  gap: calc(1rem * var(--d));
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.view-names-head,
-.view-name-row {
+.lens {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 6.5rem 3.5rem;
-  align-items: center;
   gap: calc(0.75rem * var(--d));
+  padding: calc(1rem * var(--d)) calc(1.25rem * var(--d));
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--surface);
 }
 
-.view-name-row {
-  padding: calc(0.375rem * var(--d)) 0;
-  border-top: 1px solid var(--rule);
-}
-
-.view-names-head {
-  color: var(--muted);
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-
-.view-names-head span:not(:first-child) {
-  text-align: end;
-}
-
-.view-name {
-  display: grid;
-  min-width: 0;
-}
-
-.view-name-text {
-  color: var(--ink);
-  font-size: 0.875rem;
-  font-weight: 700;
-}
-
-.view-label {
-  overflow: hidden;
-  color: var(--muted);
-  font-size: 0.75rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.view-name-row_off .view-name-text {
+.lens_off .lens-name {
   color: var(--muted);
   font-weight: 400;
 }
 
-.view-used {
+.lens-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(1rem * var(--d));
+}
+
+.lens-name {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+
+.lens-meta {
+  margin: 0;
   color: var(--muted);
   font-size: 0.8125rem;
-  font-variant-numeric: tabular-nums;
-  text-align: end;
 }
 
-.view-active {
-  justify-self: end;
-}
-
-.view-names-note {
+.lens-label {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem;
-  margin: calc(0.25rem * var(--d)) 0 0;
+  align-items: baseline;
+  gap: calc(0.25rem * var(--d)) calc(0.75rem * var(--d));
+  margin: 0;
   color: var(--muted);
   font-size: 0.8125rem;
+}
+
+.lens-label-key {
+  font-weight: 700;
+}
+
+.lens-label code {
+  color: var(--ink);
+  font-size: 0.75rem;
+}
+
+.lens-sources {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lens-source {
+  display: flex;
+  align-items: center;
+  gap: calc(0.75rem * var(--d));
+  padding: calc(0.375rem * var(--d)) 0;
+  border-top: 1px solid var(--rule);
+}
+
+.lens-source-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lens-source-page {
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.lens-add {
+  display: flex;
+  align-items: center;
+  gap: calc(0.75rem * var(--d));
+}
+
+.lens-pick {
+  flex: 1;
+  min-width: 0;
 }
 
 /* Deciding on an org setting: what the org has and what the timeline

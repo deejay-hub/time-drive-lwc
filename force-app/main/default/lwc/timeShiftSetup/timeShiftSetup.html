@@ -650,45 +650,6 @@
                     </button>
                     <p class="guided-text">{st.text}</p>
                     <p lwc:if={st.status} class="guided-status">{st.status}</p>
-                    <template lwc:if={st.isViews}>
-                      <div class="view-names">
-                        <div class="view-names-head" aria-hidden="true">
-                          <span>View</span>
-                          <span>Sources</span>
-                          <span>Active</span>
-                        </div>
-                        <template for:each={viewRows} for:item="v">
-                          <div key={v.key} class={v.className}>
-                            <span class="view-name">
-                              <span class="view-name-text">{v.name}</span>
-                              <code lwc:if={v.labelName} class="view-label">{v.labelName}</code>
-                            </span>
-                            <span class="view-used">{v.used}</span>
-                            <lightning-input
-                              class="view-active"
-                              type="toggle"
-                              label={v.name}
-                              variant="label-hidden"
-                              message-toggle-active=""
-                              message-toggle-inactive=""
-                              checked={v.active}
-                              disabled={v.isAll}
-                              data-key={v.key}
-                              onchange={handleViewActive}
-                            ></lightning-input>
-                          </div>
-                        </template>
-                        <p class="view-names-note">
-                          <span
-                            >To rename a view, change its custom label: the English value, or its Spanish
-                            translation.</span
-                          >
-                          <a href="/lightning/setup/ExternalStrings/home" target="_blank" rel="noopener"
-                            >Open Custom Labels</a
-                          >
-                        </p>
-                      </div>
-                    </template>
                     <template lwc:if={st.isFit}>
                       <div class="guided-choices fit">
                         <section class={st.fit.className} aria-label={st.fit.label}>
@@ -777,6 +738,121 @@
       <!-- Docs: the Config Guide and the FAQs -->
       <template lwc:elseif={isDiagnostics}>
         <c-time-shift-diagnostics></c-time-shift-diagnostics>
+      </template>
+
+      <!-- Lenses: each one's label, and the sources in it -->
+      <template lwc:elseif={isLensesPage}>
+        <header class="page-head">
+          <div class="page-head-text">
+            <h1 class="page-title" tabindex="-1">Lenses</h1>
+            <p class="page-lede">
+              A lens shows some of a record's sources, like Service. Put each source in the lens it belongs to, rename a
+              lens by changing its custom label, and offer only the lenses your org uses.
+            </p>
+          </div>
+        </header>
+        <template lwc:if={loadError}>
+          <div class="problem-state" role="alert">
+            <img class="problem-art" src={errorImage} alt="" />
+            <p class="problem-title">{loadError.message}</p>
+            <p class="problem-cause" lwc:if={loadError.cause}>{loadError.cause}</p>
+            <button class="ghost" type="button" onclick={handleRetryLoad}>Try again</button>
+          </div>
+        </template>
+        <template lwc:else>
+          <ul class="lenses">
+            <template for:each={lensCards} for:item="l">
+              <li key={l.key} class={l.className}>
+                <div class="lens-head">
+                  <div class="lens-title">
+                    <h2 class="lens-name">{l.name}</h2>
+                    <p class="lens-meta">{l.meta}</p>
+                  </div>
+                  <lightning-input
+                    class="lens-active"
+                    type="toggle"
+                    label={l.toggleLabel}
+                    variant="label-hidden"
+                    message-toggle-active=""
+                    message-toggle-inactive=""
+                    checked={l.active}
+                    disabled={l.isAll}
+                    data-key={l.key}
+                    onchange={handleLensActive}
+                  ></lightning-input>
+                </div>
+                <template lwc:if={l.labelName}>
+                  <p class="lens-label">
+                    <span class="lens-label-key">Label</span>
+                    <code>{l.labelName}</code>
+                    <span class="lens-label-reads">reads “{l.shown}” in your language</span>
+                    <a href="/lightning/setup/ExternalStrings/home" target="_blank" rel="noopener"
+                      >Edit in Custom Labels</a
+                    >
+                    <a href="/lightning/setup/LabelWorkbenchTranslate/home" target="_blank" rel="noopener">Translate</a>
+                  </p>
+                </template>
+                <template lwc:if={l.isAll}>
+                  <p class="quiet">Shows every source, so there is nothing to add.</p>
+                </template>
+                <template lwc:else>
+                  <template lwc:if={l.hasMembers}>
+                    <ul class="lens-sources" aria-label={l.name}>
+                      <template for:each={l.members} for:item="m">
+                        <li key={m.key} class="lens-source">
+                          <span class="chip chip_small" style={m.chipStyle}>
+                            <lightning-icon icon-name={m.iconName} size="xx-small" variant="inverse"></lightning-icon>
+                          </span>
+                          <span class="lens-source-name">{m.name}</span>
+                          <span class="lens-source-page">{m.page}</span>
+                          <span lwc:if={m.off} class="badge badge_off">Inactive</span>
+                          <template lwc:if={m.pending}>
+                            <span class="pending" role="status">
+                              <span class="pending-dot" aria-hidden="true"></span>Updating…
+                            </span>
+                          </template>
+                          <template lwc:else>
+                            <lightning-button-icon
+                              icon-name="utility:close"
+                              variant="bare"
+                              alternative-text={m.removeLabel}
+                              title={m.removeLabel}
+                              data-name={m.key}
+                              onclick={handleLensRemove}
+                            ></lightning-button-icon>
+                          </template>
+                        </li>
+                      </template>
+                    </ul>
+                  </template>
+                  <template lwc:else>
+                    <p class="quiet">No sources are in this lens yet.</p>
+                  </template>
+                  <template lwc:if={l.canAdd}>
+                    <div class="lens-add">
+                      <lightning-combobox
+                        class="lens-pick"
+                        label={l.name}
+                        variant="label-hidden"
+                        placeholder="Add a source…"
+                        options={l.addOptions}
+                        value={l.pick}
+                        data-key={l.key}
+                        onchange={handleLensPick}
+                      ></lightning-combobox>
+                      <lightning-button
+                        label="Add"
+                        disabled={l.cannotAdd}
+                        data-key={l.key}
+                        onclick={handleLensAdd}
+                      ></lightning-button>
+                    </div>
+                  </template>
+                </template>
+              </li>
+            </template>
+          </ul>
+        </template>
       </template>
 
       <template lwc:elseif={isDocsPage}>
@@ -1726,30 +1802,6 @@
                     </template>
                   </template>
 
-                  <!-- Lens: which lens the source belongs to, under the date -->
-                  <template lwc:if={isLensStep}>
-                    <h3 class="second-question link-question" id="lens-heading">Which lens?</h3>
-                    <div class="tune-view">
-                      <div class="second second_tight">
-                        <p class="tune-help">Pick the timeline lens it belongs to.</p>
-                        <div class="chips" role="group" aria-labelledby="lens-heading">
-                          <template for:each={viewChoices} for:item="v">
-                            <button
-                              key={v.label}
-                              class={v.className}
-                              type="button"
-                              aria-pressed={v.pressed}
-                              data-value={v.value}
-                              onclick={handleView}
-                            >
-                              {v.label}
-                            </button>
-                          </template>
-                        </div>
-                      </div>
-                    </div>
-                  </template>
-
                   <!-- Range: how far back, with what each would read -->
                   <template lwc:if={isRangeStep}>
                     <p class="volume" lwc:if={hasVolumes}>
@@ -1878,28 +1930,6 @@
                             value={draft.eventLabel}
                             onchange={handleLegendName}
                           ></lightning-input>
-                        </template>
-                        <template lwc:if={lensInName}>
-                          <div class="tune-view">
-                            <div class="second second_tight">
-                              <h3 class="tune-label" id="lens-question-name">Lens</h3>
-                              <p class="tune-help">The timeline lens it belongs to.</p>
-                              <div class="chips" role="group" aria-labelledby="lens-question-name">
-                                <template for:each={viewChoices} for:item="v">
-                                  <button
-                                    key={v.label}
-                                    class={v.className}
-                                    type="button"
-                                    aria-pressed={v.pressed}
-                                    data-value={v.value}
-                                    onclick={handleView}
-                                  >
-                                    {v.label}
-                                  </button>
-                                </template>
-                              </div>
-                            </div>
-                          </div>
                         </template>
                       </section>
                       <section class="tune-item" aria-labelledby="tune-order">

@@ -24,6 +24,7 @@ import getVolumes from "@salesforce/apex/TimeShiftSetupController.getVolumes";
 import saveDraft from "@salesforce/apex/TimeShiftSetupController.save";
 import setSourceActive from "@salesforce/apex/TimeShiftSetupController.setActive";
 import removeSource from "@salesforce/apex/TimeShiftSetupController.remove";
+import setSourceLens from "@salesforce/apex/TimeShiftSetupController.setLens";
 import { describeError, illustrationUrl } from "c/timeShiftErrors";
 import { lookupLabel } from "c/timeShiftFieldPicker";
 import { ICON_SETS } from "./iconCatalog";
@@ -195,10 +196,12 @@ const GUIDED_STEPS = [
   },
   {
     key: "views",
-    title: "Choose your timeline views",
-    text: "The timeline's picker offers All items and a view for each kind of item. Make inactive any your org won't use.",
-    what: "Saves which views the picker offers, in one deployment. Each view's name is a custom label, in English and Spanish; to rename one, change its label's translation in Custom Labels.",
-    why: "People pick a view to see only some of a record's items, like Service. Offering only the views your org uses keeps the picker short."
+    manual: true,
+    title: "Review the categories for your lenses",
+    text: "Have you reviewed the categories for your lenses?",
+    what: "Opens Lenses: each lens's name (a custom label you can translate), the sources in it, and whether the timeline's picker offers it.",
+    why: "People pick a lens to see only some of a record's items, like Service. Putting each source in the right lens, and offering only the lenses your org uses, keeps the picker short and useful.",
+    checkLabel: "I have reviewed my lenses"
   },
   {
     key: "review",
@@ -359,7 +362,6 @@ const RANGES = [
 ];
 
 // The views until Time Trail View's arrive.
-const CATEGORIES = ["Commerce", "Marketing", "Digital", "Service", "Sales"];
 const FORMATS = ["Text", "Date", "Date/Time", "Currency", "Number"].map((f) => ({ label: f, value: f }));
 
 const OBJECT_ICONS = {
@@ -922,11 +924,25 @@ export default class TimeShiftSetup extends LightningElement {
     }
     const name = Object.keys(this.pending).find((n) => this.pending[n].jobId.slice(0, 15) === job);
     if (!name) return;
-    const { label, active, removing } = this.pending[name];
+    const { label, active, removing, move } = this.pending[name];
     clearTimeout(this.pending[name].timer);
     const pending = { ...this.pending };
     delete pending[name];
     this.pending = pending;
+    if (move) {
+      if (succeeded) {
+        this.sources = this.sources.map((s) => (s.developerName === name ? { ...s, category: move.to } : s));
+        this.toast(
+          "success",
+          move.to ? `${label} is in ${this.viewNameOf(move.to)}` : `${label} is out of ${this.viewNameOf(move.from)}`,
+          ""
+        );
+      } else {
+        this.toast("error", `${label} couldn't be ${move.to ? "added" : "removed"}`, payload.Message__c || "");
+      }
+      this.loadSources();
+      return;
+    }
     // Show the outcome now, so the row doesn't fall back to its old state
     // while the list is read again.
     if (succeeded && removing) this.sources = this.sources.filter((s) => s.developerName !== name);
@@ -1009,27 +1025,108 @@ export default class TimeShiftSetup extends LightningElement {
   get viewRows() {
     return (this.viewDrafts ?? []).map((v) => {
       const active = v.developerName in this.viewEdits ? this.viewEdits[v.developerName] : v.active;
-      const used = this.sources.filter((src) => src.category === v.developerName).length;
+      return { key: v.developerName, active };
+    });
+  }
+
+  // The Lenses page: each lens with the custom label behind its name, the
+  // sources in it, and a way to add one. A source is in one lens at a time.
+  lensPick = {};
+
+  get lensCards() {
+    return (this.viewDrafts ?? []).map((v) => {
+      const key = v.developerName;
+      const isAll = key === "All";
+      const name = v.shown || v.name;
+      const active = key in this.viewEdits ? this.viewEdits[key] : v.active;
+      const members = isAll
+        ? []
+        : this.sources
+            .filter((src) => src.category === key)
+            .sort((a, b) => this.sourceName(a).localeCompare(this.sourceName(b)))
+            .map((src) => {
+              const pending = this.pending[src.developerName];
+              const label = this.sourceName(src);
+              return {
+                key: src.developerName,
+                name: label,
+                page: this.parentLabelOf(src.parentObject),
+                iconName: src.icon || "utility:record",
+                chipStyle: `--chip: ${src.iconColour || "var(--setup-chip)"}`,
+                off: !src.active,
+                pending: Boolean(pending),
+                removeLabel: `Remove ${label} from ${name}`
+              };
+            });
+      const options = isAll
+        ? []
+        : this.sources
+            .filter((src) => src.category !== key)
+            .sort((a, b) => this.sourceName(a).localeCompare(this.sourceName(b)))
+            .map((src) => ({
+              value: src.developerName,
+              label: `${this.sourceName(src)} · ${this.parentLabelOf(src.parentObject)}${
+                src.category ? ` (now in ${this.viewNameOf(src.category)})` : ""
+              }`
+            }));
+      const pick = this.lensPick[key] ?? "";
       return {
-        key: v.developerName,
-        name: v.shown || v.name,
-        labelName: v.labelName,
+        key,
+        name,
+        isAll,
         active,
-        isAll: v.developerName === "All",
-        className: `view-name-row${active ? "" : " view-name-row_off"}`,
-        used: v.developerName === "All" ? "Every source" : `${used} ${used === 1 ? "source" : "sources"}`
+        labelName: v.labelName,
+        shown: v.shown,
+        meta: isAll ? "Shows every source" : `${members.length} ${members.length === 1 ? "source" : "sources"}`,
+        members,
+        hasMembers: members.length > 0,
+        addOptions: options,
+        canAdd: options.length > 0,
+        pick,
+        cannotAdd: !pick,
+        toggleLabel: `${name}: offered in the picker`,
+        className: `lens${active ? "" : " lens_off"}`
       };
     });
   }
 
-  get viewsChanged() {
-    return (this.viewDrafts ?? []).some(
-      (v) => v.developerName in this.viewEdits && this.viewEdits[v.developerName] !== v.active
-    );
+  handleLensPick(event) {
+    this.lensPick = { ...this.lensPick, [event.target.dataset.key]: event.detail.value };
   }
 
-  handleViewActive(event) {
+  handleLensAdd(event) {
+    const key = event.currentTarget.dataset.key;
+    const name = this.lensPick[key];
+    if (!name) return;
+    this.lensPick = { ...this.lensPick, [key]: "" };
+    this.moveToLens(name, key);
+  }
+
+  handleLensRemove(event) {
+    this.moveToLens(event.currentTarget.dataset.name, null);
+  }
+
+  // Offered in the picker or not: saved as it is switched.
+  handleLensActive(event) {
     this.viewEdits = { ...this.viewEdits, [event.target.dataset.key]: event.target.checked };
+    if (!this.viewSaving) this.saveViewChoices();
+  }
+
+  async moveToLens(name, lens) {
+    const source = this.sources.find((src) => src.developerName === name);
+    if (!source || this.pending[name]) return;
+    const label = this.sourceName(source);
+    try {
+      const ticket = await setSourceLens({ developerName: name, lens });
+      // eslint-disable-next-line @lwc/lwc/no-async-operation
+      const timer = setTimeout(() => this.slowToggle(name), SAVE_PATIENCE);
+      this.pending = {
+        ...this.pending,
+        [name]: { jobId: ticket.jobId, move: { to: lens, from: source.category }, label, timer }
+      };
+    } catch (e) {
+      this.toast("error", `${label} couldn't be ${lens ? "added" : "removed"}`, plainError(e).message);
+    }
   }
 
   async saveViewChoices() {
@@ -1178,6 +1275,10 @@ export default class TimeShiftSetup extends LightningElement {
     return this.view === "setup";
   }
 
+  get isLensesPage() {
+    return this.view === "lenses";
+  }
+
   get isDocsPage() {
     return this.view === "docs";
   }
@@ -1207,6 +1308,7 @@ export default class TimeShiftSetup extends LightningElement {
       { key: "dashboard", label: "Dashboard" },
       { key: "setup", label: "Setup" },
       { key: "pages", label: "Customize" },
+      { key: "lenses", label: "Lenses" },
       { key: "diagnostics", label: "Diagnostics" },
       { key: "docs", label: "Docs" }
     ].map((item) => ({
@@ -1254,7 +1356,7 @@ export default class TimeShiftSetup extends LightningElement {
 
   // The menu's own pages need no breadcrumb.
   get showCrumbs() {
-    return !["home", "dashboard", "setup", "pages", "diagnostics", "docs"].includes(this.view);
+    return !["home", "dashboard", "setup", "pages", "lenses", "diagnostics", "docs"].includes(this.view);
   }
 
   // A new page starts at the top, with focus on its heading.
@@ -1819,19 +1921,7 @@ export default class TimeShiftSetup extends LightningElement {
       case "perms":
         return [{ label: "Open permission sets", href: "/lightning/setup/PermSets/home" }];
       case "views":
-        return [
-          {
-            label: this.viewSaving
-              ? "Saving…"
-              : this.viewsChanged
-                ? "Save the views"
-                : done
-                  ? "Saved"
-                  : "Keep these views",
-            handler: "views",
-            primary: !done || this.viewsChanged
-          }
-        ];
+        return [{ label: "Open Lenses", handler: "lenses", primary: !done }];
       case "fit": {
         const c = step.fit;
         const saving = this.fitSaving?.key === c.key;
@@ -1892,8 +1982,7 @@ export default class TimeShiftSetup extends LightningElement {
         ...state,
         actions,
         number: String(i + 1),
-        isFit: step.kind === "fit",
-        isViews: step.key === "views"
+        isFit: step.kind === "fit"
       };
     });
     const selected = this.guidedSelected ?? steps.find((st) => !st.done)?.key ?? steps[0].key;
@@ -1978,7 +2067,7 @@ export default class TimeShiftSetup extends LightningElement {
     if (handler === "add") this.handleAddFromHome();
     else if (handler === "customize") this.show("pages");
     else if (handler === "fit" && !this.fitSaving) this.saveOrgFit(event.currentTarget.dataset.fit);
-    else if (handler === "views" && !this.viewSaving) this.saveViewChoices();
+    else if (handler === "lenses") this.show("lenses");
     else if (handler === "video") this.handleWatchVideo();
     else if (handler === "retry") this.handleRetryLoad();
   }
@@ -2119,7 +2208,7 @@ export default class TimeShiftSetup extends LightningElement {
 
   sourceCard(s, index) {
     const pending = this.pending[s.developerName];
-    const active = pending && !pending.removing ? pending.active : s.active;
+    const active = pending && !pending.removing && !pending.move ? pending.active : s.active;
     const name = this.sourceName(s);
     return {
       ...s,
@@ -2129,9 +2218,11 @@ export default class TimeShiftSetup extends LightningElement {
       pendingText: pending
         ? pending.removing
           ? "Removing…"
-          : pending.active
-            ? "Making active…"
-            : "Making inactive…"
+          : pending.move
+            ? "Updating its lens…"
+            : pending.active
+              ? "Making active…"
+              : "Making inactive…"
         : "",
       className: `row${active ? "" : " row_off"}${pending?.removing ? " row_leaving" : ""}${
         s.developerName === this.justSaved ? " row_saved" : ""
@@ -2659,18 +2750,9 @@ export default class TimeShiftSetup extends LightningElement {
     this.relatedDateOpen = false;
   }
 
-  // Under the date (Apex classes, which have none, set it with their name).
-  get isLensStep() {
-    return this.stepKey === "date" && Boolean(this.draft.dateField) && !this.showPickerResults;
-  }
-
   // Icon and colour down the left, the title and subtitle down the right.
   get styleGridClass() {
     return `style-grid${this.showWords ? "" : " style-grid_solo"}`;
-  }
-
-  get lensInName() {
-    return this.uiKind === "apex";
   }
 
   get isFilterStep() {
@@ -3827,25 +3909,6 @@ export default class TimeShiftSetup extends LightningElement {
   }
 
   // ---- step: name ----------------------------------------------------------
-
-  get viewChoices() {
-    const current = this.draft.category ?? "";
-    const keys = this.viewDrafts
-      ? this.viewDrafts
-          .filter((v) => v.developerName !== "All" && (v.active || v.developerName === current))
-          .map((v) => v.developerName)
-      : CATEGORIES;
-    return [...keys, ""].map((c) => ({
-      value: c,
-      label: c ? this.viewNameOf(c) : "None",
-      pressed: String(current === c),
-      className: `chip-choice${current === c ? " chip-choice_on" : ""}`
-    }));
-  }
-
-  handleView(event) {
-    this.update({ category: event.currentTarget.dataset.value || null });
-  }
 
   // ---- step: words ---------------------------------------------------------
 

@@ -737,6 +737,40 @@ private class TimeShiftSetupControllerTest {
   }
 
   @IsTest
+  static void putsASourceInALensOrTakesItOut() {
+    // Into a lens that exists: its Category is that lens's key.
+    TimeShiftSetupController.SaveTicket ticket = TimeShiftSetupController.setLens('Order_Placed', 'Sales');
+    Assert.areEqual('Order_Placed', ticket.developerName);
+    TimeShiftSetupController.SourceDraft d = new TimeShiftSetupController.SourceDraft(
+      TimeShiftTestData.source('Order_Placed')
+    );
+    d.category = 'Sales';
+    Map<String, Object> values = new Map<String, Object>();
+    for (Metadata.CustomMetadataValue v : TimeShiftSetupController.sourceMetadata(d).values) {
+      values.put(v.field, v.value);
+    }
+    Assert.areEqual('Sales', values.get('Category__c'));
+    // Out of them, with a blank.
+    Assert.areEqual('Order_Placed', TimeShiftSetupController.setLens('Order_Placed', null).developerName);
+    Assert.areEqual('Order_Placed', TimeShiftSetupController.setLens('Order_Placed', '').developerName);
+    // A lens that isn't one (All is not a tag to put a source in), or a source that isn't there.
+    for (String bad : new List<String>{ 'NoSuchLens', TimeShiftConfig.ALL_VIEW }) {
+      try {
+        TimeShiftSetupController.setLens('Order_Placed', bad);
+        Assert.fail(bad + ' is not a lens to put a source in');
+      } catch (AuraHandledException e) {
+        Assert.areEqual('There is no lens called ' + bad + '.', e.getMessage());
+      }
+    }
+    try {
+      TimeShiftSetupController.setLens('No_Such_Source', 'Sales');
+      Assert.fail('A missing source should say so');
+    } catch (AuraHandledException e) {
+      Assert.areEqual('That source no longer exists.', e.getMessage());
+    }
+  }
+
+  @IsTest
   static void removesASourceBySwitchingItOffAndHidingIt() {
     TimeShiftSetupController.SaveTicket ticket = TimeShiftSetupController.remove('Order_Placed');
     Assert.areEqual('Order_Placed', ticket.developerName);

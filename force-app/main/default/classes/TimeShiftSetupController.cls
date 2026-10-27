@@ -1312,6 +1312,35 @@ public with sharing class TimeShiftSetupController {
   }
 
   /**
+   * Puts a source in a lens (one of the timeline's views, by its key), or takes
+   * it out of them when `lens` is blank: its Category, which the timeline's
+   * lens picker filters by. A source is in one lens at a time.
+   */
+  @AuraEnabled
+  public static SaveTicket setLens(String developerName, String lens) {
+    requireSetupAccess();
+    Time_Shift_Source__mdt s = TimeShiftConfig.source(developerName);
+    if (s == null) {
+      throw failure('That source no longer exists.');
+    }
+    String category = String.isBlank(lens) ? null : lens.trim();
+    if (category != null) {
+      Boolean known = false;
+      for (Time_Shift_View__mdt v : TimeShiftConfig.views()) {
+        known = known || (v.DeveloperName == category && v.DeveloperName != TimeShiftConfig.ALL_VIEW);
+      }
+      if (!known) {
+        throw failure('There is no lens called ' + category + '.');
+      }
+    }
+    SourceDraft d = new SourceDraft(s);
+    d.category = category;
+    Metadata.DeployContainer container = new Metadata.DeployContainer();
+    container.addMetadata(sourceMetadata(d));
+    return new SaveTicket(deploy(container, developerName), developerName);
+  }
+
+  /**
    * Removes a source: switched off and marked removed, so the timeline and
    * this page leave it out. (Apex can't delete metadata records; Setup can.)
    */
