@@ -1904,8 +1904,19 @@ button.kd-row:focus-visible {
   white-space: nowrap;
 }
 
-.lens-source-page {
+/* Record page › the records it reads, then what the filter calls it. */
+.lens-source-parent,
+.lens-source-sep,
+.lens-source-filter {
   color: var(--muted);
+  font-weight: 400;
+}
+
+.lens-source-parent {
+  font-size: 0.8125rem;
+}
+
+.lens-source-filter {
   font-size: 0.8125rem;
 }
 
@@ -1915,6 +1926,7 @@ button.kd-row:focus-visible {
   gap: calc(0.75rem * var(--d));
 }
 
+.lens-page,
 .lens-pick {
   flex: 1;
   min-width: 0;

@@ -1074,6 +1074,7 @@ describe("c-time-shift-setup", () => {
         objectName: "Invoice__c",
         objectLabel: "Invoice",
         label: "Order placed",
+        legendName: "Orders",
         kind: "Salesforce",
         active: true,
         category: "Commerce",
@@ -1086,6 +1087,7 @@ describe("c-time-shift-setup", () => {
         objectName: "Task",
         objectLabel: "Task",
         label: "Tasks",
+        legendName: "Task",
         kind: "Salesforce",
         active: false,
         category: "Marketing",
@@ -1098,6 +1100,7 @@ describe("c-time-shift-setup", () => {
         objectName: "Case",
         objectLabel: "Case",
         label: "Cases",
+        legendName: "Cases",
         kind: "Salesforce",
         active: true,
         category: null,
@@ -1161,36 +1164,49 @@ describe("c-time-shift-setup", () => {
       expect(all.querySelector(".lens-active").disabled).toBe(true);
     });
 
-    it("lists the sources in a lens by the records they read, with the page they're on", async () => {
+    it("lists a lens's sources as record page \u203a records they read, with the filter's name in brackets", async () => {
       const { root } = await openLenses();
       const commerce = card(root, "Commerce timeline");
       expect(commerce.querySelector(".lens-meta").textContent).toBe("1 source");
-      expect([...commerce.querySelectorAll(".lens-source-name")].map((n) => n.textContent)).toEqual(["Invoice"]);
-      expect(commerce.querySelector(".lens-source-page").textContent).toBe("Contact");
-      // An inactive source is marked.
+      const row = commerce.querySelector(".lens-source");
+      expect(row.querySelector(".lens-source-parent").textContent).toBe("Contact");
+      expect(row.querySelector(".lens-source-object").textContent).toBe("Invoice");
+      expect(row.querySelector(".lens-source-filter").textContent).toBe("(Orders)");
+      // The same name again isn't repeated in brackets; an inactive source is marked.
       const marketing = card(root, "Marketing timeline");
+      expect(marketing.querySelector(".lens-source-object").textContent).toBe("Task");
+      expect(marketing.querySelector(".lens-source-filter")).toBeNull();
       expect(marketing.querySelector(".lens-source .badge_off").textContent).toBe("Inactive");
     });
 
-    it("adds a configured source to a lens, saves it, and shows it there once saved", async () => {
+    it("adds a source by choosing its record page first, then its object, and saves it", async () => {
       setLens.mockResolvedValue({ jobId: "0Af000000000002AAA", developerName: "Cases" });
       const { root, deliver } = await openLenses();
-      const commerce = card(root, "Commerce timeline");
-      const pick = commerce.querySelector(".lens-pick");
-      // Sources from every lens are offered, and where each is now.
-      expect(pick.options.map((o) => o.label)).toEqual([
-        "Case \u00b7 Account",
-        "Task \u00b7 Contact (now in Marketing timeline)"
-      ]);
-      expect(commerce.querySelector("lightning-button").disabled).toBe(true);
+      const lens = () => card(root, "Commerce timeline");
+      // The record pages with something to add come first; the objects wait for one.
+      expect(
+        lens()
+          .querySelector(".lens-page")
+          .options.map((o) => o.label)
+      ).toEqual(["Contact \u00b7 1 source", "Account \u00b7 1 source"]);
+      expect(lens().querySelector(".lens-pick").disabled).toBe(true);
+      expect(lens().querySelector(".lens-add lightning-button").disabled).toBe(true);
+      lens()
+        .querySelector(".lens-page")
+        .dispatchEvent(new CustomEvent("change", { detail: { value: "Account" } }));
+      await flush();
+      // Then that page's own objects, by the records they read and what the filter calls them.
+      const pick = lens().querySelector(".lens-pick");
+      expect(pick.disabled).toBe(false);
+      expect(pick.options.map((o) => o.label)).toEqual(["Case (Cases)"]);
       pick.dispatchEvent(new CustomEvent("change", { detail: { value: "Cases" } }));
       await flush();
-      const add = card(root, "Commerce timeline").querySelector(".lens-add lightning-button");
+      const add = lens().querySelector(".lens-add lightning-button");
       expect(add.disabled).toBe(false);
       add.click();
       await flush();
       expect(setLens).toHaveBeenCalledWith({ developerName: "Cases", lens: "Commerce" });
-      // Saving: the row isn't there until Salesforce says so.
+      // Saved: it joins the lens, under its page.
       getSources.mockResolvedValue(
         SOURCES_IN_LENSES.map((s) => (s.developerName === "Cases" ? { ...s, category: "Commerce" } : s))
       );
@@ -1198,15 +1214,42 @@ describe("c-time-shift-setup", () => {
       await flush();
       await flush();
       expect(
-        [...card(root, "Commerce timeline").querySelectorAll(".lens-source-name")].map((n) => n.textContent)
-      ).toEqual(["Case", "Invoice"]);
+        [...lens().querySelectorAll(".lens-source")].map(
+          (r) =>
+            `${r.querySelector(".lens-source-parent").textContent} > ${r.querySelector(".lens-source-object").textContent}`
+        )
+      ).toEqual(["Contact > Invoice", "Account > Case"]);
+    });
+
+    it("says which lens a source is in now when it is offered, and changing the page starts the choice again", async () => {
+      const { root } = await openLenses();
+      const lens = () => card(root, "Commerce timeline");
+      lens()
+        .querySelector(".lens-page")
+        .dispatchEvent(new CustomEvent("change", { detail: { value: "Contact" } }));
+      await flush();
+      expect(
+        lens()
+          .querySelector(".lens-pick")
+          .options.map((o) => o.label)
+      ).toEqual(["Task \u2014 now in Marketing timeline"]);
+      lens()
+        .querySelector(".lens-pick")
+        .dispatchEvent(new CustomEvent("change", { detail: { value: "Tasks" } }));
+      await flush();
+      expect(lens().querySelector(".lens-add lightning-button").disabled).toBe(false);
+      lens()
+        .querySelector(".lens-page")
+        .dispatchEvent(new CustomEvent("change", { detail: { value: "Account" } }));
+      await flush();
+      expect(lens().querySelector(".lens-add lightning-button").disabled).toBe(true);
     });
 
     it("takes a source out of a lens", async () => {
       setLens.mockResolvedValue({ jobId: "0Af000000000003AAA", developerName: "Order_Placed" });
       const { root } = await openLenses();
       const remove = card(root, "Commerce timeline").querySelector("lightning-button-icon");
-      expect(remove.alternativeText).toBe("Remove Invoice from Commerce timeline");
+      expect(remove.alternativeText).toBe("Remove Contact Invoice from Commerce timeline");
       remove.click();
       await flush();
       expect(setLens).toHaveBeenCalledWith({ developerName: "Order_Placed", lens: null });

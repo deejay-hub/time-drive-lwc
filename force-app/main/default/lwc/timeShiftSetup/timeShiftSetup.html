@@ -803,8 +803,12 @@
                           <span class="chip chip_small" style={m.chipStyle}>
                             <lightning-icon icon-name={m.iconName} size="xx-small" variant="inverse"></lightning-icon>
                           </span>
-                          <span class="lens-source-name">{m.name}</span>
-                          <span class="lens-source-page">{m.page}</span>
+                          <span class="lens-source-name">
+                            <span class="lens-source-parent">{m.parent}</span>
+                            <span class="lens-source-sep" aria-hidden="true">›</span>
+                            <span class="lens-source-object">{m.name}</span>
+                            <span lwc:if={m.filterName} class="lens-source-filter">({m.filterName})</span>
+                          </span>
                           <span lwc:if={m.off} class="badge badge_off">Inactive</span>
                           <template lwc:if={m.pending}>
                             <span class="pending" role="status">
@@ -831,12 +835,23 @@
                   <template lwc:if={l.canAdd}>
                     <div class="lens-add">
                       <lightning-combobox
-                        class="lens-pick"
-                        label={l.name}
+                        class="lens-page"
+                        label="Record page"
                         variant="label-hidden"
-                        placeholder="Add a source…"
+                        placeholder="Record page…"
+                        options={l.pageOptions}
+                        value={l.page}
+                        data-key={l.key}
+                        onchange={handleLensParent}
+                      ></lightning-combobox>
+                      <lightning-combobox
+                        class="lens-pick"
+                        label="Source"
+                        variant="label-hidden"
+                        placeholder="Then its object…"
                         options={l.addOptions}
                         value={l.pick}
+                        disabled={l.noPage}
                         data-key={l.key}
                         onchange={handleLensPick}
                       ></lightning-combobox>

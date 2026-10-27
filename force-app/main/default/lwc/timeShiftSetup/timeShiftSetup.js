@@ -1031,9 +1031,26 @@ export default class TimeShiftSetup extends LightningElement {
 
   // The Lenses page: each lens with the custom label behind its name, the
   // sources in it, and a way to add one. A source is in one lens at a time.
+  // Sources are named by the records they read (Task Relation), with what the
+  // filter calls them after it in brackets (Tasks) when that is different.
   lensPick = {};
+  lensParentPick = {};
+
+  // What the filter calls a source, when it isn't just the object's name again.
+  filterNameOf(src) {
+    const legend = (src.legendName || src.eventLabel || "").trim();
+    return legend && legend.toLowerCase() !== this.sourceName(src).toLowerCase() ? legend : "";
+  }
+
+  // "Task Relation (Tasks)".
+  sourceWithFilterName(src) {
+    const legend = this.filterNameOf(src);
+    return legend ? `${this.sourceName(src)} (${legend})` : this.sourceName(src);
+  }
 
   get lensCards() {
+    const order = (src) => PARENTS.findIndex((p) => p.value === (src.parentObject || "Contact"));
+    const byPageThenName = (a, b) => order(a) - order(b) || this.sourceName(a).localeCompare(this.sourceName(b));
     return (this.viewDrafts ?? []).map((v) => {
       const key = v.developerName;
       const isAll = key === "All";
@@ -1043,33 +1060,39 @@ export default class TimeShiftSetup extends LightningElement {
         ? []
         : this.sources
             .filter((src) => src.category === key)
-            .sort((a, b) => this.sourceName(a).localeCompare(this.sourceName(b)))
+            .sort(byPageThenName)
             .map((src) => {
               const pending = this.pending[src.developerName];
-              const label = this.sourceName(src);
+              const object = this.sourceName(src);
               return {
                 key: src.developerName,
-                name: label,
-                page: this.parentLabelOf(src.parentObject),
+                parent: this.parentLabelOf(src.parentObject),
+                name: object,
+                filterName: this.filterNameOf(src),
                 iconName: src.icon || "utility:record",
                 chipStyle: `--chip: ${src.iconColour || "var(--setup-chip)"}`,
                 off: !src.active,
                 pending: Boolean(pending),
-                removeLabel: `Remove ${label} from ${name}`
+                removeLabel: `Remove ${this.parentLabelOf(src.parentObject)} ${object} from ${name}`
               };
             });
-      const options = isAll
-        ? []
-        : this.sources
-            .filter((src) => src.category !== key)
-            .sort((a, b) => this.sourceName(a).localeCompare(this.sourceName(b)))
-            .map((src) => ({
-              value: src.developerName,
-              label: `${this.sourceName(src)} · ${this.parentLabelOf(src.parentObject)}${
-                src.category ? ` (now in ${this.viewNameOf(src.category)})` : ""
-              }`
-            }));
-      const pick = this.lensPick[key] ?? "";
+      // Adding: the record page first, then the objects on it.
+      const offered = isAll ? [] : this.sources.filter((src) => src.category !== key);
+      const pages = PARENTS.filter((p) => offered.some((src) => (src.parentObject || "Contact") === p.value)).map(
+        (p) => {
+          const count = offered.filter((src) => (src.parentObject || "Contact") === p.value).length;
+          return { value: p.value, label: `${p.label} · ${count} ${count === 1 ? "source" : "sources"}` };
+        }
+      );
+      const page = this.lensParentPick[key] ?? "";
+      const options = offered
+        .filter((src) => (src.parentObject || "Contact") === page)
+        .sort(byPageThenName)
+        .map((src) => ({
+          value: src.developerName,
+          label: `${this.sourceWithFilterName(src)}${src.category ? ` \u2014 now in ${this.viewNameOf(src.category)}` : ""}`
+        }));
+      const pick = options.some((o) => o.value === this.lensPick[key]) ? this.lensPick[key] : "";
       return {
         key,
         name,
@@ -1080,14 +1103,23 @@ export default class TimeShiftSetup extends LightningElement {
         meta: isAll ? "Shows every source" : `${members.length} ${members.length === 1 ? "source" : "sources"}`,
         members,
         hasMembers: members.length > 0,
+        canAdd: pages.length > 0,
+        pageOptions: pages,
+        page,
         addOptions: options,
-        canAdd: options.length > 0,
+        noPage: !page,
         pick,
         cannotAdd: !pick,
         toggleLabel: `${name}: offered in the picker`,
         className: `lens${active ? "" : " lens_off"}`
       };
     });
+  }
+
+  handleLensParent(event) {
+    const key = event.target.dataset.key;
+    this.lensParentPick = { ...this.lensParentPick, [key]: event.detail.value };
+    this.lensPick = { ...this.lensPick, [key]: "" };
   }
 
   handleLensPick(event) {
