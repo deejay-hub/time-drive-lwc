@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1000" viewBox="0 0 1500 1000">
+<title>Time Drive: Horizontal and vertical</title>
+<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F4FAF7"/><stop offset="1" stop-color="#DDEFE8"/></linearGradient><radialGradient id="glow"><stop offset="0" stop-color="#7FC2AC" stop-opacity="0.35"/><stop offset="1" stop-color="#7FC2AC" stop-opacity="0"/></radialGradient><clipPath id="canvas"><rect width="1500" height="1000"/></clipPath></defs>
+<g clip-path="url(#canvas)">
+<rect id="background" width="1500" height="1000" fill="url(#bg)"/>
+<circle id="glow" cx="1170.0" cy="300.0" r="620.0" fill="url(#glow)"/>
+<circle cx="104" cy="140" r="6" fill="#0F6B58"/>
+<text id="kicker" x="122" y="147" font-family="Sora, 'Helvetica Neue', Arial, sans-serif" font-size="20" font-weight="800" text-anchor="start" letter-spacing="3" fill="#0F6B58">HORIZONTAL OR VERTICAL</text>
+<text id="headline" x="96" y="250" font-family="Sora, 'Helvetica Neue', Arial, sans-serif" font-size="76" font-weight="800" text-anchor="start" fill="#0B2B26">Two ways</text>
+<text x="96" y="336" font-family="Sora, 'Helvetica Neue', Arial, sans-serif" font-size="76" font-weight="800" text-anchor="start" fill="#0B2B26">to see time.</text>
+<text id="subtext" x="96" y="440" font-family="Lato, 'Helvetica Neue', Arial, sans-serif" font-size="30" font-weight="400" text-anchor="start" fill="#44564F">Run it across a wide region or</text>
+<text x="96" y="482" font-family="Lato, 'Helvetica Neue', Arial, sans-serif" font-size="30" font-weight="400" text-anchor="start" fill="#44564F">down a narrow one. Auto picks the</text>
+<text x="96" y="524" font-family="Lato, 'Helvetica Neue', Arial, sans-serif" font-size="30" font-weight="400" text-anchor="start" fill="#44564F">layout that fits; set it per page.</text>
+<rect x="96" y="600" width="168" height="44" rx="22.0" fill="#FFFFFF" fill-opacity="1.0" stroke="#9CCBBD" stroke-opacity="0.6"/>
+<text x="180.0" y="629.0" font-family="Sora, 'Helvetica Neue', Arial, sans-serif" font-size="20" font-weight="700" text-anchor="middle" fill="#0B4D43">Horizontal</text>
+<rect x="276" y="600" width="143" height="44" rx="22.0" fill="#FFFFFF" fill-opacity="1.0" stroke="#9CCBBD" stroke-opacity="0.6"/>
+<text x="347.5" y="629.0" font-family="Sora, 'Helvetica Neue', Arial, sans-serif" font-size="20" font-weight="700" text-anchor="middle" fill="#0B4D43">Vertical</text>
+<rect x="431" y="600" width="93" height="44" rx="22.0" fill="#0F6B58" fill-opacity="1" stroke="#0F6B58" stroke-opacity="0.6"/>
+<text x="477.5" y="629.0" font-family="Sora, 'Helvetica Neue', Arial, sans-serif" font-size="20" font-weight="700" text-anchor="middle" fill="#FFFFFF">Auto</text>
+<line x1="668" y1="110" x2="668" y2="880" stroke="#0F6B58" stroke-opacity="0.45" stroke-width="4" stroke-linecap="round"/>
+<circle cx="668" cy="248.6" r="11" fill="#2F7D4F"/>
+<circle cx="668" cy="495.0" r="11" fill="#E5532F"/>
+<circle cx="668" cy="741.4000000000001" r="11" fill="#5B5FC7"/>
+<rect x="730" y="142" width="740" height="480" rx="68" fill="#0B4D43" fill-opacity="0.028"/>
+<rect x="742" y="154" width="716" height="456" rx="56" fill="#0B4D43" fill-opacity="0.044"/>
+<rect x="752" y="164" width="696" height="436" rx="46" fill="#0B4D43" fill-opacity="0.064"/>
+<rect id="tablet-2a" x="760" y="150" width="680" height="420" rx="38" fill="#FFFFFF" stroke="#C5DDD4" stroke-width="2"/>
+<g id="screen-2a"><rect x="774" y="164" width="652" height="392" rx="26" fill="#FFFFFF" stroke="#0F6B58" stroke-width="2.5" stroke-dasharray="12 9"/>
+<text x="1100.0" y="348.0" font-family="Sora, 'Helvetica Neue', Arial, sans-serif" font-size="30" font-weight="800" text-anchor="middle" letter-spacing="1" fill="#0B4D43">SCREEN 2a</text>
+<text x="1100.0" y="389.4" font-family="Lato, 'Helvetica Neue', Arial, sans-serif" font-size="24" font-weight="700" text-anchor="middle" fill="#0B4D43">Horizontal</text>
+<text x="1100.0" y="420.9" font-family="Lato, 'Helvetica Neue', Arial, sans-serif" font-size="21" font-weight="400" text-anchor="middle" fill="#0B4D43">Days across, heat map beneath</text>
+<text x="1100.0" y="452.4" font-family="Lato, 'Helvetica Neue', Arial, sans-serif" font-size="18" font-weight="400" text-anchor="middle" fill="#0B4D43" fill-opacity="0.8">652 x 392 px (capture at 2x)</text>
+</g>
+<rect x="950" y="462" width="520" height="620" rx="68" fill="#0B4D43" fill-opacity="0.028"/>
+<rect x="962" y="474" width="496" height="596" rx="56" fill="#0B4D43" fill-opacity="0.044"/>
+<rect x="972" y="484" width="476" height="576" rx="46" fill="#0B4D43" fill-opacity="0.064"/>
+<rect id="tablet-2b" x="980" y="470" width="460" height="560" rx="38" fill="#FFFFFF" stroke="#C5DDD4" stroke-width="2"/>
+<g id="screen-2b"><rect x="994" y="484" width="432" height="532" rx="26" fill="#FFFFFF" stroke="#0F6B58" stroke-width="2.5" stroke-dasharray="12 9"/>
+<text x="1210.0" y="698.2" font-family="Sora, 'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="800" text-anchor="middle" letter-spacing="1" fill="#0B4D43">SCREEN 2b</text>
+<text x="1210.0" y="730.8" font-family="Lato, 'Helvetica Neue', Arial, sans-serif" font-size="20" font-weight="700" text-anchor="middle" fill="#0B4D43">Vertical</text>
+<text x="1210.0" y="756.3" font-family="Lato, 'Helvetica Neue', Arial, sans-serif" font-size="17" font-weight="400" text-anchor="middle" fill="#0B4D43">Days down, in a narrow column</text>
+<text x="1210.0" y="781.8" font-family="Lato, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="400" text-anchor="middle" fill="#0B4D43" fill-opacity="0.8">432 x 532 px (capture at 2x)</text>
+</g>
+<rect id="footer" y="930" width="1500" height="70" fill="#FFFFFF" fill-opacity="0.94"/>
+<g id="footer-logo" transform="translate(96 944) scale(0.4)"><rect width="100" height="100" rx="18" fill="#0B4D43"/>
+<rect x="16" y="16" width="68" height="68" rx="8" fill="#FFFFFF"/>
+<rect x="31" y="30" width="4" height="42" rx="2" fill="#0F6B58" fill-opacity="0.45"/>
+<circle cx="33" cy="30" r="6" fill="#2F7D4F"/><circle cx="33" cy="50" r="6" fill="#E5532F"/><circle cx="33" cy="70" r="6" fill="#5B5FC7"/>
+<rect x="45" y="27" width="26" height="5" rx="2.5" fill="#2A1A12"/><rect x="45" y="47" width="20" height="5" rx="2.5" fill="#2A1A12"/>
+<rect x="45" y="67" width="23" height="5" rx="2.5" fill="#2A1A12" fill-opacity="0.35"/></g>
+<text x="150" y="972" font-family="Sora, 'Helvetica Neue', Arial, sans-serif" font-size="24" font-weight="800" text-anchor="start" fill="#0B4D43">Time Drive</text>
+<text x="1404" y="972" font-family="Lato, 'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="700" text-anchor="end" fill="#0B4D43" fill-opacity="0.8">2 / 10</text>
+</g>
+</svg>

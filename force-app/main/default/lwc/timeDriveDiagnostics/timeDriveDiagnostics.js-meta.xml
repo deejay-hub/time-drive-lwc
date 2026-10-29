@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>67.0</apiVersion>
+    <isExposed>false</isExposed>
+    <description
+  >The Diagnostics page in Time Drive Setup: runs a record's timeline and shows the queries, timings, permissions and what was left out.</description>
+</LightningComponentBundle>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>One thing a Time Drive plots: a Salesforce object, a Data 360 object or an Apex class, with how it links to the page, its date, filter, words, look and the fields shown when an item is opened.</description>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <enableActivities>false</enableActivities>
+    <enableBulkApi>true</enableBulkApi>
+    <enableHistory>false</enableHistory>
+    <enableReports>true</enableReports>
+    <enableSearch>false</enableSearch>
+    <enableSharing>true</enableSharing>
+    <enableStreamingApi>true</enableStreamingApi>
+    <label>Time Drive Record</label>
+    <nameField>
+        <label>Time Drive Record Name</label>
+        <type>Text</type>
+    </nameField>
+    <pluralLabel>Time Drive Records</pluralLabel>
+    <sharingModel>ControlledByParent</sharingModel>
+    <visibility>Public</visibility>
+</CustomObject>

@@ -1,7 +1,7 @@
 # Every end-user string of the timeline components, with its Spanish and Arabic.
 # (key, what it is, English, Spanish, Arabic). {0}, {1} ... are filled in by the
-# component. The label's API name is Time_Shift_<key>; generate.py writes the
-# custom labels, the es and ar translations and lwc/timeShiftLabels from this.
+# component. The label's API name is Time_Drive_<key>; generate.py writes the
+# custom labels, the es and ar translations and lwc/timeDriveLabels from this.
 #
 # Arabic and Spanish are drafts: have a native speaker review them. Arabic has
 # singular, dual and plural forms; the counts here use one plural form each.
@@ -38,7 +38,7 @@ LABELS = [
     # ---- server messages (Server_*: used by Apex, not the components). {0}... are filled in with String.format;
     # no straight apostrophes: String.format treats them as quotes.
     ("Server_Apex_Needs_Class", "warning: an Apex source has no class", "{0}: an Apex source needs a Provider Class.", "{0}: un origen de Apex necesita una clase proveedora.", "{0}: يحتاج مصدر Apex إلى فئة موفّر."),
-    ("Server_Bad_Provider", "warning: the class is not a provider", "{0}: {1} is not a TimeShiftRowProvider or TimeShiftProvider class.", "{0}: {1} no es una clase TimeShiftRowProvider ni TimeShiftProvider.", "{0}: {1} ليست فئة TimeShiftRowProvider أو TimeShiftProvider."),
+    ("Server_Bad_Provider", "warning: the class is not a provider", "{0}: {1} is not a TimeDriveRowProvider or TimeDriveProvider class.", "{0}: {1} no es una clase TimeDriveRowProvider ni TimeDriveProvider.", "{0}: {1} ليست فئة TimeDriveRowProvider أو TimeDriveProvider."),
     ("Server_Max_Records", "warning: a source was cut short", "{0}: only {1} items are plotted (its Max Records), so some may be missing.", "{0}: solo se muestran {1} elementos (su máximo de registros), así que puede faltar alguno.", "{0}: يتم عرض {1} عنصرًا فقط (الحد الأقصى للسجلات)، وقد تكون هناك عناصر ناقصة."),
     ("Server_Bad_Years", "warning: a History or Future value is not allowed", "{0} “{1}” is not one of 0.25, 0.5, 1, 2, 3 ... 10 years, so it is not used.", "{0} «{1}» no es uno de 0,25, 0,5, 1, 2, 3 ... 10 años, así que no se usa.", "{0} «{1}» ليست من القيم 0.25 و0.5 و1 و2 و3 ... 10 سنوات، لذلك لا تُستخدم."),
     ("Server_Data360_Missing", "warning: no Data 360 in the org", "Data 360 is not available in this org, so its sources are skipped.", "Data 360 no está disponible en esta organización, así que se omiten sus orígenes.", "Data 360 غير متاح في هذه المؤسسة، لذلك يتم تخطي مصادره."),
@@ -65,8 +65,6 @@ LABELS = [
     ("All_Day", "the time shown for an all-day event", "All-Day", "Todo el día", "طوال اليوم"),
     ("No_Title", "an item with no title", "(No title)", "(Sin título)", "(بلا عنوان)"),
     # ---- errors on the page
-    ("Label_Possible_Cause", "the lead-in to a likely cause", "Possible cause:", "Causa posible:", "السبب المحتمل:"),
-    ("Label_To_Fix", "the lead-in to what to do", "To fix:", "Para solucionarlo:", "للإصلاح:"),
     ("Error_Load_Title", "title when the timeline can't load", "The timeline couldn't load", "No se pudo cargar la cronología", "تعذّر تحميل الجدول الزمني"),
     ("Error_Read_Title", "title when every source failed", "The timeline couldn't be read", "No se pudo leer la cronología", "تعذّرت قراءة الجدول الزمني"),
     ("Error_Partial_Title", "title when some sources failed", "Some items couldn't be shown", "No se pudieron mostrar algunos elementos", "تعذّر عرض بعض العناصر"),
@@ -93,14 +91,12 @@ LABELS = [
     ("Group_To", "a grouped row's last time", "To", "Hasta", "إلى"),
     # ---- empty states
     ("Empty_Setup_Heading", "heading when the object isn't set up", "Setup Error", "Error de configuración", "خطأ في الإعداد"),
-    ("Empty_No_Match", "heading when filters hide everything", "Nothing matches", "Ningún resultado", "لا توجد نتائج مطابقة"),
-    ("Empty_No_Engagement", "heading when there's no history", "No engagement yet", "Aún no hay interacción", "لا يوجد تفاعل بعد"),
+    ("Empty_No_Match", "heading when there is nothing to show", "No data found", "No se encontraron datos", "لم يتم العثور على بيانات"),
     ("Filter_None", "filter panel with no types to offer", "Nothing to filter in this view.", "No hay nada que filtrar en esta vista.", "لا شيء لتصفيته في هذا العرض."),
     ("No_Sources", "the object has no active sources", "This object has not been setup by your admin.", "Tu administrador aún no ha configurado este objeto.", "لم يقم المسؤول بإعداد هذا الكائن."),
     ("Empty_Window", "no data in the time window", "No data found between {0} and {1}. Check your filters and try again.", "No se encontraron datos entre {0} y {1}. Revisa tus filtros e inténtalo de nuevo.", "لم يتم العثور على بيانات بين {0} و{1}. تحقق من عوامل التصفية وحاول مرة أخرى."),
     ("Empty_Customer", "no history for this record", "No engagement yet for this customer.", "Aún no hay interacción con este cliente.", "لا يوجد تفاعل بعد لهذا العميل."),
-    ("Empty_Nothing", "nothing in the current view", "Nothing.", "Nada.", "لا شيء."),
-    ("Empty_Nothing_In", "nothing in a named view", "Nothing in the {0}.", "No hay nada en «{0}».", "لا شيء في {0}."),
+    ("Empty_Nothing", "text when filters hide everything", "No data found with those filters applied.", "No se encontraron datos con esos filtros.", "لم يتم العثور على بيانات مع هذه الفلاتر."),
     ("Between", "a placeholder day: nothing in a span", "Nothing between {0} and {1}", "Nada entre {0} y {1}", "لا شيء بين {0} و{1}"),
     ("Near_Now", "'now', in 'Nothing between X and now'", "now", "ahora", "الآن"),
     ("Near_This_Week", "this week, in a span", "this week", "esta semana", "هذا الأسبوع"),
@@ -167,25 +163,13 @@ LABELS = [
     ("Type_Opp_Lost", "event type", "Opportunities lost", "Oportunidades perdidas", "الفرص الخاسرة"),
     ("Type_Other", "event type not otherwise named", "Other", "Otros", "أخرى"),
     ("Many_Other", "grouped row not otherwise named", "Items", "Elementos", "العناصر"),
-    # ---- the error messages (timeShiftErrors)
+    # ---- the error messages (timeDriveErrors)
     ("Err_Offline", "error: offline", "Can't reach Salesforce.", "No se puede conectar con Salesforce.", "تعذّر الاتصال بـ Salesforce."),
-    ("Err_Offline_Cause", "likely cause: offline", "Your connection may have dropped. Check it, then try again.", "Es posible que se haya perdido la conexión. Compruébala e inténtalo de nuevo.", "ربما انقطع اتصالك. تحقق منه ثم حاول مرة أخرى."),
     ("Err_Access", "error: no access", "You don't have access to some of the data this needs.", "No tienes acceso a algunos de los datos que esto necesita.", "ليس لديك صلاحية الوصول إلى بعض البيانات التي يحتاجها هذا."),
-    ("Err_Access_Cause", "likely cause: no access", "A permission set that grants the objects or fields it reads may not be assigned to you.", "Es posible que no tengas asignado un conjunto de permisos que otorgue acceso a los objetos o campos que lee.", "ربما لم تُسنَد إليك مجموعة أذونات تمنح الوصول إلى الكائنات أو الحقول التي يقرؤها."),
     ("Err_Not_Found", "error: record gone", "This record isn't available.", "Este registro no está disponible.", "هذا السجل غير متاح."),
-    ("Err_Not_Found_Cause", "likely cause: record gone", "It may have been deleted or merged, or it's no longer shared with you.", "Puede que se haya eliminado o combinado, o que ya no se comparta contigo.", "ربما تم حذفه أو دمجه، أو لم تعد تتم مشاركته معك."),
     ("Err_Setup", "error: not set up", "Something this needs isn't set up in this org.", "Falta algo que esto necesita en esta org.", "شيء يحتاجه هذا غير مُعدّ في هذه المؤسسة."),
-    ("Err_Setup_Cause", "likely cause: not set up", "An object or field it reads is missing. Ask your Salesforce admin to check the installation.", "Falta un objeto o campo que lee. Pide a tu administrador de Salesforce que revise la instalación.", "كائن أو حقل يقرؤه مفقود. اطلب من مسؤول Salesforce التحقق من التثبيت."),
     ("Err_Busy", "error: too slow", "This took too long to load.", "La carga tardó demasiado.", "استغرق التحميل وقتاً طويلاً."),
-    ("Err_Busy_Cause", "likely cause: too slow", "There may be a lot of history to read, or Salesforce is busy. Try again in a moment.", "Puede que haya mucho historial que leer, o que Salesforce esté ocupado. Inténtalo de nuevo en un momento.", "ربما يوجد الكثير من السجل لقراءته، أو أن Salesforce مشغول. حاول مرة أخرى بعد قليل."),
     ("Err_Unknown", "error: something else", "Something went wrong.", "Algo salió mal.", "حدث خطأ ما."),
-    ("Err_Unknown_Cause", "likely cause: something else", "It may be a passing problem. Try again, and if it keeps happening, let your Salesforce admin know.", "Puede ser un problema pasajero. Inténtalo de nuevo y, si sigue ocurriendo, avisa a tu administrador de Salesforce.", "ربما تكون مشكلة عابرة. حاول مرة أخرى، وإذا استمرت فأخبر مسؤول Salesforce."),
-    ("Prob_Access_Cause", "sources couldn't be read: access", "You may not have access to a field or object they read, or it isn't in this org.", "Es posible que no tengas acceso a un campo u objeto que leen, o que no exista en esta org.", "ربما ليس لديك صلاحية الوصول إلى حقل أو كائن يقرؤونه، أو أنه غير موجود في هذه المؤسسة."),
-    ("Prob_Access_Fix", "sources couldn't be read: access", "Ask your Salesforce admin to check your permission sets (such as Time Trail) and the Time Trail Source records.", "Pide a tu administrador de Salesforce que revise tus conjuntos de permisos (como Time Trail) y los registros de origen de Time Trail.", "اطلب من مسؤول Salesforce التحقق من مجموعات الأذونات لديك (مثل Time Trail) وسجلات مصدر Time Trail."),
-    ("Prob_Busy_Cause", "sources couldn't be read: too slow", "Salesforce took too long to read them.", "Salesforce tardó demasiado en leerlos.", "استغرقت Salesforce وقتاً طويلاً في قراءتها."),
-    ("Prob_Busy_Fix", "sources couldn't be read: too slow", "Try again in a moment.", "Inténtalo de nuevo en un momento.", "حاول مرة أخرى بعد قليل."),
-    ("Prob_Unknown_Cause", "sources couldn't be read: something else", "Something unexpected went wrong reading them.", "Algo inesperado salió mal al leerlos.", "حدث أمر غير متوقع أثناء قراءتها."),
-    ("Prob_Unknown_Fix", "sources couldn't be read: something else", "Try again, and if it keeps happening, let your Salesforce admin know.", "Inténtalo de nuevo y, si sigue ocurriendo, avisa a tu administrador de Salesforce.", "حاول مرة أخرى، وإذا استمرت المشكلة فأخبر مسؤول Salesforce."),
     ("Prob_Message", "which sources couldn't be read", "{0} couldn't be read.", "No se pudo leer {0}.", "تعذّرت قراءة {0}."),
     # ---- record details
     ("Rd_Loading", "details loading", "Loading details", "Cargando detalles", "جارٍ تحميل التفاصيل"),
@@ -198,6 +182,8 @@ LABELS = [
     ("Filters_Event_Types", "the event types group", "Event types", "Tipos de evento", "أنواع الأحداث"),
     # ---- legend names a source can start with
     ("Legend_Files", "a Files source's legend name", "Files & Notes", "Archivos y notas", "الملفات والملاحظات"),
+    ("Legend_Calls", "a Calls source's legend name", "Calls", "Llamadas", "المكالمات"),
+    ("Legend_Emails", "an Emails source's legend name", "Emails", "Correos electrónicos", "رسائل البريد الإلكتروني"),
     # ---- the View all page
     ("Group_Loading", "the list page loading", "Loading", "Cargando", "جارٍ التحميل"),
     ("Group_Nothing", "heading: the list is empty", "Nothing to show", "Nada que mostrar", "لا شيء لعرضه"),
@@ -219,11 +205,11 @@ LABELS = [
 
 # The labels that were already in the package: their Arabic.
 EXISTING_AR = {
-    "Time_Shift_Example_Legend": "المتابعات",
-    "Time_Shift_View_All": "كل العناصر",
-    "Time_Shift_View_Commerce": "الجدول الزمني للتجارة",
-    "Time_Shift_View_Digital": "الجدول الزمني الرقمي",
-    "Time_Shift_View_Marketing": "الجدول الزمني للتسويق",
-    "Time_Shift_View_Sales": "الجدول الزمني للمبيعات",
-    "Time_Shift_View_Service": "الجدول الزمني للخدمة",
+    "Time_Drive_Example_Legend": "المتابعات",
+    "Time_Drive_View_All": "كل العناصر",
+    "Time_Drive_View_Commerce": "التجارة",
+    "Time_Drive_View_Digital": "الرقمي",
+    "Time_Drive_View_Marketing": "التسويق",
+    "Time_Drive_View_Sales": "المبيعات",
+    "Time_Drive_View_Service": "الخدمة",
 }

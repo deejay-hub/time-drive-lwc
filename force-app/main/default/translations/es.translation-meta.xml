@@ -2,798 +2,742 @@
 <Translations xmlns="http://soap.sforce.com/2006/04/metadata">
     <customLabels>
         <label>Eliminar</label>
-        <name>Time_Shift_Action_Delete</name>
+        <name>Time_Drive_Action_Delete</name>
     </customLabels>
     <customLabels>
         <label>Editar</label>
-        <name>Time_Shift_Action_Edit</name>
+        <name>Time_Drive_Action_Edit</name>
     </customLabels>
     <customLabels>
         <label>Correo electrónico</label>
-        <name>Time_Shift_Action_Email</name>
+        <name>Time_Drive_Action_Email</name>
     </customLabels>
     <customLabels>
         <label>Registrar una llamada</label>
-        <name>Time_Shift_Action_Log_Call</name>
+        <name>Time_Drive_Action_Log_Call</name>
     </customLabels>
     <customLabels>
         <label>Nuevo evento</label>
-        <name>Time_Shift_Action_New_Event</name>
+        <name>Time_Drive_Action_New_Event</name>
     </customLabels>
     <customLabels>
         <label>Nueva tarea</label>
-        <name>Time_Shift_Action_New_Task</name>
+        <name>Time_Drive_Action_New_Task</name>
     </customLabels>
     <customLabels>
         <label>Todo el día</label>
-        <name>Time_Shift_All_Day</name>
+        <name>Time_Drive_All_Day</name>
     </customLabels>
     <customLabels>
         <label>Se añadió {0}</label>
-        <name>Time_Shift_Announce_Added</name>
+        <name>Time_Drive_Announce_Added</name>
     </customLabels>
     <customLabels>
         <label>Se añadió de {0} a {1}</label>
-        <name>Time_Shift_Announce_Added_Range</name>
+        <name>Time_Drive_Announce_Added_Range</name>
     </customLabels>
     <customLabels>
         <label>Mostrando {0}</label>
-        <name>Time_Shift_Announce_Showing</name>
+        <name>Time_Drive_Announce_Showing</name>
     </customLabels>
     <customLabels>
         <label>Mostrando de {0} a {1}</label>
-        <name>Time_Shift_Announce_Showing_Range</name>
+        <name>Time_Drive_Announce_Showing_Range</name>
     </customLabels>
     <customLabels>
         <label>Mostrando hoy</label>
-        <name>Time_Shift_Announce_Today</name>
+        <name>Time_Drive_Announce_Today</name>
     </customLabels>
     <customLabels>
         <label>Nada entre {0} y {1}</label>
-        <name>Time_Shift_Between</name>
+        <name>Time_Drive_Between</name>
     </customLabels>
     <customLabels>
         <label>Mostrar horas y fechas</label>
-        <name>Time_Shift_Button_Lite_Off</name>
+        <name>Time_Drive_Button_Lite_Off</name>
     </customLabels>
     <customLabels>
         <label>Solo títulos</label>
-        <name>Time_Shift_Button_Lite_On</name>
+        <name>Time_Drive_Button_Lite_On</name>
     </customLabels>
     <customLabels>
         <label>Actualizar</label>
-        <name>Time_Shift_Button_Refresh</name>
+        <name>Time_Drive_Button_Refresh</name>
     </customLabels>
     <customLabels>
         <label>Mostrar todo</label>
-        <name>Time_Shift_Button_Show_Everything</name>
+        <name>Time_Drive_Button_Show_Everything</name>
     </customLabels>
     <customLabels>
         <label>Hoy</label>
-        <name>Time_Shift_Button_Today</name>
+        <name>Time_Drive_Button_Today</name>
     </customLabels>
     <customLabels>
         <label>Intentar de nuevo</label>
-        <name>Time_Shift_Button_Try_Again</name>
+        <name>Time_Drive_Button_Try_Again</name>
     </customLabels>
     <customLabels>
         <label>Contraer todo</label>
-        <name>Time_Shift_Collapse_All</name>
+        <name>Time_Drive_Collapse_All</name>
     </customLabels>
     <customLabels>
         <label>{0} días</label>
-        <name>Time_Shift_Days_Many</name>
+        <name>Time_Drive_Days_Many</name>
     </customLabels>
     <customLabels>
         <label>1 día</label>
-        <name>Time_Shift_Days_One</name>
+        <name>Time_Drive_Days_One</name>
     </customLabels>
     <customLabels>
         <label>¿Seguro que quieres eliminar este {0}?</label>
-        <name>Time_Shift_Delete_Confirm</name>
+        <name>Time_Drive_Delete_Confirm</name>
     </customLabels>
     <customLabels>
         <label>Eliminado</label>
-        <name>Time_Shift_Delete_Done</name>
+        <name>Time_Drive_Delete_Done</name>
     </customLabels>
     <customLabels>
         <label>No se pudo eliminar</label>
-        <name>Time_Shift_Delete_Failed</name>
+        <name>Time_Drive_Delete_Failed</name>
     </customLabels>
     <customLabels>
         <label>elemento</label>
-        <name>Time_Shift_Delete_Item</name>
+        <name>Time_Drive_Delete_Item</name>
     </customLabels>
     <customLabels>
         <label>Eliminar {0}</label>
-        <name>Time_Shift_Delete_Title</name>
+        <name>Time_Drive_Delete_Title</name>
     </customLabels>
     <customLabels>
         <label>Ocultar detalles</label>
-        <name>Time_Shift_Details_Hide</name>
+        <name>Time_Drive_Details_Hide</name>
     </customLabels>
     <customLabels>
         <label>Mostrar detalles</label>
-        <name>Time_Shift_Details_Show</name>
+        <name>Time_Drive_Details_Show</name>
     </customLabels>
     <customLabels>
         <label>Detalles: {0}</label>
-        <name>Time_Shift_Details_Toggle</name>
+        <name>Time_Drive_Details_Toggle</name>
     </customLabels>
     <customLabels>
         <label>Rebotado</label>
-        <name>Time_Shift_Email_Bounced</name>
+        <name>Time_Drive_Email_Bounced</name>
     </customLabels>
     <customLabels>
         <label>Abierto</label>
-        <name>Time_Shift_Email_Opened</name>
+        <name>Time_Drive_Email_Opened</name>
     </customLabels>
     <customLabels>
         <label>Aún sin abrir</label>
-        <name>Time_Shift_Email_Unopened</name>
+        <name>Time_Drive_Email_Unopened</name>
     </customLabels>
     <customLabels>
         <label>Aún no hay interacción con este cliente.</label>
-        <name>Time_Shift_Empty_Customer</name>
+        <name>Time_Drive_Empty_Customer</name>
     </customLabels>
     <customLabels>
-        <label>Aún no hay interacción</label>
-        <name>Time_Shift_Empty_No_Engagement</name>
+        <label>No se encontraron datos</label>
+        <name>Time_Drive_Empty_No_Match</name>
     </customLabels>
     <customLabels>
-        <label>Ningún resultado</label>
-        <name>Time_Shift_Empty_No_Match</name>
-    </customLabels>
-    <customLabels>
-        <label>Nada.</label>
-        <name>Time_Shift_Empty_Nothing</name>
-    </customLabels>
-    <customLabels>
-        <label>No hay nada en «{0}».</label>
-        <name>Time_Shift_Empty_Nothing_In</name>
+        <label>No se encontraron datos con esos filtros.</label>
+        <name>Time_Drive_Empty_Nothing</name>
     </customLabels>
     <customLabels>
         <label>Error de configuración</label>
-        <name>Time_Shift_Empty_Setup_Heading</name>
+        <name>Time_Drive_Empty_Setup_Heading</name>
     </customLabels>
     <customLabels>
         <label>No se encontraron datos entre {0} y {1}. Revisa tus filtros e inténtalo de nuevo.</label>
-        <name>Time_Shift_Empty_Window</name>
+        <name>Time_Drive_Empty_Window</name>
     </customLabels>
     <customLabels>
         <label>No tienes acceso a algunos de los datos que esto necesita.</label>
-        <name>Time_Shift_Err_Access</name>
-    </customLabels>
-    <customLabels>
-        <label>Es posible que no tengas asignado un conjunto de permisos que otorgue acceso a los objetos o campos que lee.</label>
-        <name>Time_Shift_Err_Access_Cause</name>
+        <name>Time_Drive_Err_Access</name>
     </customLabels>
     <customLabels>
         <label>La carga tardó demasiado.</label>
-        <name>Time_Shift_Err_Busy</name>
-    </customLabels>
-    <customLabels>
-        <label>Puede que haya mucho historial que leer, o que Salesforce esté ocupado. Inténtalo de nuevo en un momento.</label>
-        <name>Time_Shift_Err_Busy_Cause</name>
+        <name>Time_Drive_Err_Busy</name>
     </customLabels>
     <customLabels>
         <label>Este registro no está disponible.</label>
-        <name>Time_Shift_Err_Not_Found</name>
-    </customLabels>
-    <customLabels>
-        <label>Puede que se haya eliminado o combinado, o que ya no se comparta contigo.</label>
-        <name>Time_Shift_Err_Not_Found_Cause</name>
+        <name>Time_Drive_Err_Not_Found</name>
     </customLabels>
     <customLabels>
         <label>No se puede conectar con Salesforce.</label>
-        <name>Time_Shift_Err_Offline</name>
-    </customLabels>
-    <customLabels>
-        <label>Es posible que se haya perdido la conexión. Compruébala e inténtalo de nuevo.</label>
-        <name>Time_Shift_Err_Offline_Cause</name>
+        <name>Time_Drive_Err_Offline</name>
     </customLabels>
     <customLabels>
         <label>Falta algo que esto necesita en esta org.</label>
-        <name>Time_Shift_Err_Setup</name>
-    </customLabels>
-    <customLabels>
-        <label>Falta un objeto o campo que lee. Pide a tu administrador de Salesforce que revise la instalación.</label>
-        <name>Time_Shift_Err_Setup_Cause</name>
+        <name>Time_Drive_Err_Setup</name>
     </customLabels>
     <customLabels>
         <label>Algo salió mal.</label>
-        <name>Time_Shift_Err_Unknown</name>
-    </customLabels>
-    <customLabels>
-        <label>Puede ser un problema pasajero. Inténtalo de nuevo y, si sigue ocurriendo, avisa a tu administrador de Salesforce.</label>
-        <name>Time_Shift_Err_Unknown_Cause</name>
+        <name>Time_Drive_Err_Unknown</name>
     </customLabels>
     <customLabels>
         <label>No se pudo cargar la cronología</label>
-        <name>Time_Shift_Error_Load_Title</name>
+        <name>Time_Drive_Error_Load_Title</name>
     </customLabels>
     <customLabels>
         <label>No se pudieron mostrar algunos elementos</label>
-        <name>Time_Shift_Error_Partial_Title</name>
+        <name>Time_Drive_Error_Partial_Title</name>
     </customLabels>
     <customLabels>
         <label>No se pudo leer la cronología</label>
-        <name>Time_Shift_Error_Read_Title</name>
+        <name>Time_Drive_Error_Read_Title</name>
     </customLabels>
     <customLabels>
         <label>Seguimientos</label>
-        <name>Time_Shift_Example_Legend</name>
+        <name>Time_Drive_Example_Legend</name>
     </customLabels>
     <customLabels>
         <label>Expandir todo</label>
-        <name>Time_Shift_Expand_All</name>
+        <name>Time_Drive_Expand_All</name>
     </customLabels>
     <customLabels>
         <label>No hay nada que filtrar en esta vista.</label>
-        <name>Time_Shift_Filter_None</name>
+        <name>Time_Drive_Filter_None</name>
     </customLabels>
     <customLabels>
         <label>Filtros</label>
-        <name>Time_Shift_Filters</name>
+        <name>Time_Drive_Filters</name>
     </customLabels>
     <customLabels>
         <label>Filtros, {0} activos</label>
-        <name>Time_Shift_Filters_Active</name>
+        <name>Time_Drive_Filters_Active</name>
     </customLabels>
     <customLabels>
         <label>Aplicar</label>
-        <name>Time_Shift_Filters_Apply</name>
+        <name>Time_Drive_Filters_Apply</name>
     </customLabels>
     <customLabels>
         <label>Cancelar</label>
-        <name>Time_Shift_Filters_Cancel</name>
+        <name>Time_Drive_Filters_Cancel</name>
     </customLabels>
     <customLabels>
         <label>Cerrar</label>
-        <name>Time_Shift_Filters_Close</name>
+        <name>Time_Drive_Filters_Close</name>
     </customLabels>
     <customLabels>
         <label>Tipos de evento</label>
-        <name>Time_Shift_Filters_Event_Types</name>
+        <name>Time_Drive_Filters_Event_Types</name>
     </customLabels>
     <customLabels>
         <label>{0} días sin actividad</label>
-        <name>Time_Shift_Gap_Day_Many</name>
+        <name>Time_Drive_Gap_Day_Many</name>
     </customLabels>
     <customLabels>
         <label>1 día sin actividad</label>
-        <name>Time_Shift_Gap_Day_One</name>
+        <name>Time_Drive_Gap_Day_One</name>
     </customLabels>
     <customLabels>
         <label>{0} semestres sin actividad</label>
-        <name>Time_Shift_Gap_Half_Many</name>
+        <name>Time_Drive_Gap_Half_Many</name>
     </customLabels>
     <customLabels>
         <label>1 semestre sin actividad</label>
-        <name>Time_Shift_Gap_Half_One</name>
+        <name>Time_Drive_Gap_Half_One</name>
     </customLabels>
     <customLabels>
         <label>{0} meses sin actividad</label>
-        <name>Time_Shift_Gap_Month_Many</name>
+        <name>Time_Drive_Gap_Month_Many</name>
     </customLabels>
     <customLabels>
         <label>1 mes sin actividad</label>
-        <name>Time_Shift_Gap_Month_One</name>
+        <name>Time_Drive_Gap_Month_One</name>
     </customLabels>
     <customLabels>
         <label>{0} trimestres sin actividad</label>
-        <name>Time_Shift_Gap_Quarter_Many</name>
+        <name>Time_Drive_Gap_Quarter_Many</name>
     </customLabels>
     <customLabels>
         <label>1 trimestre sin actividad</label>
-        <name>Time_Shift_Gap_Quarter_One</name>
+        <name>Time_Drive_Gap_Quarter_One</name>
     </customLabels>
     <customLabels>
         <label>{0} semanas sin actividad</label>
-        <name>Time_Shift_Gap_Week_Many</name>
+        <name>Time_Drive_Gap_Week_Many</name>
     </customLabels>
     <customLabels>
         <label>1 semana sin actividad</label>
-        <name>Time_Shift_Gap_Week_One</name>
+        <name>Time_Drive_Gap_Week_One</name>
     </customLabels>
     <customLabels>
         <label>{0} años sin actividad</label>
-        <name>Time_Shift_Gap_Year_Many</name>
+        <name>Time_Drive_Gap_Year_Many</name>
     </customLabels>
     <customLabels>
         <label>1 año sin actividad</label>
-        <name>Time_Shift_Gap_Year_One</name>
+        <name>Time_Drive_Gap_Year_One</name>
     </customLabels>
     <customLabels>
         <label>Volver a {0}</label>
-        <name>Time_Shift_Group_Back</name>
+        <name>Time_Drive_Group_Back</name>
     </customLabels>
     <customLabels>
         <label>Volver al registro</label>
-        <name>Time_Shift_Group_Back_Record</name>
+        <name>Time_Drive_Group_Back_Record</name>
     </customLabels>
     <customLabels>
         <label>Fecha</label>
-        <name>Time_Shift_Group_Col_Date</name>
+        <name>Time_Drive_Group_Col_Date</name>
     </customLabels>
     <customLabels>
         <label>Fecha y hora</label>
-        <name>Time_Shift_Group_Col_Date_Time</name>
+        <name>Time_Drive_Group_Col_Date_Time</name>
     </customLabels>
     <customLabels>
         <label>Nombre</label>
-        <name>Time_Shift_Group_Col_Name</name>
+        <name>Time_Drive_Group_Col_Name</name>
     </customLabels>
     <customLabels>
         <label>Resumen</label>
-        <name>Time_Shift_Group_Col_Summary</name>
+        <name>Time_Drive_Group_Col_Summary</name>
     </customLabels>
     <customLabels>
         <label>{0}+ elementos</label>
-        <name>Time_Shift_Group_Count_More</name>
+        <name>Time_Drive_Group_Count_More</name>
     </customLabels>
     <customLabels>
         <label>Desde</label>
-        <name>Time_Shift_Group_From</name>
+        <name>Time_Drive_Group_From</name>
     </customLabels>
     <customLabels>
         <label>Elementos</label>
-        <name>Time_Shift_Group_Heading</name>
+        <name>Time_Drive_Group_Heading</name>
     </customLabels>
     <customLabels>
         <label>Cargando</label>
-        <name>Time_Shift_Group_Loading</name>
+        <name>Time_Drive_Group_Loading</name>
     </customLabels>
     <customLabels>
         <label>Cargando más elementos</label>
-        <name>Time_Shift_Group_Loading_More</name>
+        <name>Time_Drive_Group_Loading_More</name>
     </customLabels>
     <customLabels>
         <label>Nada que mostrar</label>
-        <name>Time_Shift_Group_Nothing</name>
+        <name>Time_Drive_Group_Nothing</name>
     </customLabels>
     <customLabels>
         <label>Es posible que estos elementos hayan cambiado desde que se dibujó la cronología. Actualiza o vuelve a la cronología.</label>
-        <name>Time_Shift_Group_Nothing_Body</name>
+        <name>Time_Drive_Group_Nothing_Body</name>
     </customLabels>
     <customLabels>
         <label>Muestra los elementos de una fila agrupada de una cronología.</label>
-        <name>Time_Shift_Group_Open_Body</name>
+        <name>Time_Drive_Group_Open_Body</name>
     </customLabels>
     <customLabels>
         <label>Abre esta página desde una cronología</label>
-        <name>Time_Shift_Group_Open_From</name>
+        <name>Time_Drive_Group_Open_From</name>
     </customLabels>
     <customLabels>
         <label>{0} elementos mostrados</label>
-        <name>Time_Shift_Group_Shown</name>
+        <name>Time_Drive_Group_Shown</name>
     </customLabels>
     <customLabels>
         <label>Ordenado por fecha</label>
-        <name>Time_Shift_Group_Sorted</name>
+        <name>Time_Drive_Group_Sorted</name>
     </customLabels>
     <customLabels>
         <label>{0} registros agrupados</label>
-        <name>Time_Shift_Group_Summary_Many</name>
+        <name>Time_Drive_Group_Summary_Many</name>
     </customLabels>
     <customLabels>
         <label>1 registro agrupado</label>
-        <name>Time_Shift_Group_Summary_One</name>
+        <name>Time_Drive_Group_Summary_One</name>
     </customLabels>
     <customLabels>
         <label>Hasta</label>
-        <name>Time_Shift_Group_To</name>
+        <name>Time_Drive_Group_To</name>
     </customLabels>
     <customLabels>
         <label>Ver los {0} {1}</label>
-        <name>Time_Shift_Group_View_All</name>
+        <name>Time_Drive_Group_View_All</name>
     </customLabels>
     <customLabels>
         <label>S{0} {1}</label>
-        <name>Time_Shift_Half</name>
+        <name>Time_Drive_Half</name>
     </customLabels>
     <customLabels>
         <label>{0} en {1}</label>
-        <name>Time_Shift_Heat_On_Days</name>
+        <name>Time_Drive_Heat_On_Days</name>
     </customLabels>
     <customLabels>
         <label>{0}: {1}</label>
-        <name>Time_Shift_Heat_Title</name>
+        <name>Time_Drive_Heat_Title</name>
     </customLabels>
     <customLabels>
         <label>Haz clic para desplazar la cronología</label>
-        <name>Time_Shift_Hint_Scroll</name>
+        <name>Time_Drive_Hint_Scroll</name>
     </customLabels>
     <customLabels>
         <label>{0} elementos</label>
-        <name>Time_Shift_Items_Many</name>
+        <name>Time_Drive_Items_Many</name>
     </customLabels>
     <customLabels>
         <label>1 elemento</label>
-        <name>Time_Shift_Items_One</name>
-    </customLabels>
-    <customLabels>
-        <label>Causa posible:</label>
-        <name>Time_Shift_Label_Possible_Cause</name>
-    </customLabels>
-    <customLabels>
-        <label>Para solucionarlo:</label>
-        <name>Time_Shift_Label_To_Fix</name>
-    </customLabels>
-    <customLabels>
-        <label>Archivos y notas</label>
-        <name>Time_Shift_Legend_Files</name>
-    </customLabels>
-    <customLabels>
-        <label>Elementos de la aplicación</label>
-        <name>Time_Shift_Many_App</name>
-    </customLabels>
-    <customLabels>
-        <label>Elementos del carrito</label>
-        <name>Time_Shift_Many_Cart</name>
-    </customLabels>
-    <customLabels>
-        <label>Actualizaciones de casos</label>
-        <name>Time_Shift_Many_Case</name>
-    </customLabels>
-    <customLabels>
-        <label>Elementos de correo electrónico</label>
-        <name>Time_Shift_Many_Email</name>
-    </customLabels>
-    <customLabels>
-        <label>Mensajes push y SMS</label>
-        <name>Time_Shift_Many_Message</name>
-    </customLabels>
-    <customLabels>
-        <label>Actualizaciones de oportunidades</label>
-        <name>Time_Shift_Many_Opportunity</name>
-    </customLabels>
-    <customLabels>
-        <label>Elementos</label>
-        <name>Time_Shift_Many_Other</name>
-    </customLabels>
-    <customLabels>
-        <label>Búsquedas web</label>
-        <name>Time_Shift_Many_Search</name>
-    </customLabels>
-    <customLabels>
-        <label>Vistas de página</label>
-        <name>Time_Shift_Many_Web</name>
-    </customLabels>
-    <customLabels>
-        <label>Nueva actividad</label>
-        <name>Time_Shift_Menu_New_Activity</name>
-    </customLabels>
-    <customLabels>
-        <label>Vistas</label>
-        <name>Time_Shift_Menu_Views</name>
-    </customLabels>
-    <customLabels>
-        <label>{0} elementos más: desplázate hacia abajo</label>
-        <name>Time_Shift_More_Aria_Many</name>
-    </customLabels>
-    <customLabels>
-        <label>{0} elementos más el {1}: desplázate hacia abajo</label>
-        <name>Time_Shift_More_Aria_Many_On</name>
-    </customLabels>
-    <customLabels>
-        <label>1 elemento más: desplázate hacia abajo</label>
-        <name>Time_Shift_More_Aria_One</name>
-    </customLabels>
-    <customLabels>
-        <label>1 elemento más el {0}: desplázate hacia abajo</label>
-        <name>Time_Shift_More_Aria_One_On</name>
-    </customLabels>
-    <customLabels>
-        <label>{0} más</label>
-        <name>Time_Shift_More_Many</name>
-    </customLabels>
-    <customLabels>
-        <label>1 más</label>
-        <name>Time_Shift_More_One</name>
-    </customLabels>
-    <customLabels>
-        <label>ahora</label>
-        <name>Time_Shift_Near_Now</name>
-    </customLabels>
-    <customLabels>
-        <label>este mes</label>
-        <name>Time_Shift_Near_This_Month</name>
-    </customLabels>
-    <customLabels>
-        <label>esta semana</label>
-        <name>Time_Shift_Near_This_Week</name>
-    </customLabels>
-    <customLabels>
-        <label>hoy</label>
-        <name>Time_Shift_Near_Today</name>
-    </customLabels>
-    <customLabels>
-        <label>Tu administrador aún no ha configurado este objeto.</label>
-        <name>Time_Shift_No_Sources</name>
-    </customLabels>
-    <customLabels>
-        <label>(Sin título)</label>
-        <name>Time_Shift_No_Title</name>
-    </customLabels>
-    <customLabels>
-        <label>Nada este mes</label>
-        <name>Time_Shift_Nothing_Month</name>
-    </customLabels>
-    <customLabels>
-        <label>Nada hoy</label>
-        <name>Time_Shift_Nothing_Today</name>
-    </customLabels>
-    <customLabels>
-        <label>Nada esta semana</label>
-        <name>Time_Shift_Nothing_Week</name>
-    </customLabels>
-    <customLabels>
-        <label>{0} pedidos</label>
-        <name>Time_Shift_Orders_Many</name>
-    </customLabels>
-    <customLabels>
-        <label>1 pedido</label>
-        <name>Time_Shift_Orders_One</name>
-    </customLabels>
-    <customLabels>
-        <label>Resumen de la cronología: elige un día</label>
-        <name>Time_Shift_Overview_Pick_Day</name>
-    </customLabels>
-    <customLabels>
-        <label>Agrupado</label>
-        <name>Time_Shift_Pill_Grouped</name>
-    </customLabels>
-    <customLabels>
-        <label>Es posible que no tengas acceso a un campo u objeto que leen, o que no exista en esta org.</label>
-        <name>Time_Shift_Prob_Access_Cause</name>
-    </customLabels>
-    <customLabels>
-        <label>Pide a tu administrador de Salesforce que revise tus conjuntos de permisos (como Time Trail) y los registros de origen de Time Trail.</label>
-        <name>Time_Shift_Prob_Access_Fix</name>
-    </customLabels>
-    <customLabels>
-        <label>Salesforce tardó demasiado en leerlos.</label>
-        <name>Time_Shift_Prob_Busy_Cause</name>
-    </customLabels>
-    <customLabels>
-        <label>Inténtalo de nuevo en un momento.</label>
-        <name>Time_Shift_Prob_Busy_Fix</name>
-    </customLabels>
-    <customLabels>
-        <label>No se pudo leer {0}.</label>
-        <name>Time_Shift_Prob_Message</name>
-    </customLabels>
-    <customLabels>
-        <label>Algo inesperado salió mal al leerlos.</label>
-        <name>Time_Shift_Prob_Unknown_Cause</name>
-    </customLabels>
-    <customLabels>
-        <label>Inténtalo de nuevo y, si sigue ocurriendo, avisa a tu administrador de Salesforce.</label>
-        <name>Time_Shift_Prob_Unknown_Fix</name>
-    </customLabels>
-    <customLabels>
-        <label>T{0} {1}</label>
-        <name>Time_Shift_Quarter</name>
-    </customLabels>
-    <customLabels>
-        <label>No se pudieron cargar estos detalles. {0}</label>
-        <name>Time_Shift_Rd_Failed</name>
-    </customLabels>
-    <customLabels>
-        <label>Cargando detalles</label>
-        <name>Time_Shift_Rd_Loading</name>
-    </customLabels>
-    <customLabels>
-        <label>No tienes visibles campos en el diseño compacto de este objeto.</label>
-        <name>Time_Shift_Rd_No_Fields</name>
-    </customLabels>
-    <customLabels>
-        <label>Elementos de interacción</label>
-        <name>Time_Shift_Region_Items</name>
-    </customLabels>
-    <customLabels>
-        <label>Acciones del elemento</label>
-        <name>Time_Shift_Row_Actions</name>
-    </customLabels>
-    <customLabels>
-        <label>Comprobando lo que puedes hacer…</label>
-        <name>Time_Shift_Row_Checking</name>
-    </customLabels>
-    <customLabels>
-        <label>No puedes editar ni eliminar este elemento.</label>
-        <name>Time_Shift_Row_No_Actions</name>
-    </customLabels>
-    <customLabels>
-        <label>{0}: un origen de Apex necesita una clase proveedora.</label>
-        <name>Time_Shift_Server_Apex_Needs_Class</name>
-    </customLabels>
-    <customLabels>
-        <label>{0}: {1} no es una clase TimeShiftRowProvider ni TimeShiftProvider.</label>
-        <name>Time_Shift_Server_Bad_Provider</name>
-    </customLabels>
-    <customLabels>
-        <label>{0} «{1}» no es uno de 0,25, 0,5, 1, 2, 3 ... 10 años, así que no se usa.</label>
-        <name>Time_Shift_Server_Bad_Years</name>
-    </customLabels>
-    <customLabels>
-        <label>Data 360 no está disponible en esta organización, así que se omiten sus orígenes.</label>
-        <name>Time_Shift_Server_Data360_Missing</name>
-    </customLabels>
-    <customLabels>
-        <label>La interacción de {0} no está en el modelo de datos de esta organización ({1}).</label>
-        <name>Time_Shift_Server_Dmo_Missing</name>
-    </customLabels>
-    <customLabels>
-        <label>Vínculos de identidad</label>
-        <name>Time_Shift_Server_Identity_Links</name>
-    </customLabels>
-    <customLabels>
-        <label>{0}: solo se muestran {1} elementos (su máximo de registros), así que puede faltar alguno.</label>
-        <name>Time_Shift_Server_Max_Records</name>
-    </customLabels>
-    <customLabels>
-        <label>No</label>
-        <name>Time_Shift_Server_No</name>
-    </customLabels>
-    <customLabels>
-        <label>{0}: {1} no tiene el campo {2}.</label>
-        <name>Time_Shift_Server_No_Field</name>
-    </customLabels>
-    <customLabels>
-        <label>No hay objeto de vínculo de identidad ({0}): solo se muestra la interacción del propio individuo del contacto.</label>
-        <name>Time_Shift_Server_No_Identity_Link</name>
-    </customLabels>
-    <customLabels>
-        <label>{0}: indique un campo principal o un objeto de unión para vincular los registros con la página.</label>
-        <name>Time_Shift_Server_No_Link</name>
-    </customLabels>
-    <customLabels>
-        <label>{0}: no existe ningún objeto llamado {1}.</label>
-        <name>Time_Shift_Server_No_Object</name>
-    </customLabels>
-    <customLabels>
-        <label>{0}: {1} filas no tenían {2} y no se mostraron.</label>
-        <name>Time_Shift_Server_Rows_No_Date</name>
-    </customLabels>
-    <customLabels>
-        <label>Enviado a: {0}</label>
-        <name>Time_Shift_Server_Sent_To</name>
-    </customLabels>
-    <customLabels>
-        <label>Enviado a: {0} y 1 más</label>
-        <name>Time_Shift_Server_Sent_To_One_Other</name>
-    </customLabels>
-    <customLabels>
-        <label>Enviado a: {0} y {1} más</label>
-        <name>Time_Shift_Server_Sent_To_Others</name>
-    </customLabels>
-    <customLabels>
-        <label>Sí</label>
-        <name>Time_Shift_Server_Yes</name>
-    </customLabels>
-    <customLabels>
-        <label>Cargando la cronología…</label>
-        <name>Time_Shift_Status_Loading</name>
-    </customLabels>
-    <customLabels>
-        <label>Cargando este día</label>
-        <name>Time_Shift_Status_Loading_Day</name>
-    </customLabels>
-    <customLabels>
-        <label>Actualizando los recuentos</label>
-        <name>Time_Shift_Status_Updating_Counts</name>
-    </customLabels>
-    <customLabels>
-        <label>la semana del {0}</label>
-        <name>Time_Shift_The_Week_Of</name>
-    </customLabels>
-    <customLabels>
-        <label>Aplicación</label>
-        <name>Time_Shift_Type_App</name>
+        <name>Time_Drive_Items_One</name>
     </customLabels>
     <customLabels>
         <label>Llamadas</label>
-        <name>Time_Shift_Type_Call</name>
-    </customLabels>
-    <customLabels>
-        <label>Pedidos cancelados</label>
-        <name>Time_Shift_Type_Canceled</name>
-    </customLabels>
-    <customLabels>
-        <label>Actividad del carrito</label>
-        <name>Time_Shift_Type_Cart</name>
-    </customLabels>
-    <customLabels>
-        <label>Casos</label>
-        <name>Time_Shift_Type_Case</name>
-    </customLabels>
-    <customLabels>
-        <label>Pedidos entregados</label>
-        <name>Time_Shift_Type_Delivered</name>
-    </customLabels>
-    <customLabels>
-        <label>Correo electrónico</label>
-        <name>Time_Shift_Type_Email</name>
-    </customLabels>
-    <customLabels>
-        <label>Push y SMS</label>
-        <name>Time_Shift_Type_Message</name>
-    </customLabels>
-    <customLabels>
-        <label>Oportunidades perdidas</label>
-        <name>Time_Shift_Type_Opp_Lost</name>
-    </customLabels>
-    <customLabels>
-        <label>Oportunidades ganadas</label>
-        <name>Time_Shift_Type_Opp_Won</name>
-    </customLabels>
-    <customLabels>
-        <label>Oportunidades</label>
-        <name>Time_Shift_Type_Opportunity</name>
-    </customLabels>
-    <customLabels>
-        <label>Otros</label>
-        <name>Time_Shift_Type_Other</name>
-    </customLabels>
-    <customLabels>
-        <label>Pedidos realizados</label>
-        <name>Time_Shift_Type_Purchase</name>
-    </customLabels>
-    <customLabels>
-        <label>Reseñas</label>
-        <name>Time_Shift_Type_Review</name>
+        <name>Time_Drive_Legend_Calls</name>
     </customLabels>
     <customLabels>
         <label>Correos electrónicos</label>
-        <name>Time_Shift_Type_Sales_Email</name>
+        <name>Time_Drive_Legend_Emails</name>
+    </customLabels>
+    <customLabels>
+        <label>Archivos y notas</label>
+        <name>Time_Drive_Legend_Files</name>
+    </customLabels>
+    <customLabels>
+        <label>Elementos de la aplicación</label>
+        <name>Time_Drive_Many_App</name>
+    </customLabels>
+    <customLabels>
+        <label>Elementos del carrito</label>
+        <name>Time_Drive_Many_Cart</name>
+    </customLabels>
+    <customLabels>
+        <label>Actualizaciones de casos</label>
+        <name>Time_Drive_Many_Case</name>
+    </customLabels>
+    <customLabels>
+        <label>Elementos de correo electrónico</label>
+        <name>Time_Drive_Many_Email</name>
+    </customLabels>
+    <customLabels>
+        <label>Mensajes push y SMS</label>
+        <name>Time_Drive_Many_Message</name>
+    </customLabels>
+    <customLabels>
+        <label>Actualizaciones de oportunidades</label>
+        <name>Time_Drive_Many_Opportunity</name>
+    </customLabels>
+    <customLabels>
+        <label>Elementos</label>
+        <name>Time_Drive_Many_Other</name>
+    </customLabels>
+    <customLabels>
+        <label>Búsquedas web</label>
+        <name>Time_Drive_Many_Search</name>
+    </customLabels>
+    <customLabels>
+        <label>Vistas de página</label>
+        <name>Time_Drive_Many_Web</name>
+    </customLabels>
+    <customLabels>
+        <label>Nueva actividad</label>
+        <name>Time_Drive_Menu_New_Activity</name>
+    </customLabels>
+    <customLabels>
+        <label>Vistas</label>
+        <name>Time_Drive_Menu_Views</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} elementos más: desplázate hacia abajo</label>
+        <name>Time_Drive_More_Aria_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} elementos más el {1}: desplázate hacia abajo</label>
+        <name>Time_Drive_More_Aria_Many_On</name>
+    </customLabels>
+    <customLabels>
+        <label>1 elemento más: desplázate hacia abajo</label>
+        <name>Time_Drive_More_Aria_One</name>
+    </customLabels>
+    <customLabels>
+        <label>1 elemento más el {0}: desplázate hacia abajo</label>
+        <name>Time_Drive_More_Aria_One_On</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} más</label>
+        <name>Time_Drive_More_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>1 más</label>
+        <name>Time_Drive_More_One</name>
+    </customLabels>
+    <customLabels>
+        <label>ahora</label>
+        <name>Time_Drive_Near_Now</name>
+    </customLabels>
+    <customLabels>
+        <label>este mes</label>
+        <name>Time_Drive_Near_This_Month</name>
+    </customLabels>
+    <customLabels>
+        <label>esta semana</label>
+        <name>Time_Drive_Near_This_Week</name>
+    </customLabels>
+    <customLabels>
+        <label>hoy</label>
+        <name>Time_Drive_Near_Today</name>
+    </customLabels>
+    <customLabels>
+        <label>Tu administrador aún no ha configurado este objeto.</label>
+        <name>Time_Drive_No_Sources</name>
+    </customLabels>
+    <customLabels>
+        <label>(Sin título)</label>
+        <name>Time_Drive_No_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>Nada este mes</label>
+        <name>Time_Drive_Nothing_Month</name>
+    </customLabels>
+    <customLabels>
+        <label>Nada hoy</label>
+        <name>Time_Drive_Nothing_Today</name>
+    </customLabels>
+    <customLabels>
+        <label>Nada esta semana</label>
+        <name>Time_Drive_Nothing_Week</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} pedidos</label>
+        <name>Time_Drive_Orders_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>1 pedido</label>
+        <name>Time_Drive_Orders_One</name>
+    </customLabels>
+    <customLabels>
+        <label>Resumen de la cronología: elige un día</label>
+        <name>Time_Drive_Overview_Pick_Day</name>
+    </customLabels>
+    <customLabels>
+        <label>Agrupado</label>
+        <name>Time_Drive_Pill_Grouped</name>
+    </customLabels>
+    <customLabels>
+        <label>No se pudo leer {0}.</label>
+        <name>Time_Drive_Prob_Message</name>
+    </customLabels>
+    <customLabels>
+        <label>T{0} {1}</label>
+        <name>Time_Drive_Quarter</name>
+    </customLabels>
+    <customLabels>
+        <label>No se pudieron cargar estos detalles. {0}</label>
+        <name>Time_Drive_Rd_Failed</name>
+    </customLabels>
+    <customLabels>
+        <label>Cargando detalles</label>
+        <name>Time_Drive_Rd_Loading</name>
+    </customLabels>
+    <customLabels>
+        <label>No tienes visibles campos en el diseño compacto de este objeto.</label>
+        <name>Time_Drive_Rd_No_Fields</name>
+    </customLabels>
+    <customLabels>
+        <label>Elementos de interacción</label>
+        <name>Time_Drive_Region_Items</name>
+    </customLabels>
+    <customLabels>
+        <label>Acciones del elemento</label>
+        <name>Time_Drive_Row_Actions</name>
+    </customLabels>
+    <customLabels>
+        <label>Comprobando lo que puedes hacer…</label>
+        <name>Time_Drive_Row_Checking</name>
+    </customLabels>
+    <customLabels>
+        <label>No puedes editar ni eliminar este elemento.</label>
+        <name>Time_Drive_Row_No_Actions</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: un origen de Apex necesita una clase proveedora.</label>
+        <name>Time_Drive_Server_Apex_Needs_Class</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: {1} no es una clase TimeDriveRowProvider ni TimeDriveProvider.</label>
+        <name>Time_Drive_Server_Bad_Provider</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} «{1}» no es uno de 0,25, 0,5, 1, 2, 3 ... 10 años, así que no se usa.</label>
+        <name>Time_Drive_Server_Bad_Years</name>
+    </customLabels>
+    <customLabels>
+        <label>Data 360 no está disponible en esta organización, así que se omiten sus orígenes.</label>
+        <name>Time_Drive_Server_Data360_Missing</name>
+    </customLabels>
+    <customLabels>
+        <label>La interacción de {0} no está en el modelo de datos de esta organización ({1}).</label>
+        <name>Time_Drive_Server_Dmo_Missing</name>
+    </customLabels>
+    <customLabels>
+        <label>Vínculos de identidad</label>
+        <name>Time_Drive_Server_Identity_Links</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: solo se muestran {1} elementos (su máximo de registros), así que puede faltar alguno.</label>
+        <name>Time_Drive_Server_Max_Records</name>
+    </customLabels>
+    <customLabels>
+        <label>No</label>
+        <name>Time_Drive_Server_No</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: {1} no tiene el campo {2}.</label>
+        <name>Time_Drive_Server_No_Field</name>
+    </customLabels>
+    <customLabels>
+        <label>No hay objeto de vínculo de identidad ({0}): solo se muestra la interacción del propio individuo del contacto.</label>
+        <name>Time_Drive_Server_No_Identity_Link</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: indique un campo principal o un objeto de unión para vincular los registros con la página.</label>
+        <name>Time_Drive_Server_No_Link</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: no existe ningún objeto llamado {1}.</label>
+        <name>Time_Drive_Server_No_Object</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: {1} filas no tenían {2} y no se mostraron.</label>
+        <name>Time_Drive_Server_Rows_No_Date</name>
+    </customLabels>
+    <customLabels>
+        <label>Enviado a: {0}</label>
+        <name>Time_Drive_Server_Sent_To</name>
+    </customLabels>
+    <customLabels>
+        <label>Enviado a: {0} y 1 más</label>
+        <name>Time_Drive_Server_Sent_To_One_Other</name>
+    </customLabels>
+    <customLabels>
+        <label>Enviado a: {0} y {1} más</label>
+        <name>Time_Drive_Server_Sent_To_Others</name>
+    </customLabels>
+    <customLabels>
+        <label>Sí</label>
+        <name>Time_Drive_Server_Yes</name>
+    </customLabels>
+    <customLabels>
+        <label>Cargando la cronología…</label>
+        <name>Time_Drive_Status_Loading</name>
+    </customLabels>
+    <customLabels>
+        <label>Cargando este día</label>
+        <name>Time_Drive_Status_Loading_Day</name>
+    </customLabels>
+    <customLabels>
+        <label>Actualizando los recuentos</label>
+        <name>Time_Drive_Status_Updating_Counts</name>
+    </customLabels>
+    <customLabels>
+        <label>la semana del {0}</label>
+        <name>Time_Drive_The_Week_Of</name>
+    </customLabels>
+    <customLabels>
+        <label>Aplicación</label>
+        <name>Time_Drive_Type_App</name>
+    </customLabels>
+    <customLabels>
+        <label>Llamadas</label>
+        <name>Time_Drive_Type_Call</name>
+    </customLabels>
+    <customLabels>
+        <label>Pedidos cancelados</label>
+        <name>Time_Drive_Type_Canceled</name>
+    </customLabels>
+    <customLabels>
+        <label>Actividad del carrito</label>
+        <name>Time_Drive_Type_Cart</name>
+    </customLabels>
+    <customLabels>
+        <label>Casos</label>
+        <name>Time_Drive_Type_Case</name>
+    </customLabels>
+    <customLabels>
+        <label>Pedidos entregados</label>
+        <name>Time_Drive_Type_Delivered</name>
+    </customLabels>
+    <customLabels>
+        <label>Correo electrónico</label>
+        <name>Time_Drive_Type_Email</name>
+    </customLabels>
+    <customLabels>
+        <label>Push y SMS</label>
+        <name>Time_Drive_Type_Message</name>
+    </customLabels>
+    <customLabels>
+        <label>Oportunidades perdidas</label>
+        <name>Time_Drive_Type_Opp_Lost</name>
+    </customLabels>
+    <customLabels>
+        <label>Oportunidades ganadas</label>
+        <name>Time_Drive_Type_Opp_Won</name>
+    </customLabels>
+    <customLabels>
+        <label>Oportunidades</label>
+        <name>Time_Drive_Type_Opportunity</name>
+    </customLabels>
+    <customLabels>
+        <label>Otros</label>
+        <name>Time_Drive_Type_Other</name>
+    </customLabels>
+    <customLabels>
+        <label>Pedidos realizados</label>
+        <name>Time_Drive_Type_Purchase</name>
+    </customLabels>
+    <customLabels>
+        <label>Reseñas</label>
+        <name>Time_Drive_Type_Review</name>
+    </customLabels>
+    <customLabels>
+        <label>Correos electrónicos</label>
+        <name>Time_Drive_Type_Sales_Email</name>
     </customLabels>
     <customLabels>
         <label>Búsqueda web</label>
-        <name>Time_Shift_Type_Search</name>
+        <name>Time_Drive_Type_Search</name>
     </customLabels>
     <customLabels>
         <label>Sitio web</label>
-        <name>Time_Shift_Type_Web</name>
+        <name>Time_Drive_Type_Web</name>
     </customLabels>
     <customLabels>
         <label>Todos los tipos</label>
-        <name>Time_Shift_Types_All</name>
+        <name>Time_Drive_Types_All</name>
     </customLabels>
     <customLabels>
         <label>{0} de {1} tipos</label>
-        <name>Time_Shift_Types_Some</name>
+        <name>Time_Drive_Types_Some</name>
     </customLabels>
     <customLabels>
         <label>Todos los elementos</label>
-        <name>Time_Shift_View_All</name>
+        <name>Time_Drive_View_All</name>
     </customLabels>
     <customLabels>
-        <label>Cronología de comercio</label>
-        <name>Time_Shift_View_Commerce</name>
+        <label>Comercio</label>
+        <name>Time_Drive_View_Commerce</name>
     </customLabels>
     <customLabels>
-        <label>Cronología digital</label>
-        <name>Time_Shift_View_Digital</name>
+        <label>Digital</label>
+        <name>Time_Drive_View_Digital</name>
     </customLabels>
     <customLabels>
-        <label>Cronología de marketing</label>
-        <name>Time_Shift_View_Marketing</name>
+        <label>Marketing</label>
+        <name>Time_Drive_View_Marketing</name>
     </customLabels>
     <customLabels>
-        <label>Cronología de ventas</label>
-        <name>Time_Shift_View_Sales</name>
+        <label>Ventas</label>
+        <name>Time_Drive_View_Sales</name>
     </customLabels>
     <customLabels>
-        <label>Cronología de servicio</label>
-        <name>Time_Shift_View_Service</name>
+        <label>Servicio</label>
+        <name>Time_Drive_View_Service</name>
     </customLabels>
     <customLabels>
         <label>Semana del {0}</label>
-        <name>Time_Shift_Week_Of</name>
+        <name>Time_Drive_Week_Of</name>
     </customLabels>
     <customLabels>
         <label>Semana del</label>
-        <name>Time_Shift_Week_Of_Word</name>
+        <name>Time_Drive_Week_Of_Word</name>
     </customLabels>
 </Translations>

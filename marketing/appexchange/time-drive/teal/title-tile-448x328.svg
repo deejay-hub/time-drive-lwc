@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="448" height="328" viewBox="0 0 448 328">
+<title>Time Drive: title tile</title>
+<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#CDE7DF"/><stop offset="1" stop-color="#E3F1EC"/></linearGradient><clipPath id="canvas"><rect width="448" height="328"/></clipPath></defs>
+<g clip-path="url(#canvas)">
+<rect id="background" width="448" height="328" fill="url(#bg)"/>
+<rect x="0.0" y="180.0" width="120" height="120" rx="26.4" transform="rotate(45 60 240)" fill="#0F6B58" fill-opacity="0.16"/>
+<rect x="370.0" y="-20.0" width="120" height="120" rx="26.4" transform="rotate(45 430 40)" fill="#0F6B58" fill-opacity="0.16"/>
+<path d="M356 36Q356 48 368 48Q356 48 356 60Q356 48 344 48Q356 48 356 36Z" fill="#FFFFFF" fill-opacity="0.95"/>
+<path d="M384 70Q384 78 392 78Q384 78 384 86Q384 78 376 78Q384 78 384 70Z" fill="#FFFFFF" fill-opacity="0.95"/>
+<g id="logo" transform="translate(30 28) scale(0.64)"><rect width="100" height="100" rx="18" fill="#0B4D43"/>
+<rect x="16" y="16" width="68" height="68" rx="8" fill="#FFFFFF"/>
+<rect x="31" y="30" width="4" height="42" rx="2" fill="#0F6B58" fill-opacity="0.45"/>
+<circle cx="33" cy="30" r="6" fill="#2F7D4F"/><circle cx="33" cy="50" r="6" fill="#E5532F"/><circle cx="33" cy="70" r="6" fill="#5B5FC7"/>
+<rect x="45" y="27" width="26" height="5" rx="2.5" fill="#2A1A12"/><rect x="45" y="47" width="20" height="5" rx="2.5" fill="#2A1A12"/>
+<rect x="45" y="67" width="23" height="5" rx="2.5" fill="#2A1A12" fill-opacity="0.35"/></g>
+<text id="wordmark" x="108" y="76" font-family="Orbitron, 'Arial Black', sans-serif" font-size="33" font-weight="900" text-anchor="start" fill="#12201C">TIME DRIVE</text>
+<text x="32" y="140" font-family="Lato, 'Helvetica Neue', Arial, sans-serif" font-size="24" font-weight="700" text-anchor="start" fill="#12201C">View every touchpoint on one,</text>
+<text x="32" y="172" font-family="Lato, 'Helvetica Neue', Arial, sans-serif" font-size="24" font-weight="700" text-anchor="start" fill="#12201C">beautiful, interactive timeline.</text>
+<rect x="6" y="186" width="436" height="400" rx="60" fill="#0B4D43" fill-opacity="0.05"/>
+<rect x="16" y="196" width="416" height="400" rx="50" fill="#0B4D43" fill-opacity="0.07"/>
+<rect x="24" y="204" width="400" height="400" rx="42" fill="#0B4D43" fill-opacity="0.09"/>
+<rect id="device" x="32" y="198" width="384" height="400" rx="34" fill="#F7FAF8"/>
+<g id="screen-T"><rect x="46" y="212" width="356" height="108" rx="22" fill="#FFFFFF" stroke="#0F6B58" stroke-width="2" stroke-dasharray="8 6"/>
+<text x="224.0" y="250" font-family="Orbitron, 'Arial Black', sans-serif" font-size="18" font-weight="800" text-anchor="middle" fill="#0B4D43">SCREEN T</text>
+<text x="224.0" y="274" font-family="Lato, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="700" text-anchor="middle" fill="#0B4D43">A timeline crop · 356 x 108 px</text>
+</g>
+<rect id="footer" y="320" width="448" height="8" fill="#0B4D43"/>
+</g>
+</svg>

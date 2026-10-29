@@ -2,26 +2,26 @@
   "packageDirectories": [
     {
       "path": "force-app",
-      "package": "TimeShift",
+      "package": "TimeDrive",
       "versionName": "ver 0.1",
       "versionNumber": "0.1.0.NEXT",
       "default": true
     },
     {
       "path": "force-app-data360",
-      "package": "TimeShiftData360",
+      "package": "TimeDriveData360",
       "versionName": "ver 0.1",
       "versionNumber": "0.1.0.NEXT",
       "default": false,
       "dependencies": [
         {
-          "package": "TimeShift",
+          "package": "TimeDrive",
           "versionNumber": "0.1.0.LATEST"
         }
       ]
     }
   ],
-  "name": "TimeShift",
+  "name": "TimeDrive",
   "namespace": "",
   "sfdcLoginUrl": "https://login.salesforce.com",
   "sourceApiVersion": "67.0",

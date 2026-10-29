@@ -10,7 +10,7 @@ const path = require("path");
 const base = require("@salesforce/sfdx-lwc-jest/src/resolver.js");
 
 const LABELS = path.resolve(__dirname, "../force-app/main/default/labels/CustomLabels.labels-meta.xml");
-const OUT = path.join(os.tmpdir(), "time-trail-jest-labels");
+const OUT = path.join(os.tmpdir(), "time-drive-jest-labels");
 
 const unescape = (text) =>
   text

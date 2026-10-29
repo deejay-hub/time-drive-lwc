@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Provider_Class__c</fullName>
+    <inlineHelpText>Apex: the class that supplies the events.</inlineHelpText>
+    <label>Provider Class</label>
+    <length>255</length>
+    <required>false</required>
+    <type>Text</type>
+</CustomField>

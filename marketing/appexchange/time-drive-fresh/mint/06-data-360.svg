@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1000" viewBox="0 0 1500 1000">
+<title>Time Drive: Data 360</title>
+<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F4FAF7"/><stop offset="1" stop-color="#DDEFE8"/></linearGradient><radialGradient id="glow"><stop offset="0" stop-color="#7FC2AC" stop-opacity="0.35"/><stop offset="1" stop-color="#7FC2AC" stop-opacity="0"/></radialGradient><clipPath id="canvas"><rect width="1500" height="1000"/></clipPath></defs>
+<g clip-path="url(#canvas)">
+<rect id="background" width="1500" height="1000" fill="url(#bg)"/>
+<circle id="glow" cx="1170.0" cy="300.0" r="620.0" fill="url(#glow)"/>
+<circle cx="104" cy="140" r="6" fill="#0F6B58"/>
+<text id="kicker" x="122" y="147" font-family="Sora, 'Helvetica Neue', Arial, sans-serif" font-size="20" font-weight="800" text-anchor="start" letter-spacing="3" fill="#0F6B58">DATA 360</text>
+<rect x="30" y="392" width="880" height="620" rx="68" fill="#0B4D43" fill-opacity="0.028"/>
+<rect x="42" y="404" width="856" height="596" rx="56" fill="#0B4D43" fill-opacity="0.044"/>
+<rect x="52" y="414" width="836" height="576" rx="46" fill="#0B4D43" fill-opacity="0.064"/>
+<rect id="tablet-6" x="60" y="400" width="820" height="560" rx="38" fill="#FFFFFF" stroke="#C5DDD4" stroke-width="2"/>
+<g id="screen-6"><rect x="74" y="414" width="792" height="532" rx="26" fill="#FFFFFF" stroke="#0F6B58" stroke-width="2.5" stroke-dasharray="12 9"/>
+<text x="470.0" y="660.0" font-family="Sora, 'Helvetica Neue', Arial, sans-serif" font-size="30" font-weight="800" text-anchor="middle" letter-spacing="1" fill="#0B4D43">SCREEN 6</text>
+<text x="470.0" y="701.4" font-family="Lato, 'Helvetica Neue', Arial, sans-serif" font-size="24" font-weight="700" text-anchor="middle" fill="#0B4D43">CRM and Data 360, one timeline</text>
+<text x="470.0" y="732.9" font-family="Lato, 'Helvetica Neue', Arial, sans-serif" font-size="21" font-weight="400" text-anchor="middle" fill="#0B4D43">Emails, visits and tasks together</text>
+<text x="470.0" y="764.4" font-family="Lato, 'Helvetica Neue', Arial, sans-serif" font-size="18" font-weight="400" text-anchor="middle" fill="#0B4D43" fill-opacity="0.8">792 x 532 px (capture at 2x)</text>
+</g>
+<text id="headline" x="940" y="250" font-family="Sora, 'Helvetica Neue', Arial, sans-serif" font-size="62" font-weight="800" text-anchor="start" fill="#0B2B26">Salesforce</text>
+<text x="940" y="324" font-family="Sora, 'Helvetica Neue', Arial, sans-serif" font-size="62" font-weight="800" text-anchor="start" fill="#0B2B26">and Data 360,</text>
+<text x="940" y="398" font-family="Sora, 'Helvetica Neue', Arial, sans-serif" font-size="62" font-weight="800" text-anchor="start" fill="#0B2B26">side by side.</text>
+<text id="subtext" x="940" y="500" font-family="Lato, 'Helvetica Neue', Arial, sans-serif" font-size="28" font-weight="400" text-anchor="start" fill="#44564F">Add engagement from the unified</text>
+<text x="940" y="540" font-family="Lato, 'Helvetica Neue', Arial, sans-serif" font-size="28" font-weight="400" text-anchor="start" fill="#44564F">profile to the same timeline as</text>
+<text x="940" y="580" font-family="Lato, 'Helvetica Neue', Arial, sans-serif" font-size="28" font-weight="400" text-anchor="start" fill="#44564F">your CRM records.</text>
+<rect x="96" y="200" width="217" height="46" rx="23.0" fill="#FFFFFF" fill-opacity="1.0" stroke="#9CCBBD" stroke-opacity="0.6"/>
+<text x="204.5" y="230.0" font-family="Sora, 'Helvetica Neue', Arial, sans-serif" font-size="20" font-weight="700" text-anchor="middle" fill="#0B4D43">Salesforce CRM</text>
+<rect x="96" y="270" width="143" height="46" rx="23.0" fill="#0F6B58" fill-opacity="1" stroke="#0F6B58" stroke-opacity="0.6"/>
+<text x="167.5" y="300.0" font-family="Sora, 'Helvetica Neue', Arial, sans-serif" font-size="20" font-weight="700" text-anchor="middle" fill="#FFFFFF">Data 360</text>
+<path d="M 330 223 C 450 223, 450 258, 560 258" fill="none" stroke="#0F6B58" stroke-opacity="0.6" stroke-width="3" stroke-dasharray="3 9" stroke-linecap="round"/>
+<path d="M 330 293 C 450 293, 450 258, 560 258" fill="none" stroke="#0F6B58" stroke-opacity="0.6" stroke-width="3" stroke-dasharray="3 9" stroke-linecap="round"/>
+<line x1="560" y1="258" x2="860" y2="258" stroke="#0F6B58" stroke-opacity="0.5" stroke-width="4" stroke-linecap="round"/>
+<circle cx="620" cy="258" r="12" fill="#2F7D4F"/>
+<circle cx="710" cy="258" r="12" fill="#E5532F"/>
+<circle cx="800" cy="258" r="12" fill="#5B5FC7"/>
+<rect id="footer" y="930" width="1500" height="70" fill="#FFFFFF" fill-opacity="0.94"/>
+<g id="footer-logo" transform="translate(96 944) scale(0.4)"><rect width="100" height="100" rx="18" fill="#0B4D43"/>
+<rect x="16" y="16" width="68" height="68" rx="8" fill="#FFFFFF"/>
+<rect x="31" y="30" width="4" height="42" rx="2" fill="#0F6B58" fill-opacity="0.45"/>
+<circle cx="33" cy="30" r="6" fill="#2F7D4F"/><circle cx="33" cy="50" r="6" fill="#E5532F"/><circle cx="33" cy="70" r="6" fill="#5B5FC7"/>
+<rect x="45" y="27" width="26" height="5" rx="2.5" fill="#2A1A12"/><rect x="45" y="47" width="20" height="5" rx="2.5" fill="#2A1A12"/>
+<rect x="45" y="67" width="23" height="5" rx="2.5" fill="#2A1A12" fill-opacity="0.35"/></g>
+<text x="150" y="972" font-family="Sora, 'Helvetica Neue', Arial, sans-serif" font-size="24" font-weight="800" text-anchor="start" fill="#0B4D43">Time Drive</text>
+<text x="1404" y="972" font-family="Lato, 'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="700" text-anchor="end" fill="#0B4D43" fill-opacity="0.8">6 / 10</text>
+</g>
+</svg>

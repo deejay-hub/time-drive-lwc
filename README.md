@@ -1,4 +1,4 @@
-# Time Trail
+# Time Drive
 
 A Lightning web component for **Contact**, **Account** and person account
 record pages that shows a customer's engagement in time order: tasks, calls,
@@ -73,9 +73,9 @@ stack. Every event's detail names the object it came from.
 
 ### Data 360 data
 
-Each engagement DMO is its own **Time Trail Source** record of Kind
+Each engagement DMO is its own **Time Drive Source** record of Kind
 **Data 360** (`Data_360_Email`, `_Message`, `_Website`, `_Web_Search`, `_App`,
-`_Cart`), read by `TimeShiftData360Provider`. It:
+`_Cart`), read by `TimeDriveData360Provider`. It:
 
 1. Treats the Contact Id as an Individual Id: the Sales Cloud connector maps
    Contact to `ssot__Individual__dlm`.
@@ -85,9 +85,9 @@ Each engagement DMO is its own **Time Trail Source** record of Kind
    `WHERE <Individual Field> IN :ids AND <Date Field> >= :since`, the Ids
    being the Contact's, its Unified Individual's and the merged Individuals'.
 
-- **Identity link object.** Set it in **Time Trail Setting > Default**
+- **Identity link object.** Set it in **Time Drive Setting > Default**
   to your ruleset's link DMO (Data Cloud Setup > Data Model), for example
-  `UnifiedLinkssotIndividualTimeShift__dlm`. If the one set (default
+  `UnifiedLinkssotIndividualTimeDrive__dlm`. If the one set (default
   `IndividualIdentityLink__dlm`) isn't there, the ruleset's
   `UnifiedLinkssotIndividual…__dlm` is used, with `SourceRecordId__c` /
   `UnifiedRecordId__c`.
@@ -95,7 +95,7 @@ Each engagement DMO is its own **Time Trail Source** record of Kind
   Field, Id Field and templates against your mappings. Rows also offer
   `{Action}`, the channel action read naturally ("opened", "clicked"), so
   titles read "Email {Action}".
-- **Details.** Each DMO's expanded fields are its Time Trail Detail Field
+- **Details.** Each DMO's expanded fields are its Time Drive Detail Field
   records (shipped: Channel action).
 - **Access.** Users need read access to the DMOs (a Data Cloud permission set)
   in the data space the DMOs live in.
@@ -113,20 +113,20 @@ an error, and the CRM events still load.
 
 ## Configuring what's plotted
 
-Like Time Warp, the timeline plots whatever **Time Trail Source** custom
-metadata records say (Setup > Custom Metadata Types > Time Trail Source >
+Like Time Warp, the timeline plots whatever **Time Drive Source** custom
+metadata records say (Setup > Custom Metadata Types > Time Drive Source >
 Manage Records). One record per kind of event, and every record, whatever its
 Kind, plots the same way.
 
 ### One contract for every source
 
-Each source returns **rows**; `TimeShiftPlotter` turns them into events
+Each source returns **rows**; `TimeDrivePlotter` turns them into events
 from the source record. Only where the rows come from differs:
 
 | Kind       | Rows from                                           | Provider Class                     |
 | ---------- | --------------------------------------------------- | ---------------------------------- |
-| Salesforce | Any standard or custom object, queried in user mode | Blank (`TimeShiftSoqlProvider`)    |
-| Data 360   | One engagement DMO for the Contact's Individuals    | Blank (`TimeShiftData360Provider`) |
+| Salesforce | Any standard or custom object, queried in user mode | Blank (`TimeDriveSoqlProvider`)    |
+| Data 360   | One engagement DMO for the Contact's Individuals    | Blank (`TimeDriveData360Provider`) |
 | Apex       | Your class: an external system, a calculation       | Required                           |
 
 ### Source fields
@@ -155,7 +155,7 @@ from the source record. Only where the rows come from differs:
 `Event.AccountId`, the same field the standard timeline rolls up by: the account's own, its
 contacts', and those of its opportunities and contracts. An activity shared with a second contact of
 the account (Shared Activities) carries another account's Id there, so with Shared Activities in
-use, **Time Trail Setup > Fit to your org** switches each of Tasks, Calls, Emails and Events to its
+use, **Time Drive Setup > Fit to your org** switches each of Tasks, Calls, Emails and Events to its
 `_Every` variant (`Fit_Account_Tasks_Every` and so on): one query through
 `TaskRelation.AccountId` / `EventRelation.AccountId` that returns the account's own activities and
 the shared ones together, in place of the main source. Without Shared Activities the main sources
@@ -165,18 +165,18 @@ account?").
 
 Shipped records: Tasks, Calls and Emails, and the `Fit_*` sources (Cases,
 Events, Email Messages, Opportunities and more for Contacts, Accounts and
-person accounts) that Time Trail Setup switches on to fit the org.
+person accounts) that Time Drive Setup switches on to fit the org.
 
 ### Expanding records
 
 An event expands with, in order of preference:
 
-1. Its source's **Time Trail Detail Field** records (Source, Field,
+1. Its source's **Time Drive Detail Field** records (Source, Field,
    Label, Sequence, Format: Text, Date, Date/Time, Currency or Number). Blank
    labels use the field's label. Any source can have them; on a Salesforce
    source they replace the compact layout.
 2. The linked record's compact layout (Use Compact Layout), through the
-   `timeShiftRecordDetails` component: an admin changes the fields in
+   `timeDriveRecordDetails` component: an admin changes the fields in
    Object Manager, and Lightning Data Service applies field-level security.
    It loads only when the event is opened.
 3. The details an events provider builds itself.
@@ -186,13 +186,13 @@ An event expands with, in order of preference:
 Return rows; the record says how to plot them.
 
 ```apex
-public with sharing class MyLoyaltyProvider implements TimeShiftRowProvider {
-  public List<TimeShiftRow> getRows(TimeShiftContext context) {
-    List<TimeShiftRow> rows = new List<TimeShiftRow>();
+public with sharing class MyLoyaltyProvider implements TimeDriveRowProvider {
+  public List<TimeDriveRow> getRows(TimeDriveContext context) {
+    List<TimeDriveRow> rows = new List<TimeDriveRow>();
     // context.recordId, context.since, context.maxRecords(), context.priorEvents
     for (LoyaltyApi.Entry entry : LoyaltyApi.entriesFor(context.recordId, context.since)) {
       rows.add(
-        new TimeShiftRow(
+        new TimeDriveRow(
           new Map<String, Object>{
             'Id' => entry.id, // Id Field
             'EarnedAt' => entry.earnedAt, // Date Field (Datetime or Date)
@@ -208,21 +208,21 @@ public with sharing class MyLoyaltyProvider implements TimeShiftRowProvider {
 }
 ```
 
-Then add a Time Trail Source record: Kind **Apex**, Provider Class
+Then add a Time Drive Source record: Kind **Apex**, Provider Class
 `MyLoyaltyProvider`, Date Field `EarnedAt`, Title `Earned {Points} points`,
 Subtitle `{Reason}`, an Event Type, Category, Icon and colour, and Detail
-Field records for what the expanded event shows. `TimeShiftExampleProvider`
+Field records for what the expanded event shows. `TimeDriveExampleProvider`
 and its `Loyalty_Points_Example` record are a working example: activate the
 record to see it.
 
 A class that needs full control over every event (its own types and
-details) can implement `TimeShiftProvider` and return
-`TimeShiftController.EngagementEvent`s itself; the record's
+details) can implement `TimeDriveProvider` and return
+`TimeDriveController.EngagementEvent`s itself; the record's
 icon and colour still apply through `context.styled(event)`.
 
 ## Diagnostics
 
-**Time Trail Setup > Diagnostics** (admins with Customize Application) runs a Contact or Account's
+**Time Drive Setup > Diagnostics** (admins with Customize Application) runs a Contact or Account's
 timeline and shows what it did. Enter the Id, choose the layout and the History and Future years, and
 the actual timeline draws, as it does on a record page. Three tabs:
 
@@ -243,7 +243,7 @@ the actual timeline draws, as it does on a record page. Three tabs:
 - **Output**: the timeline itself. It is on the page whichever tab is showing, so its load is timed as
   it really is.
 
-The card logs a line for each request and draw (also to the console, as `[Time Trail]`), and
+The card logs a line for each request and draw (also to the console, as `[Time Drive]`), and
 `getTimeline` returns its own server time, so the split above is for the request the card made.
 Recording of queries is off for every other request, so a timeline pays nothing for it.
 
@@ -272,7 +272,7 @@ sf project deploy start --source-dir force-app --target-org <alias>
 sf project deploy start --source-dir force-app-data360 --target-org <alias>
 ```
 
-`force-app-data360` holds `TimeShiftData360SqlRunner`, which calls
+`force-app-data360` holds `TimeDriveData360SqlRunner`, which calls
 `ConnectApi.CdpQuery` and so only compiles where Data 360 is provisioned.
 
 **Scale.** The summary counts each source rather than reading it: an
@@ -285,13 +285,13 @@ on screen, and not at all for a busy one (over 50 items), which comes back as
 grouped counts.
 
 In Lightning App Builder, open a Contact record page and drag
-**Time Trail** onto it.
+**Time Drive** onto it.
 
 ## App Builder properties
 
 | Property               | Default    | Effect                                                                                                                                                                                                                                           |
 | ---------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Title                  | Time Trail | Card title                                                                                                                                                                                                                                       |
+| Title                  | Time Drive | Card title                                                                                                                                                                                                                                       |
 | Layout                 | Auto       | Auto (vertical below 640px, horizontal above), Vertical or Horizontal                                                                                                                                                                            |
 | Activity Actions       | Inline     | The record's New Task, New Event, Log a Call and Email: None; One button (a + menu); Inline (a round button each among the tools); Full (a button each with its name, on a line above the header, or beside the tools in a wide horizontal card) |
 | Item Detail            | Max        | Max shows each item's time and date; Lite only its title and subtitle. A button after Today switches, and the choice is remembered per browser                                                                                                   |
@@ -310,18 +310,18 @@ npm run lint
 npm run test:unit
 ```
 
-Apex tests: `TimeShiftControllerTest`.
+Apex tests: `TimeDriveControllerTest`.
 
 ## Translations
 
-Every string of the timeline (the Time Trail card, its filters, the View all page,
+Every string of the timeline (the Time Drive card, its filters, the View all page,
 record details and error messages) is a custom label, in English with Spanish
 (`es`) and Arabic (`ar`) translations. Setup's own text is not translated yet.
 
 - `scripts/labels/catalogue.py` is the list: a key, the English, the Spanish and the
   Arabic. Add or change a string there, then run `python3 -I scripts/labels/generate.py`.
   It writes `CustomLabels`, the `es` and `ar` translation files and the shared
-  `c/timeShiftLabels` module the components import.
+  `c/timeDriveLabels` module the components import.
 - Fill in `{0}`, `{1}` ... with `format(LABELS.itemsMany, 12)`.
 - The translations are drafts: have a native speaker review them. Arabic has
   singular, dual and plural forms; each count here uses one plural form.

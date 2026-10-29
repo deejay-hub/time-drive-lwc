@@ -1,0 +1,5 @@
+Bitcount Prop Double (bitcount-prop-double.woff2): Bitcount Prop Double by Petr van Blokland, latin subset,
+  variable weight 100-900. The titles.  https://fonts.google.com/specimen/Bitcount+Prop+Double
+Figtree (figtree.woff2): Figtree by Erik Kennedy, latin subset, variable weight 300-900. The body text.
+  https://fonts.google.com/specimen/Figtree
+Both are licensed under the SIL Open Font License 1.1: https://openfontlicense.org

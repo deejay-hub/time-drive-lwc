@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Parent_Field__c</fullName>
+    <inlineHelpText>The lookup on the object that points to the page's record.</inlineHelpText>
+    <label>Parent Field</label>
+    <length>255</length>
+    <required>false</required>
+    <type>Text</type>
+</CustomField>

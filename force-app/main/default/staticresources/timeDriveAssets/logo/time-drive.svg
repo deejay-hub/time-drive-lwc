@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+  <!-- Time Drive: nodes on a rail, on deep teal (the setup pages' accent, #0f6b58, taken dark). -->
+  <rect width="100" height="100" rx="18" fill="#0b4d43" />
+  <rect x="16" y="16" width="68" height="68" rx="8" fill="#ffffff" />
+  <rect x="31" y="30" width="4" height="42" rx="2" fill="#0f6b58" fill-opacity="0.45" />
+  <circle cx="33" cy="30" r="6" fill="#2f7d4f" />
+  <circle cx="33" cy="50" r="6" fill="#e5532f" />
+  <circle cx="33" cy="70" r="6" fill="#5b5fc7" />
+  <rect x="45" y="27" width="26" height="5" rx="2.5" fill="#2a1a12" />
+  <rect x="45" y="47" width="20" height="5" rx="2.5" fill="#2a1a12" />
+  <rect x="45" y="67" width="23" height="5" rx="2.5" fill="#2a1a12" fill-opacity="0.35" />
+</svg>

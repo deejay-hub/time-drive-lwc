@@ -1,0 +1,833 @@
+<template>
+  <article class={cardClass} dir={textDir} aria-label={cardTitle}>
+    <header class="header">
+      <div class={titleRowClass}>
+        <!-- The view names the card, as a list view's name does: a heading
+             holding the button that switches it. A native button and menu, so
+             the label can be styled. -->
+        <template lwc:if={firstLoad}>
+          <!-- Loading: the title and buttons are placeholders until the timeline is. -->
+          <div class="view-switch view-switch_skeleton" aria-hidden="true">
+            <span class="skeleton skeleton_heading"></span>
+          </div>
+        </template>
+        <template lwc:else>
+          <div class="view-switch" onpointerdown={markViewPress}>
+            <h2 class="view-heading">
+              <button
+                type="button"
+                class="view-button"
+                aria-haspopup="menu"
+                aria-expanded={viewMenuExpanded}
+                aria-controls="view-menu"
+                onclick={toggleViewMenu}
+                onkeydown={handleViewButtonKey}
+              >
+                <span class="view-label">{viewLabel}</span>
+                <svg class="view-caret" viewBox="0 0 12 12" aria-hidden="true"><path d="M1.5 3.75h9L6 9z"></path></svg>
+              </button>
+            </h2>
+            <template lwc:if={viewMenuOpen}>
+              <ul
+                id="view-menu"
+                class="view-menu"
+                role="menu"
+                aria-label={labels.menuViews}
+                onkeydown={handleViewMenuKey}
+              >
+                <template for:each={viewOptions} for:item="option">
+                  <li key={option.value} role="none">
+                    <button
+                      type="button"
+                      class="view-option"
+                      role="menuitemradio"
+                      aria-checked={option.ariaChecked}
+                      tabindex="-1"
+                      data-value={option.value}
+                      onclick={handleViewPick}
+                    >
+                      <svg class="view-check" viewBox="0 0 16 16" aria-hidden="true">
+                        <path d="M3 8.5l3.25 3.25L13 5"></path>
+                      </svg>
+                      {option.label}
+                    </button>
+                  </li>
+                </template>
+              </ul>
+            </template>
+          </div>
+        </template>
+
+        <!-- Full: the actions share the view's line, at its end; the tools
+             drop to the line below. -->
+        <template lwc:if={fullActionsSkeleton}>
+          <div class="actions-group actions-group_skeleton" aria-hidden="true">
+            <span class="skeleton skeleton_pill_wide"></span><span class="skeleton skeleton_pill_wide"></span>
+          </div>
+        </template>
+        <template lwc:elseif={fullActionsOwnRow}>
+          <div class="actions-group">
+            <lightning-button-group>
+              <template for:each={shownActions} for:item="a">
+                <lightning-button
+                  key={a.key}
+                  label={a.label}
+                  title={a.label}
+                  data-action={a.apiName}
+                  onclick={handleActivityAction}
+                ></lightning-button>
+              </template>
+              <template lwc:if={hasOverflowActions}>
+                <lightning-button-menu
+                  alternative-text={labels.menuNewActivity}
+                  title={labels.menuNewActivity}
+                  menu-alignment="right"
+                  onselect={handleActivityAction}
+                >
+                  <template for:each={overflowActions} for:item="a">
+                    <lightning-menu-item key={a.key} value={a.apiName} label={a.label}></lightning-menu-item>
+                  </template>
+                </lightning-button-menu>
+              </template>
+            </lightning-button-group>
+          </div>
+        </template>
+
+        <!-- Full: the filter summary shares the tools' line, on the left. -->
+        <template lwc:if={actionsOnTitleRow}>
+          <span class="row-break" aria-hidden="true"></span>
+          <p class="summary summary_tools" aria-live="polite">
+            {summaryWhen}<template lwc:if={summaryPending}
+              >&nbsp;·&nbsp;<span class="skeleton skeleton_summary" aria-hidden="true"></span
+              ><span class="assistive-text">{labels.statusUpdatingCounts}</span></template
+            ><template lwc:else>{summaryRest}</template>
+          </p>
+        </template>
+
+        <div class="toolbar">
+          <template lwc:if={firstLoad}>
+            <div class="tools tools_skeleton" aria-hidden="true">
+              <span class="skeleton skeleton_button skeleton_button_wide"></span>
+              <span class="skeleton skeleton_button"></span>
+              <span class="skeleton skeleton_button"></span>
+            </div>
+          </template>
+          <template lwc:else>
+            <!-- The record's activity actions, from its layout, as the standard
+                 Activity component offers them. Narrow: one New menu. -->
+            <template lwc:if={showInlineActions}>
+              <template lwc:if={actionsAsMenu}>
+                <lightning-button-menu
+                  class="actions-menu"
+                  icon-name="utility:add"
+                  alternative-text={labels.menuNewActivity}
+                  title={labels.menuNewActivity}
+                  menu-alignment="right"
+                  onselect={handleActivityAction}
+                >
+                  <template for:each={activityActions} for:item="a">
+                    <lightning-menu-item
+                      key={a.key}
+                      value={a.apiName}
+                      label={a.label}
+                      prefix-icon-name={a.icon}
+                    ></lightning-menu-item>
+                  </template>
+                </lightning-button-menu>
+              </template>
+              <template lwc:else>
+                <!-- Each action its own bordered button, holding the action's
+                     coloured circle, as on the standard Activity composer. -->
+                <div class="actions" role="group" aria-label={labels.menuNewActivity}>
+                  <template for:each={activityActions} for:item="a">
+                    <button
+                      key={a.key}
+                      type="button"
+                      class="action-circle"
+                      style={a.style}
+                      title={a.label}
+                      aria-label={a.label}
+                      data-action={a.apiName}
+                      onclick={handleActivityAction}
+                    >
+                      <span class="action-circle-disc" aria-hidden="true">
+                        <lightning-icon icon-name={a.buttonIcon} size="xx-small"></lightning-icon>
+                      </span>
+                    </button>
+                  </template>
+                </div>
+              </template>
+            </template>
+            <!-- Separate buttons, a little apart, as the activity actions. -->
+            <div class="tools">
+              <!-- Back to today's slot (today's items, or "Nothing today"). -->
+              <template lwc:if={hasEvents}>
+                <template lwc:if={narrow}>
+                  <lightning-button-icon
+                    class="today-button today-button_icon"
+                    icon-name="utility:key_dates"
+                    variant="border"
+                    alternative-text={labels.buttonToday}
+                    title={labels.buttonToday}
+                    onclick={goToToday}
+                  ></lightning-button-icon>
+                </template>
+                <template lwc:else>
+                  <lightning-button
+                    class="today-button"
+                    label={labels.buttonToday}
+                    onclick={goToToday}
+                  ></lightning-button>
+                </template>
+              </template>
+              <!-- Lite: titles and subtitles only, no times or dates. -->
+              <template lwc:if={showLiteButton}>
+                <lightning-button-icon-stateful
+                  class="lite-button"
+                  icon-name="utility:hide"
+                  selected={lite}
+                  alternative-text={liteLabel}
+                  title={liteLabel}
+                  onclick={toggleLite}
+                ></lightning-button-icon-stateful>
+              </template>
+              <!-- A native button, so its pressed (filters on) and expanded (panel
+                   open) states reach screen readers for certain. -->
+              <button
+                type="button"
+                class={filterButtonClass}
+                aria-label={filterLabel}
+                title={filterLabel}
+                aria-pressed={filtersPressed}
+                aria-haspopup="dialog"
+                aria-expanded="false"
+                onpointerdown={markFilterPress}
+                onclick={toggleFilters}
+              >
+                <!-- The funnel, as on Salesforce's own list and activity filters. -->
+                <lightning-icon class="filter-icon" icon-name="utility:filterList" size="x-small"></lightning-icon>
+              </button>
+              <!-- Nothing to expand on an empty timeline: no button. -->
+              <template lwc:if={showExpandButton}>
+                <lightning-button-icon-stateful
+                  class="expand-button"
+                  icon-name={expandIcon}
+                  selected={allExpanded}
+                  alternative-text={expandLabel}
+                  title={expandLabel}
+                  disabled={isLoading}
+                  onclick={toggleAll}
+                ></lightning-button-icon-stateful>
+              </template>
+              <template lwc:if={notPhone}>
+                <lightning-button-icon
+                  icon-name="utility:refresh"
+                  alternative-text={labels.buttonRefresh}
+                  title={labels.buttonRefresh}
+                  disabled={refreshing}
+                  onclick={handleRefresh}
+                ></lightning-button-icon>
+              </template>
+              <!-- A phone has room for Today, Filters and this: Refresh, Expand all
+                   and the Lite switch are behind it. -->
+              <template lwc:if={phone}>
+                <button
+                  type="button"
+                  class="header-menu-button"
+                  aria-label={labels.rowActions}
+                  title={labels.rowActions}
+                  aria-haspopup="menu"
+                  onpointerdown={markRowMenuPress}
+                  onclick={toggleHeaderMenu}
+                >
+                  <lightning-icon icon-name="utility:threedots_vertical" size="x-small"></lightning-icon>
+                </button>
+              </template>
+            </div>
+          </template>
+        </div>
+
+        <!-- The event types panel (its own component, so opening it doesn't
+             re-render the timeline); nothing applies until Apply. -->
+        <c-time-drive-filters
+          options={typeOptions}
+          none-text={filterNoneText}
+          slds1={slds1}
+          onapply={handleFiltersApply}
+          onopenchange={handleFiltersOpenChange}
+        ></c-time-drive-filters>
+      </div>
+
+      <div class="summary-row">
+        <template lwc:if={summaryAfterTools}>
+          <p class="summary" aria-live="polite">
+            {summaryWhen}<template lwc:if={summaryPending}
+              >&nbsp;·&nbsp;<span class="skeleton skeleton_summary" aria-hidden="true"></span
+              ><span class="assistive-text">{labels.statusUpdatingCounts}</span></template
+            ><template lwc:else>{summaryRest}</template>
+          </p>
+        </template>
+        <!-- Says where the timeline moved to after a jump or as days load. -->
+        <p class="assistive-text announcer" aria-live="polite" lwc:dom="manual"></p>
+      </div>
+    </header>
+
+    <!-- Everything under the header. -->
+    <div class="below-header">
+      <div class="body">
+        <template lwc:if={isLoading}>
+          <div class="skeleton-frame" role="status" aria-busy="true" style={skeletonFrameStyle}>
+            <span class="assistive-text">{labels.statusLoading}</span>
+            <!-- Shaped like the loaded card, so nothing moves when data lands. -->
+            <template lwc:if={horizontal}>
+              <div class="track track_skeleton" style={trackStyle}>
+                <template for:each={skeletonColumns} for:item="column">
+                  <section key={column} class="day">
+                    <p class="day-label">
+                      <span class="date"><span class="skeleton skeleton_date"></span></span>
+                    </p>
+                    <ol class="events">
+                      <template for:each={skeletonColumnRows} for:item="row">
+                        <li key={row} class="skeleton-row">
+                          <span class="skeleton skeleton_node"></span>
+                          <span class="skeleton-lines">
+                            <span class="skeleton skeleton_title"></span>
+                            <span class="skeleton skeleton_sub"></span>
+                          </span>
+                          <span class="skeleton skeleton_time"></span>
+                        </li>
+                      </template>
+                    </ol>
+                  </section>
+                </template>
+              </div>
+              <div class="seek seek_skeleton">
+                <div class="seek-rail"><span class="seek-line"></span></div>
+              </div>
+            </template>
+            <template lwc:else>
+              <p class="day-label"><span class="skeleton skeleton_day"></span></p>
+              <!-- The loaded list's fixed height, filled with days of rows. -->
+              <div class="track track_skeleton" style={trackStyle}>
+                <template for:each={skeletonDays} for:item="day">
+                  <section key={day} class="day">
+                    <p class="day-label"><span class="skeleton skeleton_day"></span></p>
+                    <ol class="skeleton-list">
+                      <template for:each={skeletonRows} for:item="row">
+                        <li key={row} class="skeleton-row">
+                          <span class="skeleton skeleton_node"></span>
+                          <span class="skeleton-lines">
+                            <span class="skeleton skeleton_title"></span>
+                            <span class="skeleton skeleton_sub"></span>
+                          </span>
+                          <span class="skeleton skeleton_time"></span>
+                        </li>
+                      </template>
+                    </ol>
+                  </section>
+                </template>
+              </div>
+            </template>
+          </div>
+        </template>
+        <template lwc:elseif={error}>
+          <!-- The loaded list's height, so an error doesn't change the card's.
+               Plain words only: never the raw error, which can carry query
+               text and stack traces (it goes to the console instead). -->
+          <div class="empty empty_error" style={emptyStyle} role="alert">
+            <div class="slds-illustration slds-illustration_small">
+              <div class="illustration">
+                <lightning-illustration illustration-name={errorArtName}></lightning-illustration>
+              </div>
+              <div class="slds-text-longform">
+                <h3 class="slds-illustration__header slds-text-heading_small">{labels.errorLoadTitle}</h3>
+                <p class="slds-text-body_regular">{error.message}</p>
+              </div>
+              <button type="button" class="more-button" onclick={handleRefresh}>{labels.buttonTryAgain}</button>
+            </div>
+          </div>
+        </template>
+        <template lwc:else>
+          <!-- Some sources couldn't be read but others could: one notice
+               saying which, why and what to do (never the raw error). -->
+          <template lwc:if={showProblemNotice}>
+            <div class="issue" role="status">
+              <div class="issue-illustration">
+                <lightning-illustration illustration-name={problemArtName}></lightning-illustration>
+              </div>
+              <div class="issue-text">
+                <p class="issue-title">{labels.errorPartialTitle}</p>
+                <p>{problemNotice.message}</p>
+              </div>
+            </div>
+          </template>
+          <template lwc:if={hasWarnings}>
+            <ul class="warnings">
+              <template for:each={warnings} for:item="warning">
+                <li key={warning.key} class="warning">{warning.text}</li>
+              </template>
+            </ul>
+          </template>
+
+          <template lwc:if={hasEvents}>
+            <div class={frameClass} onpointerleave={handleFramePointerLeave}>
+              <div
+                class={trackClass}
+                style={trackStyle}
+                role="region"
+                tabindex="0"
+                aria-label={labels.regionItems}
+                onscroll={handleTrackScroll}
+                onkeydown={handleTrackKey}
+                onpointerdown={handleTrackPointerDown}
+              >
+                <template for:each={groups} for:item="group">
+                  <section key={group.id} class={group.dayClass} data-index={group.index} aria-labelledby={group.id}>
+                    <h3 id={group.id} class="day-label">
+                      <template lwc:if={horizontal}>
+                        <span class="date">
+                          <span class="assistive-text">{group.label}</span>
+                          <span class="date-number" aria-hidden="true">{group.dayNumber}</span>
+                          <span class="date-words" aria-hidden="true">
+                            <span class={group.dayWordClass}>{group.dayWord}</span>
+                            <span class="date-month">{group.monthWord}</span>
+                          </span>
+                        </span>
+                      </template>
+                      <template lwc:else>{group.label}</template>
+                      <span class="day-meta">{group.meta}</span>
+                    </h3>
+                    <template lwc:if={group.loading}>
+                      <ol class="skeleton-list" aria-label={labels.statusLoadingDay}>
+                        <template for:each={skeletonDayRows} for:item="row">
+                          <li key={row} class="skeleton-row">
+                            <span class="skeleton skeleton_node"></span>
+                            <span class="skeleton-lines">
+                              <span class="skeleton skeleton_title"></span>
+                              <span class="skeleton skeleton_sub"></span>
+                            </span>
+                            <span class="skeleton skeleton_time"></span>
+                          </li>
+                        </template>
+                      </ol>
+                    </template>
+                    <!-- A slot with nothing in it: today (this week, this month), or
+                         an end of the window. -->
+                    <div lwc:if={group.placeholder} class="nothing-now">
+                      <!-- Across, a picture; down the list, a grey bar with an info icon. -->
+                      <template lwc:if={horizontal}>
+                        <img class="nothing-now-art" src={group.placeholderArt} alt="" />
+                      </template>
+                      <template lwc:else>
+                        <lightning-icon
+                          class="nothing-now-icon"
+                          icon-name="utility:info"
+                          size="xx-small"
+                          aria-hidden="true"
+                        ></lightning-icon>
+                      </template>
+                      <p class="nothing-now-text">{group.placeholderText}</p>
+                    </div>
+                    <ol class="events" onscroll={handleColumnScroll} ontransitionend={handleColumnResize}>
+                      <template for:each={group.events} for:item="item">
+                        <li key={item.id} class={item.itemClass} style={item.itemStyle}>
+                          <div class="event-row">
+                            <!-- Only the chevron expands; the title can then be a link. A busy day's
+                             grouped row has no details, so no chevron. -->
+                            <template lwc:if={item.expandable}>
+                              <button
+                                type="button"
+                                class="chevron-button"
+                                data-id={item.id}
+                                aria-expanded={item.ariaExpanded}
+                                aria-controls={item.detailId}
+                                aria-label={item.toggleLabel}
+                                title={item.toggleTitle}
+                                onclick={toggleEvent}
+                              >
+                                <svg class={item.chevronClass} viewBox="0 0 24 24" aria-hidden="true">
+                                  <path d="m9 6 6 6-6 6"></path>
+                                </svg>
+                              </button>
+                            </template>
+                            <template lwc:else><span class="chevron-spacer" aria-hidden="true"></span></template>
+                            <span class="node-col">
+                              <span class={item.railTopClass} style={item.railTopStyle} aria-hidden="true"></span>
+                              <span class={item.nodeClass} style={item.nodeStyle}>
+                                <lightning-icon
+                                  icon-name={item.icon}
+                                  size="xx-small"
+                                  variant="inverse"
+                                  alternative-text={item.iconLabel}
+                                ></lightning-icon>
+                              </span>
+                              <span class={item.railBottomClass} aria-hidden="true"></span>
+                            </span>
+                            <span class="event-main">
+                              <!-- The title, then (Enhanced Email) a small icon: opened,
+                                   unopened or bounced. A long title truncates; the icon stays. -->
+                              <span class="event-head">
+                                <template lwc:if={item.recordUrl}>
+                                  <a
+                                    class="event-title event-link"
+                                    href={item.recordUrl}
+                                    data-record={item.recordId}
+                                    onclick={openRecord}
+                                    >{item.title}</a
+                                  >
+                                </template>
+                                <template lwc:elseif={item.groupUrl}>
+                                  <a
+                                    class="event-title event-link"
+                                    href={item.groupUrl}
+                                    data-id={item.id}
+                                    aria-label={item.groupLinkLabel}
+                                    onclick={openGroup}
+                                    >{item.title}</a
+                                  >
+                                </template>
+                                <template lwc:else><span class="event-title">{item.title}</span></template>
+                                <template lwc:if={item.emailIcon}>
+                                  <lightning-icon
+                                    class={item.emailIconClass}
+                                    icon-name={item.emailIcon}
+                                    size="xx-small"
+                                    alternative-text={item.emailStateText}
+                                    title={item.emailStateText}
+                                  ></lightning-icon>
+                                </template>
+                                <template lwc:if={item.flags}
+                                  ><template for:each={item.flags} for:item="flag">
+                                    <span
+                                      key={flag.key}
+                                      class="flag"
+                                      style={flag.style}
+                                      role="img"
+                                      aria-label={flag.text}
+                                      title={flag.text}
+                                    >
+                                      <template lwc:if={flag.isDot}><span class="flag-dot"></span></template>
+                                      <template lwc:else
+                                        ><lightning-icon icon-name={flag.icon} size="xx-small"></lightning-icon
+                                      ></template>
+                                    </span> </template
+                                ></template>
+                              </span>
+                              <template lwc:if={item.grouped}
+                                ><span class="grouped-pill">{labels.pillGrouped}</span></template
+                              >
+                              <template lwc:else><span class="event-subtitle">{item.subtitle}</span></template>
+                            </span>
+                            <template lwc:if={showWhen}>
+                              <span class="event-when">
+                                <time class="event-time" datetime={item.isoTime}>{item.timeText}</time>
+                              </span>
+                            </template>
+                            <!-- Edit and Delete for a Salesforce record; the rest of the
+                                 rows keep the column so the times line up. -->
+                            <template lwc:if={item.menuRecordId}>
+                              <span class="row-menu">
+                                <button
+                                  type="button"
+                                  class="row-menu-button"
+                                  aria-label={labels.rowActions}
+                                  title={labels.rowActions}
+                                  aria-haspopup="menu"
+                                  data-id={item.id}
+                                  data-record={item.menuRecordId}
+                                  onpointerdown={markRowMenuPress}
+                                  onclick={toggleRowMenu}
+                                >
+                                  <lightning-icon
+                                    icon-name="utility:threedots_vertical"
+                                    size="x-small"
+                                  ></lightning-icon>
+                                </button>
+                              </span>
+                            </template>
+                            <template lwc:else><span class="row-menu-spacer" aria-hidden="true"></span></template>
+                          </div>
+                          <!-- Always rendered so it can grow open; hidden from everyone while closed. -->
+                          <template lwc:if={item.expandable}>
+                            <div id={item.detailId} class="detail-wrap">
+                              <div class="detail-inner">
+                                <div class="event-detail">
+                                  <template lwc:if={item.groupSummary}
+                                    ><p class="group-summary">{item.groupSummary}</p></template
+                                  >
+                                  <!-- A Salesforce record: its compact layout fields, loaded when opened. -->
+                                  <template lwc:if={item.compactLayout}>
+                                    <c-time-drive-record-details
+                                      record-id={item.layoutRecordId}
+                                      object-api-name={item.layoutObject}
+                                    ></c-time-drive-record-details>
+                                  </template>
+                                  <template lwc:elseif={item.hasDetails}>
+                                    <dl class="facts">
+                                      <template for:each={item.details} for:item="fact">
+                                        <div key={fact.label} class="fact">
+                                          <dt class="fact-label">{fact.label}</dt>
+                                          <dd class="fact-value">{fact.value}</dd>
+                                        </div>
+                                      </template>
+                                    </dl>
+                                  </template>
+                                  <p class="event-source">{item.sourceLabel}</p>
+                                </div>
+                              </div>
+                            </div>
+                          </template>
+                        </li>
+                      </template>
+                    </ol>
+                    <template lwc:if={horizontal}>
+                      <button type="button" class="scroll-pill" hidden onclick={scrollColumn}>
+                        <span class="scroll-pill-count" lwc:dom="manual"></span>
+                        <svg class="scroll-pill-icon" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="m6 9 6 6 6-6"></path>
+                        </svg>
+                      </button>
+                    </template>
+                  </section>
+                </template>
+              </div>
+              <template lwc:if={scrubber}>
+                <!-- Shown when the wheel passes over the list before it's been
+                   clicked: the wheel scrolls the page until then. -->
+                <div class="scroll-hint" aria-hidden="true">{labels.hintScroll}</div>
+                <!-- While the tab is dragged: skeleton days that slide with the
+                   pointer in place of the list, until the jump lands. -->
+                <div class="scrub-preview" aria-hidden="true">
+                  <div class="scrub-preview-inner">
+                    <template for:each={previewGroups} for:item="group">
+                      <div key={group} class="scrub-preview-group">
+                        <template for:each={skeletonPreviewDays} for:item="day">
+                          <section key={day} class="preview-day">
+                            <p class="day-label"><span class="skeleton skeleton_day"></span></p>
+                            <ol class="skeleton-list">
+                              <template for:each={skeletonPreviewRows} for:item="row">
+                                <li key={row} class="skeleton-row">
+                                  <span class="skeleton skeleton_node"></span>
+                                  <span class="skeleton-lines">
+                                    <span class="skeleton skeleton_title"></span>
+                                    <span class="skeleton skeleton_sub"></span>
+                                  </span>
+                                  <span class="skeleton skeleton_time"></span>
+                                </li>
+                              </template>
+                            </ol>
+                          </section>
+                        </template>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+                <!-- Vertical: a tab on the right edge tracks the scroll. Grab it
+                   (or the edge) and an overlay shows the whole history, with
+                   years or months and a bubble naming where you are; let go to
+                   jump there. -->
+                <div class="scrub">
+                  <div class="scrub-overlay" aria-hidden="true">
+                    <div class="scrub-labels">
+                      <template for:each={scrubber.months} for:item="month">
+                        <span key={month.key} class={month.className} style={month.style}>{month.text}</span>
+                      </template>
+                    </div>
+                    <div class="scrub-heat">
+                      <template for:each={scrubber.gaps} for:item="gap">
+                        <span key={gap.key} class="scrub-gap" style={gap.style}></span>
+                      </template>
+                      <template for:each={scrubber.cells} for:item="cell">
+                        <span key={cell.key} class={cell.className} style={cell.style}></span>
+                      </template>
+                      <template for:each={scrubber.years} for:item="year">
+                        <span key={year.key} class="scrub-year" style={year.style}></span>
+                      </template>
+                      <span lwc:if={scrubber.now} class={scrubber.now.className} style={scrubber.now.style}></span>
+                    </div>
+                  </div>
+                  <div
+                    class="scrub-rail"
+                    role="slider"
+                    tabindex="0"
+                    aria-orientation="vertical"
+                    aria-label={labels.overviewPickDay}
+                    aria-valuemin="1"
+                    aria-valuemax={scrubber.count}
+                    onpointerdown={handleScrubDown}
+                    ondragstart={handleMinimapDragStart}
+                    onpointermove={handleScrubMove}
+                    onpointerup={handleScrubUp}
+                    onpointercancel={handleScrubUp}
+                    onlostpointercapture={handleScrubUp}
+                    onkeydown={handleScrubKey}
+                    onblur={handleScrubBlur}
+                    onwheel={handleScrubWheel}
+                  >
+                    <span class="scrub-tab" aria-hidden="true">
+                      <svg class="scrub-tab-icon" viewBox="0 0 24 24">
+                        <path d="m8 9 4-4 4 4M8 15l4 4 4-4"></path>
+                      </svg>
+                    </span>
+                    <span class="scrub-bubble" aria-hidden="true" hidden lwc:dom="manual"></span>
+                  </div>
+                </div>
+              </template>
+            </div>
+            <template lwc:if={minimap}>
+              <!-- Horizontal: a seek bar under the columns, its handle over the
+                   days in view. Grab it and an overlay shows the whole history,
+                   with months or years and a bubble naming the day; the columns
+                   follow the pointer. -->
+              <div class="seek">
+                <div class="seek-overlay" aria-hidden="true">
+                  <div class="seek-heat">
+                    <template for:each={minimap.gaps} for:item="gap">
+                      <span key={gap.key} class="seek-gap" style={gap.style}></span>
+                    </template>
+                    <template for:each={minimap.cells} for:item="cell">
+                      <span key={cell.key} class={cell.className} style={cell.style}></span>
+                    </template>
+                    <template for:each={minimap.years} for:item="year">
+                      <span key={year.key} class="seek-year" style={year.style}></span>
+                    </template>
+                    <span lwc:if={minimap.now} class={minimap.now.className} style={minimap.now.style}></span>
+                  </div>
+                  <div class="seek-labels">
+                    <template for:each={minimap.months} for:item="month">
+                      <span key={month.key} class={month.className} style={month.style}>{month.text}</span>
+                    </template>
+                  </div>
+                  <span class="seek-bubble" hidden lwc:dom="manual"></span>
+                </div>
+                <div
+                  class="seek-rail"
+                  role="slider"
+                  tabindex="0"
+                  aria-label={labels.overviewPickDay}
+                  aria-valuemin="1"
+                  aria-valuemax={minimap.count}
+                  onpointerdown={handleMinimapDown}
+                  ondragstart={handleMinimapDragStart}
+                  onpointermove={handleMinimapMove}
+                  onpointerup={handleMinimapUp}
+                  onpointercancel={handleMinimapUp}
+                  onlostpointercapture={handleMinimapUp}
+                  onkeydown={handleMinimapKey}
+                  onblur={handleSeekBlur}
+                >
+                  <span class="seek-line"></span>
+                  <span class="seek-thumb"></span>
+                </div>
+              </div>
+            </template>
+          </template>
+          <template lwc:elseif={allFailed}>
+            <!-- Nothing to show because the sources couldn't be read. -->
+            <div class="empty empty_error" style={emptyStyle} role="alert">
+              <div class="slds-illustration slds-illustration_small">
+                <div class="illustration">
+                  <lightning-illustration illustration-name={problemArtName}></lightning-illustration>
+                </div>
+                <div class="slds-text-longform">
+                  <h3 class="slds-illustration__header slds-text-heading_small">{labels.errorReadTitle}</h3>
+                  <p class="slds-text-body_regular">{problemNotice.message}</p>
+                </div>
+                <button type="button" class="more-button" onclick={handleRefresh}>{labels.buttonTryAgain}</button>
+              </div>
+            </div>
+          </template>
+          <template lwc:else>
+            <div class="empty" style={emptyStyle}>
+              <div class="slds-illustration slds-illustration_small">
+                <div class="illustration">
+                  <lightning-illustration illustration-name={emptyIllustrationName}></lightning-illustration>
+                </div>
+                <div class="slds-text-longform">
+                  <h3 class="slds-illustration__header slds-text-heading_small">{emptyHeading}</h3>
+                  <p class="slds-text-body_regular">{emptyBody}</p>
+                </div>
+                <template lwc:if={isFilteredOut}>
+                  <button type="button" class="more-button" onclick={showEverything}>
+                    {labels.buttonShowEverything}
+                  </button>
+                </template>
+              </div>
+            </div>
+          </template>
+        </template>
+      </div>
+    </div>
+    <!-- The open row menu (Edit, Delete as the user's rights allow), fixed to
+         the button so the scrolling list can't clip it. -->
+    <template lwc:if={headerMenu}>
+      <ul
+        class="row-popover"
+        role="menu"
+        style={headerMenuStyle}
+        aria-label={labels.rowActions}
+        onpointerdown={markRowMenuPress}
+        onkeydown={handleRowMenuKey}
+      >
+        <template for:each={headerMenuItems} for:item="m">
+          <li key={m.key} role="none">
+            <button
+              type="button"
+              role="menuitem"
+              class="row-popover-item"
+              data-value={m.value}
+              onclick={pickHeaderMenu}
+            >
+              {m.label}
+            </button>
+          </li>
+        </template>
+      </ul>
+    </template>
+    <template lwc:if={rowMenu}>
+      <ul
+        class="row-popover"
+        role="menu"
+        style={rowMenuStyle}
+        aria-label={labels.rowActions}
+        onpointerdown={markRowMenuPress}
+        onkeydown={handleRowMenuKey}
+      >
+        <!-- A spinner and nothing else while what this record allows is asked. -->
+        <template lwc:if={rowMenu.checking}>
+          <li role="none" class="row-popover-wait">
+            <lightning-spinner size="x-small" alternative-text={labels.rowChecking}></lightning-spinner>
+          </li>
+        </template>
+        <template lwc:else>
+          <template lwc:if={rowMenu.canEdit}>
+            <li role="none">
+              <button type="button" role="menuitem" class="row-popover-item" data-value="edit" onclick={pickRowMenu}>
+                {labels.actionEdit}
+              </button>
+            </li>
+          </template>
+          <template lwc:if={rowMenu.canDelete}>
+            <li role="none">
+              <button
+                type="button"
+                role="menuitem"
+                class="row-popover-item row-popover-item_delete"
+                data-value="delete"
+                onclick={pickRowMenu}
+              >
+                {labels.actionDelete}
+              </button>
+            </li>
+          </template>
+          <template lwc:if={rowMenuEmpty}>
+            <li role="none" class="row-popover-note">{labels.rowNoActions}</li>
+          </template>
+        </template>
+      </ul>
+    </template>
+    <template for:each={layoutObjects} for:item="object">
+      <c-time-drive-layout-warmer key={object.name} object-api-name={object.name}></c-time-drive-layout-warmer>
+    </template>
+  </article>
+</template>

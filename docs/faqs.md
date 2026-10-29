@@ -1,6 +1,6 @@
 # FAQs
 
-## Who can use Time Trail Setup?
+## Who can use Time Drive Setup?
 
 Admins with the **Customize Application** permission. Everyone else sees the timeline on record pages.
 

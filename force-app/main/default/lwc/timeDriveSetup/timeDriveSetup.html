@@ -1,0 +1,2329 @@
+<template>
+  <div class="setup" style={fitStyle}>
+    <div class={pageClass}>
+      <!-- The site's menu -->
+      <div class="site-bar-mark" aria-hidden="true"></div>
+      <header class="site-bar">
+        <span class="site-brand">
+          <svg class="site-mark" viewBox="0 0 28 28" aria-hidden="true">
+            <rect class="site-mark-tile" width="28" height="28" rx="6" />
+            <path class="site-mark-rail" d="M10 8v12" />
+            <circle class="site-mark-node" cx="10" cy="8" r="2.75" />
+            <circle class="site-mark-node" cx="10" cy="14" r="2.75" />
+            <circle class="site-mark-node" cx="10" cy="20" r="2.75" />
+            <path class="site-mark-line" d="M16 8h5M16 14h3.5M16 20h4.5" />
+          </svg>
+          <span class="site-name">Time Drive</span>
+        </span>
+        <nav lwc:if={hasNav} class="site-nav" aria-label="Time Drive Setup">
+          <template for:each={navItems} for:item="item">
+            <button
+              key={item.key}
+              class={item.className}
+              type="button"
+              data-to={item.key}
+              aria-current={item.current}
+              onclick={handleNav}
+            >
+              {item.label}
+            </button>
+          </template>
+        </nav>
+      </header>
+
+      <!-- Where you are: every crumb but the last goes there -->
+      <nav class="crumbs" aria-label="Breadcrumb" lwc:if={showCrumbs}>
+        <ol class="crumb-list">
+          <template for:each={crumbs} for:item="c">
+            <li key={c.key} class="crumb">
+              <template lwc:if={c.current}>
+                <span class="crumb-here" aria-current={c.ariaCurrent}>{c.label}</span>
+              </template>
+              <template lwc:else>
+                <button class="crumb-link" type="button" data-to={c.to} onclick={handleCrumb}>{c.label}</button>
+                <lightning-icon
+                  class="crumb-sep"
+                  icon-name="utility:chevronright"
+                  size="xx-small"
+                  aria-hidden="true"
+                ></lightning-icon>
+              </template>
+            </li>
+          </template>
+        </ol>
+      </nav>
+
+      <!-- Welcome: until the org has been checked, the only page -->
+      <template lwc:if={isWelcome}>
+        <section class="welcome" aria-labelledby="welcome-title">
+          <template lwc:if={progressReady}>
+            <img class="welcome-logo" src={logoUrl} width="112" height="112" alt="" />
+            <h1 id="welcome-title" class="welcome-title page-title" tabindex="-1">Welcome to Time Drive</h1>
+            <p class="welcome-lede">
+              Time Drive fits itself to how your org works. We'll take a quick look, then set you up.
+            </p>
+            <template lwc:if={loadError}>
+              <div class="notice notice_error welcome-notice" role="alert">
+                <lightning-icon icon-name="utility:error" size="x-small" variant="error"></lightning-icon>
+                <div>
+                  <p class="notice-title">{loadError.message}</p>
+                  <p lwc:if={loadError.cause}>{loadError.cause}</p>
+                </div>
+                <button class="ghost" type="button" onclick={handleRetryLoad}>Try again</button>
+              </div>
+            </template>
+            <button class="primary welcome-start" type="button" onclick={handleGetStarted}>
+              <span>Get started</span>
+              <lightning-icon icon-name="utility:chevronright" size="x-small" variant="inverse"></lightning-icon>
+            </button>
+          </template>
+        </section>
+      </template>
+
+      <!-- Dashboard: the current setup at a glance -->
+      <template lwc:elseif={isDashboard}>
+        <div class="kh">
+          <!-- The dashboard: the current setup at a glance, and the way in -->
+          <section class="kd" aria-labelledby="dash-title">
+            <header class="kd-head">
+              <div class="page-head-text">
+                <h1 class="page-title" id="dash-title" tabindex="-1">Dashboard</h1>
+                <p class="page-lede">What your record pages' Time Drive timelines show, at a glance.</p>
+              </div>
+              <div class="kd-actions">
+                <button class="ghost" type="button" onclick={handleGetStarted}>Open record pages</button>
+              </div>
+            </header>
+
+            <template lwc:if={loadError}>
+              <div class="notice notice_error kh-notice" role="alert">
+                <lightning-icon icon-name="utility:error" size="x-small" variant="error"></lightning-icon>
+                <div>
+                  <p class="notice-title">{loadError.message}</p>
+                  <p lwc:if={loadError.cause}>{loadError.cause}</p>
+                </div>
+                <button class="ghost" type="button" onclick={handleRetryLoad}>Try again</button>
+              </div>
+            </template>
+
+            <section class="kd-table-card" aria-labelledby="dash-active">
+              <h2 class="kd-card-title" id="dash-active">Active by record page</h2>
+              <div class="kd-scroll" tabindex="0" aria-labelledby="dash-active">
+                <table class="kd-table">
+                  <thead>
+                    <tr>
+                      <template for:each={activeColumns} for:item="c">
+                        <th key={c.key} scope="col">
+                          <button
+                            class="kd-th"
+                            type="button"
+                            data-value={c.value}
+                            aria-label={c.openLabel}
+                            onclick={handleParentCard}
+                          >
+                            {c.label}
+                            <lightning-icon icon-name="utility:chevronright" size="xx-small"></lightning-icon>
+                          </button>
+                        </th>
+                      </template>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template for:each={activeTableRows} for:item="r">
+                      <tr key={r.key}>
+                        <template for:each={r.cells} for:item="cell">
+                          <td key={cell.key} class={cell.className}>
+                            <template lwc:if={cell.has}>
+                              <span class="kd-cell-in">
+                                <span class="chip chip_tiny" style={cell.chipStyle}>
+                                  <lightning-icon
+                                    icon-name={cell.iconName}
+                                    size="xx-small"
+                                    variant="inverse"
+                                  ></lightning-icon>
+                                </span>
+                                <span class="kd-cell-text">{cell.label}</span>
+                              </span>
+                            </template>
+                            <template lwc:else>{cell.label}</template>
+                          </td>
+                        </template>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <div class="kd-grid">
+              <article class="kd-card" aria-labelledby="dash-on">
+                <h2 class="kd-card-title" id="dash-on">Sources on</h2>
+                <p class="kd-figure">
+                  <span class="kd-number">{onCount}</span>
+                  <span class="kd-of">of {sourceTotal}</span>
+                </p>
+                <div class="kd-meter" aria-hidden="true"><span class="kd-meter-fill" style={meterStyle}></span></div>
+                <p class="kd-note">{offNote}</p>
+              </article>
+
+              <article class="kd-card" aria-labelledby="dash-kinds">
+                <h2 class="kd-card-title" id="dash-kinds">By kind</h2>
+                <ul class="kd-bars">
+                  <template for:each={kindBars} for:item="k">
+                    <li key={k.key} class="kd-bar">
+                      <span class="kd-bar-label">{k.label}</span>
+                      <span class="kd-bar-count">{k.count}</span>
+                      <span class="kd-bar-track" aria-hidden="true"
+                        ><span class="kd-bar-fill" style={k.style}></span
+                      ></span>
+                    </li>
+                  </template>
+                </ul>
+              </article>
+
+              <article class="kd-card" aria-labelledby="dash-pages">
+                <h2 class="kd-card-title" id="dash-pages">Record pages</h2>
+                <ul class="kd-list">
+                  <template for:each={glanceRows} for:item="g">
+                    <li key={g.key}>
+                      <button
+                        class="kd-row"
+                        type="button"
+                        data-value={g.value}
+                        aria-label={g.openLabel}
+                        onclick={handleParentCard}
+                      >
+                        <span class="kd-row-text">
+                          <span class="kd-row-name">{g.label}</span>
+                          <span class="kd-row-detail">{g.detail}</span>
+                        </span>
+                        <span class={g.pillClass}><span class="pill-dot" aria-hidden="true"></span>{g.pill}</span>
+                      </button>
+                    </li>
+                  </template>
+                  <li class="kd-row kd-row_soon">
+                    <span class="kd-row-text">
+                      <span class="kd-row-name">More record pages</span>
+                      <span class="kd-row-detail">Other record pages are planned.</span>
+                    </span>
+                  </li>
+                </ul>
+              </article>
+
+              <article class="kd-card" aria-labelledby="dash-off">
+                <h2 class="kd-card-title" id="dash-off">Switched off</h2>
+                <template lwc:if={hasOffSources}>
+                  <ul class="kd-list">
+                    <template for:each={offSources} for:item="o">
+                      <li key={o.developerName}>
+                        <button
+                          class="kd-row"
+                          type="button"
+                          data-name={o.developerName}
+                          aria-label={o.openLabel}
+                          onclick={handleOpenSource}
+                        >
+                          <span class="chip chip_small" style={o.chipStyle}>
+                            <lightning-icon icon-name={o.iconName} size="xx-small" variant="inverse"></lightning-icon>
+                          </span>
+                          <span class="kd-row-text">
+                            <span class="kd-row-name">{o.label}</span>
+                            <span class="kd-row-detail">{o.where}</span>
+                          </span>
+                          <span class="pill pill_off">Inactive</span>
+                        </button>
+                      </li>
+                    </template>
+                  </ul>
+                </template>
+                <template lwc:else>
+                  <p class="kd-note">Every source is active.</p>
+                </template>
+              </article>
+            </div>
+          </section>
+        </div>
+      </template>
+
+      <!-- Setup: guided steps, each with what to do and a way to do it -->
+      <template lwc:elseif={isSetupPage}>
+        <header class="page-head page-head_split">
+          <div class="page-head-text">
+            <h1 class="page-title" tabindex="-1">Guided setup</h1>
+            <p class="page-lede">
+              Everything Time Drive needs, in order. Each step says what to do and takes you there.
+            </p>
+          </div>
+        </header>
+
+        <template lwc:if={loadError}>
+          <div class="notice notice_error guided-access" role="alert">
+            <lightning-icon icon-name="utility:error" size="x-small" variant="error"></lightning-icon>
+            <div>
+              <p class="notice-title">{loadError.message}</p>
+              <p>Managing timeline sources needs the Time Drive Setup permission set, or Customize Application.</p>
+            </div>
+            <button class="ghost" type="button" data-handler="retry" onclick={handleGuidedAction}>Check again</button>
+          </div>
+        </template>
+        <div class={guidedProgressClass} role="group" aria-label="Progress">
+          <p class="guided-count" role="status">
+            <template lwc:if={guidedAllDone}>
+              <span class="guided-count-mark" aria-hidden="true">
+                <lightning-icon icon-name="utility:check" size="x-small" variant="inverse"></lightning-icon>
+              </span>
+              <span class="guided-count-number">Setup complete</span>
+              <span class="guided-count-label">{guidedAllDoneText}</span>
+            </template>
+            <template lwc:else>
+              <span class="guided-count-number">{guidedProgressText}</span>
+              <span class="guided-count-label">steps done</span>
+            </template>
+          </p>
+          <ol class="guided-bar">
+            <template for:each={guidedSegments} for:item="seg">
+              <li key={seg.key} class={seg.className} title={seg.label}>
+                <span class="slds-assistive-text">{seg.label}</span>
+              </li>
+            </template>
+          </ol>
+        </div>
+
+        <div class="guided">
+          <div class="guided-main">
+            <ol class="guided-steps">
+              <template for:each={guidedSteps} for:item="st">
+                <li key={st.key} class={st.className} data-key={st.key} onclick={handleGuidedRow}>
+                  <span class="guided-mark" aria-hidden="true">
+                    <template lwc:if={st.done}>
+                      <lightning-icon icon-name="utility:check" size="x-small" variant="inverse"></lightning-icon>
+                    </template>
+                    <template lwc:else>{st.number}</template>
+                  </span>
+                  <div class="guided-body">
+                    <button
+                      class="guided-title"
+                      type="button"
+                      data-key={st.key}
+                      aria-pressed={st.pressed}
+                      onclick={handleGuidedSelect}
+                    >
+                      {st.title}
+                    </button>
+                    <p class="guided-text">{st.text}</p>
+                    <p lwc:if={st.status} class="guided-status">{st.status}</p>
+                    <ul lwc:if={st.report.length} class="guided-report">
+                      <template for:each={st.report} for:item="line">
+                        <li key={line.key}>{line.text}</li>
+                      </template>
+                    </ul>
+                    <template lwc:if={st.showCheck}>
+                      <lightning-input
+                        class="guided-check"
+                        type="checkbox"
+                        label={st.checkLabel}
+                        checked={st.done}
+                        data-key={st.key}
+                        onchange={handleGuidedDone}
+                      ></lightning-input>
+                    </template>
+                  </div>
+                  <div class="guided-act">
+                    <template lwc:if={st.done}>
+                      <span class="guided-done">
+                        <lightning-icon icon-name="utility:check" size="xx-small"></lightning-icon>
+                        <span>{st.doneLabel}</span>
+                      </span>
+                    </template>
+                    <template for:each={st.actions} for:item="a">
+                      <template lwc:if={a.isLink}>
+                        <a key={a.key} class="ghost guided-button" href={a.href} target="_blank" rel="noopener">
+                          <lightning-icon icon-name="utility:new_window" size="xx-small"></lightning-icon>
+                          <span>{a.label}</span>
+                        </a>
+                      </template>
+                      <template lwc:else>
+                        <button
+                          key={a.key}
+                          class={a.className}
+                          type="button"
+                          disabled={a.disabled}
+                          data-handler={a.handler}
+                          data-fit={a.fit}
+                          onclick={handleGuidedAction}
+                        >
+                          {a.label}
+                        </button>
+                      </template>
+                    </template>
+                  </div>
+                </li>
+              </template>
+            </ol>
+          </div>
+
+          <aside class="aside-panel guided-aside" aria-live="polite" aria-labelledby="guided-about">
+            <p class="guided-aside-step">{guidedAsideStep}</p>
+            <h2 class="aside-title" id="guided-about">{guidedSelectedStep.title}</h2>
+            <div class="guided-aside-part">
+              <h3 class="guided-aside-head">{guidedAsideWhat}</h3>
+              <p>{guidedSelectedStep.what}</p>
+            </div>
+            <div class="guided-aside-part">
+              <h3 class="guided-aside-head">Why it matters</h3>
+              <p>{guidedSelectedStep.why}</p>
+            </div>
+            <div lwc:if={guidedSelectedStep.meaning} class="guided-aside-part">
+              <h3 class="guided-aside-head">What it meant for your sources</h3>
+              <p>{guidedSelectedStep.meaning}</p>
+            </div>
+          </aside>
+        </div>
+      </template>
+
+      <!-- The record pages to choose from -->
+      <!-- Docs: the Config Guide and the FAQs -->
+      <template lwc:elseif={isDiagnostics}>
+        <c-time-drive-diagnostics></c-time-drive-diagnostics>
+      </template>
+
+      <!-- Lenses: each one's label, and the sources in it -->
+      <template lwc:elseif={isLensesPage}>
+        <header class="page-head">
+          <div class="page-head-text">
+            <h1 class="page-title" tabindex="-1">Lenses</h1>
+            <p class="page-lede">
+              A lens lets people narrow the timeline to what they care about, like Service. Tick the lenses each source
+              belongs to. A source can be in several, and every source shows under All.
+            </p>
+          </div>
+        </header>
+        <template lwc:if={loadError}>
+          <div class="problem-state" role="alert">
+            <div class="problem-art">
+              <lightning-illustration illustration-name={errorImageName}></lightning-illustration>
+            </div>
+            <p class="problem-title">{loadError.message}</p>
+            <p class="problem-cause" lwc:if={loadError.cause}>{loadError.cause}</p>
+            <button class="ghost" type="button" onclick={handleRetryLoad}>Try again</button>
+          </div>
+        </template>
+        <template lwc:else>
+          <p class="lens-strip" aria-label="What the picker will offer">
+            <span class="lens-strip-label">People will see</span>
+            <template for:each={lensStrip} for:item="pill">
+              <span key={pill.key} class="lens-pill">{pill.name}</span>
+            </template>
+          </p>
+          <div class="lens-tabs" role="group" aria-label="Record page">
+            <template for:each={lensTabs} for:item="t">
+              <button
+                key={t.value}
+                class={t.className}
+                type="button"
+                aria-pressed={t.pressed}
+                data-value={t.value}
+                onclick={handleLensTab}
+              >
+                {t.label}
+              </button>
+            </template>
+          </div>
+          <template lwc:if={hasLensRows}>
+            <div class="lens-scroll">
+              <table class="lens-grid">
+                <thead>
+                  <tr>
+                    <th scope="col" class="lens-grid-source">Source</th>
+                    <template for:each={lensColumns} for:item="c">
+                      <th key={c.key} scope="col" class={c.className}>
+                        <span class="lens-col-name">{c.name}</span>
+                        <lightning-input
+                          class="lens-active"
+                          type="toggle"
+                          label={c.toggleLabel}
+                          variant="label-hidden"
+                          message-toggle-active=""
+                          message-toggle-inactive=""
+                          checked={c.active}
+                          data-key={c.key}
+                          onchange={handleLensActive}
+                        ></lightning-input>
+                      </th>
+                    </template>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template for:each={lensRows} for:item="r">
+                    <tr key={r.key} class="lens-grid-row">
+                      <th scope="row" class="lens-grid-source">
+                        <span class="chip chip_small" style={r.chipStyle}>
+                          <lightning-icon icon-name={r.iconName} size="xx-small" variant="inverse"></lightning-icon>
+                        </span>
+                        <span class="lens-source-object">{r.name}</span>
+                        <span lwc:if={r.off} class="badge badge_off">Inactive</span>
+                      </th>
+                      <template for:each={r.cells} for:item="cell">
+                        <td key={cell.key} class="lens-cell">
+                          <lightning-input
+                            type="checkbox"
+                            label={cell.label}
+                            variant="label-hidden"
+                            checked={cell.checked}
+                            data-source={cell.source}
+                            data-lens={cell.lens}
+                            onchange={handleLensCell}
+                          ></lightning-input>
+                        </td>
+                      </template>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </template>
+          <template lwc:else>
+            <p class="quiet">No sources are on this page yet. Add some in Customize.</p>
+          </template>
+          <p class="quiet lens-names">
+            A lens is named by a custom label.
+            <a href="/lightning/setup/ExternalStrings/home" target="_blank" rel="noopener">Rename in Custom Labels</a>
+            ·
+            <a href="/lightning/setup/LabelWorkbenchTranslate/home" target="_blank" rel="noopener">Translate</a>
+          </p>
+        </template>
+      </template>
+
+      <template lwc:elseif={isDocsPage}>
+        <header class="page-head">
+          <div class="page-head-text">
+            <h1 class="page-title" tabindex="-1">Docs</h1>
+            <p class="page-lede">How to set up Time Drive, and answers to the common questions.</p>
+          </div>
+        </header>
+        <ul class="docs-list">
+          <template for:each={docs} for:item="d">
+            <li key={d.key}>
+              <button class="docs-card" type="button" data-doc={d.key} onclick={handleOpenDoc}>
+                <span class="docs-card-icon" aria-hidden="true">
+                  <lightning-icon icon-name={d.icon} size="small"></lightning-icon>
+                </span>
+                <span class="docs-card-text">
+                  <span class="docs-card-title">{d.title}</span>
+                  <span class="docs-card-body">{d.summary}</span>
+                  <span class="docs-card-meta">{d.meta}</span>
+                </span>
+                <lightning-icon
+                  class="docs-card-go"
+                  icon-name="utility:chevronright"
+                  size="x-small"
+                  aria-hidden="true"
+                ></lightning-icon>
+              </button>
+            </li>
+          </template>
+        </ul>
+      </template>
+
+      <!-- One doc, with the breadcrumb back to Docs -->
+      <template lwc:elseif={isDocPage}>
+        <header class="page-head">
+          <div class="page-head-text">
+            <h1 class="page-title" tabindex="-1">{doc.title}</h1>
+            <p class="page-lede">{doc.summary}</p>
+          </div>
+        </header>
+        <template lwc:if={docLoading}>
+          <div class="doc-loading" role="status">
+            <span class="doc-loading-line"></span>
+            <span class="doc-loading-line"></span>
+            <span class="doc-loading-line doc-loading-line_short"></span>
+            <span class="slds-assistive-text">Loading {doc.title} from GitHub</span>
+          </div>
+        </template>
+        <template lwc:elseif={docFailed}>
+          <div class="doc-failed" role="alert">
+            <lightning-icon icon-name="utility:offline" size="small" aria-hidden="true"></lightning-icon>
+            <div class="doc-failed-text">
+              <p class="doc-failed-title">{doc.title} didn't load from GitHub</p>
+              <p class="quiet">Your network may block GitHub. You can read it on GitHub instead.</p>
+              <div class="doc-failed-actions">
+                <button class="ghost" type="button" onclick={handleDocRetry}>Try again</button>
+                <a class="text-link" href={docWebUrl} target="_blank" rel="noopener">Open on GitHub</a>
+              </div>
+            </div>
+          </div>
+        </template>
+        <template lwc:elseif={isGuideDoc}>
+          <div class="doc" ondoclink={handleDocLink}>
+            <article class="doc-body">
+              <template for:each={docSections} for:item="s">
+                <section key={s.key} class="doc-section" data-section={s.id}>
+                  <h2 lwc:if={s.hasHeading} class="doc-h2">{s.heading}</h2>
+                  <c-time-drive-doc-blocks blocks={s.blocks}></c-time-drive-doc-blocks>
+                </section>
+              </template>
+            </article>
+            <nav class="doc-toc" aria-label="On this page">
+              <p class="doc-toc-title">On this page</p>
+              <ol class="doc-toc-list">
+                <template for:each={docToc} for:item="s">
+                  <li key={s.key}>
+                    <button class="doc-toc-link" type="button" data-section={s.id} onclick={handleDocSection}>
+                      {s.title}
+                    </button>
+                  </li>
+                </template>
+              </ol>
+              <a class="text-link doc-source" href={docWebUrl} target="_blank" rel="noopener">View on GitHub</a>
+            </nav>
+          </div>
+        </template>
+        <template lwc:else>
+          <div class="doc" ondoclink={handleDocLink}>
+            <div class="doc-faq-wrap">
+              <div class="look-search faq-search">
+                <lightning-icon
+                  class="picker-glass"
+                  icon-name="utility:search"
+                  size="x-small"
+                  aria-hidden="true"
+                ></lightning-icon>
+                <input
+                  class="look-input"
+                  type="search"
+                  aria-label="Search the FAQs"
+                  placeholder="Search the questions and answers"
+                  autocomplete="off"
+                  value={faqQuery}
+                  oninput={handleFaqQuery}
+                />
+              </div>
+              <p class="quiet faq-count" aria-live="polite">{faqCountText}</p>
+              <template lwc:if={faqNone}>
+                <div class="empty-state empty-state_filter">
+                  <p class="problem-title">No questions match</p>
+                  <p class="problem-cause">Try other words, or read the Config Guide.</p>
+                  <button class="ghost" type="button" onclick={handleFaqClear}>Clear search</button>
+                </div>
+              </template>
+              <div class="kh-faq-list doc-faq">
+                <template for:each={docQuestions} for:item="q">
+                  <details key={q.key} class="kh-faq-item doc-anchor" data-section={q.id} open={q.open}>
+                    <summary class="kh-faq-question">
+                      <span>{q.title}</span>
+                      <lightning-icon
+                        class="kh-faq-chevron"
+                        icon-name="utility:chevrondown"
+                        size="x-small"
+                        aria-hidden="true"
+                      ></lightning-icon>
+                    </summary>
+                    <c-time-drive-doc-blocks class="kh-faq-answer" blocks={q.blocks}></c-time-drive-doc-blocks>
+                  </details>
+                </template>
+              </div>
+            </div>
+            <nav class="doc-toc" aria-label="On this page">
+              <p class="doc-toc-title">On this page</p>
+              <ol class="doc-toc-list">
+                <template for:each={docQuestions} for:item="s">
+                  <li key={s.key}>
+                    <button class="doc-toc-link" type="button" data-section={s.id} onclick={handleDocSection}>
+                      {s.title}
+                    </button>
+                  </li>
+                </template>
+              </ol>
+              <a class="text-link doc-source" href={docWebUrl} target="_blank" rel="noopener">View on GitHub</a>
+            </nav>
+          </div>
+        </template>
+      </template>
+
+      <template lwc:elseif={isPagesPage}>
+        <header class="page-head">
+          <h1 class="page-title" tabindex="-1">Customize: which record page?</h1>
+          <p class="page-lede">
+            Choose the record page whose timeline you want to change. Then add sources, make them active or inactive,
+            and edit them.
+          </p>
+        </header>
+
+        <template lwc:if={loadError}>
+          <div class="problem-state" role="alert">
+            <div class="problem-art">
+              <lightning-illustration illustration-name={errorImageName}></lightning-illustration>
+            </div>
+            <p class="problem-title">{loadError.message}</p>
+            <p class="problem-cause" lwc:if={loadError.cause}>{loadError.cause}</p>
+            <button class="ghost" type="button" onclick={handleRetryLoad}>Try again</button>
+          </div>
+        </template>
+        <template lwc:else>
+          <section class="group" aria-label="Record pages">
+            <ul class="list">
+              <template for:each={parentCards} for:item="p">
+                <li key={p.value} class="row row_page">
+                  <button
+                    class="row-main pcard"
+                    type="button"
+                    data-value={p.value}
+                    aria-label={p.openLabel}
+                    onclick={handleParentCard}
+                  >
+                    <span class="tile"><lightning-icon icon-name={p.icon} size="small"></lightning-icon></span>
+                    <span class="row-text">
+                      <span class="row-name pcard-name">{p.label}</span>
+                      <span class="row-summary pcard-count">{p.countText}</span>
+                    </span>
+                    <span class="pcard-rail" aria-hidden="true">
+                      <template for:each={p.dots} for:item="d">
+                        <span key={d.key} class="pcard-dot" style={d.style}></span>
+                      </template>
+                    </span>
+                    <lightning-icon
+                      class="row-chevron"
+                      icon-name="utility:chevronright"
+                      size="x-small"
+                      aria-hidden="true"
+                    ></lightning-icon>
+                  </button>
+                </li>
+              </template>
+              <li class="row row_soon">
+                <span class="tile tile_soon"
+                  ><lightning-icon icon-name="utility:add" size="small"></lightning-icon
+                ></span>
+                <span class="row-text">
+                  <span class="row-name">More record pages</span>
+                  <span class="row-summary">Other record pages are planned.</span>
+                </span>
+              </li>
+            </ul>
+          </section>
+        </template>
+      </template>
+
+      <!-- A record page: its sources, by type -->
+      <template lwc:elseif={isParentPage}>
+        <header class="page-head page-head_split page-head_tight">
+          <div class="page-head-text">
+            <h1 class="page-title" tabindex="-1">{selectedLabel} timeline</h1>
+          </div>
+          <button class="primary" type="button" onclick={handleAdd}>
+            <lightning-icon icon-name="utility:add" size="x-small" variant="inverse"></lightning-icon>
+            <span>Add a source</span>
+          </button>
+        </header>
+
+        <template lwc:if={loadError}>
+          <div class="problem-state" role="alert">
+            <div class="problem-art">
+              <lightning-illustration illustration-name={errorImageName}></lightning-illustration>
+            </div>
+            <p class="problem-title">{loadError.message}</p>
+            <p class="problem-cause" lwc:if={loadError.cause}>{loadError.cause}</p>
+            <button class="ghost" type="button" onclick={handleRetryLoad}>Try again</button>
+          </div>
+        </template>
+        <template lwc:elseif={hasSelectedSources}>
+          <div class="source-filter">
+            <div class="look-search source-search">
+              <lightning-icon
+                class="picker-glass"
+                icon-name="utility:search"
+                size="x-small"
+                aria-hidden="true"
+              ></lightning-icon>
+              <input
+                class="look-input"
+                type="search"
+                aria-label="Search sources"
+                placeholder="Search sources: name, object, category…"
+                autocomplete="off"
+                spellcheck="false"
+                value={sourceQuery}
+                oninput={handleSourceQuery}
+              />
+            </div>
+            <div class="look-sets" role="group" aria-label="Source type">
+              <template for:each={sourceTypes} for:item="t">
+                <button
+                  key={t.key}
+                  class={t.className}
+                  type="button"
+                  aria-pressed={t.pressed}
+                  data-value={t.key}
+                  onclick={handleSourceType}
+                >
+                  {t.text}
+                </button>
+              </template>
+            </div>
+            <span class="source-filter-rule" aria-hidden="true"></span>
+            <div class="look-sets" role="group" aria-label="Status">
+              <template for:each={sourceStatuses} for:item="t">
+                <button
+                  key={t.key}
+                  class={t.className}
+                  type="button"
+                  aria-pressed={t.pressed}
+                  data-value={t.key}
+                  onclick={handleSourceStatus}
+                >
+                  {t.text}
+                </button>
+              </template>
+            </div>
+          </div>
+          <p class="quiet source-count" aria-live="polite">{sourceCountText}</p>
+          <template lwc:if={hasFilteredSources}>
+            <ul class="list">
+              <template for:each={sourceRows} for:item="src">
+                <li key={src.developerName} class={src.className} style={src.style}>
+                  <button
+                    class="row-main"
+                    type="button"
+                    data-name={src.developerName}
+                    aria-label={src.viewLabel}
+                    onclick={handleViewSource}
+                  >
+                    <span class="chip" style={src.chipStyle}>
+                      <lightning-icon icon-name={src.iconName} size="x-small" variant="inverse"></lightning-icon>
+                    </span>
+                    <span class="row-text">
+                      <span class="row-line">
+                        <span class="row-name">{src.name}</span>
+                        <span lwc:if={src.category} class="badge">{src.categoryLabel}</span>
+                        <span lwc:if={src.offText} class="badge badge_off">{src.offText}</span>
+                      </span>
+                      <span class="row-summary">{src.summary}</span>
+                    </span>
+                  </button>
+                  <div class="row-end">
+                    <template lwc:if={src.pending}>
+                      <span class="pending" role="status">
+                        <span class="pending-dot" aria-hidden="true"></span>{src.pendingText}
+                      </span>
+                    </template>
+                    <template lwc:else>
+                      <lightning-input
+                        class="row-toggle"
+                        type="toggle"
+                        label={src.toggleLabel}
+                        variant="label-hidden"
+                        message-toggle-active=""
+                        message-toggle-inactive=""
+                        checked={src.active}
+                        data-name={src.developerName}
+                        onchange={handleToggle}
+                      ></lightning-input>
+                    </template>
+                  </div>
+                </li>
+              </template>
+            </ul>
+          </template>
+          <template lwc:else>
+            <div class="empty-state empty-state_filter">
+              <p class="problem-title">No sources match</p>
+              <p class="problem-cause">Try another word, or other filters.</p>
+              <button class="ghost" type="button" onclick={handleClearSourceFilter}>Clear filters</button>
+            </div>
+          </template>
+        </template>
+        <template lwc:else>
+          <div class="empty-state">
+            <p class="problem-title">Nothing on the {selectedLabel} timeline yet</p>
+            <p class="problem-cause">Add a source to put records on it.</p>
+            <button class="primary" type="button" onclick={handleAdd}>Add a source</button>
+          </div>
+        </template>
+
+        <!-- Ready-made sources: copied as sources of your own -->
+        <section lwc:if={hasTemplates} class="templates">
+          <h2 class="templates-title">Ready-made sources</h2>
+          <ul class="list">
+            <template for:each={templateRows} for:item="t">
+              <li key={t.key} class="row">
+                <span class="row-main row-main_static">
+                  <span class="chip" style={t.chipStyle}>
+                    <lightning-icon icon-name={t.icon} size="x-small" variant="inverse"></lightning-icon>
+                  </span>
+                  <span class="row-text">
+                    <span class="row-line">
+                      <span class="row-name">{t.label}</span>
+                    </span>
+                    <span class="row-summary">{t.summary}</span>
+                  </span>
+                </span>
+                <div class="row-end">
+                  <button
+                    class="ghost"
+                    type="button"
+                    data-key={t.key}
+                    disabled={templatesBusy}
+                    onclick={handleUseTemplate}
+                  >
+                    Add
+                  </button>
+                </div>
+              </li>
+            </template>
+          </ul>
+        </section>
+      </template>
+
+      <!-- One source: how it is set up -->
+      <template lwc:elseif={isSourcePage}>
+        <header class="page-head page-head_split">
+          <div class="source-head">
+            <span class="chip chip_large" style={viewing.chipStyle}>
+              <lightning-icon icon-name={viewing.iconName} size="small" variant="inverse"></lightning-icon>
+            </span>
+            <div class="page-head-text">
+              <h1 class="page-title" tabindex="-1">{viewing.name}</h1>
+              <p class="page-lede">{viewing.summary}</p>
+            </div>
+          </div>
+          <div class="head-actions">
+            <template lwc:if={viewingRow}>
+              <template lwc:if={viewingRow.pending}>
+                <span class="pending" role="status">
+                  <span class="pending-dot" aria-hidden="true"></span>{viewingRow.pendingText}
+                </span>
+              </template>
+              <template lwc:else>
+                <lightning-input
+                  class="head-toggle"
+                  type="toggle"
+                  label="Active"
+                  message-toggle-active=""
+                  message-toggle-inactive=""
+                  checked={viewingRow.active}
+                  data-name={viewing.developerName}
+                  onchange={handleToggle}
+                ></lightning-input>
+              </template>
+            </template>
+            <div class="head-buttons">
+              <button class="ghost ghost_danger" type="button" data-name={viewing.developerName} onclick={handleRemove}>
+                <lightning-icon icon-name="utility:delete" size="x-small"></lightning-icon>
+                <span>Remove</span>
+              </button>
+              <button class="primary" type="button" data-name={viewing.developerName} onclick={handleEdit}>
+                <lightning-icon icon-name="utility:edit" size="x-small" variant="inverse"></lightning-icon>
+                <span>Edit</span>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <div class="source-body">
+          <section class="setup-panel" aria-labelledby="facts-title">
+            <h2 class="section-title" id="facts-title">How it's set up</h2>
+            <dl class="facts">
+              <template for:each={viewFacts} for:item="f">
+                <div key={f.key} class="fact">
+                  <dt>{f.label}</dt>
+                  <dd>{f.value}</dd>
+                </div>
+              </template>
+              <div class="fact fact_preview">
+                <dt>Interactions</dt>
+                <dd>
+                  <p class="fact-preview-note">
+                    <span class="mock-badge">Sample values</span>
+                    <span>{previewSourceNote}</span>
+                  </p>
+                  <div class="mock-item mock-item_open">
+                    <div class="mock-row">
+                      <span class="mock-chevron" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></svg>
+                      </span>
+                      <span class="node" style={nodeStyle}>
+                        <lightning-icon icon-name={iconName} size="xx-small" variant="inverse"></lightning-icon>
+                      </span>
+                      <span class="mock-main">
+                        <span class="mock-title mock-title_link">{previewTitle}</span>
+                        <span lwc:if={previewSubtitle} class="mock-sub">{previewSubtitle}</span>
+                      </span>
+                      <span class="mock-time">{previewTime}</span>
+                    </div>
+                    <div class="mock-detail">
+                      <template lwc:if={previewLoading}>
+                        <span class="mock-line"></span>
+                        <span class="mock-line mock-line_short"></span>
+                      </template>
+                      <template lwc:elseif={previewEmpty}>
+                        <p class="mock-empty">{previewEmptyText}</p>
+                      </template>
+                      <template lwc:else>
+                        <dl class="mock-facts">
+                          <template for:each={previewFacts} for:item="f">
+                            <div key={f.key} class="mock-fact">
+                              <dt>{f.label}</dt>
+                              <dd>{f.value}</dd>
+                            </div>
+                          </template>
+                        </dl>
+                      </template>
+                    </div>
+                  </div>
+                  <template lwc:if={isSalesforce}>
+                    <div class="mock-arrow" aria-hidden="true">
+                      <lightning-icon icon-name="utility:arrowdown" size="x-small"></lightning-icon>
+                    </div>
+                    <div class="mock-page">
+                      <div class={clickPageHeadClass}>
+                        <span class="mock-page-icon"
+                          ><lightning-icon icon-name="utility:record" size="x-small" variant="inverse"></lightning-icon
+                        ></span>
+                        <span class="mock-page-text">
+                          <span class="mock-page-object">{clickPageLabel}</span>
+                          <span class="mock-page-name">{clickPageName}</span>
+                        </span>
+                      </div>
+                      <dl class="mock-page-facts">
+                        <template for:each={clickPageFacts} for:item="f">
+                          <div key={f.key} class="mock-fact">
+                            <dt>{f.label}</dt>
+                            <dd>{f.value}</dd>
+                          </div>
+                        </template>
+                      </dl>
+                    </div>
+                  </template>
+                </dd>
+              </div>
+            </dl>
+          </section>
+          <aside class="aside-panel source-looks" aria-labelledby="looks-title">
+            <h2 class="aside-title" id="looks-title">How it looks</h2>
+            <figure class="mock mock_static">
+              <figcaption class="mock-caption">
+                <span class="mock-badge">Sample values</span>
+                <span>In the timeline's legend and filters, in order</span>
+              </figcaption>
+              <div class="mock-filter">
+                <p class="mock-filter-head">{sourceFilterHead}</p>
+                <ol class="mock-filter-list">
+                  <template for:each={sourceFilterRows} for:item="r">
+                    <li key={r.key} class={r.className}>
+                      <span class="mock-place">{r.place}</span>
+                      <span class="chip chip_small" style={r.chipStyle}>
+                        <lightning-icon icon-name={r.icon} size="xx-small" variant="inverse"></lightning-icon>
+                      </span>
+                      <span class="mock-filter-text">
+                        <span class="mock-filter-name">{r.name}</span>
+                        <span lwc:if={r.view} class="mock-filter-view">{r.view}</span>
+                      </span>
+                      <span lwc:if={r.mine} class="badge badge_this">This source</span>
+                      <span lwc:else class="mock-count">{r.count}</span>
+                    </li>
+                  </template>
+                </ol>
+              </div>
+            </figure>
+          </aside>
+        </div>
+      </template>
+
+      <!-- Adding or editing a source: one question at a time -->
+      <template lwc:elseif={isWizard}>
+        <section class="wizard" aria-labelledby="wizard-title" onkeydown={handleKeydown}>
+          <header class="wz-head">
+            <h1 class="slds-assistive-text" id="wizard-title">{wizardTitle}</h1>
+            <ol class="thread" aria-label="Steps">
+              <template for:each={thread} for:item="k">
+                <li key={k.key} class={k.className}>
+                  <button
+                    class="knot-button"
+                    type="button"
+                    data-step={k.step}
+                    disabled={k.disabled}
+                    aria-current={k.ariaCurrent}
+                    aria-label={k.ariaLabel}
+                    onclick={handleKnot}
+                  >
+                    <span class="knot-step">{k.number}</span>
+                    <span class="knot-name">{k.name}</span>
+                  </button>
+                </li>
+              </template>
+            </ol>
+          </header>
+
+          <div class="wz-body">
+            <div class="wz-main">
+              <template for:each={scenes} for:item="scene">
+                <div key={scene.key} class={scene.className}>
+                  <h2 class="question" tabindex="-1">{question}</h2>
+                  <p class="hint" lwc:if={hint}>{hint}</p>
+
+                  <template lwc:if={stepError}>
+                    <div class="notice notice_error" role="alert">
+                      <lightning-icon icon-name="utility:error" size="x-small" variant="error"></lightning-icon>
+                      <div>
+                        <p class="notice-title">{stepError.message}</p>
+                        <p lwc:if={stepError.cause}>{stepError.cause}</p>
+                      </div>
+                    </div>
+                  </template>
+
+                  <!-- Parent: the record pages the timeline sits on -->
+                  <template lwc:if={isParentStep}>
+                    <div class="options" role="radiogroup" aria-label="The records the timeline sits on">
+                      <template for:each={parentTiles} for:item="p">
+                        <button
+                          key={p.value}
+                          class={p.className}
+                          type="button"
+                          role="radio"
+                          aria-checked={p.checked}
+                          data-value={p.value}
+                          onclick={handleParent}
+                        >
+                          <span class="option-icon"
+                            ><lightning-icon icon-name={p.icon} size="small"></lightning-icon
+                          ></span>
+                          <span class="option-text">
+                            <span class="option-label">{p.label}</span>
+                            <span class="option-detail">{p.detail}</span>
+                          </span>
+                        </button>
+                      </template>
+                    </div>
+                    <p class="quiet">More record pages are coming.</p>
+                  </template>
+
+                  <!-- Kind: four answers, 1 to 4 on the keyboard -->
+                  <template lwc:if={isKindStep}>
+                    <div class="options" role="radiogroup" aria-label="Where the records come from">
+                      <template for:each={kindTiles} for:item="k">
+                        <button
+                          key={k.value}
+                          class={k.className}
+                          type="button"
+                          role="radio"
+                          aria-checked={k.checked}
+                          data-value={k.value}
+                          disabled={k.disabled}
+                          onclick={handleKind}
+                        >
+                          <span class="option-icon"
+                            ><lightning-icon icon-name={k.icon} size="small"></lightning-icon
+                          ></span>
+                          <span class="option-text">
+                            <span class="option-label">{k.label}</span>
+                            <span class="option-detail">{k.detail}</span>
+                          </span>
+                          <kbd class="key" aria-hidden="true">{k.shortcut}</kbd>
+                        </button>
+                      </template>
+                    </div>
+                  </template>
+
+                  <!-- A search list: objects, classes, dates, individual fields -->
+                  <!-- Data 360, more than one data space: which holds the engagement -->
+                  <template lwc:if={showSpaceChooser}>
+                    <h3 class="second-question space-question">Which data space holds this engagement?</h3>
+                    <lightning-combobox
+                      class="space-field"
+                      label="Data space"
+                      variant="label-hidden"
+                      placeholder="Choose a data space"
+                      options={spaceOptions}
+                      value={draft.dataSpace}
+                      onchange={handleDataSpace}
+                    ></lightning-combobox>
+                  </template>
+
+                  <template lwc:if={showPicker}>
+                    <div class="picker" onfocusout={handlePickerFocusout}>
+                      <div class="picker-field">
+                        <lightning-icon class="picker-glass" icon-name="utility:search" size="x-small"></lightning-icon>
+                        <input
+                          class="picker-input"
+                          type="text"
+                          role="combobox"
+                          aria-label={pickerLabel}
+                          aria-expanded={pickerExpanded}
+                          aria-controls="picker-list"
+                          aria-autocomplete="list"
+                          aria-activedescendant={activeDescendant}
+                          autocomplete="off"
+                          spellcheck="false"
+                          placeholder={pickerPlaceholder}
+                          value={pickerInputValue}
+                          oninput={handleQuery}
+                          onclick={handlePickerClick}
+                          onkeydown={handlePickerKeydown}
+                        />
+                        <span lwc:if={pickerBusy} class="picker-spinner" role="status">
+                          <lightning-spinner alternative-text="Loading" size="x-small"></lightning-spinner>
+                        </span>
+                      </div>
+                      <ul
+                        lwc:if={showPickerResults}
+                        class="results"
+                        id="picker-list"
+                        role="listbox"
+                        aria-label={pickerLabel}
+                        onmousedown={handleResultsMousedown}
+                      >
+                        <template for:each={pickerResults} for:item="r">
+                          <li
+                            key={r.value}
+                            id={r.id}
+                            class={r.className}
+                            role="option"
+                            aria-selected={r.ariaSelected}
+                            data-value={r.value}
+                            data-index={r.index}
+                            onclick={handleResultClick}
+                            onmouseenter={handleResultHover}
+                          >
+                            <span class="result-label">{r.before}<mark lwc:if={r.match}>{r.match}</mark>{r.after}</span>
+                            <span lwc:if={r.tag} class="result-tag">{r.tag}</span>
+                            <span class="result-detail">{r.detail}</span>
+                          </li>
+                        </template>
+                      </ul>
+                      <template lwc:if={showPickerResults}>
+                        <p class="quiet" lwc:if={pickerEmpty}>{pickerEmpty}</p>
+                        <p class="quiet" lwc:if={pickerMore}>{pickerMore}</p>
+                      </template>
+                    </div>
+                  </template>
+
+                  <template lwc:if={showRelatedDate}>
+                    <div class="date-pick">
+                      <c-time-drive-field-picker
+                        fields={fields}
+                        label="Search the related record's dates"
+                        start-at={relatedStartField}
+                        types={dateTypes}
+                        onpick={handleRelatedDatePick}
+                        onclose={handleRelatedDateClose}
+                      ></c-time-drive-field-picker>
+                    </div>
+                  </template>
+
+                  <!-- Data 360: the field that holds the individual, under the object -->
+                  <template lwc:if={isIndividualStep}>
+                    <h3 class="second-question link-question">{individualQuestion}</h3>
+                    <p class="quiet">{individualHint}</p>
+                    <lightning-combobox
+                      class="individual-field"
+                      label={individualQuestion}
+                      variant="label-hidden"
+                      placeholder="Choose a field"
+                      options={individualCombo}
+                      value={draft.individualField}
+                      onchange={handleIndividualField}
+                    ></lightning-combobox>
+                  </template>
+
+                  <!-- Link: the ways these records belong to a Contact -->
+                  <template lwc:if={isLinkStep}>
+                    <h3 class="second-question link-question">{linkQuestion}</h3>
+                    <template lwc:if={loadingSchema}>
+                      <div class="wait" role="status">
+                        <lightning-spinner alternative-text="Reading the object" size="small"></lightning-spinner>
+                      </div>
+                    </template>
+                    <template lwc:elseif={noLinks}>
+                      <div class="notice">
+                        <lightning-icon icon-name="utility:info" size="x-small"></lightning-icon>
+                        <div>
+                          <p class="notice-title">{noLinksTitle}</p>
+                          <p>{noLinksText}</p>
+                        </div>
+                      </div>
+                    </template>
+                    <template lwc:else>
+                      <template lwc:if={linkFocused}>
+                        <div class="link-focus">
+                          <div class="link-chosen">
+                            <div class="option option_on option_chosen">
+                              <span class="option-icon"
+                                ><lightning-icon icon-name={chosenLink.icon} size="small"></lightning-icon
+                              ></span>
+                              <span class="option-text">
+                                <span class="option-label">{chosenLink.label}</span>
+                                <span class="option-detail">{linkKindText}</span>
+                              </span>
+                              <lightning-button-icon
+                                class="link-close"
+                                icon-name="utility:close"
+                                variant="bare"
+                                alternative-text="Show every way they link"
+                                title="Show every way they link"
+                                onclick={handleLinkChange}
+                              ></lightning-button-icon>
+                            </div>
+                          </div>
+                          <div class="link-model link-story">
+                            <p>{linkStory}</p>
+                            <p lwc:if={linkKindNote} class="link-note">{linkKindNote}</p>
+                          </div>
+                        </div>
+                      </template>
+                      <template lwc:if={showLinkSearch}>
+                        <div class="link-search">
+                          <lightning-input
+                            type="search"
+                            label="Search the ways they link"
+                            variant="label-hidden"
+                            placeholder="Search the ways they link"
+                            value={linkQuery}
+                            onchange={handleLinkQuery}
+                          ></lightning-input>
+                          <p class="quiet" aria-live="polite">{linkCountText}</p>
+                        </div>
+                      </template>
+                      <p lwc:if={noLinkMatches} class="quiet">Nothing matches. Try another word.</p>
+                      <div class={linkOptionsClass} role="radiogroup" aria-label="How they link">
+                        <template for:each={linkChoices} for:item="l">
+                          <p key={l.groupKey} lwc:if={l.groupHeading} class="link-group">{l.groupHeading}</p>
+                          <button
+                            key={l.key}
+                            class={l.className}
+                            type="button"
+                            role="radio"
+                            aria-checked={l.checked}
+                            data-key={l.key}
+                            disabled={l.disabled}
+                            onclick={handleLink}
+                          >
+                            <span class="option-icon"
+                              ><lightning-icon icon-name={l.icon} size="small"></lightning-icon
+                            ></span>
+                            <span class="option-text">
+                              <span class="option-label">{l.label}</span>
+                              <span class="option-detail">{l.kindText}</span>
+                            </span>
+                          </button>
+                        </template>
+                      </div>
+                    </template>
+                  </template>
+
+                  <!-- Filter: every record, or conditions -->
+                  <template lwc:if={isFilterStep}>
+                    <h3 class="second-question link-question">All of them, or only some?</h3>
+                    <div class="options options_pair" role="radiogroup" aria-label="Which records">
+                      <template for:each={filterChoices} for:item="c">
+                        <button
+                          key={c.value}
+                          class={c.className}
+                          type="button"
+                          role="radio"
+                          aria-checked={c.checked}
+                          data-value={c.value}
+                          onclick={handleFilterMode}
+                        >
+                          <span class="option-icon"
+                            ><lightning-icon icon-name={c.icon} size="small"></lightning-icon
+                          ></span>
+                          <span class="option-text">
+                            <span class="option-label">{c.label}</span>
+                            <span class="option-detail">{c.detail}</span>
+                          </span>
+                        </button>
+                      </template>
+                    </div>
+                    <template lwc:if={showConditions}>
+                      <div class="conditions-box">
+                        <ul class="conditions">
+                          <template for:each={conditionRows} for:item="c">
+                            <li key={c.key} class="condition">
+                              <span class="condition-join">{c.joinText}</span>
+                              <lightning-combobox
+                                class="condition-field"
+                                label="Field"
+                                variant="label-hidden"
+                                placeholder="Field"
+                                options={conditionFieldOptions}
+                                value={c.field}
+                                data-index={c.index}
+                                data-part="field"
+                                onchange={handleConditionChange}
+                              ></lightning-combobox>
+                              <lightning-combobox
+                                class="condition-op"
+                                label="Operator"
+                                variant="label-hidden"
+                                options={c.operators}
+                                value={c.operator}
+                                disabled={c.noField}
+                                data-index={c.index}
+                                data-part="operator"
+                                onchange={handleConditionChange}
+                              ></lightning-combobox>
+                              <span class="condition-value">
+                                <template lwc:if={c.isPicklist}>
+                                  <lightning-combobox
+                                    label="Value"
+                                    variant="label-hidden"
+                                    placeholder="Value"
+                                    options={c.picklistValues}
+                                    value={c.value}
+                                    data-index={c.index}
+                                    data-part="value"
+                                    onchange={handleConditionChange}
+                                  ></lightning-combobox>
+                                </template>
+                                <template lwc:elseif={c.isBoolean}>
+                                  <lightning-combobox
+                                    label="Value"
+                                    variant="label-hidden"
+                                    options={booleanOptions}
+                                    value={c.value}
+                                    data-index={c.index}
+                                    data-part="value"
+                                    onchange={handleConditionChange}
+                                  ></lightning-combobox>
+                                </template>
+                                <template lwc:elseif={c.isDate}>
+                                  <lightning-input
+                                    type="date"
+                                    label="Value"
+                                    variant="label-hidden"
+                                    value={c.value}
+                                    data-index={c.index}
+                                    data-part="value"
+                                    onchange={handleConditionChange}
+                                  ></lightning-input>
+                                </template>
+                                <template lwc:elseif={c.isNumber}>
+                                  <lightning-input
+                                    type="number"
+                                    step="any"
+                                    label="Value"
+                                    variant="label-hidden"
+                                    value={c.value}
+                                    data-index={c.index}
+                                    data-part="value"
+                                    onchange={handleConditionChange}
+                                  ></lightning-input>
+                                </template>
+                                <template lwc:elseif={c.isText}>
+                                  <lightning-input
+                                    label="Value"
+                                    variant="label-hidden"
+                                    placeholder="Value"
+                                    value={c.value}
+                                    disabled={c.noField}
+                                    data-index={c.index}
+                                    data-part="value"
+                                    onchange={handleConditionChange}
+                                  ></lightning-input>
+                                </template>
+                              </span>
+                              <lightning-button-icon
+                                icon-name="utility:close"
+                                variant="bare"
+                                alternative-text={c.removeLabel}
+                                title={c.removeLabel}
+                                data-index={c.index}
+                                onclick={handleRemoveCondition}
+                              ></lightning-button-icon>
+                            </li>
+                          </template>
+                        </ul>
+                        <template lwc:if={relatedFilterOpen}>
+                          <div class="related-filter">
+                            <c-time-drive-field-picker
+                              fields={fields}
+                              label="Search related records"
+                              root-lookups-only="true"
+                              onpick={handleRelatedFilterPick}
+                              onclose={handleRelatedFilterClose}
+                            ></c-time-drive-field-picker>
+                          </div>
+                        </template>
+                        <div class="box-actions">
+                          <lightning-button
+                            variant="base"
+                            icon-name="utility:add"
+                            label="Add another condition"
+                            onclick={handleAddCondition}
+                          ></lightning-button>
+                        </div>
+                      </div>
+                    </template>
+                    <template lwc:if={filterFixed}>
+                      <div class="conditions-box">
+                        <p class="tune-help">
+                          This source ships with a filter the condition builder can't show. It stays as it is until you
+                          replace it.
+                        </p>
+                        <p><code class="code">{draft.filter}</code></p>
+                        <button class="link-button" type="button" onclick={handleReplaceFilter}>
+                          Replace it with conditions
+                        </button>
+                      </div>
+                    </template>
+                  </template>
+
+                  <!-- Range: how far back, with what each would read -->
+                  <template lwc:if={isRangeStep}>
+                    <p class="volume" lwc:if={hasVolumes}>
+                      <lightning-icon icon-name="utility:database" size="x-small"></lightning-icon>
+                      <span>{volumeHeadline}</span>
+                    </p>
+                    <p class="quiet" lwc:if={volumeUnavailable}>Record counts aren't available for this object.</p>
+                    <div class="options options_ranges" role="radiogroup" aria-label="How far back">
+                      <template for:each={rangeChoices} for:item="r">
+                        <button
+                          key={r.key}
+                          class={r.className}
+                          type="button"
+                          role="radio"
+                          aria-checked={r.checked}
+                          data-value={r.value}
+                          onclick={handleRange}
+                        >
+                          <span class="option-text">
+                            <span class="option-label">{r.label}</span>
+                            <span class="option-detail" lwc:if={r.detail}>{r.detail}</span>
+                          </span>
+                          <span lwc:if={r.tag} class={r.tagClass}>{r.tag}</span>
+                        </button>
+                      </template>
+                    </div>
+                  </template>
+
+                  <!-- Name: what it's called, and its view -->
+                  <!-- Lenses: what they are for, then the choice -->
+                  <template lwc:if={isLensesStep}>
+                    <div class="lens-step">
+                      <p class="lens-step-about">
+                        On a record, the timeline has a picker. Choosing a lens there, like Service, shows only the
+                        items in that lens. Put these items in every lens where people should see them.
+                      </p>
+                      <template lwc:if={hasLensChoices}>
+                        <div class="look-sets" role="group" aria-label="Lenses">
+                          <template for:each={lensChoices} for:item="l">
+                            <button
+                              key={l.key}
+                              class={l.className}
+                              type="button"
+                              aria-pressed={l.pressed}
+                              data-value={l.key}
+                              onclick={handleLensChoice}
+                            >
+                              {l.label}
+                            </button>
+                          </template>
+                        </div>
+                      </template>
+                      <p class="quiet" lwc:else>No lenses are offered yet. They are set up on the Lenses page.</p>
+                      <p class="lens-step-under">
+                        <span class="lens-strip-label">These items will show under</span>
+                        <span class="lens-step-names">{lensesShownUnder}</span>
+                      </p>
+                    </div>
+                  </template>
+
+                  <template lwc:if={isNameStep}>
+                    <div class="tune">
+                      <section class="tune-item" aria-labelledby="tune-legend">
+                        <h3 class="tune-label" id="tune-legend">Name</h3>
+                        <p class="tune-help">What the legend and filters call these items.</p>
+                        <template lwc:if={legendFocused}>
+                          <div class="link-chosen">
+                            <div class="option option_on option_chosen">
+                              <span class="option-icon"
+                                ><lightning-icon icon-name={chosenLegend.icon} size="x-small"></lightning-icon
+                              ></span>
+                              <span class="option-text">
+                                <span class="option-label">{chosenLegend.title}</span>
+                                <span class="option-detail">{chosenLegend.text}</span>
+                              </span>
+                              <lightning-button-icon
+                                class="link-close"
+                                icon-name="utility:close"
+                                variant="bare"
+                                alternative-text="Show every way to name it"
+                                title="Show every way to name it"
+                                onclick={handleLegendChange}
+                              ></lightning-button-icon>
+                            </div>
+                          </div>
+                        </template>
+                        <div class={legendOptionsClass} role="radiogroup" aria-labelledby="tune-legend">
+                          <template for:each={legendModes} for:item="m">
+                            <button
+                              key={m.value}
+                              class={m.className}
+                              type="button"
+                              role="radio"
+                              aria-checked={m.checked}
+                              data-value={m.value}
+                              onclick={handleLegendMode}
+                            >
+                              <span class="option-icon"
+                                ><lightning-icon icon-name={m.icon} size="x-small"></lightning-icon
+                              ></span>
+                              <span class="option-text">
+                                <span class="option-label">{m.title}</span>
+                                <span class="option-detail">{m.text}</span>
+                              </span>
+                            </button>
+                          </template>
+                        </div>
+                        <template lwc:if={isLegendRelated}>
+                          <div class="chips" role="group" aria-label="The related object to name it after">
+                            <template for:each={relatedChoices} for:item="r">
+                              <button
+                                key={r.value}
+                                class={r.className}
+                                type="button"
+                                title={r.title}
+                                aria-pressed={r.pressed}
+                                data-value={r.value}
+                                onclick={handleRelatedObject}
+                              >
+                                {r.label}
+                              </button>
+                            </template>
+                          </div>
+                        </template>
+                        <template lwc:if={isLegendLabel}>
+                          <div class="label-box">
+                            <lightning-input
+                              class="custom-label-input"
+                              label="Custom label API name"
+                              placeholder="Timeline_Follow_ups"
+                              value={customLabelName}
+                              onchange={handleCustomLabel}
+                            ></lightning-input>
+                            <p class={labelStatus.className} role="status">{labelStatus.text}</p>
+                            <ol class="label-steps">
+                              <li>
+                                In Setup, open <strong>Custom Labels</strong> and choose New Custom Label. Give it a
+                                name, like <code>Timeline_Follow_ups</code>, and the words, like Follow-ups.
+                              </li>
+                              <li>
+                                On the label, add a translation for each language under Local Translations / Overrides
+                                (Translation Workbench must be on).
+                              </li>
+                              <li>
+                                Enter its API name here. The timeline shows each person the words in their language.
+                                This app comes with an example: <code>Time_Drive_Example_Legend</code>.
+                              </li>
+                            </ol>
+                          </div>
+                        </template>
+                        <template lwc:if={isLegendText}>
+                          <lightning-input
+                            class="legend-name-input"
+                            label="Name in the legend"
+                            variant="label-hidden"
+                            placeholder={draft.label}
+                            value={draft.eventLabel}
+                            onchange={handleLegendName}
+                          ></lightning-input>
+                        </template>
+                      </section>
+                      <section class="tune-item" aria-labelledby="tune-order">
+                        <h3 class="tune-label" id="tune-order">Order</h3>
+                        <p class="tune-help">
+                          {legendCountText} Drag a source to move it, or use the arrows. The legend and filters list
+                          them in this order.
+                        </p>
+                        <ol class="legend-order" aria-labelledby="tune-order">
+                          <template for:each={legendRows} for:item="row">
+                            <li
+                              key={row.key}
+                              class={row.className}
+                              draggable="true"
+                              data-key={row.key}
+                              ondragstart={handleLegendDragStart}
+                              ondragover={handleLegendDragOver}
+                              ondrop={handleLegendDrop}
+                              ondragend={handleLegendDragEnd}
+                            >
+                              <lightning-icon
+                                class="legend-grip"
+                                icon-name="utility:drag_and_drop"
+                                size="x-small"
+                                aria-hidden="true"
+                              ></lightning-icon>
+                              <span class="legend-place" aria-hidden="true">{row.place}</span>
+                              <span class="chip chip_small" style={row.chipStyle}>
+                                <lightning-icon icon-name={row.icon} size="xx-small" variant="inverse"></lightning-icon>
+                              </span>
+                              <span class="legend-name">{row.name}</span>
+                              <span lwc:if={row.mine} class="badge badge_this">This source</span>
+                              <span lwc:if={row.off} class="badge badge_off">Inactive</span>
+                              <span class="legend-move">
+                                <lightning-button-icon
+                                  icon-name="utility:chevronup"
+                                  variant="bare"
+                                  size="small"
+                                  alternative-text={row.upLabel}
+                                  title={row.upLabel}
+                                  disabled={row.first}
+                                  data-key={row.key}
+                                  data-dir="-1"
+                                  onclick={handleLegendMove}
+                                ></lightning-button-icon>
+                                <lightning-button-icon
+                                  icon-name="utility:chevrondown"
+                                  variant="bare"
+                                  size="small"
+                                  alternative-text={row.downLabel}
+                                  title={row.downLabel}
+                                  disabled={row.last}
+                                  data-key={row.key}
+                                  data-dir="1"
+                                  onclick={handleLegendMove}
+                                ></lightning-button-icon>
+                              </span>
+                            </li>
+                          </template>
+                        </ol>
+                      </section>
+                    </div>
+                  </template>
+
+                  <!-- Words: the title and subtitle, with fields -->
+                  <!-- Words and style: what each item says, its icon and colour, on one sample item -->
+                  <template lwc:if={isLookStep}>
+                    <div class="sample sample_large">
+                      <span class="node node_large" style={nodeStyle} aria-hidden="true">
+                        <lightning-icon icon-name={iconName} size="small" variant="inverse"></lightning-icon>
+                      </span>
+                      <div class="sample-body">
+                        <span class="sample-text" aria-hidden="true">
+                          <span class="sample-title">
+                            <template for:each={titleParts} for:item="p">
+                              <span key={p.key} class={p.className}>{p.text}</span>
+                            </template>
+                          </span>
+                          <span class="sample-sub">
+                            <template lwc:if={showWords}>
+                              <template for:each={subtitleParts} for:item="p">
+                                <span key={p.key} class={p.className}>{p.text}</span>
+                              </template>
+                            </template>
+                            <template lwc:else>
+                              <lightning-formatted-date-time
+                                value={sampleDate}
+                                day="numeric"
+                                month="short"
+                                hour="2-digit"
+                                minute="2-digit"
+                              ></lightning-formatted-date-time>
+                            </template>
+                          </span>
+                        </span>
+
+                        <template lwc:if={showWords}>
+                          <div class="word-fields">
+                            <div class="word-field">
+                              <label class="word-label" for="title-input">Title</label>
+                              <div class="word-row">
+                                <input
+                                  id="title-input"
+                                  class="word-input"
+                                  type="text"
+                                  placeholder="Order placed"
+                                  value={titleText}
+                                  data-field="title"
+                                  oninput={handleWords}
+                                />
+                                <button
+                                  lwc:if={hasFields}
+                                  class="add-field"
+                                  type="button"
+                                  data-field="title"
+                                  aria-expanded={titleTokensOpen}
+                                  onclick={handleTokenOpen}
+                                >
+                                  <lightning-icon icon-name="utility:add" size="xx-small"></lightning-icon>
+                                  <span>Field</span>
+                                </button>
+                              </div>
+                              <template lwc:if={titleTokensOpen}>
+                                <c-time-drive-field-picker
+                                  fields={tokenFields}
+                                  label="Search fields to add to the title"
+                                  onpick={handleFieldPick}
+                                  onclose={handleFieldPickClose}
+                                ></c-time-drive-field-picker>
+                              </template>
+                            </div>
+
+                            <div class="word-field">
+                              <label class="word-label" for="subtitle-input">Subtitle</label>
+                              <div class="word-row">
+                                <input
+                                  id="subtitle-input"
+                                  class="word-input"
+                                  type="text"
+                                  placeholder={subtitlePlaceholder}
+                                  value={subtitleText}
+                                  disabled={isEmailMessage}
+                                  aria-describedby="subtitle-note"
+                                  data-field="subtitle"
+                                  oninput={handleWords}
+                                />
+                                <button
+                                  lwc:if={canAddSubtitleField}
+                                  class="add-field"
+                                  type="button"
+                                  data-field="subtitle"
+                                  aria-expanded={subtitleTokensOpen}
+                                  onclick={handleTokenOpen}
+                                >
+                                  <lightning-icon icon-name="utility:add" size="xx-small"></lightning-icon>
+                                  <span>Field</span>
+                                </button>
+                              </div>
+                              <p lwc:if={isEmailMessage} id="subtitle-note" class="word-note">
+                                Set for you: who each email went to.
+                              </p>
+                              <template lwc:if={subtitleTokensOpen}>
+                                <c-time-drive-field-picker
+                                  fields={tokenFields}
+                                  label="Search fields to add to the subtitle"
+                                  onpick={handleFieldPick}
+                                  onclose={handleFieldPickClose}
+                                ></c-time-drive-field-picker>
+                              </template>
+                            </div>
+                          </div>
+                        </template>
+                        <template lwc:if={canRestoreLook}>
+                          <div class="look-restore">
+                            <lightning-button
+                              variant="base"
+                              icon-name="utility:undo"
+                              label={restoreLookLabel}
+                              onclick={handleRestoreLook}
+                            ></lightning-button>
+                          </div>
+                        </template>
+                      </div>
+                    </div>
+                    <div class={styleGridClass}>
+                      <div class="look">
+                        <section class="look-panel" aria-labelledby="icon-question">
+                          <div class="look-head">
+                            <h3 class="second-question" id="icon-question">Icon</h3>
+                            <span class="look-current">{iconCurrentText}</span>
+                          </div>
+                          <div class="look-search">
+                            <lightning-icon
+                              class="picker-glass"
+                              icon-name="utility:search"
+                              size="x-small"
+                              aria-hidden="true"
+                            ></lightning-icon>
+                            <input
+                              class="look-input"
+                              type="search"
+                              aria-label="Search the SLDS icons"
+                              placeholder="Search icons: email, money, chat…"
+                              autocomplete="off"
+                              spellcheck="false"
+                              value={iconQuery}
+                              oninput={handleIconQuery}
+                            />
+                          </div>
+                          <div class="look-sets" role="group" aria-label="Icon set">
+                            <template for:each={iconSets} for:item="set">
+                              <button
+                                key={set.key}
+                                class={set.className}
+                                type="button"
+                                aria-pressed={set.pressed}
+                                data-value={set.key}
+                                onclick={handleIconSet}
+                              >
+                                {set.text}
+                              </button>
+                            </template>
+                          </div>
+                          <p class="quiet look-count" aria-live="polite">{iconCountText}</p>
+                          <div class="icons" role="group" aria-label="Icons" onscroll={handleIconScroll}>
+                            <template for:each={iconChoices} for:item="i">
+                              <button
+                                key={i.name}
+                                class={i.className}
+                                type="button"
+                                aria-pressed={i.pressed}
+                                title={i.label}
+                                data-value={i.name}
+                                onclick={handleIcon}
+                              >
+                                <lightning-icon
+                                  icon-name={i.name}
+                                  size="small"
+                                  alternative-text={i.label}
+                                ></lightning-icon>
+                              </button>
+                            </template>
+                          </div>
+                        </section>
+
+                        <section class="look-panel" aria-labelledby="colour-question">
+                          <div class="look-head">
+                            <h3 class="second-question" id="colour-question">Colour</h3>
+                            <span class="look-current">{colourText}</span>
+                          </div>
+                          <div class="palette" role="group" aria-label="SLDS colours">
+                            <template for:each={paletteRows} for:item="row">
+                              <div key={row.key} class="palette-row">
+                                <span class="palette-hue">{row.hue}</span>
+                                <template for:each={row.swatches} for:item="c">
+                                  <button
+                                    key={c.key}
+                                    class={c.className}
+                                    style={c.style}
+                                    type="button"
+                                    aria-pressed={c.pressed}
+                                    title={c.label}
+                                    data-value={c.value}
+                                    onclick={handleColour}
+                                  >
+                                    <span class="slds-assistive-text">{c.label}</span>
+                                  </button>
+                                </template>
+                              </div>
+                            </template>
+                          </div>
+                          <div class="look-custom">
+                            <lightning-input
+                              type="color"
+                              label="Any colour"
+                              value={customColour}
+                              onchange={handleCustomColour}
+                            ></lightning-input>
+                          </div>
+                        </section>
+                      </div>
+                    </div>
+                  </template>
+
+                  <!-- Details: what an opened item shows, beside a preview with sample values -->
+                  <template lwc:if={isOpenStep}>
+                    <div class="behave">
+                      <div class="behave-choose">
+                        <p lwc:if={isSalesforce} class="behave-heading">When it is opened</p>
+                        <div class="details-box">
+                          <p class="details-title">Fields to show, in order</p>
+                          <ul class="details">
+                            <template for:each={detailRows} for:item="d">
+                              <li key={d.key} class="detail">
+                                <template lwc:if={isApex}>
+                                  <lightning-input
+                                    class="detail-field"
+                                    label="Field"
+                                    variant="label-hidden"
+                                    placeholder="Value name, as the class returns it"
+                                    value={d.field}
+                                    data-index={d.index}
+                                    data-part="field"
+                                    onchange={handleDetailChange}
+                                  ></lightning-input>
+                                </template>
+                                <template lwc:else>
+                                  <div class="detail-pick">
+                                    <button
+                                      class="detail-field detail-field_button"
+                                      type="button"
+                                      data-index={d.index}
+                                      aria-expanded={d.pickerOpen}
+                                      onclick={handleDetailPickOpen}
+                                    >
+                                      <span class={d.fieldClass}>{d.fieldText}</span>
+                                      <lightning-icon icon-name="utility:chevrondown" size="xx-small"></lightning-icon>
+                                    </button>
+                                    <template lwc:if={d.pickerOpen}>
+                                      <c-time-drive-field-picker
+                                        fields={tokenFields}
+                                        label="Search fields to show"
+                                        onpick={handleFieldPick}
+                                        onclose={handleFieldPickClose}
+                                      ></c-time-drive-field-picker>
+                                    </template>
+                                  </div>
+                                </template>
+                                <lightning-combobox
+                                  class="detail-format"
+                                  label="Shown as"
+                                  variant="label-hidden"
+                                  options={formatOptions}
+                                  value={d.format}
+                                  data-index={d.index}
+                                  data-part="format"
+                                  onchange={handleDetailChange}
+                                ></lightning-combobox>
+                                <span class="detail-actions">
+                                  <template lwc:if={canReorderDetails}>
+                                    <lightning-button-icon
+                                      icon-name="utility:chevronup"
+                                      variant="bare"
+                                      size="small"
+                                      alternative-text={d.upLabel}
+                                      title={d.upLabel}
+                                      disabled={d.first}
+                                      data-index={d.index}
+                                      data-dir="-1"
+                                      onclick={handleMoveDetail}
+                                    ></lightning-button-icon>
+                                    <lightning-button-icon
+                                      icon-name="utility:chevrondown"
+                                      variant="bare"
+                                      size="small"
+                                      alternative-text={d.downLabel}
+                                      title={d.downLabel}
+                                      disabled={d.last}
+                                      data-index={d.index}
+                                      data-dir="1"
+                                      onclick={handleMoveDetail}
+                                    ></lightning-button-icon>
+                                  </template>
+                                  <lightning-button-icon
+                                    icon-name="utility:close"
+                                    variant="bare"
+                                    alternative-text={d.removeLabel}
+                                    title={d.removeLabel}
+                                    data-index={d.index}
+                                    onclick={handleRemoveDetail}
+                                  ></lightning-button-icon>
+                                </span>
+                              </li>
+                            </template>
+                          </ul>
+                          <template lwc:if={canAddDetail}>
+                            <lightning-button
+                              variant="base"
+                              icon-name="utility:add"
+                              label="Add a field"
+                              onclick={handleAddDetail}
+                            ></lightning-button>
+                          </template>
+                          <template lwc:else>
+                            <p class="hint">Up to {maxDetails} fields, besides the title and subtitle.</p>
+                          </template>
+                        </div>
+                        <template lwc:if={isSalesforce}>
+                          <p class="behave-heading behave-heading_next">When its title is clicked</p>
+                          <template lwc:if={clickFocused}>
+                            <div class="link-chosen">
+                              <div class="option option_on option_chosen">
+                                <span class="option-icon"
+                                  ><lightning-icon icon-name={chosenClick.icon} size="small"></lightning-icon
+                                ></span>
+                                <span class="option-text">
+                                  <span class="option-label">{chosenClick.title}</span>
+                                  <span class="option-detail">{chosenClick.text}</span>
+                                </span>
+                                <template lwc:if={clickChangeable}>
+                                  <lightning-button-icon
+                                    class="link-close"
+                                    icon-name="utility:close"
+                                    variant="bare"
+                                    alternative-text="Show every option"
+                                    title="Show every option"
+                                    onclick={handleClickChange}
+                                  ></lightning-button-icon>
+                                </template>
+                              </div>
+                            </div>
+                          </template>
+                          <div class={clickOptionsClass} role="radiogroup" aria-label="What a click opens">
+                            <template for:each={clickOptions} for:item="o">
+                              <button
+                                key={o.value}
+                                class={o.className}
+                                type="button"
+                                role="radio"
+                                aria-checked={o.checked}
+                                data-value={o.value}
+                                disabled={o.disabled}
+                                onclick={handleClickChoice}
+                              >
+                                <span class="option-icon"
+                                  ><lightning-icon icon-name={o.icon} size="small"></lightning-icon
+                                ></span>
+                                <span class="option-text">
+                                  <span class="option-label">{o.title}</span>
+                                  <span class="option-detail">{o.text}</span>
+                                </span>
+                              </button>
+                            </template>
+                          </div>
+                          <template lwc:if={isClickRelated}>
+                            <div class="behave-related">
+                              <p class="behave-label">Which record?</p>
+                              <div class="look-sets" role="group" aria-label="Which record?">
+                                <template for:each={clickLookupChips} for:item="c">
+                                  <button
+                                    key={c.key}
+                                    class={c.className}
+                                    type="button"
+                                    aria-pressed={c.pressed}
+                                    data-value={c.value}
+                                    onclick={handleClickLookup}
+                                  >
+                                    {c.text}
+                                  </button>
+                                </template>
+                              </div>
+                            </div>
+                          </template>
+                        </template>
+                        <template lwc:if={canHighlight}>
+                          <p class="behave-heading behave-heading_next">Highlights</p>
+                          <p class="behave-label">
+                            Mark an item with a small icon when a checkbox is checked, such as High priority. One per
+                            source.
+                          </p>
+                          <ul class="highlights">
+                            <template for:each={highlightRows} for:item="h">
+                              <li key={h.key} class="highlight">
+                                <div class="highlight-head">
+                                  <lightning-combobox
+                                    class="highlight-field"
+                                    label="Field"
+                                    variant="label-hidden"
+                                    placeholder="Choose a field"
+                                    options={highlightFieldOptions}
+                                    value={h.field}
+                                    data-index={h.index}
+                                    onchange={handleHighlightField}
+                                  ></lightning-combobox>
+                                  <lightning-button-icon
+                                    icon-name="utility:close"
+                                    variant="bare"
+                                    alternative-text={h.removeLabel}
+                                    title={h.removeLabel}
+                                    data-index={h.index}
+                                    onclick={handleRemoveHighlight}
+                                  ></lightning-button-icon>
+                                </div>
+                                <template lwc:if={h.field}>
+                                  <div class="highlight-icons" role="group" aria-label="Icon">
+                                    <template for:each={h.iconChoices} for:item="i">
+                                      <button
+                                        key={i.key}
+                                        class={i.className}
+                                        type="button"
+                                        aria-pressed={i.pressed}
+                                        title={i.label}
+                                        data-index={h.index}
+                                        data-value={i.value}
+                                        onclick={handleHighlightIcon}
+                                      >
+                                        <template lwc:if={i.isDot}
+                                          ><span class="highlight-dot" style={h.colourStyle}></span
+                                        ></template>
+                                        <template lwc:else
+                                          ><lightning-icon icon-name={i.value} size="x-small"></lightning-icon
+                                        ></template>
+                                        <span class="slds-assistive-text">{i.label}</span>
+                                      </button>
+                                    </template>
+                                  </div>
+                                  <div class="highlight-colours" role="group" aria-label="Colour">
+                                    <template for:each={h.colourChoices} for:item="c">
+                                      <button
+                                        key={c.key}
+                                        class={c.className}
+                                        style={c.style}
+                                        type="button"
+                                        aria-pressed={c.pressed}
+                                        title={c.label}
+                                        data-index={h.index}
+                                        data-value={c.value}
+                                        onclick={handleHighlightColour}
+                                      >
+                                        <span class="slds-assistive-text">{c.label}</span>
+                                      </button>
+                                    </template>
+                                  </div>
+                                </template>
+                              </li>
+                            </template>
+                          </ul>
+                          <template lwc:if={canAddHighlight}>
+                            <lightning-button
+                              variant="base"
+                              icon-name="utility:add"
+                              label="Add a highlight"
+                              onclick={handleAddHighlight}
+                            ></lightning-button>
+                          </template>
+                        </template>
+                      </div>
+                      <figure class="mock">
+                        <figcaption class="mock-caption">
+                          <span class="mock-badge">Sample values</span>
+                          <span>{previewSourceNote}</span>
+                        </figcaption>
+                        <div class="mock-item mock-item_open">
+                          <div class="mock-row">
+                            <span class="mock-chevron" aria-hidden="true">
+                              <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></svg>
+                            </span>
+                            <span class="node" style={nodeStyle}>
+                              <lightning-icon icon-name={iconName} size="xx-small" variant="inverse"></lightning-icon>
+                            </span>
+                            <span class="mock-main">
+                              <span class="mock-title-line"
+                                ><span class={mockTitleClass}>{previewTitle}</span
+                                ><template for:each={previewFlags} for:item="f"
+                                  ><span key={f.key} class="mock-flag" style={f.style} title={f.text}
+                                    ><template lwc:if={f.isDot}><span class="highlight-dot"></span></template
+                                    ><template lwc:else
+                                      ><lightning-icon
+                                        icon-name={f.icon}
+                                        size="xx-small"
+                                      ></lightning-icon></template></span></template
+                              ></span>
+                              <span lwc:if={previewSubtitle} class="mock-sub">{previewSubtitle}</span>
+                            </span>
+                            <span class="mock-time">{previewTime}</span>
+                          </div>
+                          <div class="mock-detail">
+                            <template lwc:if={previewLoading}>
+                              <span class="mock-line"></span>
+                              <span class="mock-line"></span>
+                              <span class="mock-line mock-line_short"></span>
+                            </template>
+                            <template lwc:elseif={previewEmpty}>
+                              <p class="mock-empty">{previewEmptyText}</p>
+                            </template>
+                            <template lwc:else>
+                              <dl class="mock-facts">
+                                <template for:each={previewFacts} for:item="f">
+                                  <div key={f.key} class="mock-fact">
+                                    <dt>{f.label}</dt>
+                                    <dd>{f.value}</dd>
+                                  </div>
+                                </template>
+                              </dl>
+                            </template>
+                          </div>
+                        </div>
+                        <template lwc:if={isSalesforce}>
+                          <div class="mock-arrow" aria-hidden="true">
+                            <lightning-icon icon-name="utility:arrowdown" size="x-small"></lightning-icon>
+                          </div>
+                          <div class="mock-page">
+                            <div class={clickPageHeadClass}>
+                              <span class="mock-page-icon"
+                                ><lightning-icon
+                                  icon-name="utility:record"
+                                  size="x-small"
+                                  variant="inverse"
+                                ></lightning-icon
+                              ></span>
+                              <span class="mock-page-text">
+                                <span class="mock-page-object">{clickPageLabel}</span>
+                                <span class="mock-page-name">{clickPageName}</span>
+                              </span>
+                            </div>
+                            <dl class="mock-page-facts">
+                              <template for:each={clickPageFacts} for:item="f">
+                                <div key={f.key} class="mock-fact">
+                                  <dt>{f.label}</dt>
+                                  <dd>{f.value}</dd>
+                                </div>
+                              </template>
+                            </dl>
+                          </div>
+                        </template>
+                      </figure>
+                    </div>
+                  </template>
+
+                  <!-- The last question also holds Active and Save's messages -->
+                  <template lwc:if={isLastStep}>
+                    <lightning-input
+                      class="switch-on"
+                      type="toggle"
+                      label="Active when saved"
+                      message-toggle-active=""
+                      message-toggle-inactive=""
+                      checked={draft.active}
+                      disabled={saving}
+                      onchange={handleActive}
+                    ></lightning-input>
+
+                    <p class="quiet" lwc:if={missingAnswers}>{missingAnswers}</p>
+                    <template lwc:if={saveError}>
+                      <div class="notice notice_error" role="alert">
+                        <lightning-icon icon-name="utility:error" size="x-small" variant="error"></lightning-icon>
+                        <div>
+                          <p class="notice-title">{saveError.message}</p>
+                          <p lwc:if={saveError.cause}>{saveError.cause}</p>
+                        </div>
+                      </div>
+                    </template>
+                  </template>
+                </div>
+              </template>
+            </div>
+            <aside class="wz-aside" aria-labelledby="sofar-title">
+              <div class="aside-panel">
+                <h2 class="aside-title" id="sofar-title">So far</h2>
+                <template lwc:if={hasSoFar}>
+                  <dl class="sofar">
+                    <template for:each={soFar} for:item="a">
+                      <div key={a.key} class="sofar-row">
+                        <dt>{a.name}</dt>
+                        <dd>
+                          <button class="sofar-answer" type="button" data-step={a.step} onclick={handleKnot}>
+                            {a.answer}
+                          </button>
+                        </dd>
+                      </div>
+                    </template>
+                  </dl>
+                </template>
+                <template lwc:else>
+                  <p class="quiet">Your answers collect here as you go. Any of them is a click away.</p>
+                </template>
+              </div>
+            </aside>
+          </div>
+
+          <footer class="wz-foot">
+            <button class="ghost" type="button" onclick={handleBack} disabled={backDisabled}>
+              <lightning-icon icon-name="utility:chevronleft" size="x-small"></lightning-icon>
+              <span>Back</span>
+            </button>
+            <span class="foot-hint">
+              <span class="foot-step">{stepCountText}</span>
+              <span lwc:if={blockedReason}>{blockedReason}</span>
+            </span>
+            <template lwc:if={isLastStep}>
+              <button class={saveClass} type="button" disabled={saveDisabled} onclick={handleSave}>
+                <span class="save-icon"
+                  ><lightning-icon icon-name={saveIcon} size="x-small" variant="inverse"></lightning-icon
+                ></span>
+                <span>{saveLabel}</span>
+              </button>
+            </template>
+            <template lwc:else>
+              <button class="primary" type="button" disabled={continueDisabled} onclick={handleContinue}>
+                <span>Next</span>
+                <lightning-icon icon-name="utility:chevronright" size="x-small" variant="inverse"></lightning-icon>
+              </button>
+            </template>
+          </footer>
+        </section>
+      </template>
+    </div>
+  </div>
+</template>

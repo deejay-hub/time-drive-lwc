@@ -1,1595 +1,1483 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomLabels xmlns="http://soap.sforce.com/2006/04/metadata">
     <labels>
-        <fullName>Time_Shift_Example_Legend</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Example_Legend</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: an example legend name</shortDescription>
+        <shortDescription>Time Drive: an example legend name</shortDescription>
         <value>Follow-ups</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_View_All</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_View_All</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the All view's name in the view picker</shortDescription>
+        <shortDescription>Time Drive: the All view's name in the view picker</shortDescription>
         <value>All items</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_View_Commerce</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_View_Commerce</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the Commerce view's name in the view picker</shortDescription>
-        <value>Commerce timeline</value>
+        <shortDescription>Time Drive: the Commerce view's name in the view picker</shortDescription>
+        <value>Commerce</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_View_Digital</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_View_Digital</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the Digital view's name in the view picker</shortDescription>
-        <value>Digital timeline</value>
+        <shortDescription>Time Drive: the Digital view's name in the view picker</shortDescription>
+        <value>Digital</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_View_Marketing</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_View_Marketing</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the Marketing view's name in the view picker</shortDescription>
-        <value>Marketing timeline</value>
+        <shortDescription>Time Drive: the Marketing view's name in the view picker</shortDescription>
+        <value>Marketing</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_View_Sales</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_View_Sales</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the Sales view's name in the view picker</shortDescription>
-        <value>Sales timeline</value>
+        <shortDescription>Time Drive: the Sales view's name in the view picker</shortDescription>
+        <value>Sales</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_View_Service</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_View_Service</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the Service view's name in the view picker</shortDescription>
-        <value>Service timeline</value>
+        <shortDescription>Time Drive: the Service view's name in the view picker</shortDescription>
+        <value>Service</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Menu_Views</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Menu_Views</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the view menu's accessible name</shortDescription>
+        <shortDescription>Time Drive: the view menu's accessible name</shortDescription>
         <value>Views</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Menu_New_Activity</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Menu_New_Activity</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the New activity menu's name</shortDescription>
+        <shortDescription>Time Drive: the New activity menu's name</shortDescription>
         <value>New activity</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Action_New_Task</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Action_New_Task</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the New Task activity action</shortDescription>
+        <shortDescription>Time Drive: the New Task activity action</shortDescription>
         <value>New Task</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Action_New_Event</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Action_New_Event</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the New Event activity action</shortDescription>
+        <shortDescription>Time Drive: the New Event activity action</shortDescription>
         <value>New Event</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Action_Log_Call</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Action_Log_Call</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the Log a Call activity action</shortDescription>
+        <shortDescription>Time Drive: the Log a Call activity action</shortDescription>
         <value>Log a Call</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Action_Email</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Action_Email</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the Email activity action</shortDescription>
+        <shortDescription>Time Drive: the Email activity action</shortDescription>
         <value>Email</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Row_Actions</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Row_Actions</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the menu on an item with Edit and Delete</shortDescription>
+        <shortDescription>Time Drive: the menu on an item with Edit and Delete</shortDescription>
         <value>Item actions</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Row_Checking</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Row_Checking</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the item menu's spinner while rights are checked (read aloud)</shortDescription>
+        <shortDescription>Time Drive: the item menu's spinner while rights are checked (read aloud)</shortDescription>
         <value>Checking what you can do…</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Row_No_Actions</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Row_No_Actions</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the item menu when the user can neither edit nor delete</shortDescription>
+        <shortDescription>Time Drive: the item menu when the user can neither edit nor delete</shortDescription>
         <value>You can't edit or delete this item.</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Action_Edit</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Action_Edit</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the Edit item action</shortDescription>
+        <shortDescription>Time Drive: the Edit item action</shortDescription>
         <value>Edit</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Action_Delete</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Action_Delete</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the Delete item action</shortDescription>
+        <shortDescription>Time Drive: the Delete item action</shortDescription>
         <value>Delete</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Delete_Title</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Delete_Title</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the title of the delete question: Delete + the object</shortDescription>
+        <shortDescription>Time Drive: the title of the delete question: Delete + the object</shortDescription>
         <value>Delete {0}</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Delete_Confirm</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Delete_Confirm</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the question before deleting an item: {0} is the object, lower case</shortDescription>
+        <shortDescription>Time Drive: the question before deleting an item: {0} is the object, lower case</shortDescription>
         <value>Are you sure you want to delete this {0}?</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Delete_Item</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Delete_Item</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the delete question's word for an item of unknown object</shortDescription>
+        <shortDescription>Time Drive: the delete question's word for an item of unknown object</shortDescription>
         <value>item</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Delete_Done</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Delete_Done</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the message after an item is deleted</shortDescription>
+        <shortDescription>Time Drive: the message after an item is deleted</shortDescription>
         <value>Deleted</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Delete_Failed</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Delete_Failed</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the message when an item can't be deleted</shortDescription>
+        <shortDescription>Time Drive: the message when an item can't be deleted</shortDescription>
         <value>Couldn't delete</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Button_Today</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Button_Today</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the Today button</shortDescription>
+        <shortDescription>Time Drive: the Today button</shortDescription>
         <value>Today</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Button_Lite_On</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Button_Lite_On</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the button that hides times and dates (titles only)</shortDescription>
+        <shortDescription>Time Drive: the button that hides times and dates (titles only)</shortDescription>
         <value>Titles only</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Button_Lite_Off</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Button_Lite_Off</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the button that shows times and dates again</shortDescription>
+        <shortDescription>Time Drive: the button that shows times and dates again</shortDescription>
         <value>Show times and dates</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Button_Refresh</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Button_Refresh</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the Refresh button</shortDescription>
+        <shortDescription>Time Drive: the Refresh button</shortDescription>
         <value>Refresh</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Button_Try_Again</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Button_Try_Again</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the Try again button</shortDescription>
+        <shortDescription>Time Drive: the Try again button</shortDescription>
         <value>Try again</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Button_Show_Everything</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Button_Show_Everything</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the button that clears the filters</shortDescription>
+        <shortDescription>Time Drive: the button that clears the filters</shortDescription>
         <value>Show everything</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Expand_All</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Expand_All</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the expand-all button</shortDescription>
+        <shortDescription>Time Drive: the expand-all button</shortDescription>
         <value>Expand all</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Collapse_All</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Collapse_All</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the collapse-all button</shortDescription>
+        <shortDescription>Time Drive: the collapse-all button</shortDescription>
         <value>Collapse all</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Filters</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Filters</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the Filters button and panel title</shortDescription>
+        <shortDescription>Time Drive: the Filters button and panel title</shortDescription>
         <value>Filters</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Filters_Active</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Filters_Active</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the Filters button when some are on</shortDescription>
+        <shortDescription>Time Drive: the Filters button when some are on</shortDescription>
         <value>Filters, {0} active</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Types_All</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Types_All</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: all event types are shown</shortDescription>
+        <shortDescription>Time Drive: all event types are shown</shortDescription>
         <value>All types</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Types_Some</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Types_Some</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: some event types are shown</shortDescription>
+        <shortDescription>Time Drive: some event types are shown</shortDescription>
         <value>{0} of {1} types</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Server_Apex_Needs_Class</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Server_Apex_Needs_Class</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: warning: an Apex source has no class</shortDescription>
+        <shortDescription>Time Drive: warning: an Apex source has no class</shortDescription>
         <value>{0}: an Apex source needs a Provider Class.</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Server_Bad_Provider</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Server_Bad_Provider</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: warning: the class is not a provider</shortDescription>
-        <value>{0}: {1} is not a TimeShiftRowProvider or TimeShiftProvider class.</value>
+        <shortDescription>Time Drive: warning: the class is not a provider</shortDescription>
+        <value>{0}: {1} is not a TimeDriveRowProvider or TimeDriveProvider class.</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Server_Max_Records</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Server_Max_Records</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: warning: a source was cut short</shortDescription>
+        <shortDescription>Time Drive: warning: a source was cut short</shortDescription>
         <value>{0}: only {1} items are plotted (its Max Records), so some may be missing.</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Server_Bad_Years</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Server_Bad_Years</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: warning: a History or Future value is not allowed</shortDescription>
+        <shortDescription>Time Drive: warning: a History or Future value is not allowed</shortDescription>
         <value>{0} “{1}” is not one of 0.25, 0.5, 1, 2, 3 ... 10 years, so it is not used.</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Server_Data360_Missing</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Server_Data360_Missing</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: warning: no Data 360 in the org</shortDescription>
+        <shortDescription>Time Drive: warning: no Data 360 in the org</shortDescription>
         <value>Data 360 is not available in this org, so its sources are skipped.</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Server_Dmo_Missing</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Server_Dmo_Missing</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: warning: a Data 360 object is missing</shortDescription>
+        <shortDescription>Time Drive: warning: a Data 360 object is missing</shortDescription>
         <value>{0} engagement is not in this org’s data model ({1}).</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Server_No_Identity_Link</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Server_No_Identity_Link</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: warning: no identity link object</shortDescription>
+        <shortDescription>Time Drive: warning: no identity link object</shortDescription>
         <value>No identity link object ({0}): showing engagement for the Contact’s own Individual only.</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Server_Rows_No_Date</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Server_Rows_No_Date</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: warning: rows without a date</shortDescription>
+        <shortDescription>Time Drive: warning: rows without a date</shortDescription>
         <value>{0}: {1} rows had no {2} and were not plotted.</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Server_No_Object</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Server_No_Object</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: warning: the object does not exist</shortDescription>
+        <shortDescription>Time Drive: warning: the object does not exist</shortDescription>
         <value>{0}: there is no object called {1}.</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Server_No_Field</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Server_No_Field</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: warning: the field does not exist</shortDescription>
+        <shortDescription>Time Drive: warning: the field does not exist</shortDescription>
         <value>{0}: {1} has no field {2}.</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Server_No_Link</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Server_No_Link</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: warning: no field links the records to the page</shortDescription>
+        <shortDescription>Time Drive: warning: no field links the records to the page</shortDescription>
         <value>{0}: set a Parent Field or a Junction Object to link records to the page.</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Server_Sent_To</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Server_Sent_To</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: an email message's subtitle: who it went to</shortDescription>
+        <shortDescription>Time Drive: an email message's subtitle: who it went to</shortDescription>
         <value>Sent to: {0}</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Server_Sent_To_One_Other</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Server_Sent_To_One_Other</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: an email message's subtitle: who it went to and one other</shortDescription>
+        <shortDescription>Time Drive: an email message's subtitle: who it went to and one other</shortDescription>
         <value>Sent to: {0} and 1 other</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Server_Sent_To_Others</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Server_Sent_To_Others</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: an email message's subtitle: who it went to and others</shortDescription>
+        <shortDescription>Time Drive: an email message's subtitle: who it went to and others</shortDescription>
         <value>Sent to: {0} and {1} others</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Server_Yes</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Server_Yes</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: a checkbox that is checked</shortDescription>
+        <shortDescription>Time Drive: a checkbox that is checked</shortDescription>
         <value>Yes</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Server_No</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Server_No</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: a checkbox that is not checked</shortDescription>
+        <shortDescription>Time Drive: a checkbox that is not checked</shortDescription>
         <value>No</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Server_Identity_Links</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Server_Identity_Links</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the name of a problem: the identity links could not be read</shortDescription>
+        <shortDescription>Time Drive: the name of a problem: the identity links could not be read</shortDescription>
         <value>Identity links</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Status_Updating_Counts</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Status_Updating_Counts</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: screen reader text while the counts update</shortDescription>
+        <shortDescription>Time Drive: screen reader text while the counts update</shortDescription>
         <value>Updating the counts</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Status_Loading</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Status_Loading</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: screen reader text while the timeline loads</shortDescription>
+        <shortDescription>Time Drive: screen reader text while the timeline loads</shortDescription>
         <value>Loading the timeline…</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Status_Loading_Day</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Status_Loading_Day</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: a day loading</shortDescription>
+        <shortDescription>Time Drive: a day loading</shortDescription>
         <value>Loading this day</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Region_Items</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Region_Items</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the list of items's accessible name</shortDescription>
+        <shortDescription>Time Drive: the list of items's accessible name</shortDescription>
         <value>Engagement items</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Overview_Pick_Day</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Overview_Pick_Day</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the overview bar's accessible name</shortDescription>
+        <shortDescription>Time Drive: the overview bar's accessible name</shortDescription>
         <value>Timeline overview: choose a day</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Hint_Scroll</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Hint_Scroll</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the hint over a list that scrolls only once clicked</shortDescription>
+        <shortDescription>Time Drive: the hint over a list that scrolls only once clicked</shortDescription>
         <value>Click to scroll the timeline</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Pill_Grouped</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Pill_Grouped</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the tag on a busy day's grouped row</shortDescription>
+        <shortDescription>Time Drive: the tag on a busy day's grouped row</shortDescription>
         <value>Grouped</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_All_Day</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_All_Day</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the time shown for an all-day event</shortDescription>
+        <shortDescription>Time Drive: the time shown for an all-day event</shortDescription>
         <value>All-Day</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_No_Title</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_No_Title</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: an item with no title</shortDescription>
+        <shortDescription>Time Drive: an item with no title</shortDescription>
         <value>(No title)</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Label_Possible_Cause</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Error_Load_Title</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the lead-in to a likely cause</shortDescription>
-        <value>Possible cause:</value>
-    </labels>
-    <labels>
-        <fullName>Time_Shift_Label_To_Fix</fullName>
-        <categories>Time Trail</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Time Trail: the lead-in to what to do</shortDescription>
-        <value>To fix:</value>
-    </labels>
-    <labels>
-        <fullName>Time_Shift_Error_Load_Title</fullName>
-        <categories>Time Trail</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Time Trail: title when the timeline can't load</shortDescription>
+        <shortDescription>Time Drive: title when the timeline can't load</shortDescription>
         <value>The timeline couldn't load</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Error_Read_Title</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Error_Read_Title</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: title when every source failed</shortDescription>
+        <shortDescription>Time Drive: title when every source failed</shortDescription>
         <value>The timeline couldn't be read</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Error_Partial_Title</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Error_Partial_Title</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: title when some sources failed</shortDescription>
+        <shortDescription>Time Drive: title when some sources failed</shortDescription>
         <value>Some items couldn't be shown</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Email_Opened</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Email_Opened</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: an email that was opened</shortDescription>
+        <shortDescription>Time Drive: an email that was opened</shortDescription>
         <value>Opened</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Email_Unopened</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Email_Unopened</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: an email not opened yet</shortDescription>
+        <shortDescription>Time Drive: an email not opened yet</shortDescription>
         <value>Not opened yet</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Email_Bounced</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Email_Bounced</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: an email that bounced</shortDescription>
+        <shortDescription>Time Drive: an email that bounced</shortDescription>
         <value>Bounced</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Details_Toggle</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Details_Toggle</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: an item's expand button name</shortDescription>
+        <shortDescription>Time Drive: an item's expand button name</shortDescription>
         <value>Details: {0}</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Details_Show</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Details_Show</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: tooltip: show an item's details</shortDescription>
+        <shortDescription>Time Drive: tooltip: show an item's details</shortDescription>
         <value>Show details</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Details_Hide</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Details_Hide</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: tooltip: hide an item's details</shortDescription>
+        <shortDescription>Time Drive: tooltip: hide an item's details</shortDescription>
         <value>Hide details</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Items_One</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Items_One</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: one item</shortDescription>
+        <shortDescription>Time Drive: one item</shortDescription>
         <value>1 item</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Items_Many</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Items_Many</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: a number of items</shortDescription>
+        <shortDescription>Time Drive: a number of items</shortDescription>
         <value>{0} items</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_More_One</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_More_One</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the pill: one more item below</shortDescription>
+        <shortDescription>Time Drive: the pill: one more item below</shortDescription>
         <value>1 more</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_More_Many</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_More_Many</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the pill: more items below</shortDescription>
+        <shortDescription>Time Drive: the pill: more items below</shortDescription>
         <value>{0} more</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_More_Aria_One</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_More_Aria_One</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the pill's full name</shortDescription>
+        <shortDescription>Time Drive: the pill's full name</shortDescription>
         <value>1 more item: scroll down</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_More_Aria_Many</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_More_Aria_Many</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the pill's full name</shortDescription>
+        <shortDescription>Time Drive: the pill's full name</shortDescription>
         <value>{0} more items: scroll down</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_More_Aria_One_On</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_More_Aria_One_On</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the pill's full name, with its day</shortDescription>
+        <shortDescription>Time Drive: the pill's full name, with its day</shortDescription>
         <value>1 more item on {0}: scroll down</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_More_Aria_Many_On</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_More_Aria_Many_On</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the pill's full name, with its day</shortDescription>
+        <shortDescription>Time Drive: the pill's full name, with its day</shortDescription>
         <value>{0} more items on {1}: scroll down</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Group_View_All</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Group_View_All</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: a grouped row's link to its list</shortDescription>
+        <shortDescription>Time Drive: a grouped row's link to its list</shortDescription>
         <value>View all {0} {1}</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Group_Summary_One</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Group_Summary_One</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: what a grouped row stands for</shortDescription>
+        <shortDescription>Time Drive: what a grouped row stands for</shortDescription>
         <value>1 record grouped</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Group_Summary_Many</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Group_Summary_Many</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: what a grouped row stands for</shortDescription>
+        <shortDescription>Time Drive: what a grouped row stands for</shortDescription>
         <value>{0} records grouped</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Group_From</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Group_From</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: a grouped row's first time</shortDescription>
+        <shortDescription>Time Drive: a grouped row's first time</shortDescription>
         <value>From</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Group_To</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Group_To</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: a grouped row's last time</shortDescription>
+        <shortDescription>Time Drive: a grouped row's last time</shortDescription>
         <value>To</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Empty_Setup_Heading</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Empty_Setup_Heading</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: heading when the object isn't set up</shortDescription>
+        <shortDescription>Time Drive: heading when the object isn't set up</shortDescription>
         <value>Setup Error</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Empty_No_Match</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Empty_No_Match</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: heading when filters hide everything</shortDescription>
-        <value>Nothing matches</value>
+        <shortDescription>Time Drive: heading when there is nothing to show</shortDescription>
+        <value>No data found</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Empty_No_Engagement</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Filter_None</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: heading when there's no history</shortDescription>
-        <value>No engagement yet</value>
-    </labels>
-    <labels>
-        <fullName>Time_Shift_Filter_None</fullName>
-        <categories>Time Trail</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Time Trail: filter panel with no types to offer</shortDescription>
+        <shortDescription>Time Drive: filter panel with no types to offer</shortDescription>
         <value>Nothing to filter in this view.</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_No_Sources</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_No_Sources</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the object has no active sources</shortDescription>
+        <shortDescription>Time Drive: the object has no active sources</shortDescription>
         <value>This object has not been setup by your admin.</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Empty_Window</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Empty_Window</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: no data in the time window</shortDescription>
+        <shortDescription>Time Drive: no data in the time window</shortDescription>
         <value>No data found between {0} and {1}. Check your filters and try again.</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Empty_Customer</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Empty_Customer</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: no history for this record</shortDescription>
+        <shortDescription>Time Drive: no history for this record</shortDescription>
         <value>No engagement yet for this customer.</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Empty_Nothing</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Empty_Nothing</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: nothing in the current view</shortDescription>
-        <value>Nothing.</value>
+        <shortDescription>Time Drive: text when filters hide everything</shortDescription>
+        <value>No data found with those filters applied.</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Empty_Nothing_In</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Between</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: nothing in a named view</shortDescription>
-        <value>Nothing in the {0}.</value>
-    </labels>
-    <labels>
-        <fullName>Time_Shift_Between</fullName>
-        <categories>Time Trail</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Time Trail: a placeholder day: nothing in a span</shortDescription>
+        <shortDescription>Time Drive: a placeholder day: nothing in a span</shortDescription>
         <value>Nothing between {0} and {1}</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Near_Now</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Near_Now</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: 'now', in 'Nothing between X and now'</shortDescription>
+        <shortDescription>Time Drive: 'now', in 'Nothing between X and now'</shortDescription>
         <value>now</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Near_This_Week</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Near_This_Week</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: this week, in a span</shortDescription>
+        <shortDescription>Time Drive: this week, in a span</shortDescription>
         <value>this week</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Near_This_Month</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Near_This_Month</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: this month, in a span</shortDescription>
+        <shortDescription>Time Drive: this month, in a span</shortDescription>
         <value>this month</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Near_Today</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Near_Today</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: today, in a span</shortDescription>
+        <shortDescription>Time Drive: today, in a span</shortDescription>
         <value>today</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Nothing_Today</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Nothing_Today</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: today's placeholder</shortDescription>
+        <shortDescription>Time Drive: today's placeholder</shortDescription>
         <value>Nothing today</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Nothing_Week</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Nothing_Week</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: this week's placeholder</shortDescription>
+        <shortDescription>Time Drive: this week's placeholder</shortDescription>
         <value>Nothing this week</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Nothing_Month</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Nothing_Month</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: this month's placeholder</shortDescription>
+        <shortDescription>Time Drive: this month's placeholder</shortDescription>
         <value>Nothing this month</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Announce_Added</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Announce_Added</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: announcement: a day was added</shortDescription>
+        <shortDescription>Time Drive: announcement: a day was added</shortDescription>
         <value>Added {0}</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Announce_Added_Range</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Announce_Added_Range</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: announcement: days were added</shortDescription>
+        <shortDescription>Time Drive: announcement: days were added</shortDescription>
         <value>Added {0} to {1}</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Announce_Showing</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Announce_Showing</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: announcement: a day is shown</shortDescription>
+        <shortDescription>Time Drive: announcement: a day is shown</shortDescription>
         <value>Showing {0}</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Announce_Showing_Range</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Announce_Showing_Range</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: announcement: days are shown</shortDescription>
+        <shortDescription>Time Drive: announcement: days are shown</shortDescription>
         <value>Showing {0} to {1}</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Announce_Today</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Announce_Today</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: announcement: back to today</shortDescription>
+        <shortDescription>Time Drive: announcement: back to today</shortDescription>
         <value>Showing today</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Week_Of</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Week_Of</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: a week's name</shortDescription>
+        <shortDescription>Time Drive: a week's name</shortDescription>
         <value>Week of {0}</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Week_Of_Word</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Week_Of_Word</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the words 'Week of' on a column</shortDescription>
+        <shortDescription>Time Drive: the words 'Week of' on a column</shortDescription>
         <value>Week of</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_The_Week_Of</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_The_Week_Of</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: a week in a sentence</shortDescription>
+        <shortDescription>Time Drive: a week in a sentence</shortDescription>
         <value>the week of {0}</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Quarter</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Quarter</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: a quarter and its year</shortDescription>
+        <shortDescription>Time Drive: a quarter and its year</shortDescription>
         <value>Q{0} {1}</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Half</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Half</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: half a year and its year</shortDescription>
+        <shortDescription>Time Drive: half a year and its year</shortDescription>
         <value>H{0} {1}</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Heat_Title</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Heat_Title</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: a heat cell's tooltip: period, then what's in it</shortDescription>
+        <shortDescription>Time Drive: a heat cell's tooltip: period, then what's in it</shortDescription>
         <value>{0}: {1}</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Orders_One</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Orders_One</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: one order</shortDescription>
+        <shortDescription>Time Drive: one order</shortDescription>
         <value>1 order</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Orders_Many</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Orders_Many</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: some orders</shortDescription>
+        <shortDescription>Time Drive: some orders</shortDescription>
         <value>{0} orders</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Heat_On_Days</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Heat_On_Days</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: a heat cell's tooltip: what's in it, and the days it falls on</shortDescription>
+        <shortDescription>Time Drive: a heat cell's tooltip: what's in it, and the days it falls on</shortDescription>
         <value>{0} on {1}</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Days_One</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Days_One</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: one day</shortDescription>
+        <shortDescription>Time Drive: one day</shortDescription>
         <value>1 day</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Days_Many</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Days_Many</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: some days</shortDescription>
+        <shortDescription>Time Drive: some days</shortDescription>
         <value>{0} days</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Gap_Day_One</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Gap_Day_One</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: a quiet stretch</shortDescription>
+        <shortDescription>Time Drive: a quiet stretch</shortDescription>
         <value>1 quiet day</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Gap_Day_Many</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Gap_Day_Many</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: a quiet stretch</shortDescription>
+        <shortDescription>Time Drive: a quiet stretch</shortDescription>
         <value>{0} quiet days</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Gap_Week_One</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Gap_Week_One</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: a quiet stretch</shortDescription>
+        <shortDescription>Time Drive: a quiet stretch</shortDescription>
         <value>1 quiet week</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Gap_Week_Many</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Gap_Week_Many</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: a quiet stretch</shortDescription>
+        <shortDescription>Time Drive: a quiet stretch</shortDescription>
         <value>{0} quiet weeks</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Gap_Month_One</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Gap_Month_One</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: a quiet stretch</shortDescription>
+        <shortDescription>Time Drive: a quiet stretch</shortDescription>
         <value>1 quiet month</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Gap_Month_Many</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Gap_Month_Many</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: a quiet stretch</shortDescription>
+        <shortDescription>Time Drive: a quiet stretch</shortDescription>
         <value>{0} quiet months</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Gap_Quarter_One</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Gap_Quarter_One</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: a quiet stretch</shortDescription>
+        <shortDescription>Time Drive: a quiet stretch</shortDescription>
         <value>1 quiet quarter</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Gap_Quarter_Many</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Gap_Quarter_Many</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: a quiet stretch</shortDescription>
+        <shortDescription>Time Drive: a quiet stretch</shortDescription>
         <value>{0} quiet quarters</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Gap_Half_One</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Gap_Half_One</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: a quiet stretch</shortDescription>
+        <shortDescription>Time Drive: a quiet stretch</shortDescription>
         <value>1 quiet half-year</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Gap_Half_Many</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Gap_Half_Many</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: a quiet stretch</shortDescription>
+        <shortDescription>Time Drive: a quiet stretch</shortDescription>
         <value>{0} quiet half-years</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Gap_Year_One</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Gap_Year_One</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: a quiet stretch</shortDescription>
+        <shortDescription>Time Drive: a quiet stretch</shortDescription>
         <value>1 quiet year</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Gap_Year_Many</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Gap_Year_Many</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: a quiet stretch</shortDescription>
+        <shortDescription>Time Drive: a quiet stretch</shortDescription>
         <value>{0} quiet years</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Type_Purchase</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Type_Purchase</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: event type</shortDescription>
+        <shortDescription>Time Drive: event type</shortDescription>
         <value>Orders placed</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Type_Delivered</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Type_Delivered</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: event type</shortDescription>
+        <shortDescription>Time Drive: event type</shortDescription>
         <value>Orders delivered</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Type_Canceled</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Type_Canceled</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: event type</shortDescription>
+        <shortDescription>Time Drive: event type</shortDescription>
         <value>Orders canceled</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Type_Cart</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Type_Cart</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: event type</shortDescription>
+        <shortDescription>Time Drive: event type</shortDescription>
         <value>Cart activity</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Many_Cart</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Many_Cart</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: event type, grouped row</shortDescription>
+        <shortDescription>Time Drive: event type, grouped row</shortDescription>
         <value>Cart items</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Type_Email</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Type_Email</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: event type</shortDescription>
+        <shortDescription>Time Drive: event type</shortDescription>
         <value>Email</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Many_Email</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Many_Email</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: event type, grouped row</shortDescription>
+        <shortDescription>Time Drive: event type, grouped row</shortDescription>
         <value>Email items</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Type_Message</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Type_Message</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: event type</shortDescription>
+        <shortDescription>Time Drive: event type</shortDescription>
         <value>Push and SMS</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Many_Message</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Many_Message</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: event type, grouped row</shortDescription>
+        <shortDescription>Time Drive: event type, grouped row</shortDescription>
         <value>Push and SMS messages</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Type_Web</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Type_Web</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: event type</shortDescription>
+        <shortDescription>Time Drive: event type</shortDescription>
         <value>Website</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Many_Web</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Many_Web</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: event type, grouped row</shortDescription>
+        <shortDescription>Time Drive: event type, grouped row</shortDescription>
         <value>Page views</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Type_Search</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Type_Search</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: event type</shortDescription>
+        <shortDescription>Time Drive: event type</shortDescription>
         <value>Web search</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Many_Search</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Many_Search</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: event type, grouped row</shortDescription>
+        <shortDescription>Time Drive: event type, grouped row</shortDescription>
         <value>Web searches</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Type_App</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Type_App</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: event type</shortDescription>
+        <shortDescription>Time Drive: event type</shortDescription>
         <value>App</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Many_App</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Many_App</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: event type, grouped row</shortDescription>
+        <shortDescription>Time Drive: event type, grouped row</shortDescription>
         <value>App items</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Type_Case</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Type_Case</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: event type</shortDescription>
+        <shortDescription>Time Drive: event type</shortDescription>
         <value>Cases</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Many_Case</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Many_Case</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: event type, grouped row</shortDescription>
+        <shortDescription>Time Drive: event type, grouped row</shortDescription>
         <value>Case updates</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Type_Review</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Type_Review</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: event type</shortDescription>
+        <shortDescription>Time Drive: event type</shortDescription>
         <value>Reviews</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Type_Call</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Type_Call</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: event type</shortDescription>
+        <shortDescription>Time Drive: event type</shortDescription>
         <value>Calls</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Type_Sales_Email</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Type_Sales_Email</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: event type</shortDescription>
+        <shortDescription>Time Drive: event type</shortDescription>
         <value>Emails</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Type_Opportunity</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Type_Opportunity</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: event type</shortDescription>
+        <shortDescription>Time Drive: event type</shortDescription>
         <value>Opportunities</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Many_Opportunity</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Many_Opportunity</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: event type, grouped row</shortDescription>
+        <shortDescription>Time Drive: event type, grouped row</shortDescription>
         <value>Opportunity updates</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Type_Opp_Won</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Type_Opp_Won</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: event type</shortDescription>
+        <shortDescription>Time Drive: event type</shortDescription>
         <value>Opportunities won</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Type_Opp_Lost</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Type_Opp_Lost</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: event type</shortDescription>
+        <shortDescription>Time Drive: event type</shortDescription>
         <value>Opportunities lost</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Type_Other</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Type_Other</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: event type not otherwise named</shortDescription>
+        <shortDescription>Time Drive: event type not otherwise named</shortDescription>
         <value>Other</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Many_Other</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Many_Other</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: grouped row not otherwise named</shortDescription>
+        <shortDescription>Time Drive: grouped row not otherwise named</shortDescription>
         <value>Items</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Err_Offline</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Err_Offline</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: error: offline</shortDescription>
+        <shortDescription>Time Drive: error: offline</shortDescription>
         <value>Can't reach Salesforce.</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Err_Offline_Cause</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Err_Access</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: likely cause: offline</shortDescription>
-        <value>Your connection may have dropped. Check it, then try again.</value>
-    </labels>
-    <labels>
-        <fullName>Time_Shift_Err_Access</fullName>
-        <categories>Time Trail</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Time Trail: error: no access</shortDescription>
+        <shortDescription>Time Drive: error: no access</shortDescription>
         <value>You don't have access to some of the data this needs.</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Err_Access_Cause</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Err_Not_Found</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: likely cause: no access</shortDescription>
-        <value>A permission set that grants the objects or fields it reads may not be assigned to you.</value>
-    </labels>
-    <labels>
-        <fullName>Time_Shift_Err_Not_Found</fullName>
-        <categories>Time Trail</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Time Trail: error: record gone</shortDescription>
+        <shortDescription>Time Drive: error: record gone</shortDescription>
         <value>This record isn't available.</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Err_Not_Found_Cause</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Err_Setup</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: likely cause: record gone</shortDescription>
-        <value>It may have been deleted or merged, or it's no longer shared with you.</value>
-    </labels>
-    <labels>
-        <fullName>Time_Shift_Err_Setup</fullName>
-        <categories>Time Trail</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Time Trail: error: not set up</shortDescription>
+        <shortDescription>Time Drive: error: not set up</shortDescription>
         <value>Something this needs isn't set up in this org.</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Err_Setup_Cause</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Err_Busy</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: likely cause: not set up</shortDescription>
-        <value>An object or field it reads is missing. Ask your Salesforce admin to check the installation.</value>
-    </labels>
-    <labels>
-        <fullName>Time_Shift_Err_Busy</fullName>
-        <categories>Time Trail</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Time Trail: error: too slow</shortDescription>
+        <shortDescription>Time Drive: error: too slow</shortDescription>
         <value>This took too long to load.</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Err_Busy_Cause</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Err_Unknown</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: likely cause: too slow</shortDescription>
-        <value>There may be a lot of history to read, or Salesforce is busy. Try again in a moment.</value>
-    </labels>
-    <labels>
-        <fullName>Time_Shift_Err_Unknown</fullName>
-        <categories>Time Trail</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Time Trail: error: something else</shortDescription>
+        <shortDescription>Time Drive: error: something else</shortDescription>
         <value>Something went wrong.</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Err_Unknown_Cause</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Prob_Message</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: likely cause: something else</shortDescription>
-        <value>It may be a passing problem. Try again, and if it keeps happening, let your Salesforce admin know.</value>
-    </labels>
-    <labels>
-        <fullName>Time_Shift_Prob_Access_Cause</fullName>
-        <categories>Time Trail</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Time Trail: sources couldn't be read: access</shortDescription>
-        <value>You may not have access to a field or object they read, or it isn't in this org.</value>
-    </labels>
-    <labels>
-        <fullName>Time_Shift_Prob_Access_Fix</fullName>
-        <categories>Time Trail</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Time Trail: sources couldn't be read: access</shortDescription>
-        <value>Ask your Salesforce admin to check your permission sets (such as Time Trail) and the Time Trail Source records.</value>
-    </labels>
-    <labels>
-        <fullName>Time_Shift_Prob_Busy_Cause</fullName>
-        <categories>Time Trail</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Time Trail: sources couldn't be read: too slow</shortDescription>
-        <value>Salesforce took too long to read them.</value>
-    </labels>
-    <labels>
-        <fullName>Time_Shift_Prob_Busy_Fix</fullName>
-        <categories>Time Trail</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Time Trail: sources couldn't be read: too slow</shortDescription>
-        <value>Try again in a moment.</value>
-    </labels>
-    <labels>
-        <fullName>Time_Shift_Prob_Unknown_Cause</fullName>
-        <categories>Time Trail</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Time Trail: sources couldn't be read: something else</shortDescription>
-        <value>Something unexpected went wrong reading them.</value>
-    </labels>
-    <labels>
-        <fullName>Time_Shift_Prob_Unknown_Fix</fullName>
-        <categories>Time Trail</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Time Trail: sources couldn't be read: something else</shortDescription>
-        <value>Try again, and if it keeps happening, let your Salesforce admin know.</value>
-    </labels>
-    <labels>
-        <fullName>Time_Shift_Prob_Message</fullName>
-        <categories>Time Trail</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Time Trail: which sources couldn't be read</shortDescription>
+        <shortDescription>Time Drive: which sources couldn't be read</shortDescription>
         <value>{0} couldn't be read.</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Rd_Loading</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Rd_Loading</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: details loading</shortDescription>
+        <shortDescription>Time Drive: details loading</shortDescription>
         <value>Loading details</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Rd_Failed</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Rd_Failed</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: details couldn't load</shortDescription>
+        <shortDescription>Time Drive: details couldn't load</shortDescription>
         <value>These details couldn't load. {0}</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Rd_No_Fields</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Rd_No_Fields</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: no visible fields</shortDescription>
+        <shortDescription>Time Drive: no visible fields</shortDescription>
         <value>No fields in this object's compact layout are visible to you.</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Filters_Cancel</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Filters_Cancel</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: cancel the filters panel</shortDescription>
+        <shortDescription>Time Drive: cancel the filters panel</shortDescription>
         <value>Cancel</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Filters_Apply</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Filters_Apply</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: apply the filters</shortDescription>
+        <shortDescription>Time Drive: apply the filters</shortDescription>
         <value>Apply</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Filters_Close</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Filters_Close</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: close the filters panel</shortDescription>
+        <shortDescription>Time Drive: close the filters panel</shortDescription>
         <value>Close</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Filters_Event_Types</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Filters_Event_Types</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the event types group</shortDescription>
+        <shortDescription>Time Drive: the event types group</shortDescription>
         <value>Event types</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Legend_Files</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Legend_Files</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: a Files source's legend name</shortDescription>
+        <shortDescription>Time Drive: a Files source's legend name</shortDescription>
         <value>Files &amp; Notes</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Group_Loading</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Legend_Calls</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the list page loading</shortDescription>
+        <shortDescription>Time Drive: a Calls source's legend name</shortDescription>
+        <value>Calls</value>
+    </labels>
+    <labels>
+        <fullName>Time_Drive_Legend_Emails</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Time Drive: an Emails source's legend name</shortDescription>
+        <value>Emails</value>
+    </labels>
+    <labels>
+        <fullName>Time_Drive_Group_Loading</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Time Drive: the list page loading</shortDescription>
         <value>Loading</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Group_Nothing</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Group_Nothing</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: heading: the list is empty</shortDescription>
+        <shortDescription>Time Drive: heading: the list is empty</shortDescription>
         <value>Nothing to show</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Group_Nothing_Body</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Group_Nothing_Body</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the list is empty</shortDescription>
+        <shortDescription>Time Drive: the list is empty</shortDescription>
         <value>These items may have changed since the timeline was drawn. Refresh, or go back to the timeline.</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Group_Open_From</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Group_Open_From</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: heading: opened without a timeline</shortDescription>
+        <shortDescription>Time Drive: heading: opened without a timeline</shortDescription>
         <value>Open this page from a timeline</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Group_Open_Body</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Group_Open_Body</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: opened without a timeline</shortDescription>
+        <shortDescription>Time Drive: opened without a timeline</shortDescription>
         <value>It lists the items behind one of a timeline's grouped rows.</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Group_Col_Name</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Group_Col_Name</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: column heading</shortDescription>
+        <shortDescription>Time Drive: column heading</shortDescription>
         <value>Name</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Group_Col_Summary</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Group_Col_Summary</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: column heading</shortDescription>
+        <shortDescription>Time Drive: column heading</shortDescription>
         <value>Summary</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Group_Col_Date</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Group_Col_Date</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: column heading</shortDescription>
+        <shortDescription>Time Drive: column heading</shortDescription>
         <value>Date</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Group_Col_Date_Time</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Group_Col_Date_Time</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: column heading</shortDescription>
+        <shortDescription>Time Drive: column heading</shortDescription>
         <value>Date/Time</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Group_Heading</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Group_Heading</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: the list's heading when it has no name</shortDescription>
+        <shortDescription>Time Drive: the list's heading when it has no name</shortDescription>
         <value>Items</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Group_Count_More</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Group_Count_More</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: a count with more to come</shortDescription>
+        <shortDescription>Time Drive: a count with more to come</shortDescription>
         <value>{0}+ items</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Group_Sorted</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Group_Sorted</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: how the list is ordered</shortDescription>
+        <shortDescription>Time Drive: how the list is ordered</shortDescription>
         <value>Sorted by Date</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Group_Back</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Group_Back</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: link back to the record</shortDescription>
+        <shortDescription>Time Drive: link back to the record</shortDescription>
         <value>Back to {0}</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Group_Back_Record</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Group_Back_Record</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: link back to the record</shortDescription>
+        <shortDescription>Time Drive: link back to the record</shortDescription>
         <value>Back to the record</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Group_Loading_More</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Group_Loading_More</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: more rows are loading</shortDescription>
+        <shortDescription>Time Drive: more rows are loading</shortDescription>
         <value>Loading more items</value>
     </labels>
     <labels>
-        <fullName>Time_Shift_Group_Shown</fullName>
-        <categories>Time Trail</categories>
+        <fullName>Time_Drive_Group_Shown</fullName>
+        <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Time Trail: how many rows are shown</shortDescription>
+        <shortDescription>Time Drive: how many rows are shown</shortDescription>
         <value>{0} items shown</value>
     </labels>
 </CustomLabels>

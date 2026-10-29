@@ -1,6 +1,6 @@
 # Config Guide
 
-A short mock guide, to check that Time Trail Setup reads markdown from GitHub. Replace it with the real guide.
+A short mock guide, to check that Time Drive Setup reads markdown from GitHub. Replace it with the real guide.
 
 ## Before you start
 
@@ -12,8 +12,8 @@ You need the **Customize Application** permission to add and change sources.
 ## Assign the permission sets
 
 1. In Setup, open **Permission Sets**.
-2. Assign `Time Trail` to people who see the timeline.
-3. Assign `Time Trail Setup` to admins who manage it.
+2. Assign `Time Drive` to people who see the timeline.
+3. Assign `Time Drive Setup` to admins who manage it.
 
 > [!NOTE]
 > What each person sees still depends on the objects and fields they can read.
@@ -25,9 +25,9 @@ Open **Customize**, choose the record page, then **Add a source**. See the [FAQs
 ## Apex sources
 
 ```apex
-public with sharing class LoyaltyProvider implements TimeShiftProvider {
-  public List<TimeShiftController.EngagementEvent> getEvents(TimeShiftContext context) {
-    return new List<TimeShiftController.EngagementEvent>();
+public with sharing class LoyaltyProvider implements TimeDriveProvider {
+  public List<TimeDriveController.EngagementEvent> getEvents(TimeDriveContext context) {
+    return new List<TimeDriveController.EngagementEvent>();
   }
 }
 ```

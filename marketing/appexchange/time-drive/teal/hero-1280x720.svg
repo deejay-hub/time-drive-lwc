@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+<title>Time Drive: hero</title>
+<defs><clipPath id="canvas"><rect width="1280" height="720"/></clipPath></defs>
+<g clip-path="url(#canvas)">
+<rect id="background" width="1280" height="720" fill="#E6F3EE"/>
+<circle cx="30.0" cy="330.0" r="72.0" fill="#FFFFFF" fill-opacity="0.55"/>
+<circle cx="96.0" cy="306.0" r="90.0" fill="#FFFFFF" fill-opacity="0.55"/>
+<circle cx="174.0" cy="330.0" r="72.0" fill="#FFFFFF" fill-opacity="0.55"/>
+<circle cx="102.0" cy="366.0" r="84.0" fill="#FFFFFF" fill-opacity="0.55"/>
+<circle cx="18.0" cy="372.0" r="54.0" fill="#FFFFFF" fill-opacity="0.55"/>
+<circle cx="186.0" cy="378.0" r="57.599999999999994" fill="#FFFFFF" fill-opacity="0.55"/>
+<circle cx="1100.0" cy="40.0" r="84.0" fill="#FFFFFF" fill-opacity="0.55"/>
+<circle cx="1177.0" cy="12.0" r="105.0" fill="#FFFFFF" fill-opacity="0.55"/>
+<circle cx="1268.0" cy="40.0" r="84.0" fill="#FFFFFF" fill-opacity="0.55"/>
+<circle cx="1184.0" cy="82.0" r="98.0" fill="#FFFFFF" fill-opacity="0.55"/>
+<circle cx="1086.0" cy="89.0" r="62.99999999999999" fill="#FFFFFF" fill-opacity="0.55"/>
+<circle cx="1282.0" cy="96.0" r="67.19999999999999" fill="#FFFFFF" fill-opacity="0.55"/>
+<circle cx="-40.0" cy="120.0" r="48.0" fill="#FFFFFF" fill-opacity="0.55"/>
+<circle cx="4.0" cy="104.0" r="60.0" fill="#FFFFFF" fill-opacity="0.55"/>
+<circle cx="56.0" cy="120.0" r="48.0" fill="#FFFFFF" fill-opacity="0.55"/>
+<circle cx="8.0" cy="144.0" r="56.0" fill="#FFFFFF" fill-opacity="0.55"/>
+<circle cx="-48.0" cy="148.0" r="36.0" fill="#FFFFFF" fill-opacity="0.55"/>
+<circle cx="64.0" cy="152.0" r="38.400000000000006" fill="#FFFFFF" fill-opacity="0.55"/>
+<g id="logo" transform="translate(445 90) scale(0.8)"><rect width="100" height="100" rx="18" fill="#0B4D43"/>
+<rect x="16" y="16" width="68" height="68" rx="8" fill="#FFFFFF"/>
+<rect x="31" y="30" width="4" height="42" rx="2" fill="#0F6B58" fill-opacity="0.45"/>
+<circle cx="33" cy="30" r="6" fill="#2F7D4F"/><circle cx="33" cy="50" r="6" fill="#E5532F"/><circle cx="33" cy="70" r="6" fill="#5B5FC7"/>
+<rect x="45" y="27" width="26" height="5" rx="2.5" fill="#2A1A12"/><rect x="45" y="47" width="20" height="5" rx="2.5" fill="#2A1A12"/>
+<rect x="45" y="67" width="23" height="5" rx="2.5" fill="#2A1A12" fill-opacity="0.35"/></g>
+<text id="wordmark" x="545" y="149.2" font-family="Orbitron, 'Arial Black', sans-serif" font-size="45" font-weight="900" text-anchor="start" fill="#12201C">TIME DRIVE</text>
+<text x="640" y="237" font-family="Lato, 'Helvetica Neue', Arial, sans-serif" font-size="38" font-weight="400" text-anchor="middle" fill="#12201C">See every touchpoint on one interactive timeline.</text>
+<text x="640" y="283" font-family="Lato, 'Helvetica Neue', Arial, sans-serif" font-size="38" font-weight="400" text-anchor="middle" fill="#12201C">Plot Salesforce and Data 360 records side by side.</text>
+<rect x="107" y="443" width="1352" height="700" rx="106" fill="#0B4D43" fill-opacity="0.05"/>
+<rect x="117" y="453" width="1332" height="700" rx="96" fill="#0B4D43" fill-opacity="0.07"/>
+<rect x="125" y="461" width="1316" height="700" rx="88" fill="#0B4D43" fill-opacity="0.09"/>
+<rect id="device" x="133" y="455" width="1300" height="700" rx="80" fill="#F7FAF8"/>
+<g id="screen-H"><rect x="167" y="487" width="1113" height="233" rx="44" fill="#FFFFFF" stroke="#0F6B58" stroke-width="3" stroke-dasharray="14 10"/>
+<text x="723.5" y="585.5" font-family="Orbitron, 'Arial Black', sans-serif" font-size="34" font-weight="800" text-anchor="middle" fill="#0B4D43">SCREEN H</text>
+<text x="723.5" y="625.5" font-family="Lato, 'Helvetica Neue', Arial, sans-serif" font-size="30" font-weight="700" text-anchor="middle" fill="#0B4D43">A Contact's timeline</text>
+<text x="723.5" y="661.5" font-family="Lato, 'Helvetica Neue', Arial, sans-serif" font-size="26" font-weight="400" text-anchor="middle" fill="#0B4D43">Top of the timeline, cropped by the edge</text>
+<text x="723.5" y="697.5" font-family="Lato, 'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="400" text-anchor="middle" fill="#0B4D43">1113 x 233 px (capture at 2x)</text>
+</g>
+</g>
+</svg>

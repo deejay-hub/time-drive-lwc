@@ -1,0 +1,2370 @@
+:host {
+  display: block;
+  /* Spacing follows the user's Comfy/Compact density: SLDS 2's
+     density-aware hook where there is one, else 1rem (Comfy) here and 0.5rem
+     with Compact (below; the component reads the user's preference). */
+  --time-drive-space: var(--slds-g-spacing-var-4, 1rem);
+  --time-drive-space-x: calc(var(--time-drive-space) * 0.5 + 0.5rem);
+  /* The scrub tab and the heatmap: SLDS's brand blue. */
+  --time-drive-flame: var(--slds-g-color-brand-base-50, #0176d3);
+  --accent-rgb: 1 118 211;
+
+  /* Everything is SLDS's: text, links
+     and focus, rules, the header and the open event. Light and dark pairs:
+     Salesforce's dark mode sets color-scheme: dark, and the SLDS hooks (and
+     light-dark()) pick the second. */
+  --time-drive-ink: var(--slds-g-color-on-surface-2, #2e2e2e);
+  --time-drive-muted: var(--slds-g-color-on-surface-1, #5c5c5c);
+  --time-drive-rule: light-dark(rgb(0 0 0 / 0.1), rgb(255 255 255 / 0.12));
+  --time-drive-paprika: var(--slds-g-color-accent-2, #0250d9);
+  --time-drive-bright: var(--slds-g-color-accent-3, #022ac0);
+  --time-drive-cream: var(--slds-g-color-surface-container-2, #f3f3f3);
+  --time-drive-cream-deep: var(--surface);
+  /* Filled controls (Filters on, a hovered scroll pill): SLDS's brand fill. */
+  --time-drive-fill: var(--slds-g-color-accent-container-1, #066afe);
+  /* The card and its panels: SLDS's surface (white, or dark grey in dark
+     mode), and the same see-through for fades. */
+  --surface: var(--slds-g-color-surface-container-1, #fff);
+  --surface-clear: color-mix(in srgb, var(--surface) 0%, transparent);
+  /* Shadows, and the small dark bubbles (hints, dates) and their text. */
+  --shade: light-dark(#2a1a12, #000);
+  --bubble: light-dark(rgb(42 26 18 / 0.9), rgb(229 229 229 / 0.95));
+  --on-bubble: light-dark(#fff, #181818);
+
+  /* Node colours per event tone; fixed so they read the same on either
+     brand palette. */
+  --tone-commerce: #2f7d4f;
+  --tone-alert: #c62f2f;
+  --tone-marketing: #e5532f;
+  --tone-digital: #5b5fc7;
+  --tone-service: #1f7a8c;
+  --tone-feedback: #b07a0c;
+  --tone-sales: #2f6fb0;
+
+  /* Event row geometry: chevron, node, and the gap between columns. */
+  --chev: 1rem;
+  --node: 1.75rem;
+  --gap: calc(0.5 * var(--time-drive-space));
+}
+
+/* The user's density, once known (remembered from the last visit, then
+   confirmed): an exact unit each, so the page's own density hook can't flip
+   it as the page loads. --time-drive-space-x is worked out from it, so the sides
+   follow. */
+:host(.density_comfy) {
+  --time-drive-space: 1rem;
+}
+
+:host(.density_compact) {
+  --time-drive-space: 0.5rem;
+}
+
+/* The card's side padding, header and body alike: roomy across, tighter in the
+   vertical list, where the width is better spent on the items. */
+.card {
+  --side: calc(1.25 * var(--time-drive-space-x));
+}
+
+.card:not(.card_horizontal) {
+  --side: calc(0.75 * var(--time-drive-space-x));
+}
+
+/* Comfy's vertical list takes Compact's side padding (0.75 x 0.75rem). */
+:host(.density_comfy) .card:not(.card_horizontal) {
+  --side: 0.5625rem;
+}
+
+/* A narrow card (under 640px) gives up more of its outside padding, in
+   either density; the header's and body's top and bottom stay as they are. */
+.card.card_narrow,
+:host(.density_comfy) .card.card_narrow:not(.card_horizontal) {
+  --side: 0.375rem;
+}
+
+.card {
+  position: relative;
+  overflow: clip;
+  border-radius: 1.25rem;
+  background: var(--surface);
+  color: var(--time-drive-ink);
+  font-family: var(--slds-g-font-family, inherit);
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+}
+
+/* ---- header ---------------------------------------------------------------- */
+
+.header {
+  display: grid;
+  gap: calc(0.75 * var(--time-drive-space));
+  padding: calc(1 * var(--time-drive-space)) var(--side) calc(0.75 * var(--time-drive-space));
+  border-bottom: 1px solid var(--time-drive-rule);
+  background: var(--time-drive-cream-deep);
+}
+
+/* Comfy's header, a little tighter: between its own 1rem and Compact's 0.5rem. */
+:host(.density_comfy) .header {
+  gap: 0.625rem;
+  padding-block: 0.8125rem 0.625rem;
+}
+
+/* The view's name at the start, the tools at the end; in a narrow card the
+   tools drop to a line of their own rather than cut the name short. */
+.title-row {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(0.5 * var(--time-drive-space));
+}
+
+/* The view's name, as a list view's: large, navy, with a solid caret. */
+.view-switch {
+  position: relative;
+  flex: 0 1 auto;
+  max-width: 100%;
+  /* The name's text lines up with the card's edge. On this, not the button:
+     a margin on the button makes the heading narrower than the button, and
+     the button, held to the heading's width, cuts its name short. */
+  margin-inline-start: -0.25rem;
+}
+
+.view-heading {
+  min-width: 0;
+}
+
+.view-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 100%;
+  padding: 0.125rem 0.25rem;
+  border: 0;
+  border-radius: 0.25rem;
+  background: none;
+  color: var(--slds-g-color-on-surface-3, #03234d);
+  font: inherit;
+  font-size: 1.25rem;
+  font-weight: 400;
+  line-height: 1.75rem;
+  cursor: pointer;
+}
+
+.view-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.view-caret {
+  flex-shrink: 0;
+  width: 0.75rem;
+  height: 0.75rem;
+  fill: currentColor;
+}
+
+.view-button:hover .view-label {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.view-button:focus-visible {
+  outline: 2px solid var(--time-drive-paprika);
+  outline-offset: 1px;
+}
+
+.view-menu {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  inset-inline-start: 0;
+  z-index: 20;
+  min-width: max(100%, 18rem);
+  padding: 0.25rem 0;
+  border-radius: 0.5rem;
+  background: var(--surface);
+  box-shadow:
+    0 0 0 1px var(--time-drive-rule),
+    0 12px 28px -12px color-mix(in srgb, var(--shade) 35%, transparent);
+}
+
+.view-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 0;
+  background: none;
+  color: var(--time-drive-ink);
+  font: inherit;
+  text-align: start;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.view-option:hover,
+.view-option:focus {
+  outline: none;
+  background: light-dark(var(--slds-g-color-neutral-base-95, #f3f3f3), rgb(255 255 255 / 0.08));
+}
+
+.view-check {
+  flex-shrink: 0;
+  width: 0.875rem;
+  height: 0.875rem;
+  fill: none;
+  stroke: var(--time-drive-paprika);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  visibility: hidden;
+}
+
+.view-option[aria-checked="true"] .view-check {
+  visibility: visible;
+}
+
+.toolbar {
+  display: flex;
+  flex-shrink: 0;
+  margin-inline-start: auto;
+  align-items: center;
+  gap: calc(0.5 * var(--time-drive-space));
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 0.25rem;
+}
+
+/* The record's activity actions: separate buttons, a little apart (each
+   makes a different record), before the timeline's own tools. */
+.actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.25rem;
+}
+
+/* Full: a button group (and an overflow menu at its end), at the
+   end of the view's line; the tools wrap to the line below, at its end. */
+.actions-group {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.25rem;
+  margin-inline-start: auto;
+  height: 2rem;
+  /* Never narrower than the group (the title row wraps instead); a hairline
+     of room so its end border isn't cut. */
+  padding-inline-end: 1px;
+}
+
+.actions-group_skeleton {
+  gap: 0.5rem;
+}
+
+/* Full: the view and the actions, then (after the break) the filter summary
+   on the left and the tools on the right, wrapping if they can't share. */
+.row-break {
+  flex: 0 0 100%;
+  height: 0;
+}
+
+.title-row_actions .summary_tools {
+  flex: 1 1 10rem;
+  min-width: 0;
+}
+
+.title-row_actions .toolbar {
+  margin-inline-start: auto;
+}
+
+.skeleton_pill_wide {
+  display: block;
+  width: 6.5rem;
+  height: 2rem;
+  border-radius: 9999px;
+}
+
+/* An action: a bordered button, as the base button icons beside it,
+   holding the action's coloured circle with a white icon. */
+.action-circle {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid var(--slds-g-color-border-2, #c9c9c9);
+  border-radius: var(--slds-g-radius-border-circle, 9999px);
+  background: transparent;
+  cursor: pointer;
+  /* SLDS 2's button motion: lifts on hover, settles in when pressed. */
+  transition:
+    transform 0.15s ease-in-out,
+    box-shadow 0.15s ease-in-out;
+}
+
+.action-circle:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 1.5px 0 0 var(--slds-g-color-border-3, #2e2e2e);
+}
+
+.action-circle:active {
+  transform: none;
+  box-shadow:
+    inset 2px 2px 5px 0 rgb(0 0 0 / 0.08),
+    inset 0 0.5px 2px 0 rgb(0 0 0 / 0.35),
+    inset 0 1px 0 0 rgb(0 0 0 / 0.15);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .action-circle {
+    transition: none;
+  }
+
+  .action-circle:hover {
+    transform: none;
+  }
+}
+
+.action-circle:focus-visible {
+  outline: 2px solid var(--slds-g-color-accent-2, #0b5cab);
+  outline-offset: 2px;
+}
+
+/* The circle nearly fills the button: a hairline of space inside the border. */
+.action-circle-disc {
+  display: grid;
+  place-items: center;
+  width: calc(100% - 2px);
+  height: calc(100% - 2px);
+  border-radius: 9999px;
+  background: var(--action);
+}
+
+/* Today's day (week, month), whether it has items or is the placeholder:
+   it stands out in green (SLDS's success green), on the canvas and on the
+   heatmaps. */
+.card {
+  --time-drive-today: light-dark(#2e844a, #45c65a);
+}
+/* The label says it in green (no shading down the list). */
+.day_today .day-label,
+.day_today .date-number,
+.day_today .date-word,
+.day_today .day-meta {
+  color: var(--time-drive-today);
+  font-weight: 700;
+}
+/* Across: the axis above the date turns green too. */
+.card_horizontal .day_today .day-label::before {
+  background: var(--time-drive-today);
+}
+
+/* Today (this week, this month) with nothing: a small illustration and a line. */
+.nothing-now {
+  display: flex;
+  align-items: center;
+  gap: calc(0.75 * var(--time-drive-space));
+  padding: calc(0.5 * var(--time-drive-space)) 0;
+  color: var(--time-drive-muted);
+}
+.nothing-now-art {
+  width: 3rem;
+  height: auto;
+  flex-shrink: 0;
+}
+.nothing-now-text {
+  margin: 0;
+}
+/* Down the list: a grey bar, as the Activity Timeline's own notes. */
+.card:not(.card_horizontal) .nothing-now {
+  gap: calc(0.5 * var(--time-drive-space));
+  margin: calc(0.25 * var(--time-drive-space)) 0;
+  padding: calc(0.625 * var(--time-drive-space)) calc(0.875 * var(--time-drive-space));
+  border-radius: 0.5rem;
+  background: var(--slds-g-color-surface-container-2, #f3f3f3);
+  color: var(--time-drive-ink);
+}
+.card_slds1:not(.card_horizontal) .nothing-now {
+  border-radius: 0.25rem;
+}
+.nothing-now-icon {
+  flex-shrink: 0;
+  --slds-c-icon-color-foreground-default: var(--time-drive-muted);
+}
+
+.card_horizontal .nothing-now {
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+}
+/* Across, the slot is a whole column: the illustration takes most of its
+   width, and at most half its height, so the line keeps its room. */
+.card_horizontal .nothing-now-art {
+  width: min(70%, 12rem);
+  max-height: 50%;
+  object-fit: contain;
+}
+
+/* SLDS 1's corners: cards, menus, panels and notices at 0.25rem, as its
+   base components draw them (SLDS 2 rounds them more). */
+.card.card_slds1,
+.card_slds1 .view-menu,
+.card_slds1 .event_open,
+.card_slds1 .issue,
+.card_slds1 .warning,
+.card_slds1 .track-end,
+.card_slds1 .scrub-bubble,
+.card_slds1 .seek-bubble {
+  border-radius: 0.25rem;
+}
+
+/* SLDS 1: rounded squares, as its standard icons and bordered icon buttons. */
+.card_slds1 .node,
+.card_slds1 .skeleton_node {
+  border-radius: 0.25rem;
+}
+.card_slds1 .action-circle {
+  border-radius: 0.25rem;
+}
+.card_slds1 .action-circle-disc {
+  border-radius: 0.1875rem;
+}
+
+.action-circle-disc lightning-icon {
+  display: flex;
+  line-height: 0;
+  --slds-c-icon-color-foreground-default: #fff;
+  --slds-c-icon-color-foreground: #fff;
+}
+
+.summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(0.25 * var(--time-drive-space)) calc(0.75 * var(--time-drive-space));
+}
+
+.summary {
+  color: var(--time-drive-muted);
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.link {
+  min-height: 2rem;
+  padding: 0 calc(0.25 * var(--time-drive-space));
+  border: 0;
+  border-radius: 9999px;
+  background: none;
+  color: var(--time-drive-paprika);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.link:hover {
+  color: var(--time-drive-bright);
+}
+
+.link:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.link:focus-visible,
+.more-button:focus-visible,
+.track:focus-visible {
+  outline: 2px solid var(--time-drive-paprika);
+  outline-offset: 2px;
+}
+
+/* ---- body: vertical (default) ------------------------------------------------ */
+
+.body {
+  padding: calc(0.5 * var(--time-drive-space)) var(--side) calc(0.75 * var(--time-drive-space));
+}
+
+.day + .day {
+  margin-top: calc(0.5 * var(--time-drive-space));
+}
+
+/* Vertical: the day's date pins to the top while its events scroll past,
+   until the next day's header takes over. (The horizontal layout's date
+   already sits above each scrolling column.) */
+.day-label {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: var(--surface);
+  padding: calc(0.375 * var(--time-drive-space)) 0 calc(0.125 * var(--time-drive-space));
+  color: var(--time-drive-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1rem;
+}
+
+.day-label {
+  display: flex;
+  align-items: baseline;
+  gap: calc(0.5 * var(--time-drive-space));
+}
+
+.day-meta {
+  margin-inline-start: auto;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.event {
+  position: relative;
+}
+
+.event_commerce {
+  --tone: var(--tone-commerce);
+}
+.event_alert {
+  --tone: var(--tone-alert);
+}
+.event_marketing {
+  --tone: var(--tone-marketing);
+}
+.event_digital {
+  --tone: var(--tone-digital);
+}
+.event_service {
+  --tone: var(--tone-service);
+}
+.event_feedback {
+  --tone: var(--tone-feedback);
+}
+.event_sales {
+  --tone: var(--tone-sales);
+}
+
+.event-row {
+  display: grid;
+  grid-template-columns: var(--chev) var(--node) minmax(0, 1fr) auto auto;
+  /* Centre the node, chevron and time on the whole text block, one line or
+     several. */
+  align-items: center;
+  gap: var(--gap);
+  width: 100%;
+  /* A little air between items; half as much in Compact (--time-drive-space). */
+  padding: calc(0.75 * var(--time-drive-space)) calc(0.25 * var(--time-drive-space));
+  border-radius: 0.625rem;
+}
+
+/* The chevron is the only expand control: a small button with a larger hit
+   area than its glyph. */
+.chevron-button {
+  display: grid;
+  place-items: center;
+  width: calc(var(--chev) + 0.75rem);
+  height: calc(var(--chev) + 0.75rem);
+  margin: -0.375rem;
+  padding: 0;
+  border: 0;
+  border-radius: 9999px;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* Keeps a grouped row's columns aligned with expandable rows. */
+.chevron-spacer {
+  width: var(--chev);
+}
+
+/* A busy day's grouped row: a "Grouped" pill where the subtitle would be. */
+.grouped-pill {
+  justify-self: start;
+  margin-top: 0.125rem;
+  padding: 0 calc(0.375 * var(--time-drive-space));
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--time-drive-ink) 8%, transparent);
+  color: var(--time-drive-ink);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.125rem;
+}
+
+.group-summary {
+  margin-bottom: calc(0.5 * var(--time-drive-space));
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+}
+
+.chevron-button:focus-visible {
+  outline: 2px solid var(--time-drive-paprika);
+  outline-offset: -2px;
+}
+
+/* A CRM event's title links to its record, styled like the standard
+   Lightning activity timeline: link blue, regular weight. */
+.event-link {
+  /* As wide as its words, not the row: hovering beside the title is not
+     hovering the link. */
+  justify-self: start;
+  max-width: 100%;
+  /* Salesforce's link blue, as its own record links (not the theme's
+     accent colour), lighter in dark mode. */
+  color: light-dark(#0250d9, #7cb1fe);
+  text-decoration: none;
+}
+
+.event-link:hover {
+  color: light-dark(#022ac0, #a8cbff);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.event-link:focus-visible {
+  border-radius: 0.125rem;
+  outline: 2px solid var(--time-drive-paprika);
+  outline-offset: 1px;
+}
+
+.event-row:hover {
+  background: color-mix(in srgb, var(--time-drive-ink) 4%, transparent);
+}
+
+.chevron {
+  width: var(--chev);
+  height: var(--chev);
+  fill: none;
+  stroke: var(--time-drive-muted);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 160ms ease-out;
+}
+
+.chevron_open {
+  transform: rotate(90deg);
+}
+
+/* The node's column spans the whole row (through its padding), with a half
+   rail above the node and one below. Rows' halves meet, so the rail stays
+   joined however tall a row is. */
+.node-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  align-self: stretch;
+  /* The rail reaches through the row's padding, so rows' halves meet. */
+  margin-block: calc(-0.75 * var(--time-drive-space));
+}
+
+/* In the icon's own colour, at full strength. */
+.rail {
+  flex: 1;
+  width: 2px;
+  min-height: 0.25rem;
+  background: var(--tone, var(--time-drive-rule));
+}
+
+.rail_none {
+  visibility: hidden;
+}
+
+.node {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: var(--node);
+  height: var(--node);
+  border-radius: 9999px;
+  background: var(--tone, var(--tone-digital));
+  box-shadow: 0 0 0 3px var(--surface);
+}
+
+/* Any SLDS icon a source picks (utility, standard, custom, action, doctype)
+   shows as a white glyph on the node: the non-utility sets drop the coloured
+   tile they bring with them. */
+.node lightning-icon {
+  /* A block, not an inline box: no line space below to throw it off
+     centre, scaled or not. */
+  display: flex;
+  line-height: 0;
+  transform-origin: center;
+  --slds-c-icon-color-background: transparent;
+  --slds-c-icon-color-foreground: #fff;
+  --slds-c-icon-color-foreground-default: #fff;
+}
+
+/* Standard and custom glyphs are drawn small, for SLDS's coloured tile
+   (about 54% of the icon, against 87% for utility and action); without the
+   tile they're scaled to match. */
+.node lightning-icon[class*="slds-icon-standard-"],
+.node lightning-icon[class*="slds-icon-custom-"] {
+  transform: scale(1.6);
+}
+
+/* A grouped row's node: two discs fanned out behind it, each in a lighter
+   shade of its tone and ringed like the node, so a row standing for many
+   records reads as a stack at a glance. Shadows sit behind the node, so the
+   icon and the rail are untouched. */
+.node_stack {
+  --ring: var(--surface);
+  box-shadow:
+    0 0 0 3px var(--ring),
+    6px 0 0 0 color-mix(in srgb, var(--tone, var(--tone-digital)) 72%, var(--surface)),
+    6px 0 0 2px var(--ring),
+    12px 0 0 0 color-mix(in srgb, var(--tone, var(--tone-digital)) 44%, var(--surface)),
+    12px 0 0 2px var(--ring);
+}
+
+/* Room for the fanned discs before the title. */
+.event_group .event-main {
+  padding-inline-start: 0.625rem;
+}
+
+.event_open .node.node_stack {
+  --ring: var(--time-drive-cream);
+}
+
+/* Every row is two lines tall, title and subtitle or not, so the gap from
+   one icon to the next is always the same; a lone title sits centred. */
+.event-main {
+  display: grid;
+  align-content: center;
+  min-width: 0;
+  min-height: 2.25rem;
+}
+
+.event-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The title and its email icon on one line: the title gives way (ellipsis)
+   on a narrow card, the icon never does. */
+.event-head {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.event-head > .event-title {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.email-state {
+  flex: none;
+  line-height: 0;
+  --slds-c-icon-color-foreground-default: var(--time-drive-muted);
+}
+
+/* A highlight: the rule's colour, else the muted text colour. */
+.flag {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  line-height: 0;
+  --slds-c-icon-color-foreground-default: var(--flag, var(--time-drive-muted));
+}
+
+.flag-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: var(--flag, var(--time-drive-muted));
+}
+
+.email-state_opened {
+  --slds-c-icon-color-foreground-default: light-dark(#2e844a, #45c65a);
+}
+
+.email-state_bounced {
+  --slds-c-icon-color-foreground-default: light-dark(#ba0517, #fe5c4c);
+}
+
+.event-subtitle {
+  overflow: hidden;
+  color: var(--time-drive-muted);
+  font-size: 0.75rem;
+  line-height: 1rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.event-when {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: end;
+}
+
+.event-time {
+  color: var(--time-drive-muted);
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* An open event lifts into a ticket: row and details share one surface,
+   and the details use its full width. */
+.event_open {
+  border-radius: 0.75rem;
+  background: var(--time-drive-cream);
+  box-shadow:
+    0 0 0 1px var(--time-drive-rule),
+    0 8px 18px -12px color-mix(in srgb, var(--shade) 35%, transparent);
+}
+
+/* Two open tickets in a row: a gap between them (the rail pauses under an
+   open ticket, so nothing is broken). */
+.event_open + .event_open {
+  margin-top: calc(0.5 * var(--time-drive-space));
+}
+
+.event_open .event-row:hover {
+  background: transparent;
+}
+
+.event_open .node {
+  box-shadow: 0 0 0 3px var(--time-drive-cream);
+}
+
+.detail-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  transition:
+    grid-template-rows 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 0s linear 260ms;
+}
+
+.event_open .detail-wrap {
+  grid-template-rows: 1fr;
+  visibility: visible;
+  transition:
+    grid-template-rows 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 0s;
+}
+
+.detail-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.event-detail {
+  margin: 0 calc(0.625 * var(--time-drive-space)) calc(0.75 * var(--time-drive-space));
+  padding-top: calc(0.625 * var(--time-drive-space));
+  border-top: 1px solid var(--time-drive-rule);
+}
+
+.facts {
+  display: grid;
+  /* One field per row, label over value, at every width. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: calc(0.625 * var(--time-drive-space));
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.fact {
+  display: grid;
+  align-content: start;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.fact-label {
+  color: var(--time-drive-muted);
+}
+
+.fact-value {
+  overflow-wrap: break-word;
+}
+
+.event-source {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(0.25 * var(--time-drive-space));
+  margin-top: calc(0.5 * var(--time-drive-space));
+  color: var(--time-drive-muted);
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.facts + .event-source {
+  padding-top: calc(0.5 * var(--time-drive-space));
+  border-top: 1px solid var(--time-drive-rule);
+}
+
+.more-button {
+  min-height: 2rem;
+  padding: 0 calc(1 * var(--time-drive-space));
+  border: 1px solid var(--time-drive-rule);
+  border-radius: 9999px;
+  background: var(--surface);
+  color: var(--time-drive-paprika);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.more-button:hover {
+  border-color: var(--time-drive-paprika);
+}
+
+/* Empty and error states take the loaded list's height (padding included),
+   so the card is one height whatever it shows. */
+/* Illustrated states keep Comfy spacing whatever the user's density: the
+   picture and its words are laid out as one piece. */
+.empty,
+.card_horizontal .track-end {
+  --time-drive-space: 1rem;
+}
+
+/* A column centred in the state's box: the words keep their room, and the
+   illustration takes what's left, smaller in a short box (the horizontal
+   layout's height is the admin's to set). */
+.empty {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  padding: calc(1 * var(--time-drive-space)) calc(2 * var(--time-drive-space));
+  text-align: center;
+}
+
+/* The title sits close under its illustration (whose own artwork leaves
+   a margin at its foot), with a little air between it and the words. */
+.empty .slds-illustration {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  min-height: 0;
+  max-height: 100%;
+}
+
+.empty .slds-illustration > :not(.illustration) {
+  flex: none;
+}
+
+/* Every drawing gets the same slot and stands on its floor, so the words under
+   it start in the same place for every state. The slot is only as tall as the
+   visible artwork: a drawing's file has empty margin around it, which spills
+   above the slot unseen, so the drawing and the words centre as one group. */
+.illustration {
+  display: flex;
+  flex: none;
+  align-items: flex-end;
+  justify-content: center;
+  width: 12rem;
+  height: 9rem;
+  max-width: 100%;
+  /* SLDS gives an illustration a bottom margin of its own. */
+  margin-bottom: 0 !important;
+}
+
+.illustration lightning-illustration {
+  display: block;
+  width: 100%;
+}
+
+/* Wide enough for the message on one line on a wide card; it wraps as the
+   card narrows, inside the state's margins. */
+.empty .slds-text-longform {
+  max-width: 44rem;
+  text-wrap: balance;
+}
+
+.empty .slds-illustration__header {
+  margin: 0 0 calc(0.375 * var(--time-drive-space));
+  font-weight: 600;
+}
+
+.empty .slds-text-body_regular {
+  margin: 0;
+  color: var(--time-drive-muted);
+}
+
+.empty .more-button {
+  margin-top: calc(0.75 * var(--time-drive-space));
+}
+
+/* Some sources couldn't be read: one notice, the error illustration small. */
+.issue {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(0.75 * var(--time-drive-space));
+  margin-bottom: calc(0.5 * var(--time-drive-space));
+  padding: calc(0.625 * var(--time-drive-space)) calc(0.75 * var(--time-drive-space));
+  border-radius: 0.5rem;
+  background: var(--time-drive-cream);
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.issue-illustration {
+  display: flex;
+  flex: 0 0 4rem;
+  align-items: center;
+  justify-content: center;
+  width: 4rem;
+  height: 4rem;
+}
+
+.issue-illustration lightning-illustration {
+  display: block;
+  width: 100%;
+}
+
+.issue-text {
+  display: grid;
+  gap: 0.125rem;
+  min-width: 0;
+  color: var(--time-drive-muted);
+}
+
+.issue-title {
+  color: var(--time-drive-ink);
+  font-weight: 700;
+}
+
+.warnings {
+  display: grid;
+  gap: calc(0.25 * var(--time-drive-space));
+  margin-bottom: calc(0.5 * var(--time-drive-space));
+}
+
+.warning {
+  padding: calc(0.375 * var(--time-drive-space)) calc(0.625 * var(--time-drive-space));
+  border-radius: 0.5rem;
+  background: rgb(217 138 28 / 0.12);
+  color: light-dark(#6b4100, #e4a201);
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+/* ---- loading ------------------------------------------------------------------ */
+
+.skeleton-row {
+  display: grid;
+  grid-template-columns: var(--node) minmax(0, 1fr) 2.5rem;
+  align-items: center;
+  gap: var(--gap);
+  padding: calc(0.375 * var(--time-drive-space)) calc(0.25 * var(--time-drive-space))
+    calc(0.375 * var(--time-drive-space)) calc(0.25 * var(--time-drive-space) + var(--chev) + var(--gap));
+}
+
+.skeleton {
+  display: block;
+  border-radius: 0.375rem;
+  background: color-mix(in srgb, var(--time-drive-ink) 8%, transparent);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+.skeleton_node {
+  width: var(--node);
+  height: var(--node);
+  border-radius: 9999px;
+}
+
+.skeleton-lines {
+  display: grid;
+  gap: 0.375rem;
+}
+
+.skeleton_title {
+  width: 55%;
+  height: 0.75rem;
+}
+
+.skeleton_sub {
+  width: 35%;
+  height: 0.625rem;
+}
+
+.skeleton_time {
+  height: 0.625rem;
+}
+
+/* The header's types and count, while a new filter's counts load. */
+.skeleton_summary {
+  display: inline-block;
+  width: 9rem;
+  height: 0.6rem;
+  vertical-align: middle;
+}
+
+.skeleton_day {
+  display: inline-block;
+  width: 5rem;
+  height: 0.6rem;
+  vertical-align: middle;
+}
+
+/* The horizontal track placeholder: fixed height, nothing to scroll. */
+.track_skeleton {
+  overflow: hidden;
+}
+
+.track_skeleton .day:nth-child(odd) .skeleton_title {
+  width: 70%;
+}
+
+.skeleton_day {
+  display: inline-block;
+  width: 6rem;
+  height: 0.75rem;
+}
+
+.seek_skeleton .seek-rail {
+  cursor: default;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ---- vertical: a bounded list, and the scrub tab on its edge ---------------- */
+
+/* The list is as tall as its days, up to Vertical Height, then scrolls
+   inside the card, with shades at the top and bottom while there's more
+   that way. */
+.track_bounded {
+  /* The reference for its days' offsets (keeping place, the scrub tab). */
+  position: relative;
+  overflow-y: auto;
+  /* No "contain": when the list has nothing (more) to scroll, the wheel and
+     touch carry on to the page. */
+  background:
+    linear-gradient(var(--surface) 30%, var(--surface-clear)) center top,
+    linear-gradient(var(--surface-clear), var(--surface) 70%) center bottom,
+    radial-gradient(farthest-side at 50% 0, color-mix(in srgb, var(--shade) 16%, transparent), transparent) center top,
+    radial-gradient(farthest-side at 50% 100%, color-mix(in srgb, var(--shade) 16%, transparent), transparent) center
+      bottom;
+  background-repeat: no-repeat;
+  background-size:
+    100% 2.5rem,
+    100% 2.5rem,
+    100% 0.875rem,
+    100% 0.875rem;
+  background-attachment: local, local, scroll, scroll;
+  background-color: var(--surface);
+}
+
+/* The days stack, and the room left after the last one goes to a dotted
+   box (see .track-end). */
+.track_bounded {
+  display: flex;
+  flex-direction: column;
+}
+
+.track_bounded > .day {
+  flex: none;
+}
+
+/* After the last day: the rest of the track, dotted, as the end of the
+   list: an illustration as large as the room allows, and one line. Sized
+   by the room left, never by what's in it, so it can't make the list
+   overflow. */
+.track-end {
+  box-sizing: border-box;
+  container-type: size;
+  display: flex;
+  flex: 1 0 3rem;
+  min-height: 3rem;
+  margin-top: calc(0.5 * var(--time-drive-space));
+  padding: calc(0.75 * var(--time-drive-space));
+  overflow: hidden;
+  border: 1px dashed color-mix(in srgb, var(--time-drive-muted) 45%, transparent);
+  border-radius: 0.5rem;
+}
+
+/* With the scrub tab over its edge, the tab shows the position and moves the
+   list: no scrollbar, and the rows' times kept clear of the tab. */
+.track_scrub {
+  /* The scrub tab moves the list; wheel and touch over the list scroll the
+     page until it's clicked (it always scrolls from the keyboard and in
+     code). */
+  overflow-y: hidden;
+  scrollbar-width: none;
+  padding-inline-start: 0.25rem;
+  padding-inline-end: 1.5rem;
+}
+
+.track_scrub::-webkit-scrollbar {
+  display: none;
+}
+
+/* Clicked (or tapped): the wheel and touch scroll the list itself, finely,
+   without spilling onto the page; a faint ring says so. */
+.track_scrub.track_engaged {
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}
+
+/* The ring itself: over the frame, not the list, so the sticky dates can't
+   cover it; the list keeps a little room inside it (see .track_scrub). The
+   ring says it has focus, so no outline as well. */
+.frame_engaged::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  border-radius: 0.5rem;
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--time-drive-paprika) 30%, transparent);
+  pointer-events: none;
+}
+
+.track_engaged:focus-visible {
+  outline: none;
+}
+
+/* "Click to scroll the timeline": over the list's foot, briefly. */
+.scroll-hint {
+  position: absolute;
+  bottom: 0.75rem;
+  left: 50%;
+  z-index: 6;
+  padding: 0.375rem 0.75rem;
+  border-radius: 9999px;
+  background: var(--bubble);
+  color: var(--on-bubble);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1rem;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 0.25rem);
+  transition:
+    opacity 160ms ease-out,
+    transform 160ms ease-out;
+}
+
+.scroll-hint_on {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-hint {
+    transition: none;
+  }
+}
+
+.frame_scrub {
+  position: relative;
+}
+
+/* Dragging the tab: the list fades out and skeleton days slide in its
+   place, moved by the pointer (no transition: it tracks every frame). The
+   real days return once the jump lands. */
+.scrub-preview {
+  position: absolute;
+  inset-block: 0;
+  inset-inline: 0 1.5rem;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  background: var(--surface);
+  transition:
+    opacity 120ms ease-out,
+    visibility 0s linear 120ms;
+}
+
+.scrub-preview-inner {
+  will-change: transform;
+}
+
+.preview-day {
+  padding-bottom: calc(0.5 * var(--time-drive-space));
+}
+
+.preview-day:nth-child(odd) .skeleton_title {
+  width: 70%;
+}
+
+.frame_previewing .scrub-preview {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 120ms ease-out,
+    visibility 0s;
+}
+
+.frame_previewing .track {
+  visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scrub-preview-inner {
+    transform: none !important;
+  }
+}
+
+/* The end edge of the list (right, or left in right-to-left languages): the
+   rail the tab rides, and the overlay that
+   opens beside it while it's held. */
+.scrub {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  z-index: 5;
+  width: 1.5rem;
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.scrub-rail {
+  position: absolute;
+  inset: 0.375rem 0;
+  pointer-events: auto;
+  -webkit-user-drag: none;
+  touch-action: none;
+  cursor: grab;
+}
+
+.scrub-rail:focus-visible {
+  outline: none;
+}
+
+.scrub_active .scrub-rail {
+  cursor: grabbing;
+}
+
+/* The tab: a small dark pill against the edge, with up and down chevrons. */
+.scrub-tab {
+  position: absolute;
+  top: 0;
+  inset-inline-end: 0;
+  display: grid;
+  place-items: center;
+  width: 1.125rem;
+  height: 2.25rem;
+  border-start-start-radius: 0.5625rem;
+  border-end-start-radius: 0.5625rem;
+  /* The palette's accent (or its darker shade where white arrows wouldn't
+     stand out on it). */
+  background: var(--time-drive-tab, var(--time-drive-flame));
+  box-shadow: 0 2px 8px -2px rgb(var(--accent-rgb) / 0.55);
+  color: #fff;
+  transition: width 140ms ease-out;
+}
+
+.scrub-tab-icon {
+  width: 0.875rem;
+  height: 0.875rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.scrub-rail:hover .scrub-tab,
+.scrub_active .scrub-tab {
+  width: 1.375rem;
+}
+
+.scrub-rail:focus-visible:not([data-pointer]) .scrub-tab {
+  outline: 2px solid var(--time-drive-paprika);
+  outline-offset: 2px;
+}
+
+/* While held: the whole history, fading in over the list's end side. */
+.scrub-overlay {
+  position: absolute;
+  top: 0;
+  inset-inline-end: 0;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: auto 0.625rem;
+  gap: 0.5rem;
+  /* Solid behind the labels and heat (and under the tab), fading out over
+     the list. */
+  padding-block: 0.375rem;
+  padding-inline: 3.5rem 1.75rem;
+  background: linear-gradient(to left, color-mix(in srgb, var(--surface) 98%, transparent) 72%, var(--surface-clear));
+  opacity: 0;
+  transform: translateX(0.5rem);
+  visibility: hidden;
+  transition:
+    opacity 160ms ease-out,
+    transform 160ms ease-out,
+    visibility 0s linear 160ms;
+}
+
+.scrub_active .scrub-overlay {
+  opacity: 1;
+  transform: none;
+  visibility: visible;
+  transition:
+    opacity 160ms ease-out,
+    transform 160ms ease-out,
+    visibility 0s;
+}
+
+.scrub-labels {
+  position: relative;
+  min-width: 2.5rem;
+}
+
+.scrub-label {
+  position: absolute;
+  inset-inline-end: 0;
+  color: var(--time-drive-muted);
+  font-size: 0.75rem;
+  line-height: 1rem;
+  white-space: nowrap;
+  transform: translateY(-0.125rem);
+}
+
+.scrub-label_year {
+  color: var(--time-drive-ink);
+  font-weight: 700;
+}
+
+.scrub-heat {
+  position: relative;
+}
+
+/* Heat cells run down the strip here: top and height, full width. */
+.scrub-heat .heat {
+  top: auto;
+  right: 0;
+  bottom: auto;
+  left: 0;
+}
+
+.scrub-gap {
+  position: absolute;
+  left: 50%;
+  width: 0;
+  border-left: 1px dotted color-mix(in srgb, var(--time-drive-ink) 30%, transparent);
+}
+
+.scrub-now {
+  position: absolute;
+  right: -0.125rem;
+  left: -0.125rem;
+  height: 2px;
+  margin-top: -1px;
+  border-radius: 1px;
+  background: var(--time-drive-today);
+}
+
+.scrub-year {
+  position: absolute;
+  inset-inline: -3rem -0.25rem;
+  height: 0;
+  border-top: 1px dashed color-mix(in srgb, var(--time-drive-ink) 25%, transparent);
+}
+
+/* Where the tab is: the day (or month) it would jump to. */
+.scrub-bubble {
+  position: absolute;
+  top: 0;
+  inset-inline-end: calc(100% + 0.375rem);
+  z-index: 6;
+  padding: 0.375rem 0.625rem;
+  border-radius: 0.5rem;
+  background: var(--bubble);
+  color: var(--on-bubble);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.25rem;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px -4px color-mix(in srgb, var(--shade) 40%, transparent);
+  pointer-events: none;
+}
+
+.scrub-bubble[hidden] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scrub-overlay,
+  .scrub_active .scrub-overlay,
+  .scrub-tab {
+    transition: none;
+  }
+}
+
+/* ---- horizontal: days as columns along an axis -------------------------------- */
+
+.card_horizontal .track {
+  display: flex;
+  /* Horizontal Height is the track's whole height, padding included, as it is
+     for the empty and error states (also border-box), so the card is one height
+     with or without items. */
+  box-sizing: border-box;
+  /* Columns fill the track's fixed height (Horizontal Height). */
+  align-items: stretch;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  padding-bottom: calc(0.5 * var(--time-drive-space));
+  /* Edge shades while more columns are hidden either side. */
+  background:
+    linear-gradient(to right, var(--surface) 30%, var(--surface-clear)) left center,
+    linear-gradient(to left, var(--surface) 30%, var(--surface-clear)) right center,
+    radial-gradient(farthest-side at 0 50%, color-mix(in srgb, var(--shade) 14%, transparent), transparent) left center,
+    radial-gradient(farthest-side at 100% 50%, color-mix(in srgb, var(--shade) 14%, transparent), transparent) right
+      center;
+  background-repeat: no-repeat;
+  background-size:
+    2.5rem 100%,
+    2.5rem 100%,
+    0.875rem 100%,
+    0.875rem 100%;
+  background-attachment: local, local, scroll, scroll;
+  background-color: var(--surface);
+}
+
+/* Five days across the track (more room for each item's words), never
+   narrower than 17rem. */
+.card_horizontal .track {
+  container-type: inline-size;
+}
+
+.card_horizontal .day {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 0 0 max(20cqi, 17rem);
+  margin-top: 0;
+  padding-right: calc(1.5 * var(--time-drive-space));
+  scroll-snap-align: start;
+}
+
+/* The axis: each day carries its own stretch of a light grey line (SLDS's
+   lightest border grey, Border 1), so every day boundary reads as a step. The date
+   reads as a figure: 16 / FRI / Oct. */
+.card_horizontal .day-label {
+  position: relative;
+  align-items: flex-end;
+  margin: 0 0 calc(0.375 * var(--time-drive-space));
+  padding: calc(0.25rem + 0.625 * var(--time-drive-space)) 0 0;
+}
+
+.card_horizontal .day-label::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 0.25rem;
+  border-radius: 9999px;
+  background: var(--slds-g-color-border-1, #e5e5e5);
+}
+
+/* The rail runs on through the gap to the next column; the label's own
+   content (date, count) stops at the column's edge. */
+.card_horizontal .day:not(:last-of-type) .day-label {
+  margin-right: calc(-1.5 * var(--time-drive-space));
+  padding-right: calc(1.5 * var(--time-drive-space));
+}
+
+/* A slight gap between one day's stretch of the rail and the next. */
+.card_horizontal .day:not(:last-of-type) .day-label::before {
+  right: 0.375rem;
+}
+
+.date {
+  display: flex;
+  align-items: center;
+  gap: calc(0.5 * var(--time-drive-space));
+}
+
+.date-number {
+  color: var(--time-drive-ink);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.75rem;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.date-words {
+  display: grid;
+  line-height: 0.875rem;
+}
+
+.date-word {
+  color: var(--time-drive-ink);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.date-word_recent {
+  color: var(--time-drive-paprika);
+}
+
+.date-month {
+  color: var(--time-drive-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.card_horizontal .day-meta {
+  padding-bottom: 0.125rem;
+  line-height: 1rem;
+}
+
+.skeleton_date {
+  width: 4.5rem;
+  height: 1.25rem;
+  margin-block: 0.25rem;
+}
+
+/* A busy day scrolls inside its column. Shades at the top and bottom edges
+   show while there's more that way, and only then. */
+/* A column outside the drawn window (passed over while dragging or flicking):
+   placeholder rows drawn by CSS alone, so moving past it costs nothing. Its
+   events draw once the movement settles. */
+/* Columns out of view skip layout, paint and their skeleton's pulse: there
+   can be years of them, and the pulse would run in every one. Every column
+   is the same width, so skipping them moves nothing. */
+.card_horizontal .day_shell {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 17rem auto 20rem;
+}
+
+.card_horizontal .day_shell .events::before {
+  /* The same rows as the loading skeleton's (.skeleton-row), drawn as one
+     background so a shell column costs no elements: a row's height, its
+     inset, the node, the title and subtitle bars, and the time, all from
+     the same measures, so the shells match the skeleton in either density. */
+  --row: calc(var(--node) + 0.75 * var(--time-drive-space));
+  --lead: calc(0.25 * var(--time-drive-space) + var(--chev) + var(--gap));
+  --text: calc(var(--lead) + var(--node) + var(--gap));
+  --bar: color-mix(in srgb, var(--time-drive-ink) 8%, transparent);
+  --lines: calc((var(--row) - 1.75rem) / 2);
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: calc(3 * var(--row));
+  background:
+    radial-gradient(circle closest-side, var(--bar) 97%, transparent 100%) var(--lead) 0 / var(--node) var(--row)
+      repeat-y,
+    linear-gradient(
+        transparent var(--lines),
+        var(--bar) var(--lines),
+        var(--bar) calc(var(--lines) + 0.75rem),
+        transparent calc(var(--lines) + 0.75rem)
+      )
+      var(--text) 0 / 9rem var(--row) repeat-y,
+    linear-gradient(
+        transparent calc(var(--lines) + 1.125rem),
+        var(--bar) calc(var(--lines) + 1.125rem),
+        var(--bar) calc(var(--lines) + 1.75rem),
+        transparent calc(var(--lines) + 1.75rem)
+      )
+      var(--text) 0 / 6rem var(--row) repeat-y,
+    linear-gradient(
+        transparent calc((var(--row) - 0.625rem) / 2),
+        var(--bar) calc((var(--row) - 0.625rem) / 2),
+        var(--bar) calc((var(--row) + 0.625rem) / 2),
+        transparent calc((var(--row) + 0.625rem) / 2)
+      )
+      right calc(0.25 * var(--time-drive-space)) top 0 / 2.5rem var(--row) repeat-y;
+  animation: pulse 1.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.card_horizontal .events {
+  /* The reference for its events' offsets (the "N more" count). */
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  /* No "contain": a column with nothing (more) to scroll passes the wheel
+     and touch on to the page. */
+  background:
+    linear-gradient(var(--surface) 30%, var(--surface-clear)) center top,
+    linear-gradient(var(--surface-clear), var(--surface) 70%) center bottom,
+    radial-gradient(farthest-side at 50% 0, color-mix(in srgb, var(--shade) 16%, transparent), transparent) center top,
+    radial-gradient(farthest-side at 50% 100%, color-mix(in srgb, var(--shade) 16%, transparent), transparent) center
+      bottom;
+  background-repeat: no-repeat;
+  background-size:
+    100% 2.5rem,
+    100% 2.5rem,
+    100% 0.875rem,
+    100% 0.875rem;
+  background-attachment: local, local, scroll, scroll;
+  background-color: var(--surface);
+}
+
+.card_horizontal .day-label {
+  flex-shrink: 0;
+}
+
+.card_horizontal .day {
+  position: relative;
+}
+
+/* Horizontal: only the width left after the last column, so it never adds
+   to the scroll; too narrow to read, it isn't drawn (see endClass). */
+.card_horizontal .track-end {
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0 0 0 calc(0.25 * var(--time-drive-space));
+  overflow: hidden;
+}
+
+.card_horizontal .track-end_narrow {
+  visibility: hidden;
+}
+
+/* The earliest end, before the first column: narrow, the tail takes the
+   room left over. */
+.card_horizontal .track-end_head {
+  flex: 0 0 9rem;
+  margin: 0 calc(0.25 * var(--time-drive-space)) 0 0;
+}
+
+/* Fit mode: both ends narrow; the days share the rest. */
+.card_fit.card_horizontal .track-end {
+  flex: 0 0 9rem;
+}
+
+/* "3 more" at the foot of a column with events hidden below. */
+.scroll-pill {
+  position: absolute;
+  bottom: calc(0.5 * var(--time-drive-space));
+  left: 50%;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 1.75rem;
+  padding: 0 calc(0.625 * var(--time-drive-space)) 0 calc(0.75 * var(--time-drive-space));
+  border: 0;
+  border-radius: 9999px;
+  /* Slightly see-through; white text stays at 9.5:1 or better over anything
+     it can sit on (WCAG AA needs 4.5:1). */
+  background: var(--bubble);
+  box-shadow: 0 4px 12px -4px color-mix(in srgb, var(--shade) 45%, transparent);
+  color: var(--on-bubble);
+  font: inherit;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1rem;
+  cursor: pointer;
+  /* Centred under the column's content, clear of its right-hand gap. */
+  transform: translateX(calc(-50% - 0.75 * var(--time-drive-space)));
+}
+
+.scroll-pill[hidden] {
+  display: none;
+}
+
+/* Hover: SLDS's brand fill, white text at 4.5:1 or better. */
+.scroll-pill:hover {
+  background: var(--time-drive-fill);
+  color: #fff;
+}
+
+.scroll-pill:focus-visible {
+  outline: 2px solid var(--time-drive-paprika);
+  outline-offset: 2px;
+}
+
+.scroll-pill-icon {
+  width: 0.875rem;
+  height: 0.875rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---- seek bar: under the horizontal layout ------------------------------------- */
+
+/* At rest: a thin line with a handle over the days in view. */
+.seek {
+  position: relative;
+  /* Above the columns (their nodes, sticky dates and "N more" pills) so the
+     overlay and bubble are never hidden; under the panels. */
+  z-index: 8;
+  margin-top: calc(0.5 * var(--time-drive-space));
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.seek-rail {
+  position: relative;
+  height: 1.5rem;
+  -webkit-user-drag: none;
+  touch-action: none;
+  cursor: pointer;
+}
+
+.seek-rail:focus-visible {
+  outline: none;
+}
+
+.seek-rail:focus-visible:not([data-pointer]) .seek-thumb {
+  outline: 2px solid var(--time-drive-paprika);
+  outline-offset: 2px;
+}
+
+.seek-line {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: 0.25rem;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--time-drive-ink) 10%, transparent);
+  transform: translateY(-50%);
+}
+
+/* The handle: the palette's accent, as wide as the days in view. */
+.seek-thumb {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  min-width: 2rem;
+  height: 0.75rem;
+  border-radius: 9999px;
+  background: var(--time-drive-tab, var(--time-drive-flame));
+  box-shadow: 0 2px 8px -2px rgb(var(--accent-rgb) / 0.55);
+  transform: translateY(-50%);
+  transition: height 140ms ease-out;
+  will-change: left, width;
+}
+
+.seek-rail:hover .seek-thumb,
+.seek_active .seek-thumb {
+  height: 1rem;
+}
+
+.seek_active .seek-rail {
+  cursor: grabbing;
+}
+
+/* While held: the whole history rises over the columns' foot, with months
+   or years under it and a bubble naming the day under the pointer. */
+.seek-overlay {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.25rem);
+  left: 0;
+  padding: 2.75rem 0 0.375rem;
+  background: linear-gradient(to top, color-mix(in srgb, var(--surface) 98%, transparent) 70%, var(--surface-clear));
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(0.5rem);
+  visibility: hidden;
+  transition:
+    opacity 160ms ease-out,
+    transform 160ms ease-out,
+    visibility 0s linear 160ms;
+}
+
+.seek_active .seek-overlay {
+  opacity: 1;
+  transform: none;
+  visibility: visible;
+  transition:
+    opacity 160ms ease-out,
+    transform 160ms ease-out,
+    visibility 0s;
+}
+
+.seek-heat {
+  position: relative;
+  height: 1.5rem;
+}
+
+.heat {
+  position: absolute;
+  top: 0.25rem;
+  bottom: 0;
+  border-radius: 0.1875rem;
+  background: var(--time-drive-heat, var(--time-drive-flame));
+}
+
+.heat_1 {
+  opacity: 0.2;
+}
+.heat_2 {
+  opacity: 0.42;
+}
+.heat_3 {
+  opacity: 0.68;
+}
+.heat_4 {
+  opacity: 1;
+}
+
+/* An empty cell (the top and tail placeholders, or a period with nothing): a
+   neutral grey, no heat. Here, after .heat, so its background wins. */
+.heat.heat_0 {
+  opacity: 1;
+  background: color-mix(in srgb, var(--time-drive-ink) 18%, transparent);
+}
+
+/* Today's cell (day, week or month): filled green, whatever its heat. */
+.heat.heat_today {
+  opacity: 1;
+  background: var(--time-drive-today);
+}
+
+/* Today with no items: a short ink tick between the cells either side. */
+.seek-now {
+  position: absolute;
+  top: 0;
+  bottom: -0.125rem;
+  width: 2px;
+  margin-inline-start: -1px;
+  border-radius: 1px;
+  background: var(--time-drive-today);
+}
+.seek-now_cell,
+.scrub-now_cell {
+  display: none;
+}
+
+/* A long quiet stretch: a faint dotted break between active days. */
+.seek-gap {
+  position: absolute;
+  top: calc(0.25rem + (1.5rem - 0.25rem) / 2);
+  height: 0;
+  border-top: 1px dotted color-mix(in srgb, var(--time-drive-ink) 30%, transparent);
+}
+
+/* Where one year meets the next. */
+.seek-year {
+  position: absolute;
+  top: -0.25rem;
+  bottom: -1.375rem;
+  width: 0;
+  border-left: 1px dashed color-mix(in srgb, var(--time-drive-ink) 30%, transparent);
+}
+
+.seek-labels {
+  position: relative;
+  height: 1rem;
+  margin-top: 0.375rem;
+}
+
+.seek-label {
+  position: absolute;
+  color: var(--time-drive-muted);
+  font-size: 0.75rem;
+  line-height: 1rem;
+  white-space: nowrap;
+}
+
+.seek-label_year {
+  color: var(--time-drive-ink);
+  font-weight: 700;
+}
+
+.seek-bubble {
+  position: absolute;
+  z-index: 1;
+  top: 0.25rem;
+  padding: 0.375rem 0.625rem;
+  border-radius: 0.5rem;
+  background: var(--bubble);
+  color: var(--on-bubble);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.25rem;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px -4px color-mix(in srgb, var(--shade) 40%, transparent);
+}
+
+.seek-bubble[hidden] {
+  display: none;
+}
+
+/* While scrubbing, column snapping would fight the pointer. */
+.card_horizontal .track_dragging {
+  scroll-snap-type: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seek-overlay,
+  .seek_active .seek-overlay,
+  .seek-thumb {
+    transition: none;
+  }
+
+  .card_horizontal .day_shell .events::before {
+    animation: none;
+  }
+}
+
+.card_horizontal .track {
+  position: relative;
+}
+
+/* With the seek bar shown it is the scroller: hide the browser's scrollbar.
+   The track still scrolls by trackpad, Shift+wheel and the keyboard. */
+.card_horizontal .track_minimap {
+  scrollbar-width: none;
+}
+
+.card_horizontal .track_minimap::-webkit-scrollbar {
+  display: none;
+}
+
+.below-header {
+  position: relative;
+}
+
+/* ---- interaction states ---------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+
+  .chevron,
+  .detail-wrap,
+  .event_open .detail-wrap {
+    transition: none;
+  }
+}
+
+/* ---- right-to-left languages ----------------------------------------------- */
+
+/* Mirrored: the chevrons point the way text reads, grouped rows fan their
+   stack towards the text, and the scrub overlay fades the other way. */
+.card[dir="rtl"] .chevron:not(.chevron_open) {
+  transform: scaleX(-1);
+}
+
+.card[dir="rtl"] .node_stack {
+  box-shadow:
+    0 0 0 3px var(--ring),
+    -6px 0 0 0 color-mix(in srgb, var(--tone, var(--tone-digital)) 72%, var(--surface)),
+    -6px 0 0 2px var(--ring),
+    -12px 0 0 0 color-mix(in srgb, var(--tone, var(--tone-digital)) 44%, var(--surface)),
+    -12px 0 0 2px var(--ring);
+}
+
+.card[dir="rtl"] .scrub-overlay {
+  background: linear-gradient(to right, color-mix(in srgb, var(--surface) 98%, transparent) 72%, var(--surface-clear));
+  transform: translateX(-0.5rem);
+}
+
+.card[dir="rtl"] .scrub_active .scrub-overlay {
+  transform: none;
+}
+
+/* Not mirrored: time along the horizontal axis runs left to right in every
+   language, as on charts and seek bars. The columns' and labels' text still
+   reads right to left. */
+.card_horizontal .track,
+.seek {
+  direction: ltr;
+}
+
+.card[dir="rtl"] .card_horizontal .day,
+.card[dir="rtl"].card_horizontal .day,
+.card[dir="rtl"] .seek-bubble,
+.card[dir="rtl"] .seek-label {
+  direction: rtl;
+}
+
+/* ---- for screen readers ------------------------------------------------------ */
+
+/* Read out, not shown. */
+.assistive-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The Filters button: SLDS's bordered icon button (it sits in the button
+   group), filled with the palette's accent while filters are on. */
+.filter-icon {
+  display: flex;
+  line-height: 0;
+  --slds-c-icon-color-foreground-default: currentColor;
+}
+
+.filter-button_on,
+.filter-button_on:hover {
+  border-color: var(--time-drive-fill);
+  background: var(--time-drive-fill);
+  color: #fff;
+}
+
+/* ---- fit mode: few days, sharing the whole track ----------------------------
+   Every active day fits at once (see measureFit): the columns divide the
+   track between them. */
+
+/* Horizontal: equal columns across the full width. */
+.card_fit.card_horizontal .day {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* ---- vertical: the anchor at the foot of the list ----------------------------
+   As the Activity Timeline ends: a grey bar under the last day, with an info
+   icon and the line, sized by its words (the list is as tall as its days). */
+.track_bounded > .track-end_head {
+  margin: 0 0 calc(0.5 * var(--time-drive-space));
+}
+
+.track_bounded > .track-end {
+  container-type: normal;
+  flex: none;
+  min-height: 0;
+  padding: calc(0.75 * var(--time-drive-space)) calc(0.875 * var(--time-drive-space));
+  border: 0;
+  border-radius: 0.5rem;
+  background: var(--slds-g-color-surface-container-2, #f3f3f3);
+}
+
+/* The header while the timeline first loads: its title and buttons as
+   placeholders, the size of the real ones. */
+.skeleton_heading {
+  width: 11rem;
+  height: 1.5rem;
+}
+
+.tools_skeleton {
+  display: flex;
+  align-items: center;
+  gap: calc(0.5 * var(--time-drive-space));
+}
+
+.skeleton_button {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.25rem;
+}
+
+.skeleton_button_wide {
+  width: 4.5rem;
+}
+
+/* The Edit / Delete menu at the end of a row: a bare ellipsis button. Rows
+   with none keep the column. */
+.row-menu,
+.row-menu-spacer {
+  grid-column: -2 / -1;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+}
+
+.row-menu-spacer {
+  height: 1.5rem;
+}
+
+/* The ellipsis: a plain button with the muted text colour, so it doesn't
+   compete with the title; it darkens on hover and focus. */
+.row-menu-button {
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: 9999px;
+  background: none;
+  cursor: pointer;
+  --slds-c-icon-color-foreground-default: var(--time-drive-muted);
+  --sds-c-icon-color-foreground-default: var(--time-drive-muted);
+}
+
+.row-menu-button lightning-icon {
+  display: flex;
+  line-height: 0;
+}
+
+.row-menu-button:hover,
+.row-menu-button:focus-visible,
+.row-menu-button[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--time-drive-ink) 8%, transparent);
+  --slds-c-icon-color-foreground-default: var(--time-drive-ink);
+  --sds-c-icon-color-foreground-default: var(--time-drive-ink);
+}
+
+.row-menu-button:focus-visible {
+  outline: 2px solid var(--slds-g-color-accent-2, #0b5cab);
+  outline-offset: 1px;
+}
+
+/* Fixed to the button's place, above the list. */
+.row-popover {
+  position: fixed;
+  z-index: 9000;
+  min-width: 8rem;
+  margin: 0;
+  padding: 0.25rem 0;
+  border-radius: 0.5rem;
+  background: var(--surface);
+  list-style: none;
+  box-shadow:
+    0 0 0 1px var(--time-drive-rule),
+    0 12px 28px -12px color-mix(in srgb, var(--shade) 35%, transparent);
+}
+
+.row-popover-item {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.875rem;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.8125rem;
+  text-align: start;
+  cursor: pointer;
+}
+
+.row-popover-item:hover,
+.row-popover-item:focus-visible {
+  background: color-mix(in srgb, var(--time-drive-ink) 6%, transparent);
+  outline: none;
+}
+
+/* Delete looks like the other choices until it is pointed at: then a pastel red
+   with red text (a soft tint of red over the dark surface in dark mode), both
+   over 4.5:1. */
+.row-popover-item_delete:hover,
+.row-popover-item_delete:focus-visible {
+  background: light-dark(#fde8e6, rgb(234 0 30 / 0.22));
+  color: light-dark(#ba0517, #ff9b92);
+}
+
+/* The Salesforce mobile app on a phone: targets of about 44px, and a roomier
+   menu. The row's look doesn't change; the hit areas grow around it. */
+.card_phone .chevron-button {
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: -1rem;
+}
+
+.card_phone .row-menu,
+.card_phone .row-menu-spacer {
+  width: 2.75rem;
+  margin-inline-end: -0.625rem;
+}
+
+.card_phone .row-menu-button {
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+.card_phone .row-popover-item {
+  padding: 0.875rem 1rem;
+  font-size: 1rem;
+}
+
+.card_phone .event-link {
+  padding-block: 0.25rem;
+}
+
+/* The phone: the header in one line (the view, Today, Filters, and the menu
+   that holds the rest), the summary small under it; the list scrolls by
+   touch with no click first, and hands the page its scroll at the ends. */
+.card_phone .header {
+  gap: 0.25rem;
+  padding-block: 0.5rem 0.375rem;
+}
+
+.card_phone .title-row {
+  flex-wrap: nowrap;
+}
+
+.card_phone .view-switch {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.card_phone .toolbar {
+  flex: none;
+  margin-inline-start: 0;
+}
+
+.card_phone .summary-row .summary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-menu-button {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-inline-end: -0.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: 9999px;
+  background: none;
+  cursor: pointer;
+  --slds-c-icon-color-foreground-default: var(--time-drive-muted);
+}
+
+.header-menu-button:focus-visible {
+  outline: 2px solid var(--slds-g-color-accent-2, #0b5cab);
+  outline-offset: -2px;
+}
+
+.card_phone .track_scrub {
+  overflow-y: auto;
+}
+
+.card_phone .frame_engaged::after,
+.card_phone .scroll-hint {
+  display: none;
+}
+
+/* Under the row menu's buttons: it is checking what the user may do, or may do nothing. */
+.row-popover-note {
+  padding: 0.375rem 0.75rem;
+  color: var(--time-drive-muted);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+/* The row menu while it asks what the user may do: a spinner, the size of one item. */
+.row-popover-wait {
+  position: relative;
+  min-width: 7rem;
+  height: 2.25rem;
+}

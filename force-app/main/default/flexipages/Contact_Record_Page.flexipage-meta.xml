@@ -35,7 +35,7 @@
             <componentInstance>
                 <componentInstanceProperties>
                     <name>cardTitle</name>
-                    <value>Time Trail</value>
+                    <value>Time Drive</value>
                 </componentInstanceProperties>
                 <componentInstanceProperties>
                     <name>futureYears</name>
@@ -61,8 +61,8 @@
                     <name>verticalHeight</name>
                     <value>560</value>
                 </componentInstanceProperties>
-                <componentName>timeShift</componentName>
-                <identifier>c_timeShift</identifier>
+                <componentName>timeDrive</componentName>
+                <identifier>c_timeDrive</identifier>
             </componentInstance>
         </itemInstances>
         <mode>Replace</mode>
