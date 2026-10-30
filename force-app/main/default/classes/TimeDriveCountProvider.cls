@@ -14,6 +14,10 @@ public interface TimeDriveCountProvider {
    * the user's time zone. Unit is TimeDriveContext.UNIT_HOUR, _DAY,
    * _WEEK or _MONTH; each count's dayKey is its period's first day, and by
    * hour, its hour too (null for date-only fields).
+   *
+   * @param context the request context
+   * @param unit the period to count by
+   * @return the count for each period that has records
    */
   List<TimeDriveContext.DayCount> countDays(TimeDriveContext context, String unit);
 }

@@ -5,24 +5,24 @@
 }
 
 .doc-h3 {
-  margin: 0.5rem 0 0;
+  margin: var(--slds-g-spacing-2, 0.5rem) 0 0;
   color: var(--ink, #17201d);
   font-size: 1.0625rem;
-  font-weight: 700;
+  font-weight: var(--slds-g-font-weight-7, 700);
 }
 
 .doc-p,
 .doc-list {
   margin: 0;
   color: var(--body, #47524d);
-  font-size: 1rem;
+  font-size: var(--slds-g-font-scale-2, 1rem);
   line-height: 1.65;
 }
 
 .doc-list {
   display: grid;
   gap: 0.5rem;
-  padding-inline-start: 1.5rem;
+  padding-inline-start: var(--slds-g-spacing-5, 1.5rem);
   list-style: disc;
 }
 
@@ -36,7 +36,7 @@
 
 .doc-list_steps li::marker {
   color: var(--accent-deep, #0a4c3f);
-  font-weight: 700;
+  font-weight: var(--slds-g-font-weight-7, 700);
 }
 
 .doc-note {
@@ -44,7 +44,7 @@
   align-items: flex-start;
   gap: 0.625rem;
   margin: 0;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem var(--slds-g-spacing-4, 1rem)-spacing-3, 0.75rem) 1rem;
   border-inline-start: 3px solid var(--accent, #0f6b58);
   border-radius: 0 0.375rem 0.375rem 0;
   background: var(--accent-wash, #e3f0ea);
@@ -60,13 +60,13 @@
 
 .doc-pre {
   margin: 0;
-  padding: 1rem 1.25rem;
+  padding: var(--slds-g-spacing-4, 1rem) 1.25rem;
   overflow-x: auto;
   border-radius: 0.625rem;
   background: var(--ink, #17201d);
   color: #e8efe9;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 0.8125rem;
+  font-size: var(--slds-g-font-scale-base, 0.8125rem);
   line-height: 1.6;
   white-space: pre;
 }
@@ -75,12 +75,12 @@
   display: block;
   max-width: 100%;
   height: auto;
-  border: 1px solid var(--rule, #dfdcd2);
+  border: var(--slds-g-sizing-border-1, 1px) solid var(--rule, #dfdcd2);
   border-radius: 0.625rem;
 }
 
 .doc-rule {
-  margin: 0.5rem 0;
+  margin: var(--slds-g-spacing-2, 0.5rem) 0;
   border: 0;
   border-top: 1px solid var(--rule, #dfdcd2);
 }

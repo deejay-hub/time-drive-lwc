@@ -2,6 +2,10 @@
  * Reads the Time Drive Source records: which sources plot for a record
  * page, in sequence, the provider for each, and their detail fields.
  */
+// The branching follows the platform's cases and the plot's rules; splitting it up would only scatter them.
+// Size, parameter lists and field counts follow the platform's entry points, its cases and the data the components exchange;
+// splitting them up would only scatter what belongs together.
+@SuppressWarnings('PMD.CyclomaticComplexity, PMD.CognitiveComplexity, PMD.ExcessivePublicCount')
 public with sharing class TimeDriveConfig {
   // Tests stand in their own sources and detail fields here.
   @TestVisible
@@ -13,7 +17,81 @@ public with sharing class TimeDriveConfig {
   @TestVisible
   private static Map<String, List<Time_Drive_Highlight__mdt>> testHighlights;
 
-  /** Active sources for the parent object, by Sequence. */
+  // ---- the timeline's views ------------------------------------------------
+
+  public static final String ALL_VIEW = 'All';
+  @TestVisible
+  private static List<Time_Drive_View__mdt> testViews;
+
+  // A legend name that's a custom label: $Label.Timeline_Follow_ups.
+  public static final String LABEL_PREFIX = '$Label.';
+  // Objects whose plural name says little (Content Document Links), and the
+  // custom label a source of theirs is named with unless it says otherwise.
+  // Setup starts such a source on it too.
+  public static final Map<String, String> DEFAULT_LEGEND_LABELS = new Map<String, String>{
+    'contentdocumentlink' => 'Time_Drive_Legend_Files'
+  };
+  // Or another object's name, as Salesforce translates it: $Object.Task (a
+  // TaskRelation source reading "Tasks").
+  public static final String OBJECT_PREFIX = '$Object.';
+  private static Map<String, String> legendLabels = new Map<String, String>();
+
+  private static Map<String, Schema.SObjectType> typesByName = new Map<String, Schema.SObjectType>();
+
+  private static Map<String, Schema.DescribeSObjectResult> described = new Map<String, Schema.DescribeSObjectResult>();
+
+  private static Map<String, Map<String, Schema.SObjectField>> fieldMaps = new Map<String, Map<String, Schema.SObjectField>>();
+  private static Map<String, Schema.DescribeFieldResult> fieldDescribes = new Map<String, Schema.DescribeFieldResult>();
+  private static Map<Schema.SObjectType, Schema.DescribeSObjectResult> describedTypes = new Map<Schema.SObjectType, Schema.DescribeSObjectResult>();
+
+  private static Map<String, PathField> pathFields = new Map<String, PathField>();
+
+  // ---- the admin's Time Drive records --------------------------------------
+  // Read into the same shapes the metadata types give, so the providers, the
+  // plotter and the controller take a source the way they always have.
+
+  private static Map<String, Time_Drive_Source__mdt> driveSources;
+  private static Map<String, List<Time_Drive_Detail_Field__mdt>> driveDetails;
+  private static Map<String, List<Time_Drive_Highlight__mdt>> driveHighlights;
+
+  private static final List<String> SOURCE_COPIED = new List<String>{
+    'Kind__c',
+    'Object_Name__c',
+    'Parent_Field__c',
+    'Junction_Object__c',
+    'Junction_Parent_Field__c',
+    'Junction_Record_Field__c',
+    'Individual_Field__c',
+    'Data_Space__c',
+    'Provider_Class__c',
+    'Date_Field__c',
+    'Filter__c',
+    'Max_Records__c',
+    'History_Months__c',
+    'Event_Type__c',
+    'Event_Label__c',
+    'Category__c',
+    'Lenses__c',
+    'Title__c',
+    'Subtitle__c',
+    'Icon__c',
+    'Icon_Colour__c',
+    'Record_Id_Field__c',
+    'Id_Field__c',
+    'Sequence__c'
+  };
+
+  // The partition for what is kept between requests; none to use in tests or
+  // where the org has no capacity for it.
+  private static final String CACHE_KEY = 'driveRecords';
+  private static final Integer CACHE_SECONDS = 600;
+
+  /**
+   * Active sources for the parent object, by Sequence.
+   *
+   * @param parentObject API name of the parent object
+   * @return the active sources, by Sequence
+   */
   public static List<Time_Drive_Source__mdt> sources(String parentObject) {
     List<SourceOrder> ordered = new List<SourceOrder>();
     for (Time_Drive_Source__mdt s : allSources().values()) {
@@ -34,6 +112,10 @@ public with sharing class TimeDriveConfig {
    * plots) or a TimeDriveProvider (finished events). With no Provider
    * Class, Salesforce sources use the generic SOQL provider and Data 360
    * sources the Data 360 one; Apex sources must name their class.
+   *
+   * @param source the source to find a provider for
+   * @param warnings receives a message when no usable provider can be made
+   * @return the provider instance, or null when there is none
    */
   public static Object providerFor(Time_Drive_Source__mdt source, List<String> warnings) {
     String kind = new TimeDriveContext(null, null, null, source, null, null).kind();
@@ -58,13 +140,11 @@ public with sharing class TimeDriveConfig {
     return null;
   }
 
-  // ---- the timeline's views ------------------------------------------------
-
-  public static final String ALL_VIEW = 'All';
-  @TestVisible
-  private static List<Time_Drive_View__mdt> testViews;
-
-  /** The views, All first, then by Sequence. */
+  /**
+   * The views, All first, then by Sequence.
+   *
+   * @return the views in display order
+   */
   public static List<Time_Drive_View__mdt> views() {
     List<Time_Drive_View__mdt> all = testViews != null ? testViews : Time_Drive_View__mdt.getAll().values();
     List<ViewOrder> ordered = new List<ViewOrder>();
@@ -79,7 +159,11 @@ public with sharing class TimeDriveConfig {
     return out;
   }
 
-  /** The views the picker offers: All, and every active one. */
+  /**
+   * The views the picker offers: All, and every active one.
+   *
+   * @return the views to offer
+   */
   public static List<Time_Drive_View__mdt> activeViews() {
     List<Time_Drive_View__mdt> out = new List<Time_Drive_View__mdt>();
     for (Time_Drive_View__mdt v : views()) {
@@ -90,12 +174,22 @@ public with sharing class TimeDriveConfig {
     return out;
   }
 
-  /** Whether a view is offered: All always; others unless made inactive. */
+  /**
+   * Whether a view is offered: All always; others unless made inactive.
+   *
+   * @param v the view to check
+   * @return true when the view is offered
+   */
   public static Boolean isActive(Time_Drive_View__mdt v) {
     return v.DeveloperName == ALL_VIEW || v.getPopulatedFieldsAsMap().get('Active__c') != false;
   }
 
-  /** A view's picker label in the viewer's language: its Menu Label (or a custom label's), else its label. */
+  /**
+   * A view's picker label in the viewer's language: its Menu Label (or a custom label's), else its label.
+   *
+   * @param v the view
+   * @return the view's picker label
+   */
   public static String viewLabel(Time_Drive_View__mdt v) {
     String raw = v.Menu_Label__c?.trim();
     String out = String.isNotBlank(raw) && raw.startsWith(LABEL_PREFIX)
@@ -112,6 +206,12 @@ public with sharing class TimeDriveConfig {
     Decimal rank() {
       return view.DeveloperName == ALL_VIEW ? -1 : (view.Sequence__c == null ? 1000 : view.Sequence__c);
     }
+    /**
+     * Orders views by rank, then by label.
+     *
+     * @param other the ViewOrder to compare with
+     * @return a negative, zero or positive number
+     */
     public Integer compareTo(Object other) {
       Decimal a = rank();
       Decimal b = ((ViewOrder) other).rank();
@@ -119,24 +219,14 @@ public with sharing class TimeDriveConfig {
     }
   }
 
-  // A legend name that's a custom label: $Label.Timeline_Follow_ups.
-  public static final String LABEL_PREFIX = '$Label.';
-  // Objects whose plural name says little (Content Document Links), and the
-  // custom label a source of theirs is named with unless it says otherwise.
-  // Setup starts such a source on it too.
-  public static final Map<String, String> DEFAULT_LEGEND_LABELS = new Map<String, String>{
-    'contentdocumentlink' => 'Time_Drive_Legend_Files'
-  };
-  // Or another object's name, as Salesforce translates it: $Object.Task (a
-  // TaskRelation source reading "Tasks").
-  public static final String OBJECT_PREFIX = '$Object.';
-  private static Map<String, String> legendLabels = new Map<String, String>();
-
   /**
    * What the legend and filters call a source's items, in the viewer's
    * language: a custom label's translation ($Label.Name), the words typed
    * (one language), or, left blank, the object's plural name (Salesforce
    * translates those); else the source's own name.
+   *
+   * @param s the source
+   * @return the label to show for the source in the legend
    */
   public static String legendLabel(Time_Drive_Source__mdt s) {
     if (s == null) {
@@ -170,7 +260,12 @@ public with sharing class TimeDriveConfig {
     return out;
   }
 
-  /** A custom label in the viewer's language, or null when there's none by that name. */
+  /**
+   * A custom label in the viewer's language, or null when there's none by that name.
+   *
+   * @param name the custom label's name
+   * @return the label text, or null when there is no such label
+   */
   public static String customLabel(String name) {
     if (String.isBlank(name)) {
       return null;
@@ -186,39 +281,37 @@ public with sharing class TimeDriveConfig {
     try {
       return String.isBlank(objectName)
         ? null
-        : Schema.describeSObjects(new List<String>{ objectName })[0].getLabelPlural();
+        : Schema.describeSObjects(new List<String>{ objectName }, SObjectDescribeOptions.DEFERRED)[0].getLabelPlural();
     } catch (Exception e) {
       return null;
     }
   }
 
-  private static Map<String, Schema.SObjectType> typesByName = new Map<String, Schema.SObjectType>();
-
-  private static Map<String, Schema.DescribeSObjectResult> described = new Map<String, Schema.DescribeSObjectResult>();
-
   /**
    * An object's describe, kept for the request: the source's query, its
    * highlights and its rows all ask for the same one. Throws for a name that
    * isn't an object, as Schema.describeSObjects does.
+   *
+   * @param objectName API name of the object
+   * @return the object's describe result
    */
   public static Schema.DescribeSObjectResult describeObject(String objectName) {
     String key = objectName.toLowerCase();
     Schema.DescribeSObjectResult found = described.get(key);
     if (found == null) {
-      found = Schema.describeSObjects(new List<String>{ objectName })[0];
+      found = Schema.describeSObjects(new List<String>{ objectName }, SObjectDescribeOptions.DEFERRED)[0];
       described.put(key, found);
     }
     return found;
   }
 
-  private static Map<String, Map<String, Schema.SObjectField>> fieldMaps = new Map<String, Map<String, Schema.SObjectField>>();
-  private static Map<String, Schema.DescribeFieldResult> fieldDescribes = new Map<String, Schema.DescribeFieldResult>();
-  private static Map<Schema.SObjectType, Schema.DescribeSObjectResult> describedTypes = new Map<Schema.SObjectType, Schema.DescribeSObjectResult>();
-
   /**
    * An object's fields by lower-case name, built once for the request:
    * fields.getMap() rebuilds the whole map on every call, which in an object
    * with hundreds of fields is a measurable cost each time.
+   *
+   * @param objectName API name of the object
+   * @return the object's fields by lower-case name
    */
   public static Map<String, Schema.SObjectField> fieldMap(String objectName) {
     String key = objectName.toLowerCase();
@@ -233,6 +326,10 @@ public with sharing class TimeDriveConfig {
   /**
    * One field's describe, kept for the request (getDescribe() on a field is
    * not free either). Null when the object has no such field.
+   *
+   * @param objectName API name of the object
+   * @param fieldName API name of the field
+   * @return the field's describe result, or null when there is no such field
    */
   public static Schema.DescribeFieldResult fieldDescribe(String objectName, String fieldName) {
     if (String.isBlank(fieldName)) {
@@ -267,13 +364,15 @@ public with sharing class TimeDriveConfig {
     public String prefix = '';
   }
 
-  private static Map<String, PathField> pathFields = new Map<String, PathField>();
-
   /**
    * Follows a path of relationship names to its last field. Null when a step
    * isn't a lookup to one object (a polymorphic Who or What can't be
    * followed), the object or field doesn't exist, or the last field is
    * missing. A path without dots is the object's own field.
+   *
+   * @param objectName API name of the object the path starts from
+   * @param path a field name or dotted relationship path
+   * @return the field the path ends at, or null when it cannot be resolved
    */
   public static PathField pathField(String objectName, String path) {
     if (String.isBlank(objectName) || String.isBlank(path)) {
@@ -341,21 +440,34 @@ public with sharing class TimeDriveConfig {
    * a junction (TaskRelation with Task.ActivityDate), the object the date
    * path leads to. Behaviour that depends on the kind of record (archived
    * activities, all-day events) follows this, not the source's object.
+   *
+   * @param s the source
+   * @return API name of the object that holds the source's date
    */
   public static String dateOwner(Time_Drive_Source__mdt s) {
     return pathField(s.Object_Name__c, s.Date_Field__c)?.owner ?? s.Object_Name__c;
   }
 
-  /** The path to the date's object with its dot (Task.), blank when it is the source's own. */
+  /**
+   * The path to the date's object with its dot (Task.), blank when it is the source's own.
+   *
+   * @param s the source
+   * @return the prefix, or blank
+   */
   public static String datePrefix(Time_Drive_Source__mdt s) {
     return pathField(s.Object_Name__c, s.Date_Field__c)?.prefix ?? '';
   }
 
-  /** A type's describe, kept for the request, for record Ids and lookup targets. */
+  /**
+   * A type's describe, kept for the request, for record Ids and lookup targets.
+   *
+   * @param type the sObject type
+   * @return the type's describe result
+   */
   public static Schema.DescribeSObjectResult describeType(Schema.SObjectType type) {
     Schema.DescribeSObjectResult found = describedTypes.get(type);
     if (found == null) {
-      found = type.getDescribe();
+      found = type.getDescribe(SObjectDescribeOptions.DEFERRED);
       describedTypes.put(type, found);
       described.put(found.getName().toLowerCase(), found);
     }
@@ -366,6 +478,9 @@ public with sharing class TimeDriveConfig {
    * An object by API name, described by name (Data 360's DMOs can be, though
    * the global describe doesn't list them in every org). Null when there's no
    * such object.
+   *
+   * @param name API name of the object
+   * @return the sObject type, or null when there is no such object
    */
   public static Schema.SObjectType sObjectType(String name) {
     if (String.isBlank(name)) {
@@ -390,6 +505,8 @@ public with sharing class TimeDriveConfig {
   /**
    * The shipped templates (Time Drive Source metadata): a catalogue the setup
    * wizard copies from. They are never plotted themselves.
+   *
+   * @return the templates by developer name
    */
   public static Map<String, Time_Drive_Source__mdt> templates() {
     if (testSources == null) {
@@ -403,41 +520,6 @@ public with sharing class TimeDriveConfig {
     return out;
   }
 
-  // ---- the admin's Time Drive records --------------------------------------
-  // Read into the same shapes the metadata types give, so the providers, the
-  // plotter and the controller take a source the way they always have.
-
-  private static Map<String, Time_Drive_Source__mdt> driveSources;
-  private static Map<String, List<Time_Drive_Detail_Field__mdt>> driveDetails;
-  private static Map<String, List<Time_Drive_Highlight__mdt>> driveHighlights;
-
-  private static final List<String> SOURCE_COPIED = new List<String>{
-    'Kind__c',
-    'Object_Name__c',
-    'Parent_Field__c',
-    'Junction_Object__c',
-    'Junction_Parent_Field__c',
-    'Junction_Record_Field__c',
-    'Individual_Field__c',
-    'Data_Space__c',
-    'Provider_Class__c',
-    'Date_Field__c',
-    'Filter__c',
-    'Max_Records__c',
-    'History_Months__c',
-    'Event_Type__c',
-    'Event_Label__c',
-    'Category__c',
-    'Lenses__c',
-    'Title__c',
-    'Subtitle__c',
-    'Icon__c',
-    'Icon_Colour__c',
-    'Record_Id_Field__c',
-    'Id_Field__c',
-    'Sequence__c'
-  };
-
   /** Forgets what was read, so the next read is fresh (after a save). */
   public static void reset() {
     try {
@@ -447,6 +529,7 @@ public with sharing class TimeDriveConfig {
       }
     } catch (Exception e) {
       // Nothing kept to forget.
+      System.debug(LoggingLevel.FINE, 'Time Drive: cache not cleared. ' + e.getMessage());
     }
     driveSources = null;
     driveDetails = null;
@@ -464,11 +547,6 @@ public with sharing class TimeDriveConfig {
       adopt(r);
     }
   }
-
-  // The partition for what is kept between requests; none to use in tests or
-  // where the org has no capacity for it.
-  private static final String CACHE_KEY = 'driveRecords';
-  private static final Integer CACHE_SECONDS = 600;
 
   private static Cache.OrgPartition partition() {
     try {
@@ -488,6 +566,7 @@ public with sharing class TimeDriveConfig {
       }
     } catch (Exception e) {
       // Not readable: read the records.
+      System.debug(LoggingLevel.FINE, 'Time Drive: cache not read. ' + e.getMessage());
     }
     List<Time_Drive_Record__c> found = queryDriveRecords();
     try {
@@ -496,6 +575,7 @@ public with sharing class TimeDriveConfig {
       }
     } catch (Exception e) {
       // No room to keep them: every request reads them.
+      System.debug(LoggingLevel.FINE, 'Time Drive: cache not kept. ' + e.getMessage());
     }
     return found;
   }
@@ -611,7 +691,12 @@ public with sharing class TimeDriveConfig {
     }
   }
 
-  /** The keys of the lenses a source is in: its Lenses, else its Category (one lens). */
+  /**
+   * The keys of the lenses a source is in: its Lenses, else its Category (one lens).
+   *
+   * @param s the source
+   * @return the lens keys
+   */
   public static List<String> lensesOf(Time_Drive_Source__mdt s) {
     List<String> out = new List<String>();
     if (s == null) {
@@ -629,13 +714,22 @@ public with sharing class TimeDriveConfig {
     return out;
   }
 
-  /** The lenses as one string (Sales;Service), which an event carries to the lens filter. */
+  /**
+   * The lenses as one string (Sales;Service), which an event carries to the lens filter.
+   *
+   * @param s the source
+   * @return the lenses joined with semicolons
+   */
   public static String lensKey(Time_Drive_Source__mdt s) {
     List<String> lenses = lensesOf(s);
     return lenses.isEmpty() ? null : String.join(lenses, ';');
   }
 
-  /** Every source by key: the admin's Time Drive records, or a test's stand-ins. */
+  /**
+   * Every source by key: the admin's Time Drive records, or a test's stand-ins.
+   *
+   * @return the sources by key
+   */
   public static Map<String, Time_Drive_Source__mdt> allSources() {
     if (testSources == null) {
       loadDrives();
@@ -648,6 +742,12 @@ public with sharing class TimeDriveConfig {
     return out;
   }
 
+  /**
+   * One source by developer name.
+   *
+   * @param developerName the source's developer name
+   * @return the source, or null when there is none
+   */
   public static Time_Drive_Source__mdt source(String developerName) {
     return String.isBlank(developerName) ? null : allSources().get(developerName);
   }
@@ -655,6 +755,9 @@ public with sharing class TimeDriveConfig {
   /**
    * A source's detail field records as stored, blanked ones too (the setup
    * wizard reuses their names), by Sequence.
+   *
+   * @param sourceDeveloperName developer name of the source
+   * @return the stored detail field records
    */
   public static List<Time_Drive_Detail_Field__mdt> storedDetailFields(String sourceDeveloperName) {
     if (testDetailFields != null) {
@@ -673,6 +776,9 @@ public with sharing class TimeDriveConfig {
   /**
    * A source's highlight records as stored, blanked ones too (the setup
    * wizard reuses their names), by Sequence.
+   *
+   * @param sourceDeveloperName developer name of the source
+   * @return the stored highlight records
    */
   public static List<Time_Drive_Highlight__mdt> storedHighlights(String sourceDeveloperName) {
     if (testHighlights != null) {
@@ -688,12 +794,22 @@ public with sharing class TimeDriveConfig {
     return found == null ? new List<Time_Drive_Highlight__mdt>() : found;
   }
 
-  /** The source's highlights in use. */
+  /**
+   * The source's highlights in use.
+   *
+   * @param sourceDeveloperName developer name of the source
+   * @return the highlights in use
+   */
   public static List<Time_Drive_Highlight__mdt> highlights(String sourceDeveloperName) {
     return storedHighlights(sourceDeveloperName);
   }
 
-  /** The source's detail fields in use, by Sequence. */
+  /**
+   * The source's detail fields in use, by Sequence.
+   *
+   * @param sourceDeveloperName developer name of the source
+   * @return the detail fields in use
+   */
   public static List<Time_Drive_Detail_Field__mdt> detailFields(String sourceDeveloperName) {
     return storedDetailFields(sourceDeveloperName);
   }
@@ -705,6 +821,12 @@ public with sharing class TimeDriveConfig {
       this.source = source;
     }
 
+    /**
+     * Orders sources by Sequence.
+     *
+     * @param other the SourceOrder to compare with
+     * @return a negative, zero or positive number
+     */
     public Integer compareTo(Object other) {
       Decimal mine = source.Sequence__c == null ? 0 : source.Sequence__c;
       Decimal theirs = ((SourceOrder) other).source.Sequence__c == null ? 0 : ((SourceOrder) other).source.Sequence__c;

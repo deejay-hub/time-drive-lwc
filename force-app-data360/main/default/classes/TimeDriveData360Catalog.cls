@@ -8,16 +8,39 @@
 public with sharing class TimeDriveData360Catalog implements TimeDriveData360Provider.Catalog {
   // An item's own name (fields end __c, so only the object's ends __dlm).
   private static final Pattern DMO_NAME = Pattern.compile('\\bname=([A-Za-z0-9_]+__dlm)\\b');
+  // An item's category: Profile, Engagement or Related (fields have none).
+  private static final Pattern CATEGORY = Pattern.compile('\\bcategory=([A-Za-z]+)');
+  // The metadata per data space, asked for once a request.
+  private static Map<String, List<Object>> metadataBySpace = new Map<String, List<Object>>();
 
-  // A data space's DMOs (blank: the default one).
+  /**
+   * A data space's DMOs (blank: the default one).
+   *
+   * @param dataSpace the data space, blank for the default one
+   * @return the DMO API names
+   */
   public List<String> dmoNames(String dataSpace) {
-    ConnectApi.CdpQueryMetadataOutput meta = ConnectApi.CdpQuery.getAllMetadata(
-      'DataModelObject',
-      null,
-      null,
-      String.isBlank(dataSpace) ? 'default' : dataSpace
-    );
-    return namesIn(meta.metadata);
+    return namesIn(metadata(dataSpace));
+  }
+
+  /**
+   * A data space's Profile DMOs (blank: the default one): those describing
+   * who someone is (Individual, Party, Account) rather than what they did.
+   *
+   * @param dataSpace the data space, blank for the default one
+   * @return the API names of its Profile DMOs
+   */
+  public Set<String> profileDmoNames(String dataSpace) {
+    return profileNamesIn(metadata(dataSpace));
+  }
+
+  private static List<Object> metadata(String dataSpace) {
+    String space = String.isBlank(dataSpace) ? 'default' : dataSpace;
+    if (!metadataBySpace.containsKey(space)) {
+      ConnectApi.CdpQueryMetadataOutput meta = ConnectApi.CdpQuery.getAllMetadata('DataModelObject', null, null, space);
+      metadataBySpace.put(space, meta.metadata);
+    }
+    return metadataBySpace.get(space);
   }
 
   // The items come back as untyped objects; their text holds the name.
@@ -31,5 +54,19 @@ public with sharing class TimeDriveData360Catalog implements TimeDriveData360Pro
       }
     }
     return new List<String>(out);
+  }
+
+  @TestVisible
+  private static Set<String> profileNamesIn(List<Object> items) {
+    Set<String> out = new Set<String>();
+    for (Object item : items == null ? new List<Object>() : items) {
+      String text = String.valueOf(item);
+      Matcher name = DMO_NAME.matcher(text);
+      Matcher category = CATEGORY.matcher(text);
+      if (name.find() && category.find() && category.group(1) == 'Profile') {
+        out.add(name.group(1));
+      }
+    }
+    return out;
   }
 }

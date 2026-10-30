@@ -52,3 +52,6 @@ $RECYCLE.BIN/
 
 # Claude Code local files
 .claude/
+
+# Code Analyzer scan output
+code-analyzer-results-*

@@ -52,7 +52,7 @@ export function typeInfo(type) {
 
 // The timeline views in the header picker: each shows some event categories.
 export const VIEWS = [
-  { value: "All", label: VIEW_ALL, categories: null },
+  { value: "All", label: VIEW_ALL, categories: ["All"] },
   { value: "Marketing", label: VIEW_MARKETING, categories: ["Marketing"] },
   { value: "Commerce", label: VIEW_COMMERCE, categories: ["Commerce"] },
   { value: "Digital", label: VIEW_DIGITAL, categories: ["Digital"] },

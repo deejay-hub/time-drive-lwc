@@ -142,7 +142,6 @@ const PERF = {
 
 const flush = async () => {
   for (let i = 0; i < 4; i++) {
-    // eslint-disable-next-line no-await-in-loop, @lwc/lwc/no-async-operation
     await new Promise((resolve) => setTimeout(resolve, 0));
   }
 };

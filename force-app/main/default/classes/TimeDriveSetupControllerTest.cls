@@ -1,5 +1,17 @@
+// Run as the running user on purpose; tests where what a person may do is the point run as a user with
+// only the permission set (see the Preference and Progress tests).
+// Size, parameter lists and field counts follow the platform's entry points, its cases and the data the components exchange;
+// splitting them up would only scatter what belongs together.
+@SuppressWarnings(
+  'PMD.ApexUnitTestClassShouldHaveRunAs, PMD.CyclomaticComplexity, PMD.CognitiveComplexity, PMD.ExcessiveParameterList, PMD.NcssCount'
+)
 @IsTest
 private class TimeDriveSetupControllerTest {
+  // A well-formed Id for tests: the object's key prefix and a number.
+  private static Id fakeId(String prefix, Integer n) {
+    return Id.valueOf(prefix + String.valueOf(n).leftPad(12, '0'));
+  }
+
   // The sources the timeline once shipped with, in place of the org's.
   static {
     TimeDriveTestData.useShipped();
@@ -236,6 +248,29 @@ private class TimeDriveSetupControllerTest {
     Assert.areEqual(Contact.SObjectType, TimeDriveConfig.sObjectType('Contact'));
     Assert.isNull(TimeDriveConfig.sObjectType('NotHere__dlm'));
     Assert.isNull(TimeDriveConfig.sObjectType(''));
+  }
+
+  @IsTest
+  static void leavesDataCloudProfileObjectsOut() {
+    // No DMOs in a test: two objects that describe stand in, one of them a Profile object.
+    TimeDriveSetupController.testDmoNames = new List<String>{ 'Contact', 'Account' };
+    TimeDriveData360Provider.testProfileDmoNames = new Set<String>{ 'account' };
+    List<String> offered = new List<String>();
+    for (TimeDriveSetupController.Option o : TimeDriveSetupController.getObjects('dmo', 'Contact', null)) {
+      offered.add(o.value);
+    }
+    Assert.isTrue(offered.contains('Contact'), 'Others are offered as before');
+    Assert.isFalse(offered.contains('Account'), 'Profile objects are left out, whatever their case');
+
+    // Contact points are left out too, whichever category Data 360 gives them.
+    for (String name : new List<String>{ 'ssot__ContactPointEmail__dlm', 'SSOT__CONTACTPOINTPHONE__DLM' }) {
+      Assert.isTrue(TimeDriveSetupController.CONTACT_POINT_DMO.matcher(name).matches(), name);
+    }
+    for (
+      String name : new List<String>{ 'ssot__EmailEngagement__dlm', 'ssot__Campaign__dlm', 'ContactPointNotes__dlm' }
+    ) {
+      Assert.isFalse(TimeDriveSetupController.CONTACT_POINT_DMO.matcher(name).matches(), name);
+    }
   }
 
   @IsTest
@@ -659,6 +694,20 @@ private class TimeDriveSetupControllerTest {
     Assert.areEqual(1, [SELECT COUNT() FROM Time_Drive_Record__c]);
     Assert.areEqual(1, [SELECT COUNT() FROM Time_Drive__c]);
 
+    // A detail taken out is cleared, not left behind in its old slot.
+    d.details.clear();
+    TimeDriveSetupController.save(JSON.serialize(d));
+    Time_Drive_Record__c cleared = [
+      SELECT Detail_1_Field__c, Detail_1_Label__c, Highlight_Field__c
+      FROM Time_Drive_Record__c
+      WHERE Key__c = 'Orders_from_setup'
+    ];
+    Assert.isNull(cleared.Detail_1_Field__c, 'The removed detail is gone');
+    Assert.isNull(cleared.Detail_1_Label__c);
+    Assert.isNull(cleared.Highlight_Field__c);
+    TimeDriveConfig.reset();
+    Assert.areEqual(0, TimeDriveConfig.detailFields('Orders_from_setup').size());
+
     Assert.areEqual('Orders_from_setup_2', TimeDriveSetupController.uniqueName('Orders from setup'));
     Assert.areEqual('Source_2026_orders', TimeDriveSetupController.uniqueName('2026 orders!'));
   }
@@ -800,14 +849,15 @@ private class TimeDriveSetupControllerTest {
     // Out of them all, with none.
     TimeDriveSetupController.setLenses(key, new List<String>());
     Assert.isNull([SELECT Lenses__c FROM Time_Drive_Record__c WHERE Key__c = :key].Lenses__c);
-    // A lens that isn't one (All is not a tag to put a source in), or a source that isn't there.
-    for (String bad : new List<String>{ 'NoSuchLens', TimeDriveConfig.ALL_VIEW }) {
-      try {
-        TimeDriveSetupController.setLenses(key, new List<String>{ bad });
-        Assert.fail(bad + ' is not a lens to put a source in');
-      } catch (AuraHandledException e) {
-        Assert.areEqual('There is no lens called ' + bad + '.', e.getMessage());
-      }
+    // All is a lens like the others.
+    TimeDriveSetupController.setLenses(key, new List<String>{ TimeDriveConfig.ALL_VIEW, 'Service' });
+    Assert.areEqual('All;Service', [SELECT Lenses__c FROM Time_Drive_Record__c WHERE Key__c = :key].Lenses__c);
+    // A lens that isn't one, or a source that isn't there.
+    try {
+      TimeDriveSetupController.setLenses(key, new List<String>{ 'NoSuchLens' });
+      Assert.fail('NoSuchLens is not a lens to put a source in');
+    } catch (AuraHandledException e) {
+      Assert.areEqual('There is no lens called NoSuchLens.', e.getMessage());
     }
     try {
       TimeDriveSetupController.setLenses('No_Such_Source', new List<String>{ 'Sales' });
@@ -831,6 +881,13 @@ private class TimeDriveSetupControllerTest {
       WHERE Template_Key__c = :first.key
     ];
     Assert.isTrue(copy.Active__c);
+    Assert.isTrue(
+      TimeDriveConfig.lensesOf(
+          TimeDriveConfig.source([SELECT Key__c FROM Time_Drive_Record__c WHERE Template_Key__c = :first.key].Key__c)
+        )
+        .contains(TimeDriveConfig.ALL_VIEW),
+      'A template\'s copy starts in All'
+    );
     try {
       TimeDriveSetupController.useTemplate(first.key);
       Assert.fail('A template is added once');
@@ -838,10 +895,102 @@ private class TimeDriveSetupControllerTest {
       Assert.isTrue(e.getMessage().contains('already added'));
     }
     // The rest in one go; a second go has nothing left to add.
-    Integer rest = TimeDriveSetupController.quickStart('Contact');
-    Assert.areEqual(offered.size() - 1, rest);
-    Assert.areEqual(0, TimeDriveSetupController.quickStart('Contact'));
+    TimeDriveSetupController.QuickStartResult rest = TimeDriveSetupController.quickStart('Contact');
+    Assert.areEqual(offered.size() - 1, rest.added.size());
+    Assert.isTrue(rest.switched.isEmpty(), 'Nothing to switch: one variant of each');
+    TimeDriveSetupController.QuickStartResult again = TimeDriveSetupController.quickStart('Contact');
+    Assert.isTrue(again.added.isEmpty() && again.switched.isEmpty(), 'A second go changes nothing');
     Assert.isTrue(TimeDriveConfig.sources('Contact').size() > 0, 'They are on the timeline now');
+  }
+
+  @IsTest
+  static void checkingAgainSwitchesToTheVariantThatFitsNow() {
+    TimeDriveConfig.testSources = null;
+    // First check: no Shared Activities, so Contact Tasks are read by Name.
+    TimeDriveSetupController.testFeatures = new Set<String>();
+    TimeDriveSetupController.QuickStartResult first = TimeDriveSetupController.quickStart('Contact');
+    Assert.isTrue(templateKeys(first.added).contains('Tasks'));
+    Assert.isTrue(first.switched.isEmpty());
+
+    // Shared Activities is turned on: every contact's variant takes over, and the first is kept, switched off.
+    TimeDriveSetupController.testFeatures = new Set<String>{ 'SharedActivities' };
+    TimeDriveSetupController.QuickStartResult second = TimeDriveSetupController.quickStart('Contact');
+    Assert.isTrue(templateKeys(second.added).contains('Fit_Contact_Tasks_Every'));
+    TimeDriveSetupController.VariantSwitch tasks = switchTo(second, 'Tasks (every contact)');
+    Assert.isNotNull(tasks, 'The switch is reported');
+    Assert.areEqual('Tasks', tasks.offLabel);
+    Assert.areEqual('Contact', tasks.parentObject);
+    Assert.isFalse(copyActive('Tasks'), 'The variant by Name is switched off');
+    Assert.isTrue(copyActive('Fit_Contact_Tasks_Every'), 'Only the variant that fits plots the tasks');
+
+    // Checking again changes nothing.
+    TimeDriveSetupController.QuickStartResult third = TimeDriveSetupController.quickStart('Contact');
+    Assert.isTrue(third.added.isEmpty() && third.switched.isEmpty());
+
+    // Back without Shared Activities: the first copy is switched on again, not added a second time.
+    TimeDriveSetupController.testFeatures = new Set<String>();
+    TimeDriveSetupController.QuickStartResult fourth = TimeDriveSetupController.quickStart('Contact');
+    Assert.isFalse(templateKeys(fourth.added).contains('Tasks'));
+    Assert.isNotNull(switchTo(fourth, 'Tasks'));
+    Assert.isTrue(copyActive('Tasks'));
+    Assert.isFalse(copyActive('Fit_Contact_Tasks_Every'));
+    Assert.areEqual(1, [SELECT COUNT() FROM Time_Drive_Record__c WHERE Template_Key__c = 'Tasks']);
+  }
+
+  @IsTest
+  static void checkingLeavesAGroupTheAdminSwitchedOffAndMendsDoubles() {
+    TimeDriveConfig.testSources = null;
+    TimeDriveSetupController.testFeatures = new Set<String>();
+    TimeDriveSetupController.quickStart('Contact');
+    TimeDriveSetupController.testFeatures = new Set<String>{ 'SharedActivities' };
+    TimeDriveSetupController.quickStart('Contact');
+
+    // Both variants on (as an older check could leave them): checking switches one off.
+    switchOn('Tasks', true);
+    switchOn('Fit_Contact_Tasks_Every', true);
+    TimeDriveSetupController.QuickStartResult mended = TimeDriveSetupController.quickStart('Contact');
+    Assert.isNotNull(switchTo(mended, 'Tasks (every contact)'));
+    Assert.isFalse(copyActive('Tasks'));
+    Assert.isTrue(copyActive('Fit_Contact_Tasks_Every'));
+
+    // The admin switches Contact Tasks off altogether: checking leaves it off.
+    switchOn('Fit_Contact_Tasks_Every', false);
+    TimeDriveSetupController.QuickStartResult after = TimeDriveSetupController.quickStart('Contact');
+    Assert.isNull(switchTo(after, 'Tasks (every contact)'));
+    Assert.isFalse(copyActive('Tasks'));
+    Assert.isFalse(copyActive('Fit_Contact_Tasks_Every'));
+  }
+
+  private static Set<String> templateKeys(List<TimeDriveSetupController.TemplateOption> options) {
+    Set<String> out = new Set<String>();
+    for (TimeDriveSetupController.TemplateOption o : options) {
+      out.add(o.key);
+    }
+    return out;
+  }
+
+  private static TimeDriveSetupController.VariantSwitch switchTo(
+    TimeDriveSetupController.QuickStartResult result,
+    String onLabel
+  ) {
+    for (TimeDriveSetupController.VariantSwitch s : result.switched) {
+      if (s.onLabel == onLabel && s.parentObject == 'Contact') {
+        return s;
+      }
+    }
+    return null;
+  }
+
+  private static Time_Drive_Record__c copyOfTemplate(String templateKey) {
+    return [SELECT Key__c, Active__c FROM Time_Drive_Record__c WHERE Template_Key__c = :templateKey LIMIT 1];
+  }
+
+  private static Boolean copyActive(String templateKey) {
+    return copyOfTemplate(templateKey).Active__c;
+  }
+
+  private static void switchOn(String templateKey, Boolean active) {
+    TimeDriveSetupController.setActive(copyOfTemplate(templateKey).Key__c, active);
   }
 
   @IsTest
@@ -856,7 +1005,7 @@ private class TimeDriveSetupControllerTest {
   @IsTest
   static void publishesTheDeploymentResult() {
     Metadata.DeployResult result = new Metadata.DeployResult();
-    result.id = '0Af000000000001';
+    result.id = String.valueOf(fakeId('0Af', 1)).left(15);
     result.status = Metadata.DeployStatus.Succeeded;
     Test.startTest();
     new TimeDriveSetupController.SaveResult('Order_Placed').handleResult(result, null);

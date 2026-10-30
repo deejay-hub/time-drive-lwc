@@ -21,7 +21,6 @@ import LightningConfirm from "lightning/confirm";
 import { deleteRecord } from "lightning/uiRecordApi";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
 import { registerRefreshHandler, unregisterRefreshHandler } from "lightning/refresh";
-import ASSETS from "@salesforce/resourceUrl/timeDriveAssets";
 import FORM_FACTOR from "@salesforce/client/formFactor";
 import DIR from "@salesforce/i18n/dir";
 import LOCALE from "@salesforce/i18n/locale";
@@ -71,6 +70,9 @@ function minCellSize(days, base) {
   if (years > 5) return Math.round(base * 1.25);
   return base;
 }
+// Takes values only to read them: reading a field or getter makes LWC
+// re-render the caller when it changes, or builds what the getter caches.
+function dependOn() {}
 // Vertical: days of activity shown at first, and added by scrolling near
 // either end. The window of drawn days stays under
 // MAX_WINDOW_DAYS: days far behind the view are dropped again.
@@ -196,7 +198,6 @@ const MONTH_SHORT = FORMATS.month;
 const MONTH_YEAR = FORMATS.monthYear;
 
 // The window's ends, across: nothing to see this far out.
-const NOTHING_TO_SEE = `${ASSETS}/illustrations/nothing-to-see.svg`;
 
 // "2026-10-18" (server day key) -> local midnight, for labels and the minimap.
 function keyTime(key) {
@@ -563,8 +564,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     this._geometry = null;
     // Builds (or reuses) the day list, and with it the labels and times the
     // scrubber's bubble reads.
-    // eslint-disable-next-line no-unused-expressions
-    this.orderedDays;
+    dependOn(this.orderedDays);
     this._scrubUnit = (this.horizontal ? this.minimap : this.scrubber)?.unit;
     // The layout flipped, and with it the order: open at Open At again.
     if (this._focusLayout !== undefined && this._focusLayout !== this.horizontal) this._focusPending = true;
@@ -855,10 +855,9 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     return this.cardWidth > 0 && this.cardWidth < WIDE_FROM;
   }
 
-  // The filters as the server takes them.
+  // The filters as the server takes them: the lens viewed (All is a lens like the others).
   syncQuery() {
-    const categories = viewFor(this.view).categories;
-    const next = { categories: categories ? [...categories] : null, hidden: [...this.hiddenTypes] };
+    const next = { categories: [this.view], hidden: [...this.hiddenTypes] };
     // A new query: its counts are on their way (the header says so until
     // the summary lands). The same query brings no new summary to wait for.
     const changed =
@@ -1327,8 +1326,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   // still being fetched shows placeholder rows.
   get groups() {
     // Read so the view re-renders as days arrive.
-    // eslint-disable-next-line no-unused-expressions
-    this.daysLoaded;
+    dependOn(this.daysLoaded);
     const all = this.orderedDays;
     const offset = this.horizontal ? 0 : this.windowFrom;
     const days = this.horizontal ? all : all.slice(offset, offset + this.visibleDays);
@@ -1350,7 +1348,6 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
         placeholder: Boolean(day.placeholder),
         placeholderText: day.placeholderText,
         // Nothing to see: today with nothing, or the window's ends.
-        placeholderArt: NOTHING_TO_SEE,
         // Horizontal columns outside the drawn window show a CSS skeleton.
         dayClass: `${drawn ? "day" : "day day_shell"}${day.key === todayKey ? " day_today" : ""}`,
         // Horizontal day headers read the date as a figure: 16 / FRI / Oct.
@@ -1409,8 +1406,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       ? days.slice(this.renderFrom, this.renderTo + 1)
       : days.slice(this.windowFrom, this.windowFrom + this.visibleDays);
     // Read so the view re-renders as days arrive.
-    // eslint-disable-next-line no-unused-expressions
-    this.daysLoaded;
+    dependOn(this.daysLoaded);
     const out = [];
     for (const day of drawn) {
       if (day.placeholder) continue;
@@ -1709,6 +1705,11 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   // lightning-illustration draws them in the page's SLDS, light or dark.
   art(state) {
     return illustrationName(state);
+  }
+
+  // An empty slot across (the start, the end, today): the "all done" drawing.
+  get nothingArtName() {
+    return illustrationName("nothing");
   }
   // Setup for what an admin can fix (a missing object or field, a permission
   // set not assigned); error for the rest.

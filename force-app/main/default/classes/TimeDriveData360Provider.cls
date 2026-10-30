@@ -22,6 +22,10 @@
  * Queries are dynamic so this class deploys to orgs without Data 360; a DMO
  * that doesn't exist, isn't mapped or isn't readable adds a warning instead.
  */
+// The branching follows the platform's cases and the plot's rules; splitting it up would only scatter them.
+// Size, parameter lists and field counts follow the platform's entry points, its cases and the data the components exchange;
+// splitting them up would only scatter what belongs together.
+@SuppressWarnings('PMD.CyclomaticComplexity, PMD.CognitiveComplexity, PMD.ExcessiveParameterList, PMD.NcssCount')
 public with sharing class TimeDriveData360Provider implements TimeDriveRowProvider, TimeDriveCountProvider {
   private static final String ACTION_FIELD = 'ssot__EngagementChannelActionId__c';
   // A DMO query returning more rows than this fails ("too many rows for
@@ -44,11 +48,21 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
   // Tests stand in for Data 360's list of DMOs here.
   @TestVisible
   private static List<String> testDmoNames;
+  @TestVisible
+  private static Set<String> testProfileDmoNames;
 
   // Individual Ids per Contact and data space, worked out once a request for
   // all the DMO sources (and kept 15 minutes, see TimeDriveCache).
   private static Map<String, Set<String>> individualIdsByRecord = new Map<String, Set<String>>();
+  // The org's own model, as passed in by getRows and countDays.
+  private static Map<String, Schema.SObjectType> realModel;
 
+  /**
+   * Reads the source's Data 360 rows for the context's window.
+   *
+   * @param context the request context
+   * @return the rows read
+   */
   public List<TimeDriveRow> getRows(TimeDriveContext context) {
     // Empty on purpose: objects are looked up by name (see objectIn), not by
     // reading the org's whole global describe.
@@ -125,9 +139,7 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
       List<SObject> found = Database.queryWithBinds(soql, binds, AccessLevel.USER_MODE);
       TimeDriveDiagnostics.query(s.DeveloperName, 'rows', soql, binds, found.size(), startedAt, null);
       for (SObject row : found) {
-        rows.add(
-          new TimeDriveRow(row).put('Action', hasAction ? actionText((String) row.get(ACTION_FIELD)) : null)
-        );
+        rows.add(new TimeDriveRow(row).put('Action', hasAction ? actionText((String) row.get(ACTION_FIELD)) : null));
       }
     } catch (Exception e) {
       TimeDriveDiagnostics.query(s.DeveloperName, 'rows', soql, binds, 0, startedAt, e.getMessage());
@@ -143,6 +155,10 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
    * in the user's time zone, as the SOQL provider's convertTimezone() does.
    * A count that can't run (the SQL isn't accepted, the DMO isn't there)
    * throws, and the source is read as rows instead.
+   *
+   * @param context the request context
+   * @param unit the period to count by
+   * @return the count for each period that has rows
    */
   public List<TimeDriveContext.DayCount> countDays(TimeDriveContext context, String unit) {
     realModel = new Map<String, Schema.SObjectType>();
@@ -308,12 +324,13 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
   /**
    * Data 360's standard DMOs key rows by ssot__Id__c; a custom one may have
    * only Id. With no Id Field set, the one the DMO has is used.
+   *
+   * @param context the request context
+   * @param fields the DMO's fields by lower-case name
+   * @return the source, with its Id field set to the one the DMO has when none was set
    */
   @TestVisible
-  private static Time_Drive_Source__mdt fitIdField(
-    TimeDriveContext context,
-    Map<String, Schema.SObjectField> fields
-  ) {
+  private static Time_Drive_Source__mdt fitIdField(TimeDriveContext context, Map<String, Schema.SObjectField> fields) {
     Time_Drive_Source__mdt s = context.source;
     if (String.isNotBlank(s.Id_Field__c) || fields.containsKey(context.idField().toLowerCase())) {
       return s;
@@ -329,6 +346,7 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
     return 'TIMESTAMP ' + quoted(at.formatGmt('yyyy-MM-dd HH:mm:ss.SSS'));
   }
 
+  /** Thrown when a count cannot be run. */
   public class CountException extends Exception {
   }
 
@@ -337,6 +355,13 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
    * runner is TimeDriveData360SqlRunner (force-app-data360), found by name.
    */
   public interface SqlRunner {
+    /**
+     * Runs a Data 360 SQL query.
+     *
+     * @param sql the SQL to run
+     * @param dataSpace the data space, blank for the default one
+     * @return the result rows
+     */
     List<List<Object>> run(String sql, String dataSpace);
   }
 
@@ -346,7 +371,21 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
    * Data 360, found by name.
    */
   public interface Catalog {
+    /**
+     * Lists the DMOs in a data space.
+     *
+     * @param dataSpace the data space, blank for the default one
+     * @return the DMO API names
+     */
     List<String> dmoNames(String dataSpace);
+
+    /**
+     * The Profile DMOs in a data space: who someone is, not what they did.
+     *
+     * @param dataSpace the data space, blank for the default one
+     * @return the API names of the Profile DMOs
+     */
+    Set<String> profileDmoNames(String dataSpace);
   }
 
   // A data model object by name: from the model given (the org's, or a
@@ -360,28 +399,59 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
     Schema.SObjectType t = objects.get(name.toLowerCase());
     return t != null || objects !== realModel ? t : TimeDriveConfig.sObjectType(name);
   }
-  // The org's own model, as passed in by getRows and countDays.
-  private static Map<String, Schema.SObjectType> realModel;
 
   /**
    * Data 360's DMO names in a data space (blank: the default), from
    * TimeDriveData360Catalog where force-app-data360 is deployed; none if it
    * isn't, or Data 360 couldn't be asked.
+   *
+   * @param dataSpace the data space, blank for the default one
+   * @return the DMO API names, none when they cannot be listed
    */
   public static List<String> dmoNames(String dataSpace) {
     if (testDmoNames != null) {
       return testDmoNames;
     }
     try {
-      Type catalogType = Type.forName('TimeDriveData360Catalog');
-      Object catalog = catalogType == null ? null : catalogType.newInstance();
-      if (catalog instanceof Catalog) {
-        return ((Catalog) catalog).dmoNames(dataSpace);
+      Catalog catalog = catalog();
+      if (catalog != null) {
+        return catalog.dmoNames(dataSpace);
       }
     } catch (Exception e) {
       // Data 360 couldn't be asked.
+      System.debug(LoggingLevel.FINE, 'Time Drive: Data 360 not asked. ' + e.getMessage());
     }
     return new List<String>();
+  }
+
+  /**
+   * Data 360's Profile DMOs in a data space (blank: the default), which
+   * describe people rather than what they did, so Setup doesn't offer them;
+   * none when Data 360 couldn't be asked.
+   *
+   * @param dataSpace the data space, blank for the default one
+   * @return the API names of the Profile DMOs
+   */
+  public static Set<String> profileDmoNames(String dataSpace) {
+    if (testProfileDmoNames != null) {
+      return testProfileDmoNames;
+    }
+    try {
+      Catalog catalog = catalog();
+      if (catalog != null) {
+        return catalog.profileDmoNames(dataSpace);
+      }
+    } catch (Exception e) {
+      System.debug(LoggingLevel.FINE, 'Time Drive: Data 360 not asked. ' + e.getMessage());
+    }
+    return new Set<String>();
+  }
+
+  // TimeDriveData360Catalog, where force-app-data360 is deployed.
+  private static Catalog catalog() {
+    Type catalogType = Type.forName('TimeDriveData360Catalog');
+    Object found = catalogType == null ? null : catalogType.newInstance();
+    return found instanceof Catalog ? (Catalog) found : null;
   }
 
   // The identity link DMO: the one set, else the ruleset's in the source's
@@ -415,6 +485,8 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
   /**
    * Whether the Data 360 add-on (force-app-data360) is deployed: its runner
    * and catalog are found by name and are what this class expects.
+   *
+   * @return true when the add-on is deployed
    */
   public static Boolean addOnInstalled() {
     if (sqlRunner != null || testDmoNames != null) {
@@ -447,6 +519,11 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
   /**
    * The Contact's own Individual Id, its Unified Individual's Id, and every
    * source Individual merged into the same Unified Individual.
+   *
+   * @param contactId the Contact's Id
+   * @param objects sObject types by name
+   * @param context the request context
+   * @return the Individual Ids
    */
   @TestVisible
   private static Set<String> individualIdsFor(
@@ -480,7 +557,12 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
     String sourceField = setting.Link_Source_Field__c;
     String unifiedField = setting.Link_Unified_Field__c;
     if (linkObject == null) {
-      warnings.add(String.format(Label.Time_Drive_Server_No_Identity_Link, new List<String>{ String.valueOf(setting.Identity_Link_Object__c) }));
+      warnings.add(
+        String.format(
+          Label.Time_Drive_Server_No_Identity_Link,
+          new List<String>{ String.valueOf(setting.Identity_Link_Object__c) }
+        )
+      );
       return ids;
     }
     try {
@@ -530,9 +612,7 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
 
   // The Default Time Drive Setting, with the standard names filled in.
   private static Time_Drive_Setting__mdt setting() {
-    Time_Drive_Setting__mdt found = testSetting != null
-      ? testSetting
-      : Time_Drive_Setting__mdt.getInstance('Default');
+    Time_Drive_Setting__mdt found = testSetting != null ? testSetting : Time_Drive_Setting__mdt.getInstance('Default');
     Time_Drive_Setting__mdt s = found == null ? new Time_Drive_Setting__mdt() : found.clone();
     if (String.isBlank(s.Identity_Link_Object__c)) {
       s.Identity_Link_Object__c = 'IndividualIdentityLink__dlm';

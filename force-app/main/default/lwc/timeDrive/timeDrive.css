@@ -310,7 +310,7 @@
 
 .action-circle:hover {
   transform: translateY(-1.5px);
-  box-shadow: 0 1.5px 0 0 var(--slds-g-color-border-3, #2e2e2e);
+  box-shadow: 0 1.5px 0 0 var(--time-drive-press-edge, #2e2e2e);
 }
 
 .action-circle:active {
@@ -373,11 +373,6 @@
   padding: calc(0.5 * var(--time-drive-space)) 0;
   color: var(--time-drive-muted);
 }
-.nothing-now-art {
-  width: 3rem;
-  height: auto;
-  flex-shrink: 0;
-}
 .nothing-now-text {
   margin: 0;
 }
@@ -404,12 +399,24 @@
   height: 100%;
   text-align: center;
 }
-/* Across, the slot is a whole column: the illustration takes most of its
-   width, and at most half its height, so the line keeps its room. */
-.card_horizontal .nothing-now-art {
-  width: min(70%, 12rem);
-  max-height: 50%;
-  object-fit: contain;
+/* Across, the slot is a whole column: the drawing stands in a slot of a
+   fixed size, centred over the line under it, as the empty states' are. */
+.card_horizontal .nothing-now {
+  align-items: center;
+}
+.nothing-now-illustration {
+  display: flex;
+  flex: none;
+  align-items: flex-end;
+  justify-content: center;
+  width: min(70%, 9rem);
+  height: 6rem;
+  /* SLDS gives an illustration a bottom margin of its own. */
+  margin-bottom: 0 !important;
+}
+.nothing-now-illustration lightning-illustration {
+  display: block;
+  width: 100%;
 }
 
 /* SLDS 1's corners: cards, menus, panels and notices at 0.25rem, as its
@@ -2206,7 +2213,6 @@
   background: none;
   cursor: pointer;
   --slds-c-icon-color-foreground-default: var(--time-drive-muted);
-  --sds-c-icon-color-foreground-default: var(--time-drive-muted);
 }
 
 .row-menu-button lightning-icon {
@@ -2219,7 +2225,6 @@
 .row-menu-button[aria-expanded="true"] {
   background: color-mix(in srgb, var(--time-drive-ink) 8%, transparent);
   --slds-c-icon-color-foreground-default: var(--time-drive-ink);
-  --sds-c-icon-color-foreground-default: var(--time-drive-ink);
 }
 
 .row-menu-button:focus-visible {

@@ -13,11 +13,22 @@
  *   Detail Fields     the Time Drive Detail Field records, in order;
  *                     when there are any they replace the compact layout
  */
+// The branching follows the platform's cases and the plot's rules; splitting it up would only scatter them.
+// Size, parameter lists and field counts follow the platform's entry points, its cases and the data the components exchange;
+// splitting them up would only scatter what belongs together.
+@SuppressWarnings('PMD.CyclomaticComplexity, PMD.CognitiveComplexity, PMD.ExcessiveParameterList')
 public with sharing class TimeDrivePlotter {
   private static final Pattern TOKEN = Pattern.compile('\\{([A-Za-z0-9_.]+)\\}');
   public static final String SEPARATOR = ' · ';
+  private static final Integer MAX_PLACES = 6;
 
-  /** Events from either kind of provider. */
+  /**
+   * Events from either kind of provider.
+   *
+   * @param provider a row provider or an event provider
+   * @param context the request context
+   * @return the plotted events
+   */
   public static List<TimeDriveController.EngagementEvent> run(Object provider, TimeDriveContext context) {
     if (provider instanceof TimeDriveRowProvider) {
       return plot(context, ((TimeDriveRowProvider) provider).getRows(context));
@@ -25,6 +36,13 @@ public with sharing class TimeDrivePlotter {
     return ((TimeDriveProvider) provider).getEvents(context);
   }
 
+  /**
+   * Turns rows into plotted events using the source's templates and fields.
+   *
+   * @param context the request context
+   * @param rows the rows to plot
+   * @return the events
+   */
   public static List<TimeDriveController.EngagementEvent> plot(TimeDriveContext context, List<TimeDriveRow> rows) {
     Time_Drive_Source__mdt s = context.source;
     List<Time_Drive_Detail_Field__mdt> detailFields = context.detailFields();
@@ -83,7 +101,12 @@ public with sharing class TimeDrivePlotter {
     return events;
   }
 
-  // Field paths named by {tokens} in a template.
+  /**
+   * Finds the field paths named by {tokens} in a template.
+   *
+   * @param template the template text
+   * @return the field paths
+   */
   public static Set<String> tokens(String template) {
     Set<String> found = new Set<String>();
     if (String.isBlank(template)) {
@@ -96,9 +119,15 @@ public with sharing class TimeDrivePlotter {
     return found;
   }
 
-  // The title, or where its fields are all blank, their labels in brackets:
-  // an email with no subject is "[Subject]", so there's still something to
-  // read and to click.
+  /**
+   * The title, or where its fields are all blank, their labels in brackets:
+   * an email with no subject is "[Subject]", so there's still something to
+   * read and to click.
+   *
+   * @param template the title template
+   * @param row the row to read
+   * @return the title
+   */
   public static String title(String template, TimeDriveRow row) {
     String filled = fill(template, row);
     if (String.isNotBlank(filled) || tokens(template).isEmpty()) {
@@ -112,8 +141,14 @@ public with sharing class TimeDrivePlotter {
     return String.join(labels, SEPARATOR);
   }
 
-  // Fill a template's tokens from a row, then drop separators left around
-  // blank values: "{Subject} · {CaseNumber}" with no subject -> "00001028".
+  /**
+   * Fill a template's tokens from a row, then drop separators left around
+   * blank values: "{Subject} · {CaseNumber}" with no subject -> "00001028".
+   *
+   * @param template the template text
+   * @param row the row to read
+   * @return the filled template
+   */
   public static String fill(String template, TimeDriveRow row) {
     if (String.isBlank(template)) {
       return null;
@@ -135,6 +170,12 @@ public with sharing class TimeDrivePlotter {
    * A value as text. Format (Text, Date, Date/Time, Currency, Number) is the
    * detail field's; blank means by the value's type, with currency fields
    * on records shown as currency.
+   *
+   * @param value the value to format
+   * @param format the format, blank for the value's type
+   * @param row the row the value is from
+   * @param path the value's field path
+   * @return the formatted text
    */
   public static String format(Object value, String format, TimeDriveRow row, String path) {
     if (value == null) {
@@ -171,7 +212,6 @@ public with sharing class TimeDrivePlotter {
       .stripTrailingZeros()
       .toPlainString();
   }
-  private static final Integer MAX_PLACES = 6;
 
   // Dates plot at midday, so they land on their own day in any time zone.
   private static Datetime instant(Object value) {

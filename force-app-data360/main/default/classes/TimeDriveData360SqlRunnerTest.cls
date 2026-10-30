@@ -1,3 +1,6 @@
+// Run as the running user on purpose; tests where what a person may do is the point run as a user with
+// only the permission set (see the Preference and Progress tests).
+@SuppressWarnings('PMD.ApexUnitTestClassShouldHaveRunAs')
 @IsTest
 private class TimeDriveData360SqlRunnerTest {
   // Data 360's query API can't run in a test; this checks the runner is the

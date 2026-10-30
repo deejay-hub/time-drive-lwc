@@ -122,7 +122,9 @@ const ILLUSTRATIONS = {
   // Set up, but no record matches: a search that found nothing.
   noresults: "noresults:search",
   // Filters took everything away.
-  filtered: "noresults:filter"
+  filtered: "noresults:filter",
+  // An empty slot on the horizontal canvas: the start, the end and today.
+  nothing: "success:selfassigned"
 };
 
 /**
@@ -178,7 +180,7 @@ function buttonRadius() {
 
 // The slots a drawing sits in (a fixed size, so the words under it start in the
 // same place whichever drawing it is).
-const SLOTS = ".illustration, .issue-illustration, .error-illustration, .problem-art";
+const SLOTS = ".illustration, .issue-illustration, .error-illustration, .problem-art, .nothing-now-illustration";
 const watched = new WeakSet();
 
 // A drawing's file has empty margin around the artwork, so it may be this much

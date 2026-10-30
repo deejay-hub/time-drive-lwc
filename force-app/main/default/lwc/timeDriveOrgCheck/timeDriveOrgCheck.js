@@ -1,15 +1,16 @@
 /**
  * Checking the org, as a popup from Setup: what we'll do, a checklist ticked
  * off one real check at a time, then what was found and what that means. The
- * recommended sources are added as soon as the checks are done; closing it
- * hands Setup the report (what each check found, and what was added).
+ * recommended sources are added as soon as the checks are done, and where a
+ * setting changed since the last check, a source is switched for the variant
+ * that fits now, so the same records are never plotted twice; closing it
+ * hands Setup the report (what each check found, what was added and switched).
  */
 import LightningModal from "lightning/modal";
 import { api } from "lwc";
 import ASSETS from "@salesforce/resourceUrl/timeDriveAssets";
 import getOrgCheckSteps from "@salesforce/apex/TimeDriveSetupController.getOrgCheckSteps";
 import runOrgCheck from "@salesforce/apex/TimeDriveSetupController.runOrgCheck";
-import getTemplates from "@salesforce/apex/TimeDriveSetupController.getTemplates";
 import quickStart from "@salesforce/apex/TimeDriveSetupController.quickStart";
 import { describeError } from "c/timeDriveErrors";
 
@@ -27,6 +28,7 @@ export default class TimeDriveOrgCheck extends LightningModal {
   stage = "intro";
   checks = [];
   added = [];
+  switched = [];
   error;
 
   get isIntro() {
@@ -101,20 +103,20 @@ export default class TimeDriveOrgCheck extends LightningModal {
     return new Promise((resolve) => setTimeout(resolve, reduced ? 0 : ms));
   }
 
-  // The recommended sources, added without asking; what was added is listed.
+  // The recommended sources, added without asking, and any source switched
+  // for the variant that fits the org now; what changed is listed.
   async addRecommended() {
-    const templates = await getTemplates({ parentObject: null });
-    const toAdd = templates.filter((t) => !t.added);
     this.added = [];
-    if (!toAdd.length) return;
+    this.switched = [];
+    let result;
     try {
-      await quickStart({ parentObject: null });
+      result = await quickStart({ parentObject: null });
     } catch (e) {
       this.addError = describeError(e);
       return;
     }
     const groups = [];
-    for (const t of toAdd) {
+    for (const t of result?.added ?? []) {
       let group = groups.find((g) => g.page === t.parentObject);
       if (!group) {
         group = { page: t.parentObject, label: PAGE_LABELS[t.parentObject] ?? t.parentObject, items: [] };
@@ -123,6 +125,12 @@ export default class TimeDriveOrgCheck extends LightningModal {
       group.items.push({ key: t.key, label: t.label });
     }
     this.added = groups;
+    this.switched = (result?.switched ?? []).map((s) => ({
+      key: `${s.parentObject}|${s.offLabel}|${s.onKey}`,
+      page: PAGE_LABELS[s.parentObject] ?? s.parentObject,
+      offLabel: s.offLabel,
+      onLabel: s.onLabel
+    }));
   }
 
   addError;
@@ -155,9 +163,18 @@ export default class TimeDriveOrgCheck extends LightningModal {
     return this.added.reduce((n, g) => n + g.items.length, 0);
   }
 
-  // The block above the findings: what was added, or why it couldn't be.
+  // The block above the findings: what was added and switched, or why it couldn't be.
   get showAdded() {
-    return this.hasAdded || Boolean(this.addError);
+    return this.hasAdded || this.hasSwitched || Boolean(this.addError);
+  }
+
+  get hasSwitched() {
+    return this.switched.length > 0;
+  }
+
+  get switchedText() {
+    const n = this.switched.length;
+    return `${n} ${n === 1 ? "source" : "sources"} to fit your org`;
   }
 
   get hasAdded() {
@@ -182,6 +199,7 @@ export default class TimeDriveOrgCheck extends LightningModal {
         unknown: st.unknown === true
       })),
       added: this.added.map((g) => ({ page: g.page, label: g.label, items: g.items.map((i) => i.label) })),
+      switched: this.switched.map((s) => ({ page: s.page, offLabel: s.offLabel, onLabel: s.onLabel })),
       error: this.addError?.message
     });
   }

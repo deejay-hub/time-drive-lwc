@@ -6,7 +6,7 @@ jest.mock("@salesforce/apex/TimeDriveSetupController.getFields", () => ({ defaul
   virtual: true
 });
 
-const flush = () => new Promise((resolve) => setTimeout(resolve, 0)); // eslint-disable-line @lwc/lwc/no-async-operation
+const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 describe("c-time-drive-field-picker", () => {
   afterEach(() => {

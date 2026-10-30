@@ -5,6 +5,10 @@
  * and time, how long each source took, what the user's permissions allow,
  * and what was left out and why. Admins only (Customize Application).
  */
+// The branching follows the platform's cases and the plot's rules; splitting it up would only scatter them.
+// Size, parameter lists and field counts follow the platform's entry points, its cases and the data the components exchange;
+// splitting them up would only scatter what belongs together.
+@SuppressWarnings('PMD.CyclomaticComplexity, PMD.CognitiveComplexity, PMD.ExcessiveParameterList, PMD.NcssCount')
 public with sharing class TimeDriveDiagnosticController {
   @TestVisible
   private static Boolean testCanCustomize;
@@ -62,6 +66,7 @@ public with sharing class TimeDriveDiagnosticController {
     public Decimal sequence;
   }
 
+  /** Overall totals of a diagnostic run. */
   public class Totals {
     @AuraEnabled
     public Integer elapsedMs;
@@ -85,6 +90,7 @@ public with sharing class TimeDriveDiagnosticController {
     public String unit;
   }
 
+  /** The result of a diagnostic run. */
   public class Report {
     @AuraEnabled
     public String mode;
@@ -119,6 +125,13 @@ public with sharing class TimeDriveDiagnosticController {
    * summary and the days it opens on) or "scroll" (the next days, with what
    * the summary found, as the card asks for them). `layout` is "Across" or
    * "Down", as the card's, and History and Future are in years.
+   *
+   * @param recordId the record to run the timeline for
+   * @param mode the load to run, first load or scroll
+   * @param layout the timeline's layout
+   * @param historyYears how many years of history to read
+   * @param futureYears how many years ahead to read
+   * @return the report
    */
   @AuraEnabled
   public static Report run(Id recordId, String mode, String layout, String historyYears, String futureYears) {
@@ -261,6 +274,8 @@ public with sharing class TimeDriveDiagnosticController {
 
   // ---- the page and the user ------------------------------------------------
 
+  // UserRecordAccess is a read-only view of the running user's own access.
+  @SuppressWarnings('PMD.ApexCRUDViolation')
   private static void describePage(
     Report report,
     Id recordId,
@@ -299,6 +314,8 @@ public with sharing class TimeDriveDiagnosticController {
     }
   }
 
+  // UserPermissionAccess is a read-only view of the running user's own permissions.
+  @SuppressWarnings('PMD.ApexCRUDViolation')
   private static void describePermissions(Report report, Set<String> features, Schema.DescribeSObjectResult parent) {
     report.permissions.add(new Fact('User', UserInfo.getName(), UserInfo.getUserId() + ' · ' + UserInfo.getUserName(), null));
     report.permissions.add(new Fact('Time zone / locale', UserInfo.getTimeZone().getID() + ' / ' + UserInfo.getLocale(), null, null));
@@ -399,7 +416,7 @@ public with sharing class TimeDriveDiagnosticController {
       r.missing = s.Object_Name__c;
       return;
     }
-    Schema.DescribeSObjectResult d = type.getDescribe();
+    Schema.DescribeSObjectResult d = type.getDescribe(SObjectDescribeOptions.DEFERRED);
     r.access = objectAccess(d);
     Map<String, Schema.SObjectField> fields = TimeDriveConfig.fieldMap(d.getName());
     Set<String> named = new Set<String>();
@@ -432,6 +449,13 @@ public with sharing class TimeDriveDiagnosticController {
   }
 
   private class BySequence implements System.Comparator<SourceRow> {
+    /**
+     * Orders source rows by sequence, used ones first.
+     *
+     * @param a the first row
+     * @param b the second row
+     * @return a negative, zero or positive number
+     */
     public Integer compare(SourceRow a, SourceRow b) {
       Decimal x = a.sequence == null ? 0 : a.sequence;
       Decimal y = b.sequence == null ? 0 : b.sequence;
@@ -495,6 +519,8 @@ public with sharing class TimeDriveDiagnosticController {
     return value == true ? 'yes' : 'no';
   }
 
+  // Only the running user's own permission set assignments are read.
+  @SuppressWarnings('PMD.ApexCRUDViolation')
   private static Boolean userCanCustomize() {
     if (testCanCustomize != null) {
       return testCanCustomize;

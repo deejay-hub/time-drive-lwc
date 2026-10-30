@@ -7,31 +7,36 @@
           <div class="art">
             <img class="art-image" src={logoUrl} width="100" height="100" alt="" />
           </div>
-          <p class="intro-lede">Time Drive fits itself to how your org works.</p>
+          <p class="intro-lede">Time Drive is Tailored to you.</p>
           <ol class="steps">
             <li class="step">
               <span class="step-mark" aria-hidden="true"></span>
               <span>
                 <span class="step-title">We check how your org is set up</span>
                 <span class="step-text">
-                  Shared Activities, Person Accounts, Enhanced Email and more. Nothing you've set up is changed.
+                  Shared Activities, Person Accounts, Enhanced Email and more to help determine a default setup for you.
+                  This saves you time.
                 </span>
               </span>
             </li>
             <li class="step">
               <span class="step-mark" aria-hidden="true"></span>
               <span>
-                <span class="step-title">You see what each one means</span>
+                <span class="step-title">We'll give you a summary</span>
                 <span class="step-text">
-                  Which setting it is, where it lives in Setup, and what the timeline does because of it.
+                  Each feature that impacts Time Drive is identified and you'll see where in Setup the feature lives and
+                  the impact it has.
                 </span>
               </span>
             </li>
             <li class="step">
               <span class="step-mark" aria-hidden="true"></span>
               <span>
-                <span class="step-title">We add the sources that fit</span>
-                <span class="step-text">The recommended set, ready for you to change in Customize.</span>
+                <span class="step-title">We'll get you set up quickly</span>
+                <span class="step-text"
+                  >Based on what we find we'll set up Time Drive according to best practice and you can customize it to
+                  your needs.</span
+                >
               </span>
             </li>
           </ol>
@@ -79,20 +84,41 @@
               <p>{addError.message}</p>
             </div>
           </template>
-          <template lwc:elseif={hasAdded}>
-            <h2 class="summary-title">We added {addedText}</h2>
-            <ul class="check-add-groups">
-              <template for:each={added} for:item="g">
-                <li key={g.page} class="check-add-group">
-                  <span class="check-add-page">{g.label}</span>
-                  <span class="check-add-items">
-                    <template for:each={g.items} for:item="i">
-                      <span key={i.key} class="badge">{i.label}</span>
-                    </template>
-                  </span>
-                </li>
-              </template>
-            </ul>
+          <template lwc:else>
+            <template lwc:if={hasAdded}>
+              <h2 class="summary-title">We added {addedText}</h2>
+              <ul class="check-add-groups">
+                <template for:each={added} for:item="g">
+                  <li key={g.page} class="check-add-group">
+                    <span class="check-add-page">{g.label}</span>
+                    <span class="check-add-items">
+                      <template for:each={g.items} for:item="i">
+                        <span key={i.key} class="badge">{i.label}</span>
+                      </template>
+                    </span>
+                  </li>
+                </template>
+              </ul>
+            </template>
+            <div lwc:if={hasSwitched} class="check-switch">
+              <h2 class="summary-title">We switched {switchedText}</h2>
+              <p class="check-switch-lede">
+                A setting changed since your last check, so these records are now read another way. Only one way is on,
+                so nothing shows twice. The source switched off is kept, with its fields and highlights.
+              </p>
+              <ul class="check-add-groups">
+                <template for:each={switched} for:item="s">
+                  <li key={s.key} class="check-add-group">
+                    <span class="check-add-page">{s.page}</span>
+                    <span class="check-add-items">
+                      <span class="badge badge_off">{s.offLabel}</span>
+                      <span class="check-switch-to">switched off for</span>
+                      <span class="badge">{s.onLabel}</span>
+                    </span>
+                  </li>
+                </template>
+              </ul>
+            </div>
           </template>
         </section>
 

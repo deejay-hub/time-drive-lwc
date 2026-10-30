@@ -1,3 +1,5 @@
+// Setup's progress is the admin's; the test that matters (a person without Setup access) runs as that person.
+@SuppressWarnings('PMD.ApexUnitTestClassShouldHaveRunAs')
 @IsTest
 private class TimeDriveProgressTest {
   @IsTest

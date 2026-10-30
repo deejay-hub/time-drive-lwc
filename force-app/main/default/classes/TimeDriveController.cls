@@ -3,6 +3,10 @@
  * Time Drive Source for the record's object (Salesforce records, Data
  * 360 DMOs or Apex providers) merged into one newest-first stream.
  */
+// The branching follows the platform's cases and the plot's rules; splitting it up would only scatter them.
+// Size, parameter lists and field counts follow the platform's entry points, its cases and the data the components exchange;
+// splitting them up would only scatter what belongs together.
+@SuppressWarnings('PMD.CyclomaticComplexity, PMD.CognitiveComplexity, PMD.AvoidBooleanMethodParameters, PMD.ExcessiveParameterList, PMD.ExcessivePublicCount, PMD.NcssCount, PMD.TooManyFields')
 public with sharing class TimeDriveController {
 
   // How far back and forward the timeline reaches, in years: the App Builder's
@@ -22,6 +26,22 @@ public with sharing class TimeDriveController {
   // week or month instead of per day.
   public static final Integer COUNT_ROWS = 30000;
 
+  // Past this much of a request's SOQL queries or CPU time, getTimeline leaves the
+  // days to a request of their own.
+  private static final Integer SPENT_QUERIES = 45;
+  private static final Integer SPENT_CPU_MS = 5000;
+  @TestVisible
+  private static Boolean testBudgetSpent;
+  public static final Integer MAX_COLUMNS = 12;
+
+  public static final Integer GROUP_PAGE_SIZE = 50;
+  public static final Integer MAX_GROUP_PAGE_SIZE = 200;
+
+  // A record page that's a person account: an Account with its own Contact.
+  public static final String PERSON_ACCOUNT = 'PersonAccount';
+
+  private static final Map<Id, Id> PERSON_CONTACTS = new Map<Id, Id>();
+
   /**
    * The whole history as per-period counts (no event details): what the day
    * list, minimap, filter panel and counts are drawn from. Periods are days,
@@ -31,6 +51,12 @@ public with sharing class TimeDriveController {
    * hold; others are read as rows. Filters are applied here, so counts match
    * what the days will show. History and Future (years, e.g. "2" and "0.5";
    * Future blank or "None" for up to today) set the window.
+   * @param contactId the Id of the Contact or Account the timeline is on
+   * @param categories the categories to show, or null for all
+   * @param hiddenTypes the event types to leave out
+   * @param historyYears how many years back to look, as the App Builder lists them
+   * @param futureYears how many years ahead to look, or blank for up to today
+   * @return the per-period counts, with any warnings and problems
    */
   @AuraEnabled(cacheable=true)
   public static TimelineSummary getSummary(
@@ -168,6 +194,16 @@ public with sharing class TimeDriveController {
    * heads a list of `count` (the vertical one, with every period above it when
    * that is fewer than `count`); none for a count of 0. If the card draws other
    * days it asks for them as before.
+   * @param contactId the Id of the Contact or Account the timeline is on
+   * @param categories the categories to show, or null for all
+   * @param hiddenTypes the event types to leave out
+   * @param historyYears how many years back to look
+   * @param futureYears how many years ahead to look, or blank for up to today
+   * @param focus where the card opens (today, earliest or latest)
+   * @param newestFirst true when the list runs newest first
+   * @param centred true to centre the focus among the periods (horizontal layout)
+   * @param count how many periods to open with, 0 for none
+   * @return the summary and the events of the opening periods
    */
   @AuraEnabled
   public static TimelineLoad getTimeline(
@@ -206,6 +242,16 @@ public with sharing class TimeDriveController {
   /**
    * getTimeline, recording what it ran: for the Diagnostics page, so the
    * queries and times it shows are those of the request the card really made.
+   * @param contactId the Id of the Contact or Account the timeline is on
+   * @param categories the categories to show, or null for all
+   * @param hiddenTypes the event types to leave out
+   * @param historyYears how many years back to look
+   * @param futureYears how many years ahead to look, or blank for up to today
+   * @param focus where the card opens (today, earliest or latest)
+   * @param newestFirst true when the list runs newest first
+   * @param centred true to centre the focus among the periods (horizontal layout)
+   * @param count how many periods to open with, 0 for none
+   * @return the summary and opening events, with the queries and timings recorded
    */
   @AuraEnabled
   public static TimelineLoad getTimelineDiagnosed(
@@ -306,6 +352,10 @@ public with sharing class TimeDriveController {
    * each run as its periods' keys joined by commas. A run is read as one span
    * of dates, not one range per period; a busy period (counted, not read)
    * ends a run, so its items are never pulled in.
+   * @param summary the timeline summary listing every period with items
+   * @param wanted the period keys asked for
+   * @param busy the period keys that are counted, not read
+   * @return each run of consecutive wanted periods as keys joined by commas
    */
   private static List<String> runsOf(TimelineSummary summary, Set<String> wanted, Set<String> busy) {
     List<String> runs = new List<String>();
@@ -324,6 +374,13 @@ public with sharing class TimeDriveController {
     return runs;
   }
 
+  /**
+   * Public entry to runsOf, for the tests.
+   * @param summary the timeline summary listing every period with items
+   * @param keys the period keys asked for
+   * @param busy the period keys that are counted, not read
+   * @return each run of consecutive wanted periods as keys joined by commas
+   */
   public static List<String> runsFor(TimelineSummary summary, List<String> keys, List<String> busy) {
     return runsOf(summary, new Set<String>(keys), new Set<String>(busy));
   }
@@ -363,13 +420,6 @@ public with sharing class TimeDriveController {
     return out;
   }
 
-  // Past this much of a request's SOQL queries or CPU time, getTimeline leaves the
-  // days to a request of their own.
-  private static final Integer SPENT_QUERIES = 45;
-  private static final Integer SPENT_CPU_MS = 5000;
-  @TestVisible
-  private static Boolean testBudgetSpent;
-
   private static Boolean budgetSpent() {
     if (testBudgetSpent != null) {
       return testBudgetSpent;
@@ -382,6 +432,13 @@ public with sharing class TimeDriveController {
    * days (with the placeholders for today, where History starts and where
    * Future ends) in the list's order, the focus among them, and a window around
    * it (see getTimeline). Only periods with items come back.
+   * @param summary the timeline summary listing every period with items
+   * @param window the dates the timeline covers
+   * @param focus where the card opens (today, earliest or latest)
+   * @param newestFirst true when the list runs newest first
+   * @param centred true to centre the focus among the periods
+   * @param size how many periods to open with
+   * @return the keys of the opening periods that have items
    */
   @TestVisible
   private static List<String> openingKeys(
@@ -459,6 +516,14 @@ public with sharing class TimeDriveController {
    * The timeline asks for a page at a time. Counted sources are queried for
    * those periods only, and not at all for a busy one: its counts come back
    * as grouped rows.
+   * @param contactId the Id of the Contact or Account the timeline is on
+   * @param categories the categories to show, or null for all
+   * @param hiddenTypes the event types to leave out
+   * @param historyYears how many years back to look
+   * @param futureYears how many years ahead to look, or blank for up to today
+   * @param dayKeys the period keys to read
+   * @param busyKeys the period keys that come back as grouped rows
+   * @return the events of those periods, newest first
    */
   // Not cached in the browser: Refresh must bring back new items on days
   // already drawn (the component keeps the days it has fetched itself).
@@ -485,6 +550,17 @@ public with sharing class TimeDriveController {
    * queried as in getDays. `runs` are the days asked for that follow one
    * another in the summary, each run's keys joined by commas: a run is read
    * as one span of dates, not one range per day (see runsOf).
+   * @param contactId the Id of the Contact or Account the timeline is on
+   * @param categories the categories to show, or null for all
+   * @param hiddenTypes the event types to leave out
+   * @param historyYears how many years back to look
+   * @param futureYears how many years ahead to look, or blank for up to today
+   * @param dayKeys the period keys to read
+   * @param busyKeys the period keys that come back as grouped rows
+   * @param emptySources counted sources the summary found nothing in, or null
+   * @param busyCounts the summary's counts for the busy periods, or null
+   * @param runs the consecutive period keys, each run joined by commas
+   * @return the events of those periods, newest first
    */
   @AuraEnabled
   public static List<EngagementEvent> getPageDays(
@@ -583,6 +659,14 @@ public with sharing class TimeDriveController {
    * for (the type's label and icon, the record's name). `fields` are extra
    * columns (the page asks for the object's compact layout fields); each
    * item's are in its `columns`.
+   * @param recordId the Id of the record the timeline is on
+   * @param type the event type whose items are listed
+   * @param fromAt the start of the grouped row's span
+   * @param toAt the end of the grouped row's span
+   * @param pageSize how many items to return, or null for the default
+   * @param cursor the previous page's cursor, or null for the first page
+   * @param fields extra columns to read for each item
+   * @return one page of items with a cursor for the next
    */
   @AuraEnabled
   public static GroupPage getGroupPage(
@@ -629,10 +713,6 @@ public with sharing class TimeDriveController {
     }
     return out;
   }
-  public static final Integer MAX_COLUMNS = 12;
-
-  public static final Integer GROUP_PAGE_SIZE = 50;
-  public static final Integer MAX_GROUP_PAGE_SIZE = 200;
 
   // The record's name, for the page's breadcrumb; null when it has none or
   // it can't be read.
@@ -649,6 +729,7 @@ public with sharing class TimeDriveController {
     }
   }
 
+  /** One page of a grouped row's items, with what the page needs to draw itself. */
   public class GroupPage {
     @AuraEnabled
     public List<EngagementEvent> items = new List<EngagementEvent>();
@@ -672,7 +753,11 @@ public with sharing class TimeDriveController {
     public String recordName;
   }
 
-  /** Every event, newest first (kept for callers that want the lot). */
+  /**
+   * Every event, newest first (kept for callers that want the lot).
+   * @param contactId the Id of the Contact or Account the timeline is on
+   * @return the events and any warnings and problems
+   */
   @AuraEnabled(cacheable=true)
   public static TimelineResult getEvents(Id contactId) {
     TimelineResult result = new TimelineResult();
@@ -690,6 +775,9 @@ public with sharing class TimeDriveController {
    * a single item on a busy day (a group of one says no more than the item).
    * Rows already grouped (a counted source's busy day) count as their
    * groupCount.
+   * @param events the events to group
+   * @param threshold the most events a day shows before it is grouped
+   * @return the events with busy days grouped by type
    */
   @TestVisible
   private static List<EngagementEvent> groupBusyDays(List<EngagementEvent> events, Integer threshold) {
@@ -763,7 +851,11 @@ public with sharing class TimeDriveController {
    * as the standard Activity component shows them: the quick actions in its
    * layout's Activity composer that this user can use, in order, each with
    * its SLDS icon and colour. The timeline opens them as Salesforce does.
+   * @param recordId the Id of the record the timeline is on
+   * @return the quick actions the user can use, in order
    */
+  // PlatformAction lists what the running user's page layout offers; it has no object permission to check.
+  @SuppressWarnings('PMD.ApexCRUDViolation')
   @AuraEnabled(cacheable=true)
   public static List<ActivityAction> getActivityActions(Id recordId) {
     List<ActivityAction> out = new List<ActivityAction>();
@@ -785,6 +877,7 @@ public with sharing class TimeDriveController {
       }
     } catch (Exception e) {
       // No actions to offer: the timeline shows none.
+      System.debug(LoggingLevel.FINE, 'Time Drive: no activity actions. ' + e.getMessage());
     }
     return out;
   }
@@ -795,6 +888,7 @@ public with sharing class TimeDriveController {
    * either): no query, only the object's describe. What the record itself
    * allows (sharing, ownership, Modify All Data) is asked for when the row's
    * menu is opened (getRights), not for every item drawn.
+   * @param events the events to mark with what the user's permissions allow
    */
   @TestVisible
   private static void markRights(List<EngagementEvent> events) {
@@ -824,7 +918,11 @@ public with sharing class TimeDriveController {
    * (sharing, ownership: UserRecordAccess). If the record's access can't be
    * read, the object's permissions decide and Salesforce still has the last
    * word when the user acts.
+   * @param recordId the Id of the record whose rights are wanted
+   * @return what the user may do with the record
    */
+  // UserRecordAccess and UserPermissionAccess are read-only views of the running user's own access.
+  @SuppressWarnings('PMD.ApexCRUDViolation')
   @AuraEnabled(cacheable=true)
   public static RecordRights getRights(Id recordId) {
     RecordRights out = new RecordRights();
@@ -876,6 +974,12 @@ public with sharing class TimeDriveController {
     @AuraEnabled
     public String text;
 
+    /**
+     * Builds a highlight.
+     * @param icon the icon name, or 'dot'
+     * @param colour the icon colour, or null
+     * @param text what the highlight says
+     */
     public Flag(String icon, String colour, String text) {
       this.icon = icon;
       this.colour = colour;
@@ -883,6 +987,7 @@ public with sharing class TimeDriveController {
     }
   }
 
+  /** A quick action offered on the record page, with its icon and colour. */
   public class ActivityAction {
     @AuraEnabled
     public String apiName;
@@ -893,6 +998,13 @@ public with sharing class TimeDriveController {
     @AuraEnabled
     public String colour;
 
+    /**
+     * Builds an action, giving the colour a leading #.
+     * @param apiName the quick action's API name
+     * @param label the action's label
+     * @param icon the SLDS icon name
+     * @param colour the colour, with or without a leading #
+     */
     public ActivityAction(String apiName, String label, String icon, String colour) {
       this.apiName = apiName;
       this.label = label;
@@ -901,7 +1013,10 @@ public with sharing class TimeDriveController {
     }
   }
 
-  /** The timeline's views for its picker: { value (the key sources use), label }. */
+  /**
+   * The timeline's views for its picker: { value (the key sources use), label }.
+   * @return the views for the picker
+   */
   @AuraEnabled(cacheable=true)
   public static List<ViewOption> getViews() {
     List<ViewOption> out = new List<ViewOption>();
@@ -911,7 +1026,10 @@ public with sharing class TimeDriveController {
     return out;
   }
 
-  /** What this person last chose (see Time_Drive_Preference__c): their own row, else none. */
+  /**
+   * What this person last chose (see Time_Drive_Preference__c): their own row, else none.
+   * @return the user's saved choices, with blank fields when none
+   */
   @AuraEnabled
   public static Preference getPreference() {
     Preference out = new Preference();
@@ -926,7 +1044,10 @@ public with sharing class TimeDriveController {
   /**
    * Keeps the lens and/or the label choice (Lite or Max) as this person's own;
    * a null leaves that one as it is. Nothing else is kept.
+   * @param lens the lens to keep, or null to leave it as it is
+   * @param itemDetail the label choice (Lite or Max) to keep, or null to leave it as it is
    */
+  @SuppressWarnings('PMD.ApexCRUDViolation')
   @AuraEnabled
   public static void savePreference(String lens, String itemDetail) {
     Time_Drive_Preference__c mine = own();
@@ -940,10 +1061,12 @@ public with sharing class TimeDriveController {
     if (itemDetail != null) {
       mine.Item_Detail__c = itemDetail.toLowerCase() == 'lite' ? 'Lite' : 'Max';
     }
+    // The row is the running user's own and a custom setting's access can't be granted by a permission
+    // set, so user mode would refuse everyone but admins: it is written as the system.
     if (isNew) {
-      Database.insert(mine, AccessLevel.USER_MODE);
+      Database.insert(mine, AccessLevel.SYSTEM_MODE);
     } else {
-      Database.update(mine, AccessLevel.USER_MODE);
+      Database.update(mine, AccessLevel.SYSTEM_MODE);
     }
   }
 
@@ -953,6 +1076,7 @@ public with sharing class TimeDriveController {
     return row != null && row.Id != null && row.SetupOwnerId == UserInfo.getUserId() ? row : null;
   }
 
+  /** The user's saved choices: the lens and the label choice. */
   public class Preference {
     @AuraEnabled
     public String lens;
@@ -960,6 +1084,7 @@ public with sharing class TimeDriveController {
     public String itemDetail;
   }
 
+  /** A view for the picker: the key sources use and its label. */
   public class ViewOption {
     @AuraEnabled
     public String value;
@@ -968,6 +1093,12 @@ public with sharing class TimeDriveController {
     // The view's own name (Marketing), beside the picker's (also Marketing now).
     @AuraEnabled
     public String name;
+    /**
+     * Builds a view option.
+     * @param value the view's key
+     * @param label the label shown in the picker
+     * @param name the view's own name
+     */
     public ViewOption(String value, String label, String name) {
       this.value = value;
       this.label = label;
@@ -975,26 +1106,25 @@ public with sharing class TimeDriveController {
     }
   }
 
-  // A record page that's a person account: an Account with its own Contact.
-  public static final String PERSON_ACCOUNT = 'PersonAccount';
-
-  // The person account's Contact, or null for any other record (and in orgs
-  // without person accounts, where Account has no IsPersonAccount).
+  /**
+   * The person account's Contact, or null for any other record (and in orgs without person
+   * accounts, where Account has no IsPersonAccount).
+   * @param recordId the Id of the page's record
+   * @return the Contact Id, or null
+   */
   public static Id personContactOf(Id recordId) {
     if (recordId == null || recordId.getSObjectType() != Account.SObjectType) {
       return null;
     }
     // Asked once per request: the combined first load runs the summary and the
     // days in one transaction, and a record's kind doesn't change within it.
-    if (personContacts.containsKey(recordId)) {
-      return personContacts.get(recordId);
+    if (PERSON_CONTACTS.containsKey(recordId)) {
+      return PERSON_CONTACTS.get(recordId);
     }
     Id found = lookUpPersonContact(recordId);
-    personContacts.put(recordId, found);
+    PERSON_CONTACTS.put(recordId, found);
     return found;
   }
-
-  private static final Map<Id, Id> personContacts = new Map<Id, Id>();
 
   private static Id lookUpPersonContact(Id recordId) {
     Map<String, Schema.SObjectField> fields = TimeDriveConfig.fieldMap('Account');
@@ -1143,6 +1273,7 @@ public with sharing class TimeDriveController {
      * rows: each counted Salesforce source can return a row per period of
      * the window. Data 360 counts use no query rows. Worked out from the
      * window and the sources alone, so the summary and its pages agree.
+     * @return the unit of each count: day, week or month
      */
     String unitFor() {
       if (!counting) {
@@ -1201,6 +1332,36 @@ public with sharing class TimeDriveController {
       since = since < window.since ? window.since : since;
       until = until > window.until ? window.until : until;
       return since > until ? null : new TimeWindow(since, until);
+    }
+
+    /**
+     * Groups a source's counts, one for each day, by the period each falls in. Days outside the
+     * wanted periods are dropped; each kept count is added to that period's total.
+     * @param found The source's counts by day.
+     * @param wanted The period keys asked for.
+     * @param totals The running total of items for each period, added to here.
+     * @return The counts of each wanted period.
+     */
+    private Map<String, List<TimeDriveContext.DayCount>> groupByPeriod(
+      List<TimeDriveContext.DayCount> found,
+      Set<String> wanted,
+      Map<String, Integer> totals
+    ) {
+      Map<String, List<TimeDriveContext.DayCount>> byPeriod = new Map<String, List<TimeDriveContext.DayCount>>();
+      for (TimeDriveContext.DayCount c : found) {
+        String key = TimeDriveContext.periodKey(Date.valueOf(c.dayKey), unit);
+        if (!wanted.contains(key)) {
+          continue;
+        }
+        List<TimeDriveContext.DayCount> inPeriod = byPeriod.get(key);
+        if (inPeriod == null) {
+          inPeriod = new List<TimeDriveContext.DayCount>();
+          byPeriod.put(key, inPeriod);
+        }
+        inPeriod.add(c);
+        totals.put(key, (totals.containsKey(key) ? totals.get(key) : 0) + c.count);
+      }
+      return byPeriod;
     }
 
     // The events of the wanted periods (keys from the summary), busy ones
@@ -1282,20 +1443,8 @@ public with sharing class TimeDriveController {
             );
           }
           if (found != null) {
-            Map<String, List<TimeDriveContext.DayCount>> byPeriod = new Map<String, List<TimeDriveContext.DayCount>>();
-            for (TimeDriveContext.DayCount c : found) {
-              String key = TimeDriveContext.periodKey(Date.valueOf(c.dayKey), unit);
-              if (!wanted.contains(key)) {
-                continue;
-              }
-              if (!byPeriod.containsKey(key)) {
-                byPeriod.put(key, new List<TimeDriveContext.DayCount>());
-              }
-              byPeriod.get(key).add(c);
-              totals.put(key, (totals.containsKey(key) ? totals.get(key) : 0) + c.count);
-            }
             contexts.put(i, context);
-            counted.put(i, byPeriod);
+            counted.put(i, groupByPeriod(found, wanted, totals));
             continue;
           }
         }
@@ -1382,6 +1531,11 @@ public with sharing class TimeDriveController {
      * reads one more than the page after its own cursor (its last item
      * shown); the reads are merged newest first, each source's in its own
      * order, so what's shown of each is always the start of what's left.
+     * @param type the event type whose items are listed
+     * @param size how many items to return
+     * @param cursors each source's cursor, by source name, where its last page ended
+     * @param fields extra columns to read for each item
+     * @return one page of items with a cursor for the next
      */
     GroupPage page(String type, Integer size, Map<String, List<String>> cursors, List<String> fields) {
       GroupPage out = new GroupPage();
@@ -1530,6 +1684,10 @@ public with sharing class TimeDriveController {
      * on (newest first, the periods after that one are complete), a few
      * times at most. A single period with more than the cap (a summary out
      * of date: it was busy) is counted instead, as one grouped row.
+     * @param i the index of the source in the run's list
+     * @param periodKeys the period keys to read
+     * @param grain the unit of the keys (day, week or month)
+     * @return every event in those periods, or grouped rows for periods over the cap
      */
     List<EngagementEvent> readInFull(Integer i, Set<String> periodKeys, String grain) {
       List<EngagementEvent> out = new List<EngagementEvent>();
@@ -1826,6 +1984,10 @@ public with sharing class TimeDriveController {
       this.index = index;
     }
 
+    /**
+     * Loads the events of the sources before this one.
+     * @return the earlier events
+     */
     public List<EngagementEvent> load() {
       return run.before(index);
     }
@@ -1894,15 +2056,12 @@ public with sharing class TimeDriveController {
     }
 
     // A source in several lenses carries them as Sales;Service: it shows when
-    // any of them is in the view.
+    // any of them is in the view. One in no lens at all is in All.
     Boolean inView(String category) {
       if (inView == null) {
         return true;
       }
-      if (category == null) {
-        return inView.contains(category);
-      }
-      for (String lens : category.split(';')) {
+      for (String lens : String.isBlank(category) ? new List<String>{ TimeDriveConfig.ALL_VIEW } : category.split(';')) {
         if (inView.contains(lens)) {
           return true;
         }
@@ -1927,6 +2086,8 @@ public with sharing class TimeDriveController {
    * The kind of failure an exception is, for the user: 'access' (in user
    * mode a field or object hidden from the user reads as missing, so both
    * land here), 'busy' or 'unknown'.
+   * @param e the exception to classify
+   * @return access, busy or unknown
    */
   public static String kindOf(Exception e) {
     if (e instanceof NoAccessException || e instanceof System.SecurityException) {
@@ -1975,12 +2136,18 @@ public with sharing class TimeDriveController {
     @AuraEnabled
     public String kind;
 
+    /**
+     * Builds a problem.
+     * @param source the name of the source
+     * @param kind the kind of failure
+     */
     public Problem(String source, String kind) {
       this.source = source;
       this.kind = kind;
     }
   }
 
+  /** The events of a whole timeline with any warnings and problems. */
   public class TimelineResult {
     @AuraEnabled
     public List<EngagementEvent> events = new List<EngagementEvent>();
@@ -1992,6 +2159,7 @@ public with sharing class TimeDriveController {
     public List<Problem> problems = new List<Problem>();
   }
 
+  /** The per-period counts of a timeline with the sources and types they came from. */
   public class TimelineSummary {
     // A period with more items than this comes back grouped: the component
     // says which periods are, so their pages count only those.
@@ -2031,6 +2199,7 @@ public with sharing class TimeDriveController {
     public List<Problem> problems = new List<Problem>();
   }
 
+  /** The count of one period: its key and how many items each source has. */
   public class DaySummary {
     @AuraEnabled
     public String key;
@@ -2046,6 +2215,10 @@ public with sharing class TimeDriveController {
     @AuraEnabled
     public List<Integer> n = new List<Integer>();
 
+    /**
+     * Builds a summary for one period.
+     * @param key the period's key
+     */
     public DaySummary(String key) {
       this.key = key;
     }
@@ -2061,8 +2234,7 @@ public with sharing class TimeDriveController {
     }
   }
 
-  // What the summary counted for one source in one busy period, handed back
-  // with the days it asks for.
+  /** The count for one source in one busy period, handed back with the periods asked for. */
   public class BusyCount {
     @AuraEnabled
     public String key;
@@ -2072,6 +2244,7 @@ public with sharing class TimeDriveController {
     public Integer count;
   }
 
+  /** How many items a type has. */
   public class TypeCount {
     @AuraEnabled
     public String type;
@@ -2085,6 +2258,11 @@ public with sharing class TimeDriveController {
     @AuraEnabled
     public String iconColour;
 
+    /**
+     * Builds a type count.
+     * @param type the event type
+     * @param count how many items it has
+     */
     public TypeCount(String type, Integer count) {
       this.type = type;
       this.count = count;
@@ -2104,15 +2282,26 @@ public with sharing class TimeDriveController {
     public Datetime since;
     public Datetime until;
 
+    /** Builds the default window: the default history up to today. */
     public TimeWindow() {
       this(DEFAULT_HISTORY_YEARS, null);
     }
 
+    /**
+     * Builds a window from two dates.
+     * @param since the start of the window
+     * @param until the end of the window
+     */
     public TimeWindow(Datetime since, Datetime until) {
       this.since = since;
       this.until = until;
     }
 
+    /**
+     * Builds a window from years of history and future.
+     * @param historyYears how many years back to start
+     * @param futureYears how many years ahead to end, or null for today
+     */
     public TimeWindow(Decimal historyYears, Decimal futureYears) {
       Date today = Date.today();
       since = Datetime.newInstance(today.addMonths(-monthsIn(historyYears)), Time.newInstance(0, 0, 0, 0));
@@ -2120,6 +2309,11 @@ public with sharing class TimeDriveController {
       until = Datetime.newInstance(last, Time.newInstance(23, 59, 59, 999));
     }
 
+    /**
+     * Keeps the events whose time lies in the window.
+     * @param events the events to filter, or null
+     * @return the events inside the window
+     */
     public List<EngagementEvent> within(List<EngagementEvent> events) {
       List<EngagementEvent> kept = new List<EngagementEvent>();
       for (EngagementEvent e : events == null ? new List<EngagementEvent>() : events) {
@@ -2164,6 +2358,7 @@ public with sharing class TimeDriveController {
     return null;
   }
 
+  /** One item on the timeline, from a CRM record or a Data 360 row. */
   public class EngagementEvent implements Comparable {
     @AuraEnabled
     public String id;
@@ -2246,6 +2441,15 @@ public with sharing class TimeDriveController {
     @AuraEnabled
     public Datetime emailOpenedAt;
 
+    /**
+     * Builds an event.
+     * @param id the event's Id
+     * @param type the event type
+     * @param category the event's category
+     * @param title the title shown
+     * @param subtitle the subtitle shown
+     * @param occurredAt when the event happened
+     */
     public EngagementEvent(
       String id,
       String type,
@@ -2262,24 +2466,47 @@ public with sharing class TimeDriveController {
       this.occurredAt = occurredAt;
     }
 
+    /**
+     * Sets the Id of the record the event stands for.
+     * @param recordId the record's Id
+     * @return this event
+     */
     public EngagementEvent record(Id recordId) {
       this.recordId = recordId;
 
       return this;
     }
 
+    /**
+     * Sets the record whose compact layout the event opens with.
+     * @param detailRecordId the record's Id
+     * @param detailObject the record's object API name
+     * @return this event
+     */
     public EngagementEvent detailRecord(Id detailRecordId, String detailObject) {
       this.detailRecordId = detailRecordId;
       this.detailObject = detailObject;
       return this;
     }
 
+    /**
+     * Sets where the event says it comes from.
+     * @param sourceObject the source's object API name
+     * @param sourceLabel the source's label
+     * @return this event
+     */
     public EngagementEvent source(String sourceObject, String sourceLabel) {
       this.sourceObject = sourceObject;
       this.sourceLabel = sourceLabel;
       return this;
     }
 
+    /**
+     * Adds a detail line, unless the value is empty.
+     * @param label the detail's label
+     * @param value the detail's value
+     * @return this event
+     */
     public EngagementEvent detail(String label, Object value) {
       if (value != null && String.valueOf(value) != '') {
         details.add(new Detail(label, String.valueOf(value)));
@@ -2287,7 +2514,11 @@ public with sharing class TimeDriveController {
       return this;
     }
 
-    // Newest first.
+    /**
+     * Orders events newest first.
+     * @param other the event to compare with
+     * @return a negative number when this event is newer
+     */
     public Integer compareTo(Object other) {
       Datetime theirs = ((EngagementEvent) other).occurredAt;
       if (occurredAt == theirs) {
@@ -2303,12 +2534,18 @@ public with sharing class TimeDriveController {
     }
   }
 
+  /** A labelled value shown in an opened event. */
   public class Detail {
     @AuraEnabled
     public String label;
     @AuraEnabled
     public String value;
 
+    /**
+     * Builds a detail.
+     * @param label the detail's label
+     * @param value the detail's value
+     */
     public Detail(String label, String value) {
       this.label = label;
       this.value = value;

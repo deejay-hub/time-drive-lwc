@@ -11,6 +11,10 @@
  * history. (MIN, MAX and SUM cost a row per record aggregated, so they're
  * never used.)
  */
+// The branching follows the platform's cases and the plot's rules; splitting it up would only scatter them.
+// Size, parameter lists and field counts follow the platform's entry points, its cases and the data the components exchange;
+// splitting them up would only scatter what belongs together.
+@SuppressWarnings('PMD.CyclomaticComplexity, PMD.CognitiveComplexity, PMD.NcssCount')
 public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider, TimeDriveCountProvider {
   // Objects whose old records Salesforce archives (Activity archiving).
   public static final Set<String> ARCHIVED_OBJECTS = new Set<String>{ 'Task', 'Event' };
@@ -19,6 +23,22 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
   @TestVisible
   private static final Integer MAX_GROUPS = 2000;
 
+  // Date fields known to refuse CALENDAR_MONTH() and the like.
+  private static final Set<String> NO_DATE_FUNCTIONS = new Set<String>{ 'task.activitydate', 'event.activitydate' };
+  private static Map<String, Boolean> acceptsFunctions = new Map<String, Boolean>();
+
+  // Words a filter may use that aren't fields.
+  private static final Set<String> FILTER_WORDS = new Set<String>{
+    'and', 'or', 'not', 'in', 'like', 'null', 'true', 'false', 'includes', 'excludes',
+    'today', 'yesterday', 'tomorrow'
+  };
+
+  /**
+   * Reads the source's records for the context's window.
+   *
+   * @param context the request context
+   * @return the rows read
+   */
   public List<TimeDriveRow> getRows(TimeDriveContext context) {
     Time_Drive_Source__mdt s = context.source;
     List<TimeDriveRow> events = new List<TimeDriveRow>();
@@ -94,7 +114,14 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
    * batched so no query can return more than 2,000 groups; before a batch
    * that could use more query rows than are left, a COUNT() (one row) checks
    * how many records there really are.
+   *
+   * @param context the request context
+   * @param unit the period to count by
+   * @return the count for each period that has records
    */
+  // One count query for each batch of periods, on purpose: a grouped query returns at most 2,000 groups,
+  // and each batch is checked against the query-row limit before it runs.
+  @SuppressWarnings('PMD.OperationWithLimitsInLoop')
   public List<TimeDriveContext.DayCount> countDays(TimeDriveContext context, String unit) {
     List<TimeDriveContext.DayCount> counts = new List<TimeDriveContext.DayCount>();
     Query q = new Query(context);
@@ -194,16 +221,18 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
     return counts;
   }
 
-  // Date fields known to refuse CALENDAR_MONTH() and the like.
-  private static final Set<String> NO_DATE_FUNCTIONS = new Set<String>{ 'task.activitydate', 'event.activitydate' };
-  private static Map<String, Boolean> acceptsFunctions = new Map<String, Boolean>();
-
   /**
    * Whether a date (not date/time) field can be grouped by its week or month.
    * Task and Event ActivityDate can't; for any other, a query that matches
    * no row tries the function, and a refusal means it is counted by day as
    * before. The answer is kept for the rest of the request.
+   *
+   * @param s the source
+   * @return true when the field can be grouped by week or month
    */
+  // The names go into the probe as written, so they must be plain identifiers or paths (checked below);
+  // the query runs in user mode.
+  @SuppressWarnings('PMD.ApexSOQLInjection')
   private static Boolean acceptsDateFunctions(Time_Drive_Source__mdt s) {
     String key = (s.Object_Name__c + '.' + s.Date_Field__c).toLowerCase();
     // A date reached through a junction is the date of the object it leads to.
@@ -214,6 +243,12 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
     Boolean known = acceptsFunctions.get(key);
     if (known != null) {
       return known;
+    }
+    if (
+      !Pattern.matches('[A-Za-z0-9_.]+', String.valueOf(s.Date_Field__c)) ||
+      !Pattern.matches('[A-Za-z0-9_]+', String.valueOf(s.Object_Name__c))
+    ) {
+      return false;
     }
     Boolean accepts;
     String probe =
@@ -307,12 +342,6 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
     return result;
   }
 
-  // Words a filter may use that aren't fields.
-  private static final Set<String> FILTER_WORDS = new Set<String>{
-    'and', 'or', 'not', 'in', 'like', 'null', 'true', 'false', 'includes', 'excludes',
-    'today', 'yesterday', 'tomorrow'
-  };
-
   /**
    * A filter written against an object, rewritten to reach its fields across
    * a relationship (TaskSubtype = 'Call' as Task.TaskSubtype = 'Call'), for a
@@ -321,6 +350,11 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
    * left as written. Null when that can't be done with certainty (a subquery,
    * or a word that is neither a field nor a known keyword), so the caller can
    * use the filter on the object itself.
+   *
+   * @param filter the source's filter
+   * @param objectName API name of the source's object
+   * @param prefix relationship path to prefix field names with
+   * @return the filter, prefixed when it applies to a related object
    */
   @TestVisible
   private static String prefixed(String filter, String objectName, String prefix) {
@@ -387,7 +421,12 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
     return out;
   }
 
-  // Field names once each, whatever their case (SOQL rejects duplicates).
+  /**
+   * Field names once each, whatever their case.
+   *
+   * @param fields the field names
+   * @return the unique field names
+   */
   public static List<String> unique(Set<String> fields) {
     Map<String, String> byKey = new Map<String, String>();
     for (String f : fields) {
@@ -398,6 +437,7 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
     return byKey.values();
   }
 
+  /** Thrown when a count cannot be run. */
   public class CountException extends Exception {
   }
 
@@ -409,6 +449,9 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
   /**
    * Whether a source links through its junction: when it names one. (A
    * source names one link; Guided setup chooses tasks' and events'.)
+   *
+   * @param s the source
+   * @return true when the source reads through a junction object
    */
   @TestVisible
   private static Boolean useJunction(Time_Drive_Source__mdt s) {

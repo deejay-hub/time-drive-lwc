@@ -3,5 +3,5 @@
 }
 
 .confirm {
-  margin-inline-start: 0.5rem;
+  margin-inline-start: var(--slds-g-spacing-2, 0.5rem);
 }

@@ -3,6 +3,8 @@
  * priority, escalated, VIP). The field is read with the item's own query, so a
  * highlight costs a column, not a request.
  */
+// The branching follows the platform's cases and the plot's rules; splitting it up would only scatter them.
+@SuppressWarnings('PMD.CyclomaticComplexity, PMD.CognitiveComplexity')
 public with sharing class TimeDriveHighlights {
   /** One highlight per source. */
   public static final Integer MAX_RULES = 1;
@@ -17,8 +19,11 @@ public with sharing class TimeDriveHighlights {
   }
 
   /**
-   * The source's rules whose checkbox the user can read (one they can't would
-   * fail the whole query), at most MAX_RULES. Other kinds of field are left out.
+   * The source's rules whose checkbox the user can read (one they can't would fail the whole
+   * query), at most MAX_RULES. Other kinds of field are left out.
+   * @param objectName the API name of the source's object
+   * @param stored the saved highlight records for the source
+   * @return the rules to apply
    */
   public static List<Rule> rulesFor(String objectName, List<Time_Drive_Highlight__mdt> stored) {
     List<Rule> out = new List<Rule>();
@@ -55,7 +60,11 @@ public with sharing class TimeDriveHighlights {
     return out;
   }
 
-  /** The fields the rules read, for the item's query. */
+  /**
+   * The fields the rules read, for the item's query.
+   * @param rules the rules in use
+   * @return the field paths to select
+   */
   public static Set<String> fieldsOf(List<Rule> rules) {
     Set<String> out = new Set<String>();
     for (Rule r : rules) {
@@ -64,7 +73,12 @@ public with sharing class TimeDriveHighlights {
     return out;
   }
 
-  /** The icons a row earns; null for none. */
+  /**
+   * The icons a row earns; null for none.
+   * @param rules the rules in use
+   * @param row the row to test
+   * @return the flags for the checked fields, or null
+   */
   public static List<TimeDriveController.Flag> flagsFor(List<Rule> rules, TimeDriveRow row) {
     List<TimeDriveController.Flag> out;
     for (Rule r : rules) {

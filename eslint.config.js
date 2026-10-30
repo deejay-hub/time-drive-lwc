@@ -26,7 +26,10 @@ module.exports = defineConfig([
         files: ['**/lwc/**/*.test.js'],
         extends: [lwcConfig],
         rules: {
-            '@lwc/lwc/no-unexpected-wire-adapter-usages': 'off'
+            '@lwc/lwc/no-unexpected-wire-adapter-usages': 'off',
+            // Tests wait on timers and step through async work one await at a time, on purpose.
+            '@lwc/lwc/no-async-operation': 'off',
+            'no-await-in-loop': 'off'
         },
         languageOptions: {
             globals: {

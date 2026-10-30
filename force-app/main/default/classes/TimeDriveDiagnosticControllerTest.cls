@@ -1,3 +1,6 @@
+// Run as the running user on purpose; tests where what a person may do is the point run as a user with
+// only the permission set (see the Preference and Progress tests).
+@SuppressWarnings('PMD.ApexUnitTestClassShouldHaveRunAs')
 @IsTest
 private class TimeDriveDiagnosticControllerTest {
   private static Contact customer;

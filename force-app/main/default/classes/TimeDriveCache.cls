@@ -13,6 +13,12 @@ public with sharing class TimeDriveCache {
   @TestVisible
   private static Map<String, Object> testStore;
 
+  /**
+   * A cached value by key.
+   *
+   * @param key the cache key
+   * @return the value, or null when none is kept
+   */
   public static Object get(String key) {
     if (testStore != null) {
       return testStore.get(key);
@@ -24,6 +30,12 @@ public with sharing class TimeDriveCache {
     }
   }
 
+  /**
+   * Keeps a value for the cache's time to live; if the cache cannot take it, nothing is kept.
+   *
+   * @param key the cache key
+   * @param value the value to keep
+   */
   public static void put(String key, Object value) {
     if (testStore != null) {
       testStore.put(key, value);
@@ -37,7 +49,12 @@ public with sharing class TimeDriveCache {
     }
   }
 
-  /** A cache key from parts: letters and digits only, as the cache needs. */
+  /**
+   * A cache key from parts: letters and digits only, as the cache needs.
+   *
+   * @param parts the parts to build the key from
+   * @return the key
+   */
   public static String key(List<String> parts) {
     List<String> named = new List<String>();
     for (String part : parts) {

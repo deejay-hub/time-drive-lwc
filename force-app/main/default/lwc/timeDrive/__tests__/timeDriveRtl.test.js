@@ -47,7 +47,6 @@ describe("c-time-drive in a right-to-left locale", () => {
     const element = createElement("c-time-drive", { is: TimeDrive });
     element.recordId = "003000000000001AAA";
     document.body.appendChild(element);
-    // eslint-disable-next-line @lwc/lwc/no-async-operation
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(element.shadowRoot.querySelector(".card").getAttribute("dir")).toBe("rtl");
   });

@@ -39,7 +39,6 @@
   align-items: center;
   gap: var(--slds-g-spacing-1, 0.25rem);
   --slds-c-icon-color-foreground-default: currentColor;
-  --sds-c-icon-color-foreground-default: currentColor;
 }
 
 .slds-page-header__row + .slds-page-header__row {

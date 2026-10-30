@@ -1,0 +1,25 @@
+# Code Analyzer settings for Time Drive.
+ignores:
+  files:
+    # The Jest tests wait on timers and step through async work on purpose, and they are not shipped.
+    - "**/__tests__/**"
+
+# The Low findings are switched off on purpose.
+rules:
+  eslint:
+    # The timeline keeps its own sizes and colours, and most of the rest have no SLDS 2 hook to swap in.
+    "@salesforce-ux/slds/no-hardcoded-values-slds2":
+      disabled: true
+    # The page header and illustration are restyled to sit in the timeline's own design.
+    "@salesforce-ux/slds/no-slds-class-overrides":
+      disabled: true
+    # Each inline disable is a reasoned exception, mostly timers for focus after a render, the drag debounce and the patience timer.
+    "@lwc/lwc-platform/no-inline-disable":
+      disabled: true
+  pmd:
+    # The debug lines are diagnostics, read when a debug log is on.
+    AvoidDebugStatements:
+      disabled: true
+    # The one unfiltered query reads every Time Drive configuration record, which it needs.
+    AvoidNonRestrictiveQueries:
+      disabled: true

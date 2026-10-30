@@ -4,6 +4,8 @@
  * record says which values are the date, title and details, so every
  * kind of source is plotted the same way.
  */
+// The branching follows the platform's cases and the plot's rules; splitting it up would only scatter them.
+@SuppressWarnings('PMD.CyclomaticComplexity, PMD.CognitiveComplexity')
 public with sharing class TimeDriveRow {
   private SObject record;
   // An object's fields by lower-case name, and the labels worked out for its
@@ -11,6 +13,9 @@ public with sharing class TimeDriveRow {
   // map, and a page of rows would otherwise do it for every row.
   private static Map<Schema.SObjectType, Map<String, Schema.SObjectField>> fieldMaps = new Map<Schema.SObjectType, Map<String, Schema.SObjectField>>();
   private static Map<String, String> labels = new Map<String, String>();
+
+  // Lower-case keys, so templates and detail fields match any case.
+  private Map<String, Object> values = new Map<String, Object>();
 
   private static Map<String, Schema.SObjectField> fieldsOf(Schema.SObjectType type) {
     Map<String, Schema.SObjectField> found = fieldMaps.get(type);
@@ -21,13 +26,20 @@ public with sharing class TimeDriveRow {
     return found;
   }
 
-  // Lower-case keys, so templates and detail fields match any case.
-  private Map<String, Object> values = new Map<String, Object>();
-
+  /**
+   * A row over a record.
+   *
+   * @param record the record
+   */
   public TimeDriveRow(SObject record) {
     this.record = record;
   }
 
+  /**
+   * A row over a map of values.
+   *
+   * @param values the values by name
+   */
   public TimeDriveRow(Map<String, Object> values) {
     if (values != null) {
       for (String key : values.keySet()) {
@@ -36,14 +48,25 @@ public with sharing class TimeDriveRow {
     }
   }
 
-  // Adds or overrides a value, e.g. the {Action} Data 360 rows offer.
+  /**
+   * Adds or overrides a value, e.g. the {Action} Data 360 rows offer.
+   *
+   * @param key the value's name
+   * @param value the value
+   * @return this row
+   */
   public TimeDriveRow put(String key, Object value) {
     values.put(key.toLowerCase(), value);
     return this;
   }
 
-  // A value by name or path, following relationships on records:
-  // Account.Owner.Name.
+  /**
+   * A value by name or path, following relationships on records:
+   * Account.Owner.Name.
+   *
+   * @param path a field name or relationship path
+   * @return the value, or null
+   */
   public Object get(String path) {
     if (String.isBlank(path)) {
       return null;
@@ -60,10 +83,15 @@ public with sharing class TimeDriveRow {
     return current?.get(steps[steps.size() - 1]);
   }
 
-  // A field's label in the user's language, for a detail with no label of
-  // its own: the field's, or for a path through a lookup the lookup's
-  // ("Who.Name" reads "Name", "What.Name" "Related To") when it ends at Name,
-  // else the last field's. Never prefixed with an object's name.
+  /**
+   * A field's label in the user's language, for a detail with no label of
+   * its own: the field's, or for a path through a lookup the lookup's
+   * ("Who.Name" reads "Name", "What.Name" "Related To") when it ends at Name,
+   * else the last field's. Never prefixed with an object's name.
+   *
+   * @param path a field name or relationship path
+   * @return the label
+   */
   public String labelOf(String path) {
     if (record == null || String.isBlank(path)) {
       return path;
@@ -120,6 +148,9 @@ public with sharing class TimeDriveRow {
    * label with " ID" ("Related To ID", "Account ID"), which the page leaves
    * off; so does Setup. Only a lookup's: a text field called "Account ID"
    * is left as it is.
+   *
+   * @param field the field
+   * @return the field's label without a trailing ID
    */
   @TestVisible
   private static String plainLabel(Schema.DescribeFieldResult field) {
@@ -129,8 +160,13 @@ public with sharing class TimeDriveRow {
       : label;
   }
 
-  // The row's field, when it's a record and the path is one of its own
-  // fields; used to format currency and default detail labels.
+  /**
+   * The row's field, when it's a record and the path is one of its own
+   * fields; used to format currency and default detail labels.
+   *
+   * @param path a field name
+   * @return the field's describe result, or null
+   */
   public Schema.DescribeFieldResult describe(String path) {
     if (record == null || String.isBlank(path) || path.contains('.')) {
       return null;

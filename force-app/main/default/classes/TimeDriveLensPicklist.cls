@@ -3,6 +3,8 @@
  * the lenses the org offers in the timeline's picker, named in the viewer's
  * language. Global because a managed package's dynamic picklist must be.
  */
+// A dynamic picklist for App Builder must be global.
+@SuppressWarnings('PMD.AvoidGlobalModifier')
 global with sharing class TimeDriveLensPicklist extends VisualEditor.DynamicPickList {
   global override VisualEditor.DataRow getDefaultValue() {
     return new VisualEditor.DataRow(Label.Time_Drive_View_All, TimeDriveConfig.ALL_VIEW);

@@ -1,6 +1,6 @@
 .doc-link {
   color: var(--accent-deep, #0a4c3f);
-  font-weight: 700;
+  font-weight: var(--slds-g-font-weight-7, 700);
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
@@ -19,12 +19,12 @@
 
 .doc-strong {
   color: var(--ink, #17201d);
-  font-weight: 700;
+  font-weight: var(--slds-g-font-weight-7, 700);
 }
 
 .doc-code {
   padding: 0.0625rem 0.375rem;
-  border-radius: 0.25rem;
+  border-radius: var(--slds-g-radius-border-1, 0.25rem);
   background: var(--sunk, #efede6);
   color: var(--ink, #17201d);
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;

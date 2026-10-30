@@ -5,14 +5,7 @@
       <div class="site-bar-mark" aria-hidden="true"></div>
       <header class="site-bar">
         <span class="site-brand">
-          <svg class="site-mark" viewBox="0 0 28 28" aria-hidden="true">
-            <rect class="site-mark-tile" width="28" height="28" rx="6" />
-            <path class="site-mark-rail" d="M10 8v12" />
-            <circle class="site-mark-node" cx="10" cy="8" r="2.75" />
-            <circle class="site-mark-node" cx="10" cy="14" r="2.75" />
-            <circle class="site-mark-node" cx="10" cy="20" r="2.75" />
-            <path class="site-mark-line" d="M16 8h5M16 14h3.5M16 20h4.5" />
-          </svg>
+          <img class="site-mark" src={logoUrl} width="28" height="28" alt="" />
           <span class="site-name">Time Drive</span>
         </span>
         <nav lwc:if={hasNav} class="site-nav" aria-label="Time Drive Setup">
@@ -59,9 +52,7 @@
           <template lwc:if={progressReady}>
             <img class="welcome-logo" src={logoUrl} width="112" height="112" alt="" />
             <h1 id="welcome-title" class="welcome-title page-title" tabindex="-1">Welcome to Time Drive</h1>
-            <p class="welcome-lede">
-              Time Drive fits itself to how your org works. We'll take a quick look, then set you up.
-            </p>
+            <p class="welcome-lede">Time Drive is Tailored to you. We'll take a quick look, then set you up.</p>
             <template lwc:if={loadError}>
               <div class="notice notice_error welcome-notice" role="alert">
                 <lightning-icon icon-name="utility:error" size="x-small" variant="error"></lightning-icon>
@@ -394,7 +385,8 @@
             <h1 class="page-title" tabindex="-1">Lenses</h1>
             <p class="page-lede">
               A lens lets people narrow the timeline to what they care about, like Service. Tick the lenses each source
-              belongs to. A source can be in several, and every source shows under All.
+              belongs to. A source can be in several. All is a lens too: leave a source out of it to show it only in its
+              other lenses.
             </p>
           </div>
         </header>
@@ -439,6 +431,7 @@
                       <th key={c.key} scope="col" class={c.className}>
                         <span class="lens-col-name">{c.name}</span>
                         <lightning-input
+                          lwc:if={c.switchable}
                           class="lens-active"
                           type="toggle"
                           label={c.toggleLabel}
@@ -470,6 +463,7 @@
                             label={cell.label}
                             variant="label-hidden"
                             checked={cell.checked}
+                            disabled={cell.only}
                             data-source={cell.source}
                             data-lens={cell.lens}
                             onchange={handleLensCell}

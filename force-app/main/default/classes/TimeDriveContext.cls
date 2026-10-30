@@ -4,6 +4,10 @@
  * returned (a provider can build on them), and somewhere to
  * report what it couldn't read.
  */
+// The branching follows the platform's cases and the plot's rules; splitting it up would only scatter them.
+// Size, parameter lists and field counts follow the platform's entry points, its cases and the data the components exchange;
+// splitting them up would only scatter what belongs together.
+@SuppressWarnings('PMD.CyclomaticComplexity, PMD.CognitiveComplexity, PMD.ExcessiveParameterList, PMD.ExcessivePublicCount, PMD.TooManyFields')
 public with sharing class TimeDriveContext {
   public static final Integer DEFAULT_MAX_RECORDS = 1000;
   public static final String KIND_SALESFORCE = 'Salesforce';
@@ -33,8 +37,7 @@ public with sharing class TimeDriveContext {
   // A page's extra columns (the object's compact layout fields): each
   // field asked for, and the path read for it (a lookup's name).
   public Map<String, String> columnPaths;
-  // Read when a provider first asks: earlier sources the summary only
-  // counted are read in full then, not for every source.
+  /** The earlier sources' events, loaded on the first read. */
   public List<TimeDriveController.EngagementEvent> priorEvents {
     get {
       if (priorLoader != null) {
@@ -55,14 +58,34 @@ public with sharing class TimeDriveContext {
   // Case.ContactId) match it, links to Account match the account.
   public Id personContactId;
 
-  // The Contact a Contact-based source reads for: the page's, or a person
-  // account's own.
+  // Where the events say they come from (the expanded event's footer).
+  // Defaults to Object Name and the record's label; providers may set them.
+  public String sourceObject;
+  public String sourceLabel;
+
+  // A draft source's detail fields (the setup wizard's preview), in place
+  // of the saved ones.
+  public List<Time_Drive_Detail_Field__mdt> draftDetailFields;
+
+  // A draft source's highlights (the setup wizard's preview), in place of the
+  // saved ones.
+  public List<Time_Drive_Highlight__mdt> draftHighlights;
+  private List<TimeDriveHighlights.Rule> highlightRulesCache;
+
+  /**
+   * The Contact a Contact-based source reads for: the page's, or a person account's own.
+   * @return the Contact Id
+   */
   public Id contactId() {
     return personContactId != null ? personContactId : recordId;
   }
 
-  // The Id a link field matches: a person account's Contact when the field
-  // points at Contact, else the page's record.
+  /**
+   * The Id a link field matches: a person account's Contact when the field points at Contact, else
+   * the page's record.
+   * @param link the lookup field being matched, or null
+   * @return the Id to match
+   */
   public Id parentIdFor(Schema.DescribeFieldResult link) {
     if (personContactId != null && link != null && link.getReferenceTo().contains(Contact.SObjectType)) {
       return personContactId;
@@ -70,11 +93,15 @@ public with sharing class TimeDriveContext {
     return recordId;
   }
 
-  // Where the events say they come from (the expanded event's footer).
-  // Defaults to Object Name and the record's label; providers may set them.
-  public String sourceObject;
-  public String sourceLabel;
-
+  /**
+   * Builds the context for one source.
+   * @param recordId the record the timeline is on
+   * @param parentObject the API name of that record's object
+   * @param since the start of the window, or null
+   * @param source the source's Time Drive Source record
+   * @param priorEvents events earlier sources returned, or null
+   * @param warnings the shared list to add warnings to, or null
+   */
   public TimeDriveContext(
     Id recordId,
     String parentObject,
@@ -101,7 +128,10 @@ public with sharing class TimeDriveContext {
     this.sourceLabel = source?.Label;
   }
 
-  /** The windows a provider should read: its ranges, or the whole window. */
+  /**
+   * The windows a provider should read: its ranges, or the whole window.
+   * @return the time windows to read
+   */
   public List<TimeDriveController.TimeWindow> spans() {
     if (ranges != null) {
       // Clipped to the source's own history, when it has one.
@@ -124,8 +154,10 @@ public with sharing class TimeDriveContext {
     };
   }
 
-  // Salesforce, Data 360 or Apex. Records from before Kind default from
-  // their provider class.
+  /**
+   * Salesforce, Data 360 or Apex. Records from before Kind default from their provider class.
+   * @return the source's kind
+   */
   public String kind() {
     if (String.isNotBlank(source?.Kind__c)) {
       return source.Kind__c;
@@ -133,11 +165,18 @@ public with sharing class TimeDriveContext {
     return String.isBlank(source?.Provider_Class__c) ? KIND_SALESFORCE : KIND_APEX;
   }
 
-  // The source's record cap, newest first.
+  /**
+   * The source's record cap, newest first.
+   * @return the most records to read
+   */
   public Integer maxRecords() {
     return source?.Max_Records__c == null ? DEFAULT_MAX_RECORDS : source.Max_Records__c.intValue();
   }
 
+  /**
+   * The source's date field, defaulting for Data 360 sources.
+   * @return the date field API name, or null
+   */
   public String dateField() {
     if (String.isNotBlank(source?.Date_Field__c)) {
       return source.Date_Field__c;
@@ -145,6 +184,10 @@ public with sharing class TimeDriveContext {
     return kind() == KIND_DATA_360 ? 'ssot__EngagementDateTm__c' : null;
   }
 
+  /**
+   * The source's Id field, defaulting for Data 360 sources.
+   * @return the Id field API name
+   */
   public String idField() {
     if (String.isNotBlank(source?.Id_Field__c)) {
       return source.Id_Field__c;
@@ -152,6 +195,10 @@ public with sharing class TimeDriveContext {
     return kind() == KIND_DATA_360 ? 'ssot__Id__c' : 'Id';
   }
 
+  /**
+   * The field holding the Id of the record an event stands for.
+   * @return the field API name, or null
+   */
   public String recordIdField() {
     if (String.isNotBlank(source?.Record_Id_Field__c)) {
       return source.Record_Id_Field__c;
@@ -163,9 +210,11 @@ public with sharing class TimeDriveContext {
     return kind() == KIND_SALESFORCE ? 'Id' : null;
   }
 
-  // Whose compact layout an opened item shows: the Details Record Field,
-  // else the item's own record (Id for Salesforce sources, the linked
-  // record otherwise), on the Details Object, else the source's.
+  /**
+   * The field whose record supplies the compact layout for an opened item: the Details Record
+   * Field, else the item's own record (Id for Salesforce sources, the linked record otherwise).
+   * @return the field API name, or null
+   */
   public String detailsRecordField() {
     String own = populated('Details_Record_Field__c');
     if (String.isNotBlank(own)) {
@@ -174,6 +223,11 @@ public with sharing class TimeDriveContext {
     return kind() == KIND_SALESFORCE ? 'Id' : recordIdField();
   }
 
+  /**
+   * The object whose compact layout an opened item shows: the Details Object when a Details Record
+   * Field is also set, else the source's object.
+   * @return the object API name
+   */
   public String detailsObject() {
     String objectName = populated('Details_Object__c');
     if (String.isNotBlank(populated('Details_Record_Field__c')) && String.isNotBlank(objectName)) {
@@ -189,15 +243,18 @@ public with sharing class TimeDriveContext {
     return value == null ? null : String.valueOf(value);
   }
 
-  // The Details Record Field, when one is set, for the providers to read.
+  /**
+   * The Details Record Field, when one is set, for the providers to read.
+   * @return the field API name, or null
+   */
   public String detailsRecordFieldIfSet() {
     return populated('Details_Record_Field__c');
   }
 
-  // A draft source's detail fields (the setup wizard's preview), in place
-  // of the saved ones.
-  public List<Time_Drive_Detail_Field__mdt> draftDetailFields;
-
+  /**
+   * The detail fields to show for the source: the draft ones when set, else the saved ones.
+   * @return the detail field records
+   */
   public List<Time_Drive_Detail_Field__mdt> detailFields() {
     if (draftDetailFields != null) {
       return draftDetailFields;
@@ -205,12 +262,10 @@ public with sharing class TimeDriveContext {
     return TimeDriveConfig.detailFields(source?.DeveloperName);
   }
 
-  // A draft source's highlights (the setup wizard's preview), in place of the
-  // saved ones.
-  public List<Time_Drive_Highlight__mdt> draftHighlights;
-  private List<TimeDriveHighlights.Rule> highlightRulesCache;
-
-  /** The highlight rules in use (Salesforce sources whose fields the user can read). */
+  /**
+   * The highlight rules in use (Salesforce sources whose fields the user can read).
+   * @return the rules, possibly empty
+   */
   public List<TimeDriveHighlights.Rule> highlightRules() {
     if (highlightRulesCache == null) {
       highlightRulesCache = new List<TimeDriveHighlights.Rule>();
@@ -224,9 +279,13 @@ public with sharing class TimeDriveContext {
     return highlightRulesCache;
   }
 
-  // A source that couldn't be read: its name and the kind of failure for the
-  // user, never the exception's message (it can carry query text and field
-  // names); that goes to the debug log for an admin.
+  /**
+   * Records a source that couldn't be read: its name and the kind of failure for the user, never
+   * the exception's message (it can carry query text and field names); that goes to the debug log
+   * for an admin.
+   * @param what the source's name
+   * @param e the exception raised
+   */
   public void fail(String what, Exception e) {
     System.debug(
       LoggingLevel.WARN,
@@ -240,14 +299,21 @@ public with sharing class TimeDriveContext {
     problems.add(new TimeDriveController.Problem(what, TimeDriveController.kindOf(e)));
   }
 
-  // A warning, once, however many sources run into it.
+  /**
+   * Adds a warning, once, however many sources run into it.
+   * @param message the warning text
+   */
   public void warn(String message) {
     if (!warnings.contains(message)) {
       warnings.add(message);
     }
   }
 
-  // Applies a source's icon, colour and compact-layout choice to an event.
+  /**
+   * Applies a source's icon, colour and compact-layout choice to an event.
+   * @param e the event to style
+   * @return the same event
+   */
   public TimeDriveController.EngagementEvent styled(
     TimeDriveController.EngagementEvent e
   ) {
@@ -269,6 +335,10 @@ public with sharing class TimeDriveContext {
 
   /** The events of the sources before this one, worked out on demand. */
   public interface PriorEvents {
+    /**
+     * Returns the events of the earlier sources.
+     * @return the events
+     */
     List<TimeDriveController.EngagementEvent> load();
   }
 
@@ -281,6 +351,12 @@ public with sharing class TimeDriveContext {
     // Counted for the whole period (from the summary's counts), not by hour.
     public Boolean whole = false;
 
+    /**
+     * Builds a count for one day.
+     * @param dayKey the day as yyyy-MM-dd
+     * @param hour the hour 0-23, or null
+     * @param count the number of items
+     */
     public DayCount(String dayKey, Integer hour, Integer count) {
       this.dayKey = dayKey;
       this.hour = hour;
@@ -288,11 +364,22 @@ public with sharing class TimeDriveContext {
     }
   }
 
-  /** The key (yyyy-MM-dd) of the day, week or month a day falls in: its first day. */
+  /**
+   * The key (yyyy-MM-dd) of the day, week or month a day falls in: its first day.
+   * @param day a date in the period
+   * @param unit the period unit (hour, day, week or month)
+   * @return the key of the period's first day
+   */
   public static String periodKey(Date day, String unit) {
     return String.valueOf(periodStart(day, unit));
   }
 
+  /**
+   * The first day of the day, week or month a day falls in.
+   * @param day a date in the period
+   * @param unit the period unit (hour, day, week or month)
+   * @return the first day of the period
+   */
   public static Date periodStart(Date day, String unit) {
     if (unit == UNIT_WEEK) {
       return Date.newInstance(day.year(), 1, 1).addDays((day.dayOfYear() - 1) / 7 * 7);
@@ -303,7 +390,12 @@ public with sharing class TimeDriveContext {
     return day;
   }
 
-  /** The last day of the period starting on `start` (weeks stop at 31 December). */
+  /**
+   * The last day of the period starting on `start` (weeks stop at 31 December).
+   * @param start the first day of the period
+   * @param unit the period unit (hour, day, week or month)
+   * @return the last day of the period
+   */
   public static Date periodEnd(Date start, String unit) {
     if (unit == UNIT_WEEK) {
       Date last = start.addDays(6);
@@ -315,7 +407,13 @@ public with sharing class TimeDriveContext {
     return start;
   }
 
-  /** How many periods (hours, days, weeks or months) touch first..last, at most. */
+  /**
+   * How many periods (hours, days, weeks or months) touch first..last, at most.
+   * @param first the first day of the span
+   * @param last the last day of the span
+   * @param unit the period unit (hour, day, week or month)
+   * @return the most periods the span touches
+   */
   public static Integer periods(Date first, Date last, String unit) {
     Integer days = first.daysBetween(last) + 1;
     if (unit == UNIT_HOUR) {

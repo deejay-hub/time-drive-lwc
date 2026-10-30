@@ -15,6 +15,12 @@ public class TimeDriveTestData {
     TimeDriveConfig.testDetailFields = detailFields();
   }
 
+  /**
+   * A stand-in source by developer name.
+   *
+   * @param developerName the source's developer name
+   * @return the source, or null when there is none
+   */
   public static Time_Drive_Source__mdt source(String developerName) {
     for (Time_Drive_Source__mdt s : sources()) {
       if (s.DeveloperName == developerName) {
@@ -24,6 +30,11 @@ public class TimeDriveTestData {
     return null;
   }
 
+  /**
+   * The stand-in sources.
+   *
+   * @return the sources
+   */
   public static List<Time_Drive_Source__mdt> sources() {
     return new List<Time_Drive_Source__mdt>{
       new Time_Drive_Source__mdt(
@@ -370,6 +381,11 @@ public class TimeDriveTestData {
     };
   }
 
+  /**
+   * The stand-in detail fields by source developer name.
+   *
+   * @return the detail fields
+   */
   public static Map<String, List<Time_Drive_Detail_Field__mdt>> detailFields() {
     Map<String, List<Time_Drive_Detail_Field__mdt>> out = new Map<String, List<Time_Drive_Detail_Field__mdt>>();
     add(

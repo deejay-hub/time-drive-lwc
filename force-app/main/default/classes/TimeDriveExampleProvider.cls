@@ -9,6 +9,12 @@
  * subtitle ("Earned {Points} points", "{Reason}") and the detail fields.
  */
 public with sharing class TimeDriveExampleProvider implements TimeDriveRowProvider {
+  /**
+   * Builds the example rows.
+   *
+   * @param context the request context
+   * @return the example rows
+   */
   public List<TimeDriveRow> getRows(TimeDriveContext context) {
     List<TimeDriveRow> rows = new List<TimeDriveRow>();
     Decimal balance = 0;

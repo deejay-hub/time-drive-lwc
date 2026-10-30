@@ -9,5 +9,11 @@
  * TimeDriveProvider instead and build the events themselves.
  */
 public interface TimeDriveRowProvider {
+  /**
+   * Builds the rows for one source.
+   *
+   * @param context the request context
+   * @return the rows
+   */
   List<TimeDriveRow> getRows(TimeDriveContext context);
 }

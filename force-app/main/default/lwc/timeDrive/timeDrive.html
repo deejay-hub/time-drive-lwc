@@ -416,7 +416,9 @@
                     <div lwc:if={group.placeholder} class="nothing-now">
                       <!-- Across, a picture; down the list, a grey bar with an info icon. -->
                       <template lwc:if={horizontal}>
-                        <img class="nothing-now-art" src={group.placeholderArt} alt="" />
+                        <div class="nothing-now-illustration">
+                          <lightning-illustration illustration-name={nothingArtName}></lightning-illustration>
+                        </div>
                       </template>
                       <template lwc:else>
                         <lightning-icon

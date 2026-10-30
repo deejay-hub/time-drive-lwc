@@ -6,11 +6,18 @@
  * the messages and one for their recipients, in user mode; if they can't be
  * read, the items stay as they are.
  */
+// The branching follows the platform's cases and the plot's rules; splitting it up would only scatter them.
+@SuppressWarnings('PMD.CyclomaticComplexity, PMD.CognitiveComplexity')
 public with sharing class TimeDriveEmails {
   public static final String OPENED = 'opened';
   public static final String UNOPENED = 'unopened';
   public static final String BOUNCED = 'bounced';
 
+  /**
+   * Adds the opened state and recipients subtitle to the events that are Enhanced Email messages.
+   *
+   * @param events the events to enrich
+   */
   public static void enrich(List<TimeDriveController.EngagementEvent> events) {
     Set<Id> ids = new Set<Id>();
     for (TimeDriveController.EngagementEvent e : events) {

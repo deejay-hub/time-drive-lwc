@@ -5,6 +5,13 @@
  * name; without it, Data 360 sources are read as rows.
  */
 public with sharing class TimeDriveData360SqlRunner implements TimeDriveData360Provider.SqlRunner {
+  /**
+   * Runs a Data 360 SQL query.
+   *
+   * @param sql the SQL to run
+   * @param dataSpace the data space, blank for the default one
+   * @return the result rows
+   */
   public List<List<Object>> run(String sql, String dataSpace) {
     ConnectApi.CdpQueryInput input = new ConnectApi.CdpQueryInput();
     input.sql = sql;

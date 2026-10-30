@@ -19,7 +19,7 @@ import getApexProviders from "@salesforce/apex/TimeDriveSetupController.getApexP
 import getLinks from "@salesforce/apex/TimeDriveSetupController.getLinks";
 import getFields from "@salesforce/apex/TimeDriveSetupController.getFields";
 import getTemplates from "@salesforce/apex/TimeDriveSetupController.getTemplates";
-import useTemplate from "@salesforce/apex/TimeDriveSetupController.useTemplate";
+import applyTemplate from "@salesforce/apex/TimeDriveSetupController.useTemplate";
 import getLabelText from "@salesforce/apex/TimeDriveSetupController.getLabelText";
 import getViewDrafts from "@salesforce/apex/TimeDriveSetupController.getViewDrafts";
 import saveViews from "@salesforce/apex/TimeDriveSetupController.saveViews";
@@ -965,7 +965,7 @@ export default class TimeDriveSetup extends LightningElement {
     if (!template || this.templatesBusy) return;
     this.templatesBusy = true;
     try {
-      await useTemplate({ templateKey: key });
+      await applyTemplate({ templateKey: key });
       this.toast("success", `${template.label} added`, "It's on the timeline now. Change it any time.");
       await this.loadSources();
     } catch (e) {
@@ -1021,6 +1021,11 @@ export default class TimeDriveSetup extends LightningElement {
     return src.lenses?.length ? src.lenses : src.category ? [src.category] : [];
   }
 
+  // The lenses it shows under: one in no lens at all is in All.
+  shownLenses(keys) {
+    return keys.length ? keys : ["All"];
+  }
+
   lensNames(src) {
     return this.lensKeys(src).map((key) => this.viewNameOf(key));
   }
@@ -1052,9 +1057,11 @@ export default class TimeDriveSetup extends LightningElement {
     this.lensPage = event.currentTarget.dataset.value;
   }
 
-  // A column for each lens but All, which shows everything.
+  // A column for each lens, All first. All is always offered, so it has no switch.
   get lensColumns() {
-    return (this.viewDrafts ?? [])
+    const drafts = this.viewDrafts ?? [];
+    const all = drafts.find((v) => v.developerName === "All");
+    const columns = drafts
       .filter((v) => v.developerName !== "All")
       .map((v) => {
         const active = v.developerName in this.viewEdits ? this.viewEdits[v.developerName] : v.active;
@@ -1063,18 +1070,24 @@ export default class TimeDriveSetup extends LightningElement {
           key: v.developerName,
           name,
           active,
+          switchable: true,
           toggleLabel: `${name}: offered in the picker`,
           className: `lens-col${active ? "" : " lens-col_off"}`
         };
       });
+    const allName = all?.shown || all?.name || "All";
+    return [{ key: "All", name: allName, active: true, switchable: false, className: "lens-col" }, ...columns];
   }
 
   // The picker as people will see it.
   get lensStrip() {
-    return ["All", ...this.lensColumns.filter((c) => c.active).map((c) => c.name)].map((name, i) => ({
-      key: `${i}-${name}`,
-      name
-    }));
+    return this.lensColumns
+      .filter((c) => c.active)
+      .map((c) => c.name)
+      .map((name, i) => ({
+        key: `${i}-${name}`,
+        name
+      }));
   }
 
   get lensRows() {
@@ -1085,7 +1098,7 @@ export default class TimeDriveSetup extends LightningElement {
       .sort((a, b) => this.sourceName(a).localeCompare(this.sourceName(b)))
       .map((src) => {
         const name = this.sourceWithFilterName(src);
-        const inLenses = new Set(this.lensKeys(src));
+        const inLenses = new Set(this.shownLenses(this.lensKeys(src)));
         return {
           key: src.developerName,
           name,
@@ -1097,6 +1110,8 @@ export default class TimeDriveSetup extends LightningElement {
             lens: c.key,
             source: src.developerName,
             checked: inLenses.has(c.key),
+            // Its only lens stays: switch the source off to hide it.
+            only: inLenses.has(c.key) && inLenses.size === 1,
             label: `${name} in ${c.name}`
           }))
         };
@@ -1119,8 +1134,9 @@ export default class TimeDriveSetup extends LightningElement {
     const lens = event.target.dataset.lens;
     const source = this.sources.find((src) => src.developerName === name);
     if (!source) return;
-    const before = this.lensKeys(source);
+    const before = this.shownLenses(this.lensKeys(source));
     const after = event.target.checked ? [...before.filter((k) => k !== lens), lens] : before.filter((k) => k !== lens);
+    if (!after.length) return;
     const order = this.lensColumns.map((c) => c.key);
     after.sort((a, b) => order.indexOf(a) - order.indexOf(b));
     this.setSourceLenses(name, after);
@@ -1426,6 +1442,12 @@ export default class TimeDriveSetup extends LightningElement {
         text: `Added ${n} ${n === 1 ? "source" : "sources"}: ${report.added.map((g) => `${g.label} (${g.items.join(", ")})`).join("; ")}`
       });
     } else lines.push({ key: "added", text: "The recommended sources were already added." });
+    for (const sw of report.switched ?? []) {
+      lines.push({
+        key: `switched-${sw.page}-${sw.offLabel}`,
+        text: `${sw.page}: ${sw.offLabel} switched off for ${sw.onLabel}`
+      });
+    }
     return lines;
   }
 
@@ -2482,7 +2504,7 @@ export default class TimeDriveSetup extends LightningElement {
       case "date":
         return "The date places each item on the timeline.";
       case "lenses":
-        return "A lens lets people narrow the timeline to one area, like Service. Choose any that fit, or none: the items always show under All.";
+        return "A lens lets people narrow the timeline to one area, like Service. All is where the timeline opens: leave it out to show these items only in the lenses you choose.";
       case "range":
         return "Less history reads fewer records, so the timeline loads faster.";
       case "name":
@@ -3747,8 +3769,9 @@ export default class TimeDriveSetup extends LightningElement {
   }
 
   get lensesAnswer() {
-    const names = this.draftLenses.map((key) => this.viewNameOf(key));
-    return names.length ? names.join(", ") : "None";
+    return this.shownLenses(this.draftLenses)
+      .map((key) => this.viewNameOf(key))
+      .join(", ");
   }
 
   get draftLenses() {
@@ -3756,7 +3779,7 @@ export default class TimeDriveSetup extends LightningElement {
   }
 
   get lensChoices() {
-    const chosen = new Set(this.draftLenses);
+    const chosen = new Set(this.shownLenses(this.draftLenses));
     return this.lensColumns.map((c) => ({
       key: c.key,
       label: c.name,
@@ -3771,13 +3794,17 @@ export default class TimeDriveSetup extends LightningElement {
 
   // Where its items will show, in words.
   get lensesShownUnder() {
-    return ["All", ...this.draftLenses.map((key) => this.viewNameOf(key))].join(" · ");
+    return this.shownLenses(this.draftLenses)
+      .map((key) => this.viewNameOf(key))
+      .join(" · ");
   }
 
+  // At least one lens stays chosen: a source in none would be in All anyway.
   handleLensChoice(event) {
     const key = event.currentTarget.dataset.value;
-    const now = this.draftLenses;
+    const now = this.shownLenses(this.draftLenses);
     const next = now.includes(key) ? now.filter((k) => k !== key) : [...now, key];
+    if (!next.length) return;
     const order = this.lensColumns.map((c) => c.key);
     next.sort((a, b) => order.indexOf(a) - order.indexOf(b));
     this.update({ lenses: next, category: next[0] ?? null });

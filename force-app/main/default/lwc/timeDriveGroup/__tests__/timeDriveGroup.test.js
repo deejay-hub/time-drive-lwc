@@ -37,7 +37,6 @@ const page = (from, to, more) => ({
 });
 
 const flush = async () => {
-  // eslint-disable-next-line no-await-in-loop
   for (let i = 0; i < 4; i++) await Promise.resolve();
 };
 

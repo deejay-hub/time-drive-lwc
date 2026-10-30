@@ -130,7 +130,8 @@ const serverFilter = (events, { categories, hiddenTypes, rangeDays, search, hist
   const after = rangeDays ? Date.now() - rangeDays * 86400000 : null;
   const needle = (search ?? "").trim().toLowerCase();
   return events.filter((e) => {
-    if (categories?.length && !categories.includes(e.category)) return false;
+    // The fixtures' sources are all in All, as well as their own lens.
+    if (categories?.length && !categories.includes("All") && !categories.includes(e.category)) return false;
     if (hiddenTypes?.includes(e.type)) return false;
     const time = new Date(e.occurredAt).getTime();
     if (time < since || time > until) return false;
@@ -246,7 +247,6 @@ const reemit = () => answer();
 // Let the component render and fetch, answering any new timeline request on the way.
 const flush = async () => {
   for (let i = 0; i < 6; i++) {
-    // eslint-disable-next-line no-await-in-loop, @lwc/lwc/no-async-operation
     await new Promise((resolve) => setTimeout(resolve, 0));
     if (answered !== null && queryOf(getSummary.getLastConfig()) !== answered) answer();
   }
@@ -254,7 +254,6 @@ const flush = async () => {
 
 // Wait out the pause after which held keys and drags draw and fetch.
 const settle = async () => {
-  // eslint-disable-next-line @lwc/lwc/no-async-operation
   await new Promise((resolve) => setTimeout(resolve, 300));
   await flush();
 };
@@ -267,7 +266,6 @@ const scrollList = async (root, edge) => {
   Object.defineProperty(track, "scrollHeight", { configurable: true, value: 2000 });
   Object.defineProperty(track, "scrollTop", { configurable: true, writable: true, value: edge === "top" ? 0 : 1440 });
   track.dispatchEvent(new CustomEvent("scroll"));
-  // eslint-disable-next-line @lwc/lwc/no-async-operation
   await new Promise((resolve) => requestAnimationFrame(resolve));
   await flush();
 };
@@ -889,7 +887,7 @@ describe("c-time-drive delight", () => {
     expect(getSummary.getLastConfig()).toMatchObject({ categories: ["Service"] });
     expect(service.shadowRoot.querySelector(".view-button").textContent).toContain("Service");
     const other = await open("No_Such_Lens");
-    expect(getSummary.getLastConfig()).toMatchObject({ categories: null });
+    expect(getSummary.getLastConfig()).toMatchObject({ categories: ["All"] });
     expect(other.shadowRoot.querySelector(".view-button").textContent).toContain("All items");
   });
 
@@ -1328,7 +1326,6 @@ describe("c-time-drive filters panel", () => {
     await Promise.resolve();
     // The panel goes at once, before the timeline updates.
     expect(filtersRoot(root).querySelector(".filter-panel")).toBeNull();
-    // eslint-disable-next-line @lwc/lwc/no-async-operation
     await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
     await Promise.resolve();
     // Asked, not answered: the dates stay, the rest is a skeleton.
@@ -1422,7 +1419,6 @@ describe("c-time-drive a new filter", () => {
     await flush();
     buttonByLabel(filtersRoot(root).querySelector(".filter-panel"), "Apply").click();
     // Apply goes out after the panel is painted (a frame, then a task).
-    // eslint-disable-next-line @lwc/lwc/no-async-operation
     await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
     await Promise.resolve();
   };
@@ -1585,10 +1581,9 @@ describe("c-time-drive drawing less", () => {
       const columns = [...root.querySelectorAll(".day")];
       expect(columns).toHaveLength(4);
       expect(columns[0].querySelector(".nothing-now-text").textContent).toMatch(/^Nothing between /);
-      // Across, the window's ends show nothing to see this far out.
-      expect(columns[0].querySelector(".nothing-now-art").getAttribute("src")).toMatch(
-        /illustrations\/nothing-to-see\.svg$/
-      );
+      // Across, the window's ends show the base component's "all done" drawing, in a slot of its own.
+      const art = columns[0].querySelector(".nothing-now-illustration lightning-illustration");
+      expect(art.illustrationName).toBe("success:selfassigned");
       expect(columns.at(-1).querySelector(".nothing-now")).toBeNull();
       document.body.removeChild(root.host);
       // Six days: more than the five across, so the usual columns.
@@ -1686,7 +1681,7 @@ describe("c-time-drive drawing less", () => {
     expect(slots).toEqual([expect.stringMatching(/^Nothing between /)]);
     // Down the list: a grey bar with an info icon, no picture.
     expect(root.querySelector(".nothing-now .nothing-now-icon")).not.toBeNull();
-    expect(root.querySelector(".nothing-now-art")).toBeNull();
+    expect(root.querySelector(".nothing-now-illustration")).toBeNull();
     document.body.removeChild(root.host);
     // Horizontal columns that fit the track: no seek bar.
     Object.defineProperty(Element.prototype, "scrollWidth", { configurable: true, get: () => 0 });
@@ -2577,7 +2572,6 @@ describe("c-time-drive accessibility", () => {
 
     // Days loaded by scrolling are announced.
     await scrollList(root, "bottom");
-    // eslint-disable-next-line @lwc/lwc/no-async-operation
     await new Promise((resolve) => requestAnimationFrame(resolve));
     expect(root.querySelector(".announcer").textContent).toMatch(/^Added .+ to .+/);
   });

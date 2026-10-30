@@ -8,5 +8,11 @@
  * read, so one missing source never empties the timeline.
  */
 public interface TimeDriveProvider {
+  /**
+   * Builds the events for one source.
+   *
+   * @param context the request context
+   * @return the events
+   */
   List<TimeDriveController.EngagementEvent> getEvents(TimeDriveContext context);
 }

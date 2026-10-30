@@ -1,5 +1,15 @@
+// Run as the running user on purpose; tests where what a person may do is the point run as a user with
+// only the permission set (see the Preference and Progress tests).
+// Size, parameter lists and field counts follow the platform's entry points, its cases and the data the components exchange;
+// splitting them up would only scatter what belongs together.
+@SuppressWarnings('PMD.ApexUnitTestClassShouldHaveRunAs, PMD.CyclomaticComplexity, PMD.CognitiveComplexity, PMD.ExcessiveParameterList, PMD.NcssCount')
 @IsTest
 private class TimeDriveControllerTest {
+  // A well-formed Id for tests: the object's key prefix and a number.
+  private static Id fakeId(String prefix, Integer n) {
+    return Id.valueOf(prefix + String.valueOf(n).leftPad(12, '0'));
+  }
+
   // The sources the timeline once shipped with, in place of the org's.
   static {
     TimeDriveTestData.useShipped();
@@ -132,7 +142,7 @@ private class TimeDriveControllerTest {
     Assert.areEqual(2, orders, 'both orders');
     Assert.isFalse(summary.types.isEmpty());
     Assert.isFalse(summary.noSources, 'the Contact page has sources');
-    Assert.areEqual(Contact.SObjectType.getDescribe().getLabel(), summary.page);
+    Assert.areEqual(Contact.SObjectType.getDescribe(SObjectDescribeOptions.DEFERRED).getLabel(), summary.page);
     // Every source in the view is offered to the filters, items or not.
     Set<String> offered = new Set<String>();
     for (TimeDriveController.TypeCount t : summary.types) {
@@ -143,6 +153,32 @@ private class TimeDriveControllerTest {
         Assert.isTrue(offered.contains(s.Event_Type__c), s.Event_Type__c + ' is offered');
       }
     }
+  }
+
+  @IsTest
+  static void allIsALensASourceIsInOrNot() {
+    // Open and closed cases each in a lens of their own, all cases in All, and one in no lens (All).
+    Id customer = contactId();
+    Time_Drive_Source__mdt everyCase = source('All_Cases', 'Case', 'CreatedDate', 'ContactId');
+    everyCase.Lenses__c = 'All';
+    Time_Drive_Source__mdt open = source('Open_Cases', 'Case', 'CreatedDate', 'ContactId');
+    open.Lenses__c = 'Service';
+    Time_Drive_Source__mdt untagged = source('Untagged_Cases', 'Case', 'CreatedDate', 'ContactId');
+    untagged.Category__c = null;
+    TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ everyCase, open, untagged };
+
+    Integer one = TimeDriveController.getSummary(customer, null, null, null, null).total / 3;
+    Assert.isTrue(one > 0, 'the setup has cases to show');
+    Assert.areEqual(
+      2 * one,
+      TimeDriveController.getSummary(customer, new List<String>{ 'All' }, null, null, null).total,
+      'All: the source in All and the one in no lens, not the one only in Service'
+    );
+    Assert.areEqual(
+      one,
+      TimeDriveController.getSummary(customer, new List<String>{ 'Service' }, null, null, null).total,
+      'Service: only the source in it'
+    );
   }
 
   @IsTest
@@ -857,6 +893,12 @@ private class TimeDriveControllerTest {
       this.rows = rows;
     }
 
+    /**
+     * Records the query and answers with the canned rows.
+     * @param sql The query it was asked to run.
+     * @param dataSpace The data space it was asked to run in.
+     * @return The rows the stub was built with.
+     */
     public List<List<Object>> run(String sql, String dataSpace) {
       this.sql = sql;
       this.dataSpace = dataSpace;
@@ -965,7 +1007,7 @@ private class TimeDriveControllerTest {
     );
     context.source = new Time_Drive_Source__mdt(Kind__c = 'Data 360', Object_Name__c = 'Reservation__dlm');
     // No ssot__Id__c on the object: its Id keys the rows.
-    Map<String, Schema.SObjectField> fields = Contact.SObjectType.getDescribe().fields.getMap();
+    Map<String, Schema.SObjectField> fields = Contact.SObjectType.getDescribe(SObjectDescribeOptions.DEFERRED).fields.getMap();
     Assert.areEqual('Id', TimeDriveData360Provider.fitIdField(context, fields).Id_Field__c);
     Assert.areEqual('Id', context.idField());
     // An Id Field that's set is kept.
@@ -1216,7 +1258,7 @@ private class TimeDriveControllerTest {
     Time_Drive_Source__mdt s = source('Follow_Ups', 'Task', 'ActivityDate', 'WhoId');
     s.Kind__c = 'Salesforce';
     // Blank: the object's plural name, which Salesforce translates.
-    Assert.areEqual(Task.SObjectType.getDescribe().getLabelPlural(), TimeDriveConfig.legendLabel(s));
+    Assert.areEqual(Task.SObjectType.getDescribe(SObjectDescribeOptions.DEFERRED).getLabelPlural(), TimeDriveConfig.legendLabel(s));
     // A custom label: its value in the viewer's language.
     s.Event_Label__c = '$Label.Time_Drive_Example_Legend';
     Assert.areEqual(System.Label.get('', 'Time_Drive_Example_Legend'), TimeDriveConfig.legendLabel(s));
@@ -1277,8 +1319,8 @@ private class TimeDriveControllerTest {
 
   @IsTest
   static void aPersonAccountsContactLinksMatchItsOwnContact() {
-    Id account = '001000000000001AAA';
-    Id person = '003000000000001AAA';
+    Id account = fakeId('001', 1);
+    Id person = fakeId('003', 1);
     TimeDriveContext context = new TimeDriveContext(account, 'PersonAccount', null, null, null, null);
     context.personContactId = person;
     Assert.areEqual(person, context.parentIdFor(Case.ContactId.getDescribe()), 'a Contact lookup');
@@ -1294,8 +1336,8 @@ private class TimeDriveControllerTest {
     s.Record_Id_Field__c = 'CampaignId';
     s.Details_Record_Field__c = 'CampaignId';
     s.Details_Object__c = 'Campaign';
-    Id member = '00v000000000001AAA';
-    Id campaign = '701000000000001AAA';
+    Id member = fakeId('00v', 1);
+    Id campaign = fakeId('701', 1);
     List<TimeDriveRow> rows = new List<TimeDriveRow>{
       new TimeDriveRow(
         new Map<String, Object>{ 'Id' => member, 'CampaignId' => campaign, 'CreatedDate' => Datetime.now() }
@@ -1982,7 +2024,7 @@ private class TimeDriveControllerTest {
     Assert.areEqual('Subject', row.labelOf('Subject'), 'other fields are as they were');
     Assert.areEqual('Status', row.labelOf('Status'));
     // Only a lookup's: the record's own Id is not one, and keeps its "ID".
-    Schema.DescribeFieldResult id = Task.SObjectType.getDescribe().fields.getMap().get('id').getDescribe();
+    Schema.DescribeFieldResult id = Task.SObjectType.getDescribe(SObjectDescribeOptions.DEFERRED).fields.getMap().get('id').getDescribe();
     Assert.areEqual(id.getLabel(), TimeDriveRow.plainLabel(id));
   }
 
@@ -2012,20 +2054,20 @@ private class TimeDriveControllerTest {
     s.Event_Label__c = 'Attachments';
     Assert.areEqual('Attachments', TimeDriveConfig.legendLabel(s), 'a name of its own wins');
     s = source('Cases', 'Case', 'CreatedDate', 'ContactId');
-    Assert.areEqual(Case.SObjectType.getDescribe().getLabelPlural(), TimeDriveConfig.legendLabel(s), 'other objects are named as before');
+    Assert.areEqual(Case.SObjectType.getDescribe(SObjectDescribeOptions.DEFERRED).getLabelPlural(), TimeDriveConfig.legendLabel(s), 'other objects are named as before');
   }
 
   @IsTest
   static void theLegendNameCanBeAnotherObjectsPluralName() {
     Time_Drive_Source__mdt s = source('Roles', 'OpportunityContactRole', 'Opportunity.CloseDate', 'ContactId');
     s.Event_Label__c = '$Object.Opportunity';
-    Assert.areEqual(Opportunity.SObjectType.getDescribe().getLabelPlural(), TimeDriveConfig.legendLabel(s));
+    Assert.areEqual(Opportunity.SObjectType.getDescribe(SObjectDescribeOptions.DEFERRED).getLabelPlural(), TimeDriveConfig.legendLabel(s));
     s = source('Roles2', 'OpportunityContactRole', 'Opportunity.CloseDate', 'ContactId');
     s.Event_Label__c = '$Object.NoSuchObject';
     Assert.areEqual('Roles2', TimeDriveConfig.legendLabel(s), 'an object that is not there falls back to the source\'s name');
     s = source('Roles3', 'OpportunityContactRole', 'Opportunity.CloseDate', 'ContactId');
     Assert.areEqual(
-      Opportunity.SObjectType.getDescribe().getLabelPlural(),
+      Opportunity.SObjectType.getDescribe(SObjectDescribeOptions.DEFERRED).getLabelPlural(),
       TimeDriveConfig.legendLabel(s),
       'with no name set, a source dated by its record is named after it'
     );

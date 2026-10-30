@@ -155,9 +155,7 @@ const SOURCES = [
 ];
 
 // Setup opens on its home page straight away; this lets the first reads land.
-// eslint-disable-next-line @lwc/lwc/no-async-operation
 const splash = () => new Promise((resolve) => setTimeout(resolve, 50));
-// eslint-disable-next-line @lwc/lwc/no-async-operation
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 // Several turns of the event loop, one after another.
@@ -1231,15 +1229,17 @@ describe("c-time-drive-setup", () => {
       expect(root.querySelector("h1.page-title").textContent).toBe("Lenses");
       // What the picker will offer, as people see it.
       expect([...root.querySelectorAll(".lens-pill")].map((p) => p.textContent)).toEqual([
-        "All",
+        "All items",
         "Commerce",
         "Marketing"
       ]);
-      // All shows everything, so it has no column.
+      // All is a lens like the others, first; it is always offered, so it has no switch.
       expect([...root.querySelectorAll("thead .lens-col-name")].map((n) => n.textContent)).toEqual([
+        "All items",
         "Commerce",
         "Marketing"
       ]);
+      expect(root.querySelectorAll("thead lightning-input.lens-active")).toHaveLength(2);
       // The first page's sources, with a tick where each is in a lens; an inactive one says so.
       expect([...root.querySelectorAll("tbody .lens-source-object")].map((n) => n.textContent)).toEqual([
         "Invoice (Orders)",
@@ -1248,6 +1248,8 @@ describe("c-time-drive-setup", () => {
       expect(cell(root, "Order_Placed", "Commerce").checked).toBe(true);
       expect(cell(root, "Order_Placed", "Marketing").checked).toBe(false);
       expect(cell(root, "Tasks", "Marketing").checked).toBe(true);
+      // In a lens of its own, a source is in All only when ticked there.
+      expect(cell(root, "Order_Placed", "All").checked).toBe(false);
       expect(root.querySelectorAll("tbody .badge_off")).toHaveLength(1);
       // The record page's tabs switch which sources are listed.
       expect([...root.querySelectorAll(".lens-tab")].map((b) => b.textContent.trim())).toEqual(["Contact", "Account"]);
@@ -1357,7 +1359,7 @@ describe("c-time-drive-setup", () => {
     const element = mount();
     await flush();
     const root = element.shadowRoot;
-    const wait = () => new Promise((resolve) => setTimeout(resolve, 300)); // eslint-disable-line @lwc/lwc/no-async-operation
+    const wait = () => new Promise((resolve) => setTimeout(resolve, 300));
     await splash();
     await toPages(root);
     root.querySelector("button.pcard").click();
@@ -1438,7 +1440,7 @@ describe("c-time-drive-setup", () => {
     const element = mount();
     await flush();
     const root = element.shadowRoot;
-    const wait = () => new Promise((resolve) => setTimeout(resolve, 300)); // eslint-disable-line @lwc/lwc/no-async-operation
+    const wait = () => new Promise((resolve) => setTimeout(resolve, 300));
     await splash();
     await toPages(root);
     root.querySelector("button.pcard").click();
@@ -1591,7 +1593,7 @@ describe("c-time-drive-setup", () => {
     const element = mount();
     await flush();
     const root = element.shadowRoot;
-    const wait = () => new Promise((resolve) => setTimeout(resolve, 300)); // eslint-disable-line @lwc/lwc/no-async-operation
+    const wait = () => new Promise((resolve) => setTimeout(resolve, 300));
     await splash();
     await toPages(root);
     root.querySelector("button.pcard").click();
@@ -1684,7 +1686,7 @@ describe("c-time-drive-setup", () => {
     const element = mount();
     await flush();
     const root = element.shadowRoot;
-    const wait = () => new Promise((resolve) => setTimeout(resolve, 300)); // eslint-disable-line @lwc/lwc/no-async-operation
+    const wait = () => new Promise((resolve) => setTimeout(resolve, 300));
     await splash();
     await toPages(root);
     root.querySelector("button.pcard").click();
@@ -1712,19 +1714,29 @@ describe("c-time-drive-setup", () => {
     expect(root.querySelector(".question").textContent).toBe("Which lenses should it be part of?");
     expect(root.querySelector(".lens-step-about").textContent).toContain("Choosing a lens there");
     const chips = () => [...root.querySelectorAll(".lens-step .chip-choice")];
-    expect(chips().map((c) => c.textContent.trim())).toEqual(["Commerce", "Marketing"]);
-    expect(root.querySelector(".lens-step-names").textContent).toBe("All");
+    // All is a choice like the others, and a new source starts in it.
+    expect(chips().map((c) => c.textContent.trim())).toEqual(["All items", "Commerce", "Marketing"]);
+    expect(chips().map((c) => c.getAttribute("aria-pressed"))).toEqual(["true", "false", "false"]);
+    expect(root.querySelector(".lens-step-names").textContent).toBe("All items");
     // Several at once, in the picker's order.
+    chips()[2].click();
+    await flush();
     chips()[1].click();
     await flush();
+    expect(chips().map((c) => c.getAttribute("aria-pressed"))).toEqual(["true", "true", "true"]);
+    expect(root.querySelector(".lens-step-names").textContent).toBe("All items \u00b7 Commerce \u00b7 Marketing");
+    // And one taken out again.
+    chips()[2].click();
+    await flush();
+    expect(root.querySelector(".lens-step-names").textContent).toBe("All items \u00b7 Commerce");
+    // All can be left out, so the items show only in Commerce.
     chips()[0].click();
     await flush();
-    expect(chips().map((c) => c.getAttribute("aria-pressed"))).toEqual(["true", "true"]);
-    expect(root.querySelector(".lens-step-names").textContent).toBe("All \u00b7 Commerce \u00b7 Marketing");
-    // And one taken out again.
+    expect(root.querySelector(".lens-step-names").textContent).toBe("Commerce");
+    // The last lens stays: a source in none would be in All anyway.
     chips()[1].click();
     await flush();
-    expect(root.querySelector(".lens-step-names").textContent).toBe("All \u00b7 Commerce");
+    expect(root.querySelector(".lens-step-names").textContent).toBe("Commerce");
     // The thread says so, and Continue is open (lenses are optional).
     expect(root.querySelector(".wz-foot .primary").disabled).toBe(false);
   });
@@ -1751,7 +1763,7 @@ describe("c-time-drive-setup", () => {
     const element = mount();
     await flush();
     const root = element.shadowRoot;
-    const wait = () => new Promise((resolve) => setTimeout(resolve, 300)); // eslint-disable-line @lwc/lwc/no-async-operation
+    const wait = () => new Promise((resolve) => setTimeout(resolve, 300));
     await splash();
     await toPages(root);
     root.querySelector("button.pcard").click();
@@ -1797,7 +1809,7 @@ describe("c-time-drive-setup", () => {
     const element = mount();
     await flush();
     const root = element.shadowRoot;
-    const wait = () => new Promise((resolve) => setTimeout(resolve, 300)); // eslint-disable-line @lwc/lwc/no-async-operation
+    const wait = () => new Promise((resolve) => setTimeout(resolve, 300));
     await splash();
     await toPages(root);
     root.querySelector("button.pcard").click();
@@ -1831,7 +1843,7 @@ describe("c-time-drive-setup", () => {
 
   it("asks for the data space of a Data 360 source only when there's a choice", async () => {
     getObjects.mockResolvedValue([{ value: "Reservation__dlm", label: "Reservation", detail: "Reservation__dlm" }]);
-    const wait = () => new Promise((resolve) => setTimeout(resolve, 300)); // eslint-disable-line @lwc/lwc/no-async-operation
+    const wait = () => new Promise((resolve) => setTimeout(resolve, 300));
     const startDmo = async (root) => {
       await splash();
       await toPages(root);
