@@ -2078,8 +2078,8 @@ public with sharing class TimeDriveSetupController {
       History_Months__c = d.historyMonths,
       Event_Type__c = String.isBlank(d.eventType) ? d.developerName.toLowerCase().left(80) : d.eventType,
       Event_Label__c = d.eventLabel,
-      Title__c = d.title,
-      Subtitle__c = d.subtitle,
+      Title__c = oneField(d.title),
+      Subtitle__c = oneField(d.subtitle),
       Icon__c = d.icon,
       Icon_Colour__c = d.iconColour,
       Record_Id_Field__c = d.recordIdFieldOrRelated(),
@@ -2129,6 +2129,17 @@ public with sharing class TimeDriveSetupController {
       r.Time_Drive__c = driveFor(d.parentObject);
     }
     return r;
+  }
+
+  /**
+   * A title or subtitle as one field ({Subject}): its first, or none (the title then shows the source's name).
+   * @param text The title or subtitle as drafted.
+   * @return The first {Field} in it, or null.
+   */
+  @TestVisible
+  private static String oneField(String text) {
+    Matcher m = Pattern.compile('\\{[^}]+\\}').matcher(text == null ? '' : text);
+    return m.find() ? m.group() : null;
   }
 
   /** Sources are records only admins write: it needs the Setup permission set's access, or Customize Application. */
@@ -2374,6 +2385,9 @@ public with sharing class TimeDriveSetupController {
     public String eventLabel;
     @AuraEnabled
     public String legendName;
+    // Its filter as it is kept (Status = 'Closed'), or null for every record.
+    @AuraEnabled
+    public String filter;
 
     /**
      * Builds the summary from a source record.
@@ -2403,6 +2417,7 @@ public with sharing class TimeDriveSetupController {
       legendName = TimeDriveConfig.legendLabel(s);
       sequence = s.Sequence__c;
       summary = describeSource(s, kind, objectLabel);
+      filter = String.isBlank(s.Filter__c) ? null : s.Filter__c;
     }
 
     /**

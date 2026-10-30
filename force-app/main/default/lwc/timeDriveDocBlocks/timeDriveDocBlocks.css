@@ -44,7 +44,7 @@
   align-items: flex-start;
   gap: 0.625rem;
   margin: 0;
-  padding: 0.75rem var(--slds-g-spacing-4, 1rem)-spacing-3, 0.75rem) 1rem;
+  padding: 0.75rem var(--slds-g-spacing-4, 1rem);
   border-inline-start: 3px solid var(--accent, #0f6b58);
   border-radius: 0 0.375rem 0.375rem 0;
   background: var(--accent-wash, #e3f0ea);

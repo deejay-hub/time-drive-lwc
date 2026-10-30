@@ -40,7 +40,7 @@
     </values>
     <values>
         <field>Subtitle__c</field>
-        <value xsi:type="xsd:string">{Status} · {Priority}</value>
+        <value xsi:type="xsd:string">{Status}</value>
     </values>
     <values>
         <field>Event_Type__c</field>

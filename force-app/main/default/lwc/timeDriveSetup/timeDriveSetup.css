@@ -1642,6 +1642,16 @@ button.kd-row:focus-visible {
   font-size: var(--slds-g-font-scale-1, 0.875rem);
 }
 
+/* Done: the check and the words centred on one line, with room between. */
+.guided-progress_done .guided-count {
+  align-items: center;
+  gap: calc(0.75rem * var(--d));
+}
+
+.guided-progress_done .guided-count-number {
+  line-height: 1;
+}
+
 .guided-bar {
   display: flex;
   gap: calc(0.25rem * var(--d));
@@ -1884,6 +1894,12 @@ thead .lens-grid-source {
 .lens-col-name {
   display: block;
   margin-bottom: calc(0.25rem * var(--d));
+}
+
+/* The source's filter, on hover or focus. */
+.lens-source-filter {
+  display: inline-flex;
+  line-height: 0;
 }
 
 /* Only as wide as the switch, so the header's centring puts it under the name. */
@@ -2936,8 +2952,7 @@ a.guided-button lightning-icon {
   --slds-c-icon-color-foreground-default: var(--muted);
 }
 
-.picker-input,
-.word-input {
+.picker-input {
   width: 100%;
   border: var(--slds-g-sizing-border-1, 1px) solid var(--rule);
   background: var(--surface);
@@ -2950,14 +2965,12 @@ a.guided-button lightning-icon {
     box-shadow 160ms var(--ease-out);
 }
 
-.picker-input::placeholder,
-.word-input::placeholder {
+.picker-input::placeholder {
   color: var(--muted);
   opacity: 0.8;
 }
 
-.picker-input:focus,
-.word-input:focus {
+.picker-input:focus {
   border-color: var(--accent-fill);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-fill) 22%, transparent);
 }
@@ -3232,48 +3245,81 @@ a.guided-button lightning-icon {
   gap: calc(0.5rem * var(--d));
 }
 
-.word-input {
+/* One field each: the field's name, opening the field list; × takes it off. */
+.field-choice {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(0.5rem * var(--d));
+  min-width: 0;
   height: 2.75rem;
   padding: 0 calc(1rem * var(--d));
+  border: var(--slds-g-sizing-border-1, 1px) solid var(--rule);
   border-radius: var(--slds-g-radius-border-3, 0.75rem);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
   font-size: 0.9375rem;
+  text-align: start;
+  cursor: pointer;
+  transition:
+    border-color 160ms var(--ease-out),
+    box-shadow 160ms var(--ease-out);
 }
 
-/* An Email Message's subtitle: set by the timeline, shown, not edited. */
-.word-input:disabled {
+.field-choice lightning-icon {
+  flex: none;
+  --slds-c-icon-color-foreground-default: var(--muted);
+}
+
+.field-choice:hover:not(:disabled),
+.field-choice[aria-expanded="true"] {
+  border-color: var(--accent-fill);
+}
+
+/* An Email Message's subtitle: set by the timeline, shown, not chosen. */
+.field-choice:disabled {
   background: var(--paper);
   cursor: not-allowed;
+}
+
+.field-choice-name {
+  overflow: hidden;
+  font-weight: var(--slds-g-font-weight-5, 500);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.field-choice-name_none {
+  color: var(--muted);
+  font-weight: var(--slds-g-font-weight-4, 400);
+}
+
+.field-clear {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  border: var(--slds-g-sizing-border-1, 1px) solid var(--rule);
+  border-radius: var(--slds-g-radius-border-3, 0.75rem);
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.field-clear lightning-icon {
+  --slds-c-icon-color-foreground-default: var(--muted);
+}
+
+.field-clear:hover {
+  border-color: var(--accent-fill);
 }
 
 .word-note {
   margin: 0;
   color: var(--muted);
   font-size: var(--slds-g-font-scale-base, 0.8125rem);
-}
-
-.add-field {
-  display: inline-flex;
-  align-items: center;
-  gap: calc(0.375rem * var(--d));
-  flex: none;
-  padding: 0 calc(1rem * var(--d));
-  border: var(--slds-g-sizing-border-1, 1px) solid var(--rule);
-  border-radius: var(--slds-g-radius-border-3, 0.75rem);
-  background: var(--surface);
-  color: var(--accent);
-  font: inherit;
-  font-weight: var(--slds-g-font-weight-6, 600);
-  cursor: pointer;
-}
-
-.add-field lightning-icon {
-  --slds-c-icon-color-foreground-default: currentColor;
-}
-
-.add-field:hover,
-.add-field[aria-expanded="true"] {
-  border-color: var(--accent-fill);
-  background: var(--accent-wash);
 }
 
 .token-picker {
@@ -4461,7 +4507,8 @@ a.guided-button lightning-icon {
 .ghost:focus-visible,
 .primary:focus-visible,
 .save:focus-visible,
-.add-field:focus-visible {
+.field-choice:focus-visible,
+.field-clear:focus-visible {
   outline: 2px solid var(--accent-fill);
   outline-offset: 2px;
 }

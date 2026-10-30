@@ -251,6 +251,16 @@ private class TimeDriveSetupControllerTest {
   }
 
   @IsTest
+  static void aTitleOrSubtitleIsOneField() {
+    Assert.areEqual('{Subject}', TimeDriveSetupController.oneField('{Subject}'));
+    Assert.areEqual('{Status}', TimeDriveSetupController.oneField('{Status} · {Priority}'), 'the first is kept');
+    Assert.areEqual('{Name}', TimeDriveSetupController.oneField('Order {Name} placed'), 'words go');
+    Assert.areEqual('{Who.Name}', TimeDriveSetupController.oneField('{Who.Name}'), 'a related field is one field');
+    Assert.isNull(TimeDriveSetupController.oneField('Order placed'), 'no field: the title shows the name');
+    Assert.isNull(TimeDriveSetupController.oneField(null));
+  }
+
+  @IsTest
   static void leavesDataCloudProfileObjectsOut() {
     // No DMOs in a test: two objects that describe stand in, one of them a Profile object.
     TimeDriveSetupController.testDmoNames = new List<String>{ 'Contact', 'Account' };

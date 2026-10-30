@@ -57,7 +57,7 @@ describe("c-time-drive-org-check", () => {
     jest.clearAllMocks();
   });
 
-  it("says what it will do first, then ticks each check off in turn and reports what it found and added", async () => {
+  it("says what it will do first, then ticks each check off in turn and says which features are in use", async () => {
     const element = mount();
     const root = element.shadowRoot;
     // The popup is the same height at every stage; the start pads with the component's own mark.
@@ -76,23 +76,19 @@ describe("c-time-drive-org-check", () => {
     await flushes(12);
     expect(runOrgCheck.mock.calls.map((c) => c[0].key)).toEqual(["SharedActivities", "PersonAccounts"]);
 
+    // One line each: the feature, and whether it is in use. Nothing about the sources.
     const cards = [...root.querySelectorAll(".check-card")];
     expect(cards.map((c) => c.querySelector(".check-card-title").textContent)).toEqual([
       "Shared Activities",
       "Person Accounts"
     ]);
-    expect(cards[0].textContent).toContain("Tasks can have several contacts.");
     expect(cards[0].querySelector(".check-badge_on").textContent).toBe("On");
-    // The exact setting, where it is, and which way it is (the badge).
-    expect(cards[0].querySelector(".check-card-setting").textContent).toBe(
-      "Allow Users to Relate Multiple Contacts to Tasks and Events"
-    );
-    expect(cards[0].querySelector(".check-card-where").textContent).toBe("Setup › Activity Settings");
-    expect(cards[0].querySelector(".check-card-adds").textContent).toContain("Contact Tasks");
-    expect(cards[0].querySelector(".check-card-adds-label").textContent).toBe("Added");
-    // The recommended sources were added without asking.
+    expect(cards[1].querySelector(".check-badge").textContent).toBe("Off");
+    expect(cards[0].textContent).not.toContain("Tasks can have several contacts.");
+    expect(root.querySelector(".summary-title").textContent).toBe("What we found");
+    expect(root.textContent).not.toContain("We added");
+    // The recommended sources were still added without asking.
     expect(quickStart).toHaveBeenCalledWith({ parentObject: null });
-    expect(root.querySelector(".check-add .summary-title").textContent).toBe("We added 2 sources on 1 record page");
     expect(root.querySelector("lightning-button.start")).toBeNull();
     expect(root.querySelector("lightning-button.done")).not.toBeNull();
   });
@@ -109,7 +105,7 @@ describe("c-time-drive-org-check", () => {
     const report = LightningModal.closed[0];
     expect(report.checks.map((c) => c.key)).toEqual(["SharedActivities", "PersonAccounts"]);
     expect(report.checks[0]).toMatchObject({ found: "On", present: true });
-    expect(report.added).toEqual([{ page: "Contact", label: "Contact", items: ["Tasks (every contact)", "Events"] }]);
+    expect(report.added).toBeUndefined();
   });
 
   it("closes with nothing from the start when cancelled", () => {
@@ -119,39 +115,14 @@ describe("c-time-drive-org-check", () => {
     expect(LightningModal.closed).toEqual([undefined]);
   });
 
-  it("adds nothing when everything recommended is already there", async () => {
-    quickStart.mockResolvedValue({ added: [], switched: [] });
+  it("says so when the recommended sources couldn't be added", async () => {
+    quickStart.mockRejectedValue({ body: { message: "No access." } });
     const element = mount();
     const root = element.shadowRoot;
     root.querySelector("lightning-button.start").click();
     await flushes(12);
-    // Asked every time: a setting may have changed since the last check.
-    expect(quickStart).toHaveBeenCalledWith({ parentObject: null });
-    // Nothing new to add: no "We added" heading, and the cards say "Adds" not "Added".
-    expect(root.querySelector(".check-add .summary-title")).toBeNull();
-    expect(root.querySelector(".check-card-adds-label").textContent).toBe("Adds");
-  });
-
-  it("says which sources it switched for the variant that fits now, and reports them", async () => {
-    LightningModal.closed.length = 0;
-    quickStart.mockResolvedValue({
-      added: [],
-      switched: [{ parentObject: "Contact", offLabel: "Tasks", onLabel: "Tasks (every contact)", onKey: "Tasks_Every" }]
-    });
-    const element = mount();
-    const root = element.shadowRoot;
-    root.querySelector("lightning-button.start").click();
-    await flushes(12);
-    const block = root.querySelector(".check-switch");
-    expect(block.querySelector(".summary-title").textContent).toBe("We switched 1 source to fit your org");
-    expect(block.textContent).toContain("nothing shows twice");
-    expect(block.querySelector(".check-add-page").textContent).toBe("Contact");
-    expect(block.querySelector(".badge_off").textContent).toBe("Tasks");
-    expect(block.querySelector(".badge:not(.badge_off)").textContent).toBe("Tasks (every contact)");
-
-    root.querySelector("lightning-button.done").click();
-    expect(LightningModal.closed[0].switched).toEqual([
-      { page: "Contact", offLabel: "Tasks", onLabel: "Tasks (every contact)" }
-    ]);
+    expect(root.querySelector(".notice-title").textContent).toBe("The recommended sources couldn't be added");
+    // What was found still shows.
+    expect(root.querySelectorAll(".check-card")).toHaveLength(2);
   });
 });

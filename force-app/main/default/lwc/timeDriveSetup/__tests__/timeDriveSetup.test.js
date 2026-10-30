@@ -261,10 +261,9 @@ describe("c-time-drive-setup", () => {
     expect(step.classList.contains("guided-step_done")).toBe(true);
     expect([...step.querySelectorAll(".guided-report li")].map((li) => li.textContent)).toEqual([
       "Shared Activities: On",
-      "Person Accounts: Off",
-      "Added 2 sources: Contact (Tasks (every contact), Events)"
+      "Person Accounts: Off"
     ]);
-    // The aside says in a sentence or two what it meant for the sources added.
+    // The aside says in a sentence what the settings mean for the timeline.
     root.querySelector('.guided-step[data-key="orgcheck"] .guided-text').click();
     await flush();
     const parts = [...root.querySelectorAll(".guided-aside .guided-aside-part")];
@@ -274,7 +273,7 @@ describe("c-time-drive-setup", () => {
       "What it meant for your sources"
     ]);
     expect(parts[2].querySelector("p").textContent).toBe(
-      "Because of what is on in your org, tasks and events include every contact on them, and emails come from email tasks. We added 2 sources on 1 record page to match."
+      "Because of what is on in your org, tasks and events include every contact on them, and emails come from email tasks."
     );
   });
 
@@ -723,6 +722,48 @@ describe("c-time-drive-setup", () => {
       expect(root.querySelector(".picker-input").value).toBe("Task › Due Date");
     });
 
+    it("gives the title and subtitle one field each: a choice replaces the one there, and × takes it off", async () => {
+      const plain = [
+        { name: "CreatedDate", label: "Created Date", type: "datetime", filterable: true, values: [] },
+        { name: "Subject", label: "Subject", type: "string", filterable: true, values: [] },
+        { name: "Status", label: "Status", type: "picklist", filterable: true, values: [] }
+      ];
+      const root = await openStep("look", { title: "", subtitle: "" }, () => plain);
+      await settle();
+      const choice = (field) => root.querySelector(`.field-choice[data-field="${field}"] .field-choice-name`);
+      // None yet: the title shows the source's name, the subtitle nothing.
+      expect(choice("title").textContent).toBe("None: its name");
+      expect(choice("subtitle").textContent).toBe("None");
+      expect(root.querySelector('.field-clear[data-field="title"]')).toBeNull();
+      // No box to type in.
+      expect(root.querySelector(".word-input")).toBeNull();
+
+      const pick = async (field, index) => {
+        root.querySelector(`.field-choice[data-field="${field}"]`).click();
+        await settle();
+        const picker = root.querySelector("c-time-drive-field-picker");
+        // A plain field, not a lookup that leads on.
+        const result = [...picker.shadowRoot.querySelectorAll(".token-result")].filter(
+          (b) => !b.querySelector(".token-go")
+        )[index];
+        const label = result.querySelector("span").textContent;
+        result.click();
+        await settle();
+        return label;
+      };
+      const first = await pick("title", 0);
+      expect(choice("title").textContent).toBe(first);
+      const second = await pick("title", 1);
+      // The second takes the first's place: one field, never two.
+      expect(second).not.toBe(first);
+      expect(choice("title").textContent).toBe(second);
+      expect(root.querySelectorAll(".sample-title .token")).toHaveLength(1);
+
+      root.querySelector('.field-clear[data-field="title"]').click();
+      await settle();
+      expect(choice("title").textContent).toBe("None: its name");
+    });
+
     it("lays out the look: the icon preview with the title and subtitle beside it, the pickers side by side below", async () => {
       const root = await openStep("look", { icon: "utility:record", iconColour: "#0B5CAB" });
       await settle();
@@ -1161,6 +1202,7 @@ describe("c-time-drive-setup", () => {
         active: true,
         category: "Commerce",
         lenses: ["Commerce"],
+        filter: "Status__c = 'Placed'",
         summary: "Invoice records."
       },
       {
@@ -1248,6 +1290,13 @@ describe("c-time-drive-setup", () => {
       expect(cell(root, "Order_Placed", "Commerce").checked).toBe(true);
       expect(cell(root, "Order_Placed", "Marketing").checked).toBe(false);
       expect(cell(root, "Tasks", "Marketing").checked).toBe(true);
+      // An info icon after each name says its filter, to tell apart sources on one object.
+      const filterOf = (name) =>
+        [...root.querySelectorAll("tbody .lens-grid-row")]
+          .find((r) => r.querySelector(".lens-source-object").textContent === name)
+          .querySelector("lightning-helptext.lens-source-filter").content;
+      expect(filterOf("Invoice (Orders)")).toBe("Filter: Status__c = 'Placed'");
+      expect(filterOf("Task")).toBe("No filter: every record");
       // In a lens of its own, a source is in All only when ticked there.
       expect(cell(root, "Order_Placed", "All").checked).toBe(false);
       expect(root.querySelectorAll("tbody .badge_off")).toHaveLength(1);

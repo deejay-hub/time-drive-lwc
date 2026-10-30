@@ -264,7 +264,6 @@
                 <lightning-icon icon-name="utility:check" size="x-small" variant="inverse"></lightning-icon>
               </span>
               <span class="guided-count-number">Setup complete</span>
-              <span class="guided-count-label">{guidedAllDoneText}</span>
             </template>
             <template lwc:else>
               <span class="guided-count-number">{guidedProgressText}</span>
@@ -454,6 +453,7 @@
                           <lightning-icon icon-name={r.iconName} size="xx-small" variant="inverse"></lightning-icon>
                         </span>
                         <span class="lens-source-object">{r.name}</span>
+                        <lightning-helptext class="lens-source-filter" content={r.filterText}></lightning-helptext>
                         <span lwc:if={r.off} class="badge badge_off">Inactive</span>
                       </th>
                       <template for:each={r.cells} for:item="cell">
@@ -1721,33 +1721,36 @@
                         <template lwc:if={showWords}>
                           <div class="word-fields">
                             <div class="word-field">
-                              <label class="word-label" for="title-input">Title</label>
+                              <span class="word-label" id="title-label">Title</span>
                               <div class="word-row">
-                                <input
-                                  id="title-input"
-                                  class="word-input"
-                                  type="text"
-                                  placeholder="Order placed"
-                                  value={titleText}
-                                  data-field="title"
-                                  oninput={handleWords}
-                                />
                                 <button
-                                  lwc:if={hasFields}
-                                  class="add-field"
+                                  class="field-choice"
                                   type="button"
                                   data-field="title"
+                                  aria-labelledby="title-label title-choice"
                                   aria-expanded={titleTokensOpen}
+                                  disabled={cannotChooseTitleField}
                                   onclick={handleTokenOpen}
                                 >
-                                  <lightning-icon icon-name="utility:add" size="xx-small"></lightning-icon>
-                                  <span>Field</span>
+                                  <span id="title-choice" class={titleChoiceClass}>{titleChoice}</span>
+                                  <lightning-icon icon-name="utility:chevrondown" size="xx-small"></lightning-icon>
+                                </button>
+                                <button
+                                  lwc:if={canClearTitle}
+                                  class="field-clear"
+                                  type="button"
+                                  data-field="title"
+                                  title="Show its name instead"
+                                  aria-label="Take the field off the title"
+                                  onclick={handleFieldClear}
+                                >
+                                  <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon>
                                 </button>
                               </div>
                               <template lwc:if={titleTokensOpen}>
                                 <c-time-drive-field-picker
                                   fields={tokenFields}
-                                  label="Search fields to add to the title"
+                                  label="Search fields for the title"
                                   onpick={handleFieldPick}
                                   onclose={handleFieldPickClose}
                                 ></c-time-drive-field-picker>
@@ -1755,29 +1758,35 @@
                             </div>
 
                             <div class="word-field">
-                              <label class="word-label" for="subtitle-input">Subtitle</label>
+                              <span class="word-label" id="subtitle-label">Subtitle</span>
                               <div class="word-row">
-                                <input
-                                  id="subtitle-input"
-                                  class="word-input"
-                                  type="text"
-                                  placeholder={subtitlePlaceholder}
-                                  value={subtitleText}
-                                  disabled={isEmailMessage}
-                                  aria-describedby="subtitle-note"
-                                  data-field="subtitle"
-                                  oninput={handleWords}
-                                />
                                 <button
-                                  lwc:if={canAddSubtitleField}
-                                  class="add-field"
+                                  class="field-choice"
                                   type="button"
                                   data-field="subtitle"
+                                  aria-labelledby="subtitle-label subtitle-choice"
+                                  aria-describedby="subtitle-note"
                                   aria-expanded={subtitleTokensOpen}
+                                  disabled={cannotChooseSubtitleField}
                                   onclick={handleTokenOpen}
                                 >
-                                  <lightning-icon icon-name="utility:add" size="xx-small"></lightning-icon>
-                                  <span>Field</span>
+                                  <span id="subtitle-choice" class={subtitleChoiceClass}>{subtitleChoice}</span>
+                                  <lightning-icon
+                                    lwc:if={canAddSubtitleChoice}
+                                    icon-name="utility:chevrondown"
+                                    size="xx-small"
+                                  ></lightning-icon>
+                                </button>
+                                <button
+                                  lwc:if={canClearSubtitle}
+                                  class="field-clear"
+                                  type="button"
+                                  data-field="subtitle"
+                                  title="No subtitle"
+                                  aria-label="Take the field off the subtitle"
+                                  onclick={handleFieldClear}
+                                >
+                                  <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon>
                                 </button>
                               </div>
                               <p lwc:if={isEmailMessage} id="subtitle-note" class="word-note">
@@ -1786,7 +1795,7 @@
                               <template lwc:if={subtitleTokensOpen}>
                                 <c-time-drive-field-picker
                                   fields={tokenFields}
-                                  label="Search fields to add to the subtitle"
+                                  label="Search fields for the subtitle"
                                   onpick={handleFieldPick}
                                   onclose={handleFieldPickClose}
                                 ></c-time-drive-field-picker>

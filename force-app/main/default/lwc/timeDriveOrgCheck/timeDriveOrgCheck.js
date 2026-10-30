@@ -3,8 +3,8 @@
  * off one real check at a time, then what was found and what that means. The
  * recommended sources are added as soon as the checks are done, and where a
  * setting changed since the last check, a source is switched for the variant
- * that fits now, so the same records are never plotted twice; closing it
- * hands Setup the report (what each check found, what was added and switched).
+ * that fits now, so the same records are never plotted twice. The summary
+ * says which features are in use; closing it hands Setup that report.
  */
 import LightningModal from "lightning/modal";
 import { api } from "lwc";
@@ -16,7 +16,6 @@ import { describeError } from "c/timeDriveErrors";
 
 // How long a finished check shows before the next starts, so each tick is seen.
 const CHECK_PAUSE = 450;
-const PAGE_LABELS = { Contact: "Contact", Account: "Account", PersonAccount: "Person Account" };
 
 export default class TimeDriveOrgCheck extends LightningModal {
   // Shown in the header.
@@ -27,8 +26,6 @@ export default class TimeDriveOrgCheck extends LightningModal {
 
   stage = "intro";
   checks = [];
-  added = [];
-  switched = [];
   error;
 
   get isIntro() {
@@ -86,9 +83,7 @@ export default class TimeDriveOrgCheck extends LightningModal {
       unknown: result.unknown,
       found: result.found,
       setting: result.setting,
-      settingWhere: result.settingWhere,
-      meaning: result.meaning,
-      adds: result.adds ?? []
+      settingWhere: result.settingWhere
     });
     await this.runFrom(index + 1);
   }
@@ -103,34 +98,13 @@ export default class TimeDriveOrgCheck extends LightningModal {
     return new Promise((resolve) => setTimeout(resolve, reduced ? 0 : ms));
   }
 
-  // The recommended sources, added without asking, and any source switched
-  // for the variant that fits the org now; what changed is listed.
+  // The recommended sources, added (and switched for the variant that fits) without asking.
   async addRecommended() {
-    this.added = [];
-    this.switched = [];
-    let result;
     try {
-      result = await quickStart({ parentObject: null });
+      await quickStart({ parentObject: null });
     } catch (e) {
       this.addError = describeError(e);
-      return;
     }
-    const groups = [];
-    for (const t of result?.added ?? []) {
-      let group = groups.find((g) => g.page === t.parentObject);
-      if (!group) {
-        group = { page: t.parentObject, label: PAGE_LABELS[t.parentObject] ?? t.parentObject, items: [] };
-        groups.push(group);
-      }
-      group.items.push({ key: t.key, label: t.label });
-    }
-    this.added = groups;
-    this.switched = (result?.switched ?? []).map((s) => ({
-      key: `${s.parentObject}|${s.offLabel}|${s.onKey}`,
-      page: PAGE_LABELS[s.parentObject] ?? s.parentObject,
-      offLabel: s.offLabel,
-      onLabel: s.onLabel
-    }));
   }
 
   addError;
@@ -141,11 +115,7 @@ export default class TimeDriveOrgCheck extends LightningModal {
       className: `check-row check-row_${st.state}`,
       isRunning: st.state === "running",
       isDone: st.state === "done",
-      badgeClass: `check-badge${st.present ? " check-badge_on" : ""}${st.unknown ? " check-badge_unknown" : ""}`,
-      hasAdds: (st.adds ?? []).length > 0,
-      // "Added" once we have added sources; "Adds" for what a setting would bring.
-      addsLabel: this.hasAdded ? "Added" : "Adds",
-      addsText: (st.adds ?? []).join(", ")
+      badgeClass: `check-badge${st.present ? " check-badge_on" : ""}${st.unknown ? " check-badge_unknown" : ""}`
     }));
   }
 
@@ -159,35 +129,7 @@ export default class TimeDriveOrgCheck extends LightningModal {
     return `${done} of ${this.checks.length} checked`;
   }
 
-  get addedCount() {
-    return this.added.reduce((n, g) => n + g.items.length, 0);
-  }
-
-  // The block above the findings: what was added and switched, or why it couldn't be.
-  get showAdded() {
-    return this.hasAdded || this.hasSwitched || Boolean(this.addError);
-  }
-
-  get hasSwitched() {
-    return this.switched.length > 0;
-  }
-
-  get switchedText() {
-    const n = this.switched.length;
-    return `${n} ${n === 1 ? "source" : "sources"} to fit your org`;
-  }
-
-  get hasAdded() {
-    return this.addedCount > 0;
-  }
-
-  get addedText() {
-    const n = this.addedCount;
-    const pages = this.added.length;
-    return `${n} ${n === 1 ? "source" : "sources"} on ${pages} record ${pages === 1 ? "page" : "pages"}`;
-  }
-
-  // What Setup keeps: a brief report of what was found and added.
+  // What Setup keeps: a brief report of what was found.
   handleDone() {
     this.close({
       checks: this.checks.map((st) => ({
@@ -198,8 +140,6 @@ export default class TimeDriveOrgCheck extends LightningModal {
         present: st.present === true,
         unknown: st.unknown === true
       })),
-      added: this.added.map((g) => ({ page: g.page, label: g.label, items: g.items.map((i) => i.label) })),
-      switched: this.switched.map((s) => ({ page: s.page, offLabel: s.offLabel, onLabel: s.onLabel })),
       error: this.addError?.message
     });
   }

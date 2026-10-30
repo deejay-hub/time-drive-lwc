@@ -1102,6 +1102,8 @@ export default class TimeDriveSetup extends LightningElement {
         return {
           key: src.developerName,
           name,
+          // Tells apart sources on the same object with different filters.
+          filterText: src.filter ? `Filter: ${src.filter}` : "No filter: every record",
           off: !src.active,
           iconName: src.icon || "utility:record",
           chipStyle: `--chip: ${src.iconColour || "var(--setup-chip)"}`,
@@ -1429,29 +1431,16 @@ export default class TimeDriveSetup extends LightningElement {
     await this.loadSources();
   }
 
-  // The brief report under the step: what each check found, then what was added.
+  // The brief report under the step: what each check found.
   get checkReportLines() {
     const report = this.checkReport;
     if (!report) return [];
     const lines = (report.checks ?? []).map((c) => ({ key: c.key, text: `${c.label}: ${c.found}` }));
-    const n = (report.added ?? []).reduce((count, g) => count + g.items.length, 0);
     if (report.error) lines.push({ key: "error", text: `The recommended sources couldn't be added: ${report.error}` });
-    else if (n) {
-      lines.push({
-        key: "added",
-        text: `Added ${n} ${n === 1 ? "source" : "sources"}: ${report.added.map((g) => `${g.label} (${g.items.join(", ")})`).join("; ")}`
-      });
-    } else lines.push({ key: "added", text: "The recommended sources were already added." });
-    for (const sw of report.switched ?? []) {
-      lines.push({
-        key: `switched-${sw.page}-${sw.offLabel}`,
-        text: `${sw.page}: ${sw.offLabel} switched off for ${sw.onLabel}`
-      });
-    }
     return lines;
   }
 
-  // In a sentence or two, what the settings found meant for the records added.
+  // In a sentence, what the settings found mean for the timeline.
   get checkMeaning() {
     const report = this.checkReport;
     if (!report?.checks?.length) return "";
@@ -1461,11 +1450,7 @@ export default class TimeDriveSetup extends LightningElement {
     if (on.has("ContactsToMultipleAccounts")) clauses.push("account pages include their related contacts");
     if (on.has("PersonAccounts")) clauses.push("Person Accounts get a timeline page of their own");
     clauses.push(on.has("EnhancedEmail") ? "emails come from Email Messages" : "emails come from email tasks");
-    const first = `Because of what is on in your org, ${clauses.join(", and ")}.`;
-    const n = (report.added ?? []).reduce((count, g) => count + g.items.length, 0);
-    if (!n) return first;
-    const pages = report.added.length;
-    return `${first} We added ${n} ${n === 1 ? "source" : "sources"} on ${pages} record ${pages === 1 ? "page" : "pages"} to match.`;
+    return `Because of what is on in your org, ${clauses.join(", and ")}.`;
   }
 
   // The org has been checked (the Setup step is ticked).
@@ -1894,10 +1879,6 @@ export default class TimeDriveSetup extends LightningElement {
   get guidedProgressText() {
     const steps = this.guidedSteps;
     return `${steps.filter((st) => st.done).length} of ${steps.length}`;
-  }
-
-  get guidedAllDoneText() {
-    return `All ${this.guidedSteps.length} steps done. The timeline is ready.`;
   }
 
   get guidedAllDone() {
@@ -2512,7 +2493,7 @@ export default class TimeDriveSetup extends LightningElement {
       case "look":
         return !this.showWords
           ? ""
-          : "Add fields to fill in each item's own values. A lookup (›) leads to a related record's fields: a member's Campaign › Name, say.";
+          : "Choose the field each item's title and subtitle show. A lookup (›) leads to a related record's fields: a member's Campaign › Name, say.";
       case "open":
         return this.isSalesforce
           ? "Opening an item shows more about it, right on the timeline. Clicking its title opens a record page: for a junction like Campaign Member, often the record it joins to. The previews use sample values."
@@ -2845,7 +2826,7 @@ export default class TimeDriveSetup extends LightningElement {
       look:
         this.reached > this.flow.indexOf("look")
           ? this.showWords
-            ? `${d.title?.trim() || "Its name"} · ${colour ?? "No colour chosen"}`
+            ? `${this.titleField ? this.fieldLabel(this.titleField) : "Its name"} · ${colour ?? "No colour chosen"}`
             : (colour ?? "No colour chosen")
           : null,
       open: this.reached > this.flow.indexOf("open") ? this.openingAnswer : null
@@ -3934,28 +3915,47 @@ export default class TimeDriveSetup extends LightningElement {
     return out;
   }
 
-  // On screen, {Order_Time__c} reads {Order Time}; typed labels map back.
-  showTokens(text) {
-    return (text ?? "").replace(/\{([^}]+)\}/g, (all, name) => `{${this.fieldLabel(name)}}`);
+  // The title and subtitle are one field each: the first {Field} in what's
+  // kept, or none (the title then shows the source's name).
+  firstField(text) {
+    return /\{([^}]+)\}/.exec(text ?? "")?.[1] ?? "";
   }
 
-  storeTokens(text) {
-    const byLabel = new Map([
-      ...(this.fields ?? []).map((f) => [f.label.toLowerCase(), f.name]),
-      ...Object.entries(this.pathLabels).map(([path, label]) => [label.toLowerCase(), path])
-    ]);
-    return (text ?? "").replace(
-      /\{([^}]+)\}/g,
-      (all, label) => `{${byLabel.get(label.trim().toLowerCase()) ?? label}}`
-    );
+  get titleField() {
+    return this.firstField(this.draft.title);
   }
 
-  get titleText() {
-    return this.showTokens(this.draft.title);
+  get subtitleField() {
+    return this.isEmailMessage ? "" : this.firstField(this.draft.subtitle);
   }
 
-  get subtitleText() {
-    return this.isEmailMessage ? "" : this.showTokens(this.draft.subtitle);
+  get titleChoice() {
+    return this.titleField ? this.fieldLabel(this.titleField) : "None: its name";
+  }
+
+  get subtitleChoice() {
+    if (this.isEmailMessage) return EMAIL_SUBTITLE;
+    return this.subtitleField ? this.fieldLabel(this.subtitleField) : "None";
+  }
+
+  get titleChoiceClass() {
+    return `field-choice-name${this.titleField ? "" : " field-choice-name_none"}`;
+  }
+
+  get subtitleChoiceClass() {
+    return `field-choice-name${this.subtitleField ? "" : " field-choice-name_none"}`;
+  }
+
+  get cannotChooseTitleField() {
+    return !this.hasFields;
+  }
+
+  get canClearTitle() {
+    return Boolean(this.titleField);
+  }
+
+  get canClearSubtitle() {
+    return Boolean(this.subtitleField);
   }
 
   // Email Messages' subtitle is the timeline's own (sender, then who it was
@@ -3964,25 +3964,27 @@ export default class TimeDriveSetup extends LightningElement {
     return this.draft?.objectName === "EmailMessage";
   }
 
-  get subtitlePlaceholder() {
-    return this.isEmailMessage ? EMAIL_SUBTITLE : "Optional";
+  get cannotChooseSubtitleField() {
+    return !this.hasFields || this.isEmailMessage;
   }
 
-  get canAddSubtitleField() {
-    return this.hasFields && !this.isEmailMessage;
+  get canAddSubtitleChoice() {
+    return !this.cannotChooseSubtitleField;
   }
 
-  handleWords(event) {
-    this.update({ [event.target.dataset.field]: this.storeTokens(event.target.value) });
+  // Taken off: the title shows the source's name again, the subtitle nothing.
+  handleFieldClear(event) {
+    this.update({ [event.currentTarget.dataset.field]: "" });
+    this.tokenTarget = undefined;
   }
 
   get titleParts() {
-    return this.partsOf(this.draft.title || this.draft.label || "Title");
+    return this.partsOf(this.titleField ? `{${this.titleField}}` : this.draft.label || "Title");
   }
 
   get subtitleParts() {
     if (this.isEmailMessage) return [{ key: "email", text: EMAIL_SAMPLE_SUBTITLE, className: "plain" }];
-    return this.partsOf(this.draft.subtitle);
+    return this.partsOf(this.subtitleField ? `{${this.subtitleField}}` : "");
   }
 
   get titleTokensOpen() {
@@ -3999,12 +4001,9 @@ export default class TimeDriveSetup extends LightningElement {
     this.tokenTarget = this.tokenTarget === target ? undefined : target;
   }
 
-  // Adds {Field} after what's there.
+  // The field chosen takes the place of the one there.
   insertToken(name) {
-    const target = this.tokenTarget;
-    const text = this.draft[target] ?? "";
-    const gap = text && !/\s$/.test(text) ? (target === "subtitle" ? " · " : " ") : "";
-    this.update({ [target]: `${text}${gap}{${name}}` });
+    this.update({ [this.tokenTarget]: `{${name}}` });
     this.tokenTarget = undefined;
   }
 

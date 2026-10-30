@@ -77,65 +77,16 @@
       </template>
 
       <template lwc:if={isSummary}>
-        <section lwc:if={showAdded} class="check-add">
-          <template lwc:if={addError}>
-            <div class="notice" role="alert">
-              <p class="notice-title">The recommended sources couldn't be added</p>
-              <p>{addError.message}</p>
-            </div>
-          </template>
-          <template lwc:else>
-            <template lwc:if={hasAdded}>
-              <h2 class="summary-title">We added {addedText}</h2>
-              <ul class="check-add-groups">
-                <template for:each={added} for:item="g">
-                  <li key={g.page} class="check-add-group">
-                    <span class="check-add-page">{g.label}</span>
-                    <span class="check-add-items">
-                      <template for:each={g.items} for:item="i">
-                        <span key={i.key} class="badge">{i.label}</span>
-                      </template>
-                    </span>
-                  </li>
-                </template>
-              </ul>
-            </template>
-            <div lwc:if={hasSwitched} class="check-switch">
-              <h2 class="summary-title">We switched {switchedText}</h2>
-              <p class="check-switch-lede">
-                A setting changed since your last check, so these records are now read another way. Only one way is on,
-                so nothing shows twice. The source switched off is kept, with its fields and highlights.
-              </p>
-              <ul class="check-add-groups">
-                <template for:each={switched} for:item="s">
-                  <li key={s.key} class="check-add-group">
-                    <span class="check-add-page">{s.page}</span>
-                    <span class="check-add-items">
-                      <span class="badge badge_off">{s.offLabel}</span>
-                      <span class="check-switch-to">switched off for</span>
-                      <span class="badge">{s.onLabel}</span>
-                    </span>
-                  </li>
-                </template>
-              </ul>
-            </div>
-          </template>
-        </section>
-
-        <h2 class="summary-title summary-title_found">What we found</h2>
+        <div lwc:if={addError} class="notice" role="alert">
+          <p class="notice-title">The recommended sources couldn't be added</p>
+          <p>{addError.message}</p>
+        </div>
+        <h2 class="summary-title">What we found</h2>
         <ul class="check-found">
           <template for:each={rows} for:item="c">
             <li key={c.key} class="check-card">
-              <div class="check-card-head">
-                <h3 class="check-card-title">{c.label}</h3>
-                <span class={c.badgeClass}>{c.found}</span>
-              </div>
-              <p class="check-card-setting">{c.setting}</p>
-              <p class="check-card-where">{c.settingWhere}</p>
-              <p class="check-card-text">{c.meaning}</p>
-              <p lwc:if={c.hasAdds} class="check-card-adds">
-                <span class="check-card-adds-label">{c.addsLabel}</span> {c.addsText}
-              </p>
+              <span class="check-card-title">{c.label}</span>
+              <span class={c.badgeClass}>{c.found}</span>
             </li>
           </template>
         </ul>
