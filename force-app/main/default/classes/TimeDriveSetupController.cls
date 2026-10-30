@@ -2617,13 +2617,7 @@ public with sharing class TimeDriveSetupController {
     /** The icon colour. */
     @AuraEnabled
     public String iconColour { get; set; }
-    /** Whether an opened item shows the compact layout. */
-    @AuraEnabled
-    public Boolean useCompactLayout { get; set; }
-    /**
-     * Where a click goes, and whose compact layout an opened item shows (blank: the item's own
-     * record).
-     */
+    /** Where a click goes (blank: the item's own record). */
     @AuraEnabled
     public String recordIdField { get; set; }
     /** Whether the source is fitted to the org; kept as shipped through edits and switches. */
@@ -2635,12 +2629,6 @@ public with sharing class TimeDriveSetupController {
     /** The group of variants an org-fitted source belongs to. */
     @AuraEnabled
     public String variantGroup { get; set; }
-    /** The field whose record supplies the details. */
-    @AuraEnabled
-    public String detailsRecordField { get; set; }
-    /** The object the details are read from. */
-    @AuraEnabled
-    public String detailsObject { get; set; }
     /** The Apex class that supplies the events. */
     @AuraEnabled
     public String providerClass { get; set; }
@@ -2706,14 +2694,11 @@ public with sharing class TimeDriveSetupController {
       subtitle = s.Subtitle__c;
       icon = s.Icon__c;
       iconColour = s.Icon_Colour__c;
-      useCompactLayout = s.Use_Compact_Layout__c;
       recordIdField = s.Record_Id_Field__c;
       Map<String, Object> populated = s.getPopulatedFieldsAsMap();
       orgFit = populated.get('Org_Fit__c') == true;
       requires = (String) populated.get('Requires__c');
       variantGroup = (String) populated.get('Variant_Group__c');
-      detailsRecordField = s.Details_Record_Field__c;
-      detailsObject = s.Details_Object__c;
       providerClass = s.Provider_Class__c;
       sequence = s.Sequence__c;
     }
@@ -2739,14 +2724,6 @@ public with sharing class TimeDriveSetupController {
      */
     public String recordIdFieldOrRelated() {
       return String.isBlank(recordIdField) ? relatedRecordField() : recordIdField;
-    }
-
-    /**
-     * The field whose record supplies the details: the one set, else the related record's.
-     * @return The field name, or null.
-     */
-    public String detailsRecordFieldOrRelated() {
-      return String.isBlank(detailsRecordField) ? relatedRecordField() : detailsRecordField;
     }
 
     /**
@@ -2798,10 +2775,7 @@ public with sharing class TimeDriveSetupController {
         Subtitle__c = subtitle,
         Icon__c = icon,
         Icon_Colour__c = iconColour,
-        Use_Compact_Layout__c = useCompactLayout == true,
         Record_Id_Field__c = recordIdFieldOrRelated(),
-        Details_Record_Field__c = detailsRecordFieldOrRelated(),
-        Details_Object__c = detailsObject,
         Provider_Class__c = providerClass
       );
     }

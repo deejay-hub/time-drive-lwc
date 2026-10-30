@@ -722,6 +722,37 @@ describe("c-time-drive-setup", () => {
       expect(root.querySelector(".picker-input").value).toBe("Task › Due Date");
     });
 
+    it("asks an Apex source's admin to vouch for how it scales before it's saved", async () => {
+      const root = await openStep("open", {
+        kind: "Apex",
+        providerClass: "TimeDriveOpportunityProducts",
+        objectName: null,
+        parentField: null,
+        dateField: null,
+        title: null,
+        details: [{ field: "Quantity", label: "", format: "Number" }]
+      });
+      await settle();
+      // Cancelled (or not ticked): nothing is saved.
+      TimeDriveConfirm.open.mockResolvedValueOnce(false);
+      root.querySelector(".wz-foot .save").click();
+      await settle();
+      expect(TimeDriveConfirm.open).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Before you save an Apex source",
+          confirmLabel: "Save",
+          acknowledgement: expect.stringContaining("scales and performs")
+        })
+      );
+      expect(TimeDriveConfirm.open.mock.calls.at(-1)[0].message).toContain("TimeDriveOpportunityProducts");
+      expect(save).not.toHaveBeenCalled();
+      // Ticked and confirmed: saved.
+      TimeDriveConfirm.open.mockResolvedValueOnce(true);
+      root.querySelector(".wz-foot .save").click();
+      await settle();
+      expect(save).toHaveBeenCalledTimes(1);
+    });
+
     it("gives the title and subtitle one field each: a choice replaces the one there, and × takes it off", async () => {
       const plain = [
         { name: "CreatedDate", label: "Created Date", type: "datetime", filterable: true, values: [] },
@@ -1022,9 +1053,8 @@ describe("c-time-drive-setup", () => {
     root.querySelector(".wz-foot .save").click();
     await flush();
     const sent = JSON.parse(save.mock.calls[0][0].draftJson);
+    expect(sent).not.toHaveProperty("useCompactLayout");
     expect(sent).toMatchObject({
-      useCompactLayout: false,
-      detailsRecordField: null,
       details: [expect.objectContaining({ field: "Status__c" })],
       recordIdField: "Location__c",
       iconColour: "#014486",

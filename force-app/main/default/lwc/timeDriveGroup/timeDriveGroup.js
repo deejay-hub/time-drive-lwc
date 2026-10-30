@@ -4,12 +4,11 @@
  * table scrolls. The timeline links here with the record, the type and the
  * row's span in the page's state; the count and label it showed come too,
  * so the header reads right before the first page arrives. Its columns are
- * the items' object's compact layout, as a standard list's are its layout's:
- * the first field links to the record.
+ * the source's own: the title (linking to the record), the subtitle, the
+ * detail fields the admin chose, then the date.
  */
 import { LightningElement, wire } from "lwc";
 import { CurrentPageReference, NavigationMixin } from "lightning/navigation";
-import { getLayout } from "lightning/uiLayoutApi";
 import getGroupPage from "@salesforce/apex/TimeDriveController.getGroupPage";
 import LOCALE from "@salesforce/i18n/locale";
 import LANG from "@salesforce/i18n/lang";
@@ -54,22 +53,6 @@ const SKELETON_ROWS = [62, 48, 70, 55, 66, 44, 58, 50].map((w, i) => ({
   }))
 }));
 
-/** A compact layout's fields, in order: each item's first field. */
-export function fieldsOf(layout) {
-  const out = [];
-  for (const section of layout?.sections ?? []) {
-    for (const row of section.layoutRows ?? []) {
-      for (const item of row.layoutItems ?? []) {
-        const field = (item.layoutComponents ?? []).find((c) => c.componentType === "Field" && c.apiName);
-        if (field && item.label && !out.some((f) => f.apiName === field.apiName)) {
-          out.push({ apiName: field.apiName, label: item.label });
-        }
-      }
-    }
-  }
-  return out;
-}
-
 // Where an item's link goes: its page, or for a file (a ContentDocument, key
 // prefix 069) its document. The same as the timeline's.
 function recordHref(id) {
@@ -92,11 +75,6 @@ export default class TimeDriveGroup extends NavigationMixin(LightningElement) {
   dateOnly = false;
   recordName;
   cursor = null;
-  // The compact layout's fields ({ apiName, label }), once it's been read
-  // (or couldn't be: no extra columns then); the first page waits for it.
-  layoutFields = [];
-  layoutReady = false;
-  pending = false;
   // The first page has come back (or failed): the header (icon, title,
   // count, the way back) shows, all at once, with the table; until then
   // they're skeletons. Refresh keeps the header.
@@ -119,26 +97,9 @@ export default class TimeDriveGroup extends NavigationMixin(LightningElement) {
       object: s[`${ns}object`]
     };
     if (JSON.stringify(next) === JSON.stringify(this.state)) return;
-    // A new object (or the first state): its layout is still to come.
-    if (next.object !== this.state.object || !("recordId" in this.state)) {
-      this.layoutFields = [];
-      this.layoutReady = !next.object;
-    }
     this.state = next;
     this.headerReady = false;
     this.reload();
-  }
-
-  get layoutObject() {
-    return this.state.object;
-  }
-
-  @wire(getLayout, { objectApiName: "$layoutObject", layoutType: "Compact", mode: "View" })
-  wiredLayout({ data, error }) {
-    if (!data && !error) return;
-    this.layoutFields = data ? fieldsOf(data) : [];
-    this.layoutReady = true;
-    this.start();
   }
 
   reload() {
@@ -149,15 +110,7 @@ export default class TimeDriveGroup extends NavigationMixin(LightningElement) {
     this.error = undefined;
     this.problems = undefined;
     this.loading = false;
-    this.pending = Boolean(this.state.recordId && this.state.type);
-    this.start();
-  }
-
-  // The first page, once the columns are known.
-  start() {
-    if (!this.pending || !this.layoutReady) return;
-    this.pending = false;
-    this.load();
+    if (this.state.recordId && this.state.type) this.load();
   }
 
   async load() {
@@ -171,8 +124,7 @@ export default class TimeDriveGroup extends NavigationMixin(LightningElement) {
         fromAt: this.state.from,
         toAt: this.state.to,
         pageSize: PAGE_SIZE,
-        cursor: this.cursor,
-        fields: this.layoutFields.map((f) => f.apiName)
+        cursor: this.cursor
       });
       if (ticket !== this.ticket) return;
       if (!this.cursor) {
@@ -248,7 +200,6 @@ export default class TimeDriveGroup extends NavigationMixin(LightningElement) {
   }
 
   get columns() {
-    if (this.layoutFields.length) return this.layoutColumns;
     const columns = [
       {
         label: LABELS.groupColName,
@@ -273,33 +224,6 @@ export default class TimeDriveGroup extends NavigationMixin(LightningElement) {
     return columns;
   }
 
-  // The layout's fields, the first linking to the record; then the
-  // source's own detail fields the layout hasn't got; then the date.
-  get layoutColumns() {
-    const [first, ...rest] = this.layoutFields;
-    const columns = [
-      {
-        label: first.label,
-        fieldName: "recordUrl",
-        type: "url",
-        typeAttributes: { label: { fieldName: "field0" }, tooltip: { fieldName: "field0" }, target: "_self" },
-        hideDefaultActions: true
-      },
-      ...rest.map((f, i) => ({ label: f.label, fieldName: `field${i + 1}`, hideDefaultActions: true }))
-    ];
-    const taken = new Set(this.layoutFields.map((f) => f.label));
-    this.detailLabels.forEach((label, i) => {
-      if (!taken.has(label)) columns.push({ label, fieldName: `detail${i}`, hideDefaultActions: true });
-    });
-    columns.push({
-      label: this.dateOnly ? LABELS.groupColDate : LABELS.groupColDateTime,
-      fieldName: "when",
-      initialWidth: 190,
-      hideDefaultActions: true
-    });
-    return columns;
-  }
-
   get rows() {
     const labels = this.detailLabels;
     return this.items.map((item) => {
@@ -310,11 +234,6 @@ export default class TimeDriveGroup extends NavigationMixin(LightningElement) {
         subtitle: item.subtitle,
         when: this.whenText(item)
       };
-      this.layoutFields.forEach((f, i) => {
-        row[`field${i}`] = item.columns?.[f.apiName] ?? "";
-      });
-      // The link always has something to click.
-      if (this.layoutFields.length && !row.field0) row.field0 = item.title;
       for (const d of item.details ?? []) {
         row[`detail${labels.indexOf(d.label)}`] = d.value;
       }
@@ -389,11 +308,10 @@ export default class TimeDriveGroup extends NavigationMixin(LightningElement) {
     return !this.missingState && !this.error && this.items.length > 0;
   }
 
-  // Until the first page is in (the layout read, then the rows): the
-  // table's shape, so nothing moves when it arrives. The table's own
-  // spinner is for the pages after.
+  // Until the first page is in: the table's shape, so nothing moves when it
+  // arrives. The table's own spinner is for the pages after.
   get showSkeleton() {
-    return !this.missingState && !this.error && this.items.length === 0 && (this.pending || this.loading);
+    return !this.missingState && !this.error && this.items.length === 0 && this.loading;
   }
 
   get isEmpty() {

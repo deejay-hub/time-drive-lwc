@@ -557,14 +557,8 @@
                                   <template lwc:if={item.groupSummary}
                                     ><p class="group-summary">{item.groupSummary}</p></template
                                   >
-                                  <!-- A Salesforce record: its compact layout fields, loaded when opened. -->
-                                  <template lwc:if={item.compactLayout}>
-                                    <c-time-drive-record-details
-                                      record-id={item.layoutRecordId}
-                                      object-api-name={item.layoutObject}
-                                    ></c-time-drive-record-details>
-                                  </template>
-                                  <template lwc:elseif={item.hasDetails}>
+                                  <!-- The fields the admin chose for the source. -->
+                                  <template lwc:if={item.hasDetails}>
                                     <dl class="facts">
                                       <template for:each={item.details} for:item="fact">
                                         <div key={fact.label} class="fact">
@@ -827,9 +821,6 @@
           </template>
         </template>
       </ul>
-    </template>
-    <template for:each={layoutObjects} for:item="object">
-      <c-time-drive-layout-warmer key={object.name} object-api-name={object.name}></c-time-drive-layout-warmer>
     </template>
   </article>
 </template>

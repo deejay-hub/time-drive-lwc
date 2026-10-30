@@ -1,5 +1,4 @@
 import { LightningElement, wire } from "lwc";
-import { getLayout } from "lightning/uiLayoutApi";
 import { getObjectInfo } from "lightning/uiObjectInfoApi";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
 import TimeDriveConfirm from "c/timeDriveConfirm";
@@ -530,11 +529,8 @@ function blankDraft() {
     icon: null,
     // A colour to start from; every source has its own.
     iconColour: DEFAULT_COLOUR,
-    useCompactLayout: false,
     // Where a click goes, and whose layout opens (blank: the item's own).
     recordIdField: null,
-    detailsRecordField: null,
-    detailsObject: null,
     providerClass: null,
     sequence: null,
     details: [],
@@ -547,20 +543,6 @@ function uiKindOf(draft) {
   if (draft.kind === "Apex") return "apex";
   if (draft.kind === "Data 360") return "dmo";
   return /__c$/i.test(draft.objectName ?? "") ? "custom" : "standard";
-}
-
-// A compact layout's fields, in order: [{ name, label }].
-function layoutFieldsOf(layout) {
-  const out = [];
-  for (const section of layout?.sections ?? []) {
-    for (const row of section.layoutRows ?? []) {
-      for (const item of row.layoutItems ?? []) {
-        const name = (item.layoutComponents ?? []).find((c) => c.componentType === "Field")?.apiName;
-        if (name && item.label) out.push({ name, label: item.label });
-      }
-    }
-  }
-  return out;
 }
 
 function valueTypeOf(type) {
@@ -580,10 +562,8 @@ function formatOf(type) {
 }
 
 let nextKey = 0;
-// Tasks, calls, emails and events open with fields chosen here, not their
-// compact layout: the fields come in the timeline's own query, so an item
-// opens at once (the layout and its lookups' names are separate, slow
-// requests). The usual four are suggested; the admin changes them.
+// Tasks, calls, emails and events start with the usual four fields to show
+// when opened; the admin changes them.
 const ACTIVITY_OBJECTS = new Set(["task", "event"]);
 const ACTIVITY_DETAILS = [
   { field: "Description", label: "", format: "Text" },
@@ -2939,7 +2919,6 @@ export default class TimeDriveSetup extends LightningElement {
         sequence: this.draft.sequence,
         parentObject: this.draft.parentObject,
         kind,
-        useCompactLayout: false,
         maxRecords: value === "dmo" ? 500 : 1000
       });
       this.fillOnlyDataSpace();
@@ -3235,9 +3214,6 @@ export default class TimeDriveSetup extends LightningElement {
           ? ACTIVITY_DETAILS.map(keyed)
           : [],
       highlights: [],
-      useCompactLayout: false,
-      detailsRecordField: null,
-      detailsObject: null,
       // A file's click opens its document, whatever the link says.
       recordIdField: file ? "ContentDocumentId" : null,
       label: suggested(d.label) ? object.label : d.label,
@@ -4347,7 +4323,7 @@ export default class TimeDriveSetup extends LightningElement {
     const value = event.currentTarget.dataset.value;
     if (value === "own") this.update({ recordIdField: null });
     else {
-      const pick = this.relatedLookups.find((l) => l.name === this.draft.detailsRecordField) ?? this.relatedLookups[0];
+      const pick = this.relatedLookups[0];
       if (pick) this.update({ recordIdField: pick.name });
     }
     this.syncPreviewObject();
@@ -4388,30 +4364,19 @@ export default class TimeDriveSetup extends LightningElement {
 
   // ---- the previews: an item as the timeline draws it, with sample values
 
+  // The page a click lands on: its object's fields, for a sample name.
   syncPreviewObject() {
     const onSourcePage = this.view === "source";
-    // The page a click lands on has a layout of its own to read.
     const click =
       (onSourcePage || this.stepKey === "open") && this.isSalesforce ? this.clickTarget.objectName : undefined;
-    if (click !== this.clickLayoutObject) {
-      this.clickLayoutObject = click;
-      this.clickLayout = undefined;
-      this.clickLayoutFailed = false;
+    if (click !== this.clickObject) {
+      this.clickObject = click;
       if (click) this.loadPreviewFields(click);
     }
   }
 
   previewFields = {};
-  // The object a click lands on, and its compact layout (the landing page).
-  clickLayoutObject;
-  clickLayout;
-  clickLayoutFailed = false;
-
-  @wire(getLayout, { objectApiName: "$clickLayoutObject", layoutType: "Compact", mode: "View" })
-  wiredClickLayout({ data, error }) {
-    if (data) this.clickLayout = data;
-    if (error) this.clickLayoutFailed = true;
-  }
+  clickObject;
 
   async loadPreviewFields(objectName) {
     if (this.previewFields[objectName] || objectName === this.draft.objectName) return;
@@ -4531,7 +4496,7 @@ export default class TimeDriveSetup extends LightningElement {
   }
 
   get clickPageHeadClass() {
-    return `mock-page-head${this.clickPageFacts.length ? "" : " mock-page-head_alone"}`;
+    return "mock-page-head mock-page-head_alone";
   }
 
   // The click preview: the record page a click lands on.
@@ -4541,25 +4506,6 @@ export default class TimeDriveSetup extends LightningElement {
 
   get clickPageName() {
     return this.sampleName(this.clickTarget.objectName);
-  }
-
-  get clickPageFacts() {
-    return this.previewFactsFor(this.clickTarget.objectName).slice(0, 3);
-  }
-
-  previewFactsFor(objectName) {
-    const fields = this.fieldsOf(objectName);
-    const layout = layoutFieldsOf(this.clickLayout).filter((r) => r.name !== "Name");
-    const rows = !this.clickLayoutFailed
-      ? layout
-      : [
-          { name: "Status", label: "Status" },
-          { name: "OwnerId", label: "Owner" }
-        ];
-    return rows.map((r, i) => {
-      const field = fields.find((f) => f.name === r.name) ?? { name: r.name, label: r.label };
-      return { key: `c${i}`, label: r.label, value: r.name === "OwnerId" ? "Sam Lee" : this.sample(field, objectName) };
-    });
   }
 
   // ---- fields through lookups (Words, and Details' chosen fields) ---------
@@ -5141,6 +5087,7 @@ export default class TimeDriveSetup extends LightningElement {
 
   async handleSave() {
     if (this.saveDisabled || this.stopForContrast()) return;
+    if (this.isApex && !(await this.confirmApexScale())) return;
     this.saveError = undefined;
     try {
       const ticket = await saveDraft({ draftJson: this.draftJson() });
@@ -5152,6 +5099,24 @@ export default class TimeDriveSetup extends LightningElement {
     } catch (e) {
       this.saveError = plainError(e);
     }
+  }
+
+  // An Apex class runs on every timeline that shows its source: before it's
+  // saved, the admin says they've thought about how it scales.
+  confirmApexScale() {
+    return TimeDriveConfirm.open({
+      size: "small",
+      label: "Before you save an Apex source",
+      title: "Before you save an Apex source",
+      message:
+        `${this.draft.providerClass || "This class"} runs every time a timeline with this source loads, for every ` +
+        "person who opens one. Code that reads too many records, queries in a loop or calls out slowly can make " +
+        "every timeline slow, or stop it loading, as the data grows. Check it against the largest records your org " +
+        "has, and keep it within Salesforce's limits.",
+      acknowledgement:
+        "I've thought about how this class scales and performs with our data, and I take responsibility for it.",
+      confirmLabel: "Save"
+    });
   }
 
   slowSave() {
@@ -5178,8 +5143,6 @@ export default class TimeDriveSetup extends LightningElement {
       conditions: this.filterFixed ? [] : d.conditions.filter((c) => c.field),
       filter: this.filterFixed ? d.filter : null,
       details: d.details.filter((x) => x.field),
-      detailsRecordField: null,
-      detailsObject: null,
       recordIdField: d.recordIdField || null,
       legendOrder: !this.editing || this.legendTouched ? this.legendOrder : null
     });

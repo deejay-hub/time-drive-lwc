@@ -1,10 +1,24 @@
 <template>
   <lightning-modal-header label={title}></lightning-modal-header>
   <lightning-modal-body>
-    <p class="message">{message}</p>
+    <p class={messageClass}>{message}</p>
+    <lightning-input
+      lwc:if={acknowledgement}
+      class="acknowledge"
+      type="checkbox"
+      label={acknowledgement}
+      checked={acknowledged}
+      onchange={handleAcknowledge}
+    ></lightning-input>
   </lightning-modal-body>
   <lightning-modal-footer>
     <lightning-button label={cancelLabel} onclick={handleCancel}></lightning-button>
-    <lightning-button class="confirm" variant="brand" label={confirmLabel} onclick={handleConfirm}></lightning-button>
+    <lightning-button
+      class="confirm"
+      variant="brand"
+      label={confirmLabel}
+      disabled={confirmDisabled}
+      onclick={handleConfirm}
+    ></lightning-button>
   </lightning-modal-footer>
 </template>

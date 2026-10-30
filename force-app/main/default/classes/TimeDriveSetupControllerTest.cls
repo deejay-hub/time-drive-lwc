@@ -480,7 +480,6 @@ private class TimeDriveSetupControllerTest {
     d.dateField = 'Event.StartDateTime';
     Time_Drive_Source__mdt s = d.toRecord();
     Assert.areEqual('EventId', s.Record_Id_Field__c, 'it opens the event');
-    Assert.areEqual('EventId', s.Details_Record_Field__c);
     d.recordIdField = 'Id';
     Assert.areEqual('Id', d.toRecord().Record_Id_Field__c, 'unless the source says otherwise');
     // A relation read by its own date opens itself, as before.
@@ -492,7 +491,6 @@ private class TimeDriveSetupControllerTest {
     d.parentField = 'LinkedEntityId';
     d.dateField = 'SystemModstamp';
     Assert.areEqual('ContentDocumentId', d.toRecord().Record_Id_Field__c);
-    Assert.areEqual('ContentDocumentId', d.toRecord().Details_Record_Field__c);
   }
 
   @IsTest

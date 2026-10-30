@@ -32,7 +32,6 @@ public with sharing class TimeDriveController {
   private static final Integer SPENT_CPU_MS = 5000;
   @TestVisible
   private static Boolean testBudgetSpent;
-  public static final Integer MAX_COLUMNS = 12;
 
   public static final Integer GROUP_PAGE_SIZE = 50;
   public static final Integer MAX_GROUP_PAGE_SIZE = 200;
@@ -656,16 +655,14 @@ public with sharing class TimeDriveController {
    * paged by its own keyset (date, then Id, after its last item shown), so
    * nothing is skipped or repeated however many there are. `cursor` is the
    * last page's, null for the first; the first also says what the page is
-   * for (the type's label and icon, the record's name). `fields` are extra
-   * columns (the page asks for the object's compact layout fields); each
-   * item's are in its `columns`.
+   * for (the type's label and icon, the record's name). Each item carries
+   * the source's own detail fields, which are the page's columns.
    * @param recordId the Id of the record the timeline is on
    * @param type the event type whose items are listed
    * @param fromAt the start of the grouped row's span
    * @param toAt the end of the grouped row's span
    * @param pageSize how many items to return, or null for the default
    * @param cursor the previous page's cursor, or null for the first page
-   * @param fields extra columns to read for each item
    * @return one page of items with a cursor for the next
    */
   @AuraEnabled
@@ -675,8 +672,7 @@ public with sharing class TimeDriveController {
     Datetime fromAt,
     Datetime toAt,
     Integer pageSize,
-    String cursor,
-    List<String> fields
+    String cursor
   ) {
     if (recordId == null || String.isBlank(type) || fromAt == null || toAt == null) {
       return new GroupPage();
@@ -693,7 +689,7 @@ public with sharing class TimeDriveController {
         Datetime.newInstance(fromAt.date(), Time.newInstance(0, 0, 0, 0)),
         Datetime.newInstance(toAt.date(), Time.newInstance(23, 59, 59, 999))
       );
-      GroupPage page = new Run(recordId, new List<String>(), new List<Problem>(), days).page(type, size, cursors, wanted(fields));
+      GroupPage page = new Run(recordId, new List<String>(), new List<Problem>(), days).page(type, size, cursors);
       if (String.isBlank(cursor)) {
         page.recordName = nameOf(recordId);
       }
@@ -701,17 +697,6 @@ public with sharing class TimeDriveController {
     } catch (Exception e) {
       throw safeFailure(e);
     }
-  }
-
-  // At most MAX_COLUMNS of the fields asked for, once each.
-  private static List<String> wanted(List<String> fields) {
-    List<String> out = new List<String>();
-    for (String f : fields == null ? new List<String>() : fields) {
-      if (String.isNotBlank(f) && !out.contains(f) && out.size() < MAX_COLUMNS) {
-        out.add(f);
-      }
-    }
-    return out;
   }
 
   // The record's name, for the page's breadcrumb; null when it has none or
@@ -1534,10 +1519,9 @@ public with sharing class TimeDriveController {
      * @param type the event type whose items are listed
      * @param size how many items to return
      * @param cursors each source's cursor, by source name, where its last page ended
-     * @param fields extra columns to read for each item
      * @return one page of items with a cursor for the next
      */
-    GroupPage page(String type, Integer size, Map<String, List<String>> cursors, List<String> fields) {
+    GroupPage page(String type, Integer size, Map<String, List<String>> cursors) {
       GroupPage out = new GroupPage();
       List<Integer> mine = new List<Integer>();
       List<List<EngagementEvent>> reads = new List<List<EngagementEvent>>();
@@ -1552,19 +1536,6 @@ public with sharing class TimeDriveController {
           TimeDriveContext context = context(i);
           context.ranges = new List<TimeWindow>{ window };
           context.pageSize = size + 1;
-          // The columns are the date's object's (Task for a TaskRelation source),
-          // read across the junction.
-          String reach = TimeDriveConfig.datePrefix(sources[i]);
-          Map<String, String> columns = columnPaths(
-            reach == '' ? sources[i].Object_Name__c : TimeDriveConfig.dateOwner(sources[i]),
-            fields
-          );
-          if (reach != '') {
-            for (String column : new List<String>(columns.keySet())) {
-              columns.put(column, reach + columns.get(column));
-            }
-          }
-          context.columnPaths = columns;
           List<String> after = cursors.get(name);
           if (after != null) {
             context.pageAt = Datetime.newInstance(Long.valueOf(after[0]));
@@ -1622,50 +1593,6 @@ public with sharing class TimeDriveController {
         }
       }
       return out;
-    }
-
-    // The fields asked for that the object has and the user can read, each
-    // with the path to read: a lookup's record name (Owner.Name for
-    // OwnerId), or the field. Others (and addresses, locations) are left out.
-    Map<String, String> columnPaths(String objectName, List<String> fields) {
-      Map<String, String> paths = new Map<String, String>();
-      if (fields == null || fields.isEmpty()) {
-        return paths;
-      }
-      try {
-        TimeDriveConfig.fieldMap(objectName);
-      } catch (Exception e) {
-        return paths;
-      }
-      for (String name : fields) {
-        Schema.DescribeFieldResult d = TimeDriveConfig.fieldDescribe(objectName, name);
-        if (d == null || !d.isAccessible()) {
-          continue;
-        }
-        Schema.DisplayType t = d.getType();
-        if (t == Schema.DisplayType.ADDRESS || t == Schema.DisplayType.LOCATION) {
-          continue;
-        }
-        if (t == Schema.DisplayType.REFERENCE) {
-          if (d.getRelationshipName() != null && namesEvery(d.getReferenceTo())) {
-            paths.put(name, d.getRelationshipName() + '.Name');
-          }
-          continue;
-        }
-        paths.put(name, d.getName());
-      }
-      return paths;
-    }
-
-    // Every object a lookup can point at has a Name the user can read.
-    Boolean namesEvery(List<Schema.SObjectType> targets) {
-      for (Schema.SObjectType target : targets) {
-        Schema.DescribeFieldResult name = TimeDriveConfig.fieldDescribe(TimeDriveConfig.describeType(target).getName(), 'Name');
-        if (name == null || !name.isAccessible()) {
-          return false;
-        }
-      }
-      return !targets.isEmpty();
     }
 
     // The source's Date Field holds dates, not date/times.
@@ -2382,12 +2309,6 @@ public with sharing class TimeDriveController {
     // opportunity), for linking; null for Data 360 events.
     @AuraEnabled
     public Id recordId;
-    // The record (and its object) whose compact layout an opened item
-    // shows: the item's own, or a related one such as a member's Campaign.
-    @AuraEnabled
-    public Id detailRecordId;
-    @AuraEnabled
-    public String detailObject;
     // The day it falls on (yyyy-MM-dd, user's time zone).
     @AuraEnabled
     public String dayKey;
@@ -2398,21 +2319,15 @@ public with sharing class TimeDriveController {
     // every source of its type is a Salesforce one.
     @AuraEnabled
     public Boolean pageable = false;
-    // View all's extra columns: each field asked for, as text.
-    @AuraEnabled
-    public Map<String, String> columns;
     @AuraEnabled
     public Integer groupCount;
     @AuraEnabled
     public Datetime firstAt;
-    // From the source's configuration: SLDS icon, its background colour, and
-    // whether to expand with the record's compact layout.
+    // From the source's configuration: SLDS icon and its background colour.
     @AuraEnabled
     public String icon;
     @AuraEnabled
     public String iconColour;
-    @AuraEnabled
-    public Boolean useCompactLayout = false;
     // The type's plural label from configuration ("Case updates").
     @AuraEnabled
     public String typeLabel;
@@ -2474,18 +2389,6 @@ public with sharing class TimeDriveController {
     public EngagementEvent record(Id recordId) {
       this.recordId = recordId;
 
-      return this;
-    }
-
-    /**
-     * Sets the record whose compact layout the event opens with.
-     * @param detailRecordId the record's Id
-     * @param detailObject the record's object API name
-     * @return this event
-     */
-    public EngagementEvent detailRecord(Id detailRecordId, String detailObject) {
-      this.detailRecordId = detailRecordId;
-      this.detailObject = detailObject;
       return this;
     }
 

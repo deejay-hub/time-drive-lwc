@@ -2422,11 +2422,13 @@ describe("c-time-drive configured sources", () => {
       title: "Case opened",
       subtitle: "Missing item · 00001028",
       occurredAt: new Date().toISOString(),
-      details: [],
+      details: [
+        { label: "Status", value: "New" },
+        { label: "Priority", value: "High" }
+      ],
       icon: "standard:case",
       iconColour: "#FF538A",
       typeLabel: "Case updates",
-      useCompactLayout: true,
       sourceObject: "Case",
       sourceLabel: "Salesforce · Case"
     },
@@ -2442,7 +2444,6 @@ describe("c-time-drive configured sources", () => {
       icon: "utility:trophy",
       iconColour: "#7B4FA0",
       typeLabel: "Loyalty points",
-      useCompactLayout: true,
       sourceObject: "Loyalty_Transaction__c",
       sourceLabel: "Salesforce · Loyalty Transaction"
     }
@@ -2476,14 +2477,20 @@ describe("c-time-drive configured sources", () => {
     expect(options).toEqual(["Case updates", "Loyalty points"]);
   });
 
-  it("expands a Salesforce record with its compact layout, only once opened", async () => {
+  it("opens an item on the fields the admin chose, and no others", async () => {
     const root = await mount();
-    expect(root.querySelector("c-time-drive-record-details")).toBeNull();
     root.querySelector('.chevron-button[data-id="500A-Case_Opened"]').click();
     await flush();
-    const details = root.querySelector("c-time-drive-record-details");
-    expect(details.recordId).toBe("500000000000001AAA");
-    expect(details.objectApiName).toBe("Case");
+    const row = root.querySelector('.chevron-button[data-id="500A-Case_Opened"]').closest(".event");
+    expect([...row.querySelectorAll(".fact")].map((f) => f.textContent)).toEqual(["StatusNew", "PriorityHigh"]);
+    // No record layout of its own: only what the source names.
+    expect(root.querySelector("c-time-drive-record-details")).toBeNull();
+    // A source with no fields chosen opens on its title, subtitle and source alone.
+    root.querySelector('.chevron-button[data-id="a05A-Loyalty"]').click();
+    await flush();
+    const loyalty = root.querySelector('.chevron-button[data-id="a05A-Loyalty"]').closest(".event");
+    expect(loyalty.querySelectorAll(".fact")).toHaveLength(0);
+    expect(loyalty.querySelector(".event-source").textContent).toBe("Salesforce · Loyalty Transaction");
   });
 });
 

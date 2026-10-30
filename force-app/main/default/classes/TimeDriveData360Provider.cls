@@ -101,7 +101,7 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
     fields.addAll(TimeDrivePlotter.tokens(s.Title__c));
     fields.addAll(TimeDrivePlotter.tokens(s.Subtitle__c));
     fields.remove('Action');
-    for (String extra : new List<String>{ s.Record_Id_Field__c, context.detailsRecordFieldIfSet() }) {
+    for (String extra : new List<String>{ s.Record_Id_Field__c }) {
       fields.add(extra);
     }
     for (Time_Drive_Detail_Field__mdt d : context.detailFields()) {

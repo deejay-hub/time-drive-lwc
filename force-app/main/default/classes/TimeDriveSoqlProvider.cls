@@ -29,8 +29,19 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
 
   // Words a filter may use that aren't fields.
   private static final Set<String> FILTER_WORDS = new Set<String>{
-    'and', 'or', 'not', 'in', 'like', 'null', 'true', 'false', 'includes', 'excludes',
-    'today', 'yesterday', 'tomorrow'
+    'and',
+    'or',
+    'not',
+    'in',
+    'like',
+    'null',
+    'true',
+    'false',
+    'includes',
+    'excludes',
+    'today',
+    'yesterday',
+    'tomorrow'
   };
 
   /**
@@ -50,16 +61,13 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
     Set<String> fields = new Set<String>{ 'Id', s.Date_Field__c };
     fields.addAll(TimeDrivePlotter.tokens(s.Title__c));
     fields.addAll(TimeDrivePlotter.tokens(s.Subtitle__c));
-    for (String extra : new List<String>{ s.Id_Field__c, s.Record_Id_Field__c, context.detailsRecordFieldIfSet() }) {
+    for (String extra : new List<String>{ s.Id_Field__c, s.Record_Id_Field__c }) {
       if (String.isNotBlank(extra)) {
         fields.add(extra);
       }
     }
     for (Time_Drive_Detail_Field__mdt d : context.detailFields()) {
       fields.add(d.Field__c);
-    }
-    if (context.columnPaths != null) {
-      fields.addAll(context.columnPaths.values());
     }
     // What the highlights read.
     fields.addAll(TimeDriveHighlights.fieldsOf(context.highlightRules()));
@@ -97,7 +105,15 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
     Long startedAt = TimeDriveDiagnostics.clock();
     try {
       rows = Database.queryWithBinds(soql, q.binds, AccessLevel.USER_MODE);
-      TimeDriveDiagnostics.query(s.DeveloperName, paging ? 'rows (page)' : 'rows', soql, q.binds, rows.size(), startedAt, null);
+      TimeDriveDiagnostics.query(
+        s.DeveloperName,
+        paging ? 'rows (page)' : 'rows',
+        soql,
+        q.binds,
+        rows.size(),
+        startedAt,
+        null
+      );
     } catch (Exception e) {
       TimeDriveDiagnostics.query(s.DeveloperName, 'rows', soql, q.binds, 0, startedAt, e.getMessage());
       context.fail(s.Label, e);
@@ -407,7 +423,12 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
           out += word;
         } else if (TimeDriveConfig.pathField(objectName, word) != null) {
           out += prefix + word;
-        } else if (word == word.toUpperCase() && (lower.startsWith('last_') || lower.startsWith('this_') || lower.startsWith('next_'))) {
+        } else if (
+          word == word.toUpperCase() &&
+          (lower.startsWith('last_') ||
+          lower.startsWith('this_') ||
+          lower.startsWith('next_'))
+        ) {
           out += word;
         } else {
           return null;
@@ -500,7 +521,12 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
       }
       Schema.DescribeFieldResult dateDescribe = TimeDriveConfig.fieldDescribe(s.Object_Name__c, s.Date_Field__c);
       if (dateDescribe == null) {
-        context.warn(String.format(Label.Time_Drive_Server_No_Field, new List<String>{ s.Label, s.Object_Name__c, s.Date_Field__c }));
+        context.warn(
+          String.format(
+            Label.Time_Drive_Server_No_Field,
+            new List<String>{ s.Label, s.Object_Name__c, s.Date_Field__c }
+          )
+        );
         return;
       }
       dateOnly = dateDescribe.getType() == Schema.DisplayType.DATE;
@@ -541,17 +567,28 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
     }
 
     private void prepareJunctionCount() {
-      if (datePrefix != '' || String.isBlank(s.Junction_Parent_Field__c) || String.isBlank(s.Junction_Record_Field__c)) {
+      if (
+        datePrefix != '' ||
+        String.isBlank(s.Junction_Parent_Field__c) ||
+        String.isBlank(s.Junction_Record_Field__c)
+      ) {
         return;
       }
-      Schema.DescribeFieldResult record = TimeDriveConfig.fieldDescribe(s.Junction_Object__c, s.Junction_Record_Field__c);
-      Schema.DescribeFieldResult parent = TimeDriveConfig.fieldDescribe(s.Junction_Object__c, s.Junction_Parent_Field__c);
+      Schema.DescribeFieldResult record = TimeDriveConfig.fieldDescribe(
+        s.Junction_Object__c,
+        s.Junction_Record_Field__c
+      );
+      Schema.DescribeFieldResult parent = TimeDriveConfig.fieldDescribe(
+        s.Junction_Object__c,
+        s.Junction_Parent_Field__c
+      );
       if (
         record == null ||
         parent == null ||
         String.isBlank(record.getRelationshipName()) ||
         record.getReferenceTo().size() != 1 ||
-        TimeDriveConfig.describeType(record.getReferenceTo()[0]).getName() != TimeDriveConfig.describeObject(s.Object_Name__c).getName()
+        TimeDriveConfig.describeType(record.getReferenceTo()[0]).getName() !=
+        TimeDriveConfig.describeObject(s.Object_Name__c).getName()
       ) {
         return;
       }
@@ -597,8 +634,13 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
       String deleted = '';
       if (archivable) {
         // A junction row's own IsDeleted too: ALL ROWS would return it.
-        deleted = ((viaJunction && countDeletable) || (!viaJunction && datePrefix != '' && ownDeletable) ? 'IsDeleted = false AND ' : '') +
-          p + datePrefix + 'IsDeleted = false AND ';
+        deleted =
+          ((viaJunction && countDeletable) || (!viaJunction && datePrefix != '' && ownDeletable)
+            ? 'IsDeleted = false AND '
+            : '') +
+          p +
+          datePrefix +
+          'IsDeleted = false AND ';
       }
       return deleted +
         (viaJunction ? countLink : link) +

@@ -1298,23 +1298,8 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     if (this._loadedFor !== this.daysLoaded) {
       this._loadedFor = this.daysLoaded;
       this._loaded = [...this._dayCache.values()].flat();
-      this._layoutObjects = null;
     }
     return this._loaded;
-  }
-  // The objects whose compact layout an expanded item may need, so each
-  // is fetched once up front instead of when the first item opens.
-  get layoutObjects() {
-    const events = this.loadedEvents;
-    if (this._layoutObjects) return this._layoutObjects;
-    const names = new Set();
-    for (const e of events) {
-      if (e.useCompactLayout && !e.grouped) names.add(e.detailObject || e.sourceObject);
-    }
-    names.delete(undefined);
-    names.delete(null);
-    this._layoutObjects = [...names].map((name) => ({ name }));
-    return this._layoutObjects;
   }
   // A day's events are kept newest first; oldest first is the reverse.
   sortEvents(events) {
@@ -1500,11 +1485,6 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       typeLabel: event.typeLabel || info.label,
       nodeStyle: this.nodeStyleFor(event),
       itemStyle: this.itemStyleFor(event),
-      // Salesforce records expand with a compact layout: the item's own, or
-      // the related record's the source chose (a member's Campaign).
-      compactLayout: event.useCompactLayout && open,
-      layoutRecordId: event.detailRecordId || event.recordId,
-      layoutObject: event.detailObject || event.sourceObject,
       // Time only: the day's sticky header carries the date.
       timeText: event.timeText,
       isoTime: event.occurredAt,
@@ -1579,7 +1559,6 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       recordUrl: null,
       groupUrl: event.pageable ? this.groupUrl(event, label) : null,
       groupLinkLabel: format(LABELS.groupViewAll, formatCount(count), label),
-      compactLayout: false,
       groupSummary: count === 1 ? LABELS.groupSummaryOne : format(LABELS.groupSummaryMany, formatCount(count)),
       details: [
         { label: LABELS.groupFrom, value: DATE_TIME_FORMAT.format(from) },

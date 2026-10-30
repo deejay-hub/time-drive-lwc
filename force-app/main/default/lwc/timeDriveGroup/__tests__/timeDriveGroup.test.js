@@ -2,7 +2,6 @@ import { createElement } from "lwc";
 import TimeDriveGroup from "c/timeDriveGroup";
 import { CurrentPageReference } from "lightning/navigation";
 import getGroupPage from "@salesforce/apex/TimeDriveController.getGroupPage";
-import { getLayout } from "lightning/uiLayoutApi";
 
 jest.mock("@salesforce/apex/TimeDriveController.getGroupPage", () => ({ default: jest.fn() }), {
   virtual: true
@@ -64,8 +63,7 @@ describe("c-time-drive-group", () => {
       fromAt: STATE.c__from,
       toAt: STATE.c__to,
       pageSize: 50,
-      cursor: null,
-      fields: []
+      cursor: null
     });
     expect(root.querySelector("h1").textContent).toBe("Case updates");
     const back = root.querySelector("a.back");
@@ -85,19 +83,17 @@ describe("c-time-drive-group", () => {
     });
   });
 
-  it("takes its columns from the object's compact layout", async () => {
-    getGroupPage.mockResolvedValueOnce({
-      ...page(0, 2, false),
-      items: page(0, 2, false).items.map((it, i) => ({
-        ...it,
-        columns: { CaseNumber: i === 0 ? "00001001" : "", Status: "New", OwnerId: "Sam Lee" }
-      }))
-    });
+  it("takes its columns from the source alone, with the header waiting for the first page", async () => {
+    let deliver;
+    getGroupPage.mockReturnValueOnce(
+      new Promise((resolve) => {
+        deliver = resolve;
+      })
+    );
     const element = await mount({ ...STATE, c__object: "Case", c__icon: "standard:case" });
-    // Nothing is read until the layout says which fields.
-    expect(getGroupPage).not.toHaveBeenCalled();
-    // Meanwhile, the table's shape and a placeholder for the way back; the
-    // type's icon from the link.
+    // Asked at once: no layout to wait for.
+    expect(getGroupPage).toHaveBeenCalledTimes(1);
+    // Meanwhile, the table's shape and a placeholder for the way back.
     const root = element.shadowRoot;
     expect(root.querySelector(".skeleton-table")).toBeTruthy();
     expect(root.querySelector("lightning-datatable")).toBeNull();
@@ -106,31 +102,12 @@ describe("c-time-drive-group", () => {
     expect(root.querySelector(".slds-media__figure lightning-icon")).toBeNull();
     expect(root.querySelector(".skeleton_icon")).toBeTruthy();
     expect(root.querySelector(".skeleton_title")).toBeTruthy();
-    const field = (apiName) => ({ componentType: "Field", apiName });
-    getLayout.emit({
-      sections: [
-        {
-          layoutRows: [
-            {
-              layoutItems: [
-                { label: "Case Number", layoutComponents: [field("CaseNumber")] },
-                { label: "Status", layoutComponents: [field("Status")] },
-                { label: "Case Owner", layoutComponents: [field("OwnerId")] }
-              ]
-            }
-          ]
-        }
-      ]
-    });
+    deliver(page(0, 2, false));
     await flush();
-    expect(getGroupPage).toHaveBeenCalledWith(expect.objectContaining({ fields: ["CaseNumber", "Status", "OwnerId"] }));
-    const table = element.shadowRoot.querySelector("lightning-datatable");
-    // The detail field Status is the layout's too: once.
-    expect(table.columns.map((c) => c.label)).toEqual(["Case Number", "Status", "Case Owner", "Priority", "Date/Time"]);
+    const table = root.querySelector("lightning-datatable");
+    // The title linking to the record, the subtitle, the admin's detail fields, the date.
+    expect(table.columns.map((c) => c.label)).toEqual(["Name", "Summary", "Status", "Priority", "Date/Time"]);
     expect(table.columns[0].type).toBe("url");
-    expect(table.data[0]).toMatchObject({ field0: "00001001", field1: "New", field2: "Sam Lee" });
-    // No value for the link's field: the item's title instead.
-    expect(table.data[1].field0).toBe("Case 1");
     expect(root.querySelector(".skeleton-table")).toBeNull();
     expect(root.querySelector("a.back").textContent).toBe("Back to Morgan Bramley");
     expect(root.querySelector(".slds-media__figure lightning-icon").iconName).toBe("standard:case");

@@ -8,10 +8,8 @@
  *                     values drop out
  *   Record Id Field   the record a click opens (default Id for
  *                     Salesforce sources); a path through lookups is fine
- *   Details Record    the record (and object) whose compact layout an
- *     Field, Object   opened item shows (default the item's own)
- *   Detail Fields     the Time Drive Detail Field records, in order;
- *                     when there are any they replace the compact layout
+ *   Detail Fields     the Time Drive Detail Field records, in order: what
+ *                     an opened item shows (the admin's choice, nothing else)
  */
 // The branching follows the platform's cases and the plot's rules; splitting it up would only scatter them.
 // Size, parameter lists and field counts follow the platform's entry points, its cases and the data the components exchange;
@@ -64,26 +62,15 @@ public with sharing class TimeDrivePlotter {
           occurredAt
         )
         .source(context.sourceObject, context.sourceLabel)
-        .record(salesforceId(row.get(context.recordIdField())))
-        .detailRecord(salesforceId(row.get(context.detailsRecordField())), context.detailsObject());
+        .record(salesforceId(row.get(context.recordIdField())));
       for (Time_Drive_Detail_Field__mdt d : detailFields) {
         e.detail(detailLabel(d, row), format(row.get(d.Field__c), d.Format__c, row, d.Field__c));
-      }
-      if (context.columnPaths != null) {
-        e.columns = new Map<String, String>();
-        for (String field : context.columnPaths.keySet()) {
-          String path = context.columnPaths.get(field);
-          e.columns.put(field, format(row.get(path), null, row, path));
-        }
       }
       if (TimeDriveConfig.dateOwner(s) == 'Event' && row.get(TimeDriveConfig.datePrefix(s) + 'IsAllDayEvent') == true) {
         e.allDay = true;
       }
       e.flags = TimeDriveHighlights.flagsFor(context.highlightRules(), row);
       context.styled(e);
-      if (!detailFields.isEmpty()) {
-        e.useCompactLayout = false;
-      }
       events.add(e);
     }
     if (skipped > 0) {

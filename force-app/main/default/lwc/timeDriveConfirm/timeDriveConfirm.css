@@ -2,6 +2,16 @@
   text-align: center;
 }
 
+.message_note {
+  text-align: start;
+  line-height: 1.5;
+}
+
+.acknowledge {
+  display: block;
+  margin-top: var(--slds-g-spacing-4, 1rem);
+}
+
 .confirm {
   margin-inline-start: var(--slds-g-spacing-2, 0.5rem);
 }

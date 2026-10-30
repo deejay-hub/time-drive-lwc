@@ -7,7 +7,9 @@
 // The branching follows the platform's cases and the plot's rules; splitting it up would only scatter them.
 // Size, parameter lists and field counts follow the platform's entry points, its cases and the data the components exchange;
 // splitting them up would only scatter what belongs together.
-@SuppressWarnings('PMD.CyclomaticComplexity, PMD.CognitiveComplexity, PMD.ExcessiveParameterList, PMD.ExcessivePublicCount, PMD.TooManyFields')
+@SuppressWarnings(
+  'PMD.CyclomaticComplexity, PMD.CognitiveComplexity, PMD.ExcessiveParameterList, PMD.ExcessivePublicCount, PMD.TooManyFields'
+)
 public with sharing class TimeDriveContext {
   public static final Integer DEFAULT_MAX_RECORDS = 1000;
   public static final String KIND_SALESFORCE = 'Salesforce';
@@ -34,9 +36,6 @@ public with sharing class TimeDriveContext {
   public Integer pageSize;
   public Datetime pageAt;
   public Id pageId;
-  // A page's extra columns (the object's compact layout fields): each
-  // field asked for, and the path read for it (a lookup's name).
-  public Map<String, String> columnPaths;
   /** The earlier sources' events, loaded on the first read. */
   public List<TimeDriveController.EngagementEvent> priorEvents {
     get {
@@ -120,9 +119,7 @@ public with sharing class TimeDriveContext {
       : Datetime.newInstance(Date.today().addMonths(-((Decimal) months).intValue()), Time.newInstance(0, 0, 0, 0));
     this.since = since != null && own != null && own > since ? own : since;
     this.source = source;
-    this.priorEvents = priorEvents == null
-      ? new List<TimeDriveController.EngagementEvent>()
-      : priorEvents;
+    this.priorEvents = priorEvents == null ? new List<TimeDriveController.EngagementEvent>() : priorEvents;
     this.warnings = warnings == null ? new List<String>() : warnings;
     this.sourceObject = source?.Object_Name__c;
     this.sourceLabel = source?.Label;
@@ -149,9 +146,7 @@ public with sharing class TimeDriveContext {
       }
       return out;
     }
-    return new List<TimeDriveController.TimeWindow>{
-      new TimeDriveController.TimeWindow(since, until)
-    };
+    return new List<TimeDriveController.TimeWindow>{ new TimeDriveController.TimeWindow(since, until) };
   }
 
   /**
@@ -208,47 +203,6 @@ public with sharing class TimeDriveContext {
       return 'ContentDocumentId';
     }
     return kind() == KIND_SALESFORCE ? 'Id' : null;
-  }
-
-  /**
-   * The field whose record supplies the compact layout for an opened item: the Details Record
-   * Field, else the item's own record (Id for Salesforce sources, the linked record otherwise).
-   * @return the field API name, or null
-   */
-  public String detailsRecordField() {
-    String own = populated('Details_Record_Field__c');
-    if (String.isNotBlank(own)) {
-      return own;
-    }
-    return kind() == KIND_SALESFORCE ? 'Id' : recordIdField();
-  }
-
-  /**
-   * The object whose compact layout an opened item shows: the Details Object when a Details Record
-   * Field is also set, else the source's object.
-   * @return the object API name
-   */
-  public String detailsObject() {
-    String objectName = populated('Details_Object__c');
-    if (String.isNotBlank(populated('Details_Record_Field__c')) && String.isNotBlank(objectName)) {
-      return objectName;
-    }
-    return sourceObject;
-  }
-
-  // A field of the source, when it has one: a source read by a query that
-  // didn't select the field (or built in memory without it) has none.
-  private String populated(String field) {
-    Object value = source?.getPopulatedFieldsAsMap().get(field);
-    return value == null ? null : String.valueOf(value);
-  }
-
-  /**
-   * The Details Record Field, when one is set, for the providers to read.
-   * @return the field API name, or null
-   */
-  public String detailsRecordFieldIfSet() {
-    return populated('Details_Record_Field__c');
   }
 
   /**
@@ -310,13 +264,11 @@ public with sharing class TimeDriveContext {
   }
 
   /**
-   * Applies a source's icon, colour and compact-layout choice to an event.
+   * Applies a source's icon and colour to an event.
    * @param e the event to style
    * @return the same event
    */
-  public TimeDriveController.EngagementEvent styled(
-    TimeDriveController.EngagementEvent e
-  ) {
+  public TimeDriveController.EngagementEvent styled(TimeDriveController.EngagementEvent e) {
     if (source != null) {
       if (String.isNotBlank(source.Icon__c)) {
         e.icon = source.Icon__c;
@@ -328,7 +280,6 @@ public with sharing class TimeDriveContext {
       if (String.isNotBlank(legend)) {
         e.typeLabel = legend;
       }
-      e.useCompactLayout = source.Use_Compact_Layout__c == true && (e.detailRecordId != null || e.recordId != null);
     }
     return e;
   }

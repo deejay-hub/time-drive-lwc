@@ -4064,8 +4064,7 @@ a.guided-button lightning-icon {
   animation: scene-in 320ms var(--ease-out) both;
 }
 
-.mock-facts,
-.mock-page-facts {
+.mock-facts {
   display: grid;
   gap: calc(0.375rem * var(--d));
   margin: 0;
