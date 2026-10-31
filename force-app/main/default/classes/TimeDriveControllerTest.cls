@@ -19,8 +19,10 @@ private class TimeDriveControllerTest {
 
   @TestSetup
   static void makeData() {
-    // Standard objects only: orders and a review are Tasks ("Order …"
-    // tasks; Completed is delivered, Deferred canceled).
+    // Tasks only, the one object the tests insert besides the Contact and its
+    // Account (a customer org's own automation is likeliest on Cases and
+    // Opportunities): orders and a review are Tasks ("Order …" tasks;
+    // Completed is delivered, Deferred canceled).
     Account store = new Account(Name = 'The Savory Spot');
     insert store;
     Contact customer = new Contact(FirstName = 'Ada', LastName = 'Shift', AccountId = store.Id);
@@ -49,26 +51,32 @@ private class TimeDriveControllerTest {
         Description = 'Great pad thai'
       )
     };
-    insert new Case(ContactId = customer.Id, Subject = 'Missing item', Status = 'New', Origin = 'Web');
-    Account company = new Account(Name = 'Ada Catering Co');
-    insert company;
-    Opportunity open = new Opportunity(
-      Name = 'Office lunches 2027',
-      AccountId = company.Id,
-      StageName = 'Prospecting',
-      CloseDate = Date.today().addDays(30),
-      Amount = 12000
-    );
-    Opportunity won = new Opportunity(
-      Name = 'Holiday party',
-      AccountId = company.Id,
-      StageName = 'Closed Won',
-      CloseDate = Date.today().addDays(-5),
-      Amount = 3500
-    );
-    insert new List<Opportunity>{ open, won };
-    insert new OpportunityContactRole(OpportunityId = open.Id, ContactId = customer.Id, Role = 'Decision Maker');
-    insert new OpportunityContactRole(OpportunityId = won.Id, ContactId = customer.Id, Role = 'Business User');
+  }
+
+  // A Task source standing for any object the timeline counts and reads.
+  private static Time_Drive_Source__mdt items() {
+    return source('Cases', 'Task', 'CreatedDate', 'WhoId');
+  }
+
+  // A busy day for a contact of its own: 60 items today and one ('Older')
+  // three days ago, the timeline's only source.
+  private static Id busyDay(Datetime threeDaysAgo) {
+    Contact busy = new Contact(LastName = 'Busy');
+    insert busy;
+    List<Task> tasks = new List<Task>();
+    for (Integer i = 0; i < 60; i++) {
+      tasks.add(new Task(WhoId = busy.Id, Subject = 'Busy ' + i));
+    }
+    Task older = new Task(WhoId = busy.Id, Subject = 'Older');
+    tasks.add(older);
+    insert tasks;
+    Test.setCreatedDate(older.Id, threeDaysAgo);
+    TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ items() };
+    return busy.Id;
+  }
+
+  private static Id olderId() {
+    return [SELECT Id FROM Task WHERE Subject = 'Older'].Id;
   }
 
   private static Id contactId() {
@@ -95,27 +103,10 @@ private class TimeDriveControllerTest {
     Assert.areEqual(1, countOf(result, 'delivered'));
     Assert.areEqual(1, countOf(result, 'canceled'));
     Assert.areEqual(1, countOf(result, 'review'));
-    Assert.areEqual(1, countOf(result, 'case'));
 
     // Newest first.
     for (Integer i = 1; i < result.events.size(); i++) {
       Assert.isTrue(result.events[i - 1].occurredAt >= result.events[i].occurredAt, 'sorted newest first');
-    }
-  }
-
-  @IsTest
-  static void opportunitiesTheContactIsOnArePlotted() {
-    TimeDriveController.TimelineResult result = TimeDriveController.getEvents(contactId());
-    Assert.areEqual(2, countOf(result, 'opportunity'), 'both opportunities opened in the window');
-    Assert.areEqual(1, countOf(result, 'opportunity_won'));
-    Assert.areEqual(0, countOf(result, 'opportunity_lost'));
-    for (TimeDriveController.EngagementEvent e : result.events) {
-      if (e.type == 'opportunity_won') {
-        Assert.areEqual('Sales', e.category);
-        Assert.isTrue(e.subtitle.contains('Holiday party'));
-        Assert.isNotNull(e.recordId, 'CRM events link to their record');
-        Assert.areEqual(Opportunity.SObjectType, e.recordId.getSObjectType());
-      }
     }
   }
 
@@ -149,13 +140,13 @@ private class TimeDriveControllerTest {
 
   @IsTest
   static void allIsALensASourceIsInOrNot() {
-    // Open and closed cases each in a lens of their own, all cases in All, and one in no lens (All).
+    // Open and closed items each in a lens of their own, all items in All, and one in no lens (All).
     Id customer = contactId();
-    Time_Drive_Source__mdt everyCase = source('All_Cases', 'Case', 'CreatedDate', 'ContactId');
+    Time_Drive_Source__mdt everyCase = source('All_Cases', 'Task', 'CreatedDate', 'WhoId');
     everyCase.Lenses__c = 'All';
-    Time_Drive_Source__mdt open = source('Open_Cases', 'Case', 'CreatedDate', 'ContactId');
+    Time_Drive_Source__mdt open = source('Open_Cases', 'Task', 'CreatedDate', 'WhoId');
     open.Lenses__c = 'Service';
-    Time_Drive_Source__mdt untagged = source('Untagged_Cases', 'Case', 'CreatedDate', 'ContactId');
+    Time_Drive_Source__mdt untagged = source('Untagged_Cases', 'Task', 'CreatedDate', 'WhoId');
     untagged.Category__c = null;
     TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ everyCase, open, untagged };
 
@@ -174,40 +165,62 @@ private class TimeDriveControllerTest {
   }
 
   @IsTest
+  static void rowsArePlottedWhateverFormTheirValuesComeIn() {
+    // An Apex source's rows: a date (not a date/time), an Id as text, and
+    // rows with no date or one that isn't a date, which are skipped and said.
+    Time_Drive_Source__mdt s = source('Mixed', 'Mixed', 'When', null);
+    s.Kind__c = 'Apex';
+    s.Record_Id_Field__c = 'RecordId';
+    s.Title__c = '{Name}';
+    Id record = fakeId('003', 7);
+    List<TimeDriveRow> rows = new List<TimeDriveRow>{
+      new TimeDriveRow(
+        new Map<String, Object>{
+          'Id' => 'a',
+          'When' => Date.today(),
+          'Name' => 'On a day',
+          'RecordId' => String.valueOf(record)
+        }
+      ),
+      new TimeDriveRow(new Map<String, Object>{ 'Id' => 'b', 'When' => null, 'Name' => 'No date' }),
+      new TimeDriveRow(new Map<String, Object>{ 'Id' => 'c', 'When' => 'soon', 'Name' => 'Not a date' })
+    };
+    List<String> warnings = new List<String>();
+    List<TimeDriveController.EngagementEvent> events = TimeDrivePlotter.plot(
+      new TimeDriveContext(null, 'Contact', null, s, null, warnings),
+      rows
+    );
+    Assert.areEqual(1, events.size(), 'only the row with a date');
+    Assert.areEqual('On a day', events[0].title);
+    Assert.areEqual(Date.today(), events[0].occurredAt.date(), 'on its day');
+    Assert.areEqual(record, events[0].recordId, 'an Id given as text');
+    Assert.areEqual(1, warnings.size(), 'the two skipped rows are said once');
+  }
+
+  @IsTest
   static void countedSourcesArentCappedByMaxRecords() {
     Id customer = contactId();
-    insert new Case(ContactId = customer, Subject = 'Wrong item', Status = 'New', Origin = 'Web');
-    Time_Drive_Source__mdt cases = source('Cases', 'Case', 'CreatedDate', 'ContactId');
+    insert new Task(WhoId = customer, Subject = 'Wrong item');
+    Time_Drive_Source__mdt cases = items();
     cases.Max_Records__c = 1;
     TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ cases };
 
     TimeDriveController.TimelineSummary summary = TimeDriveController.getSummary(customer, null, null, null, null);
-    Assert.areEqual(2, summary.total, 'counted, not read');
+    Assert.areEqual(4, summary.total, 'counted, not read: the setup\'s three and this one');
     Assert.isTrue(summary.warnings.isEmpty(), String.join(summary.warnings, ' | '));
   }
 
   @IsTest
   static void busyDaysOfCountedSourcesComeFromTheirCounts() {
-    Id customer = contactId();
-    List<Case> busy = new List<Case>();
-    for (Integer i = 0; i < 60; i++) {
-      busy.add(new Case(ContactId = customer, Subject = 'Busy ' + i, Status = 'New', Origin = 'Web'));
-    }
-    insert busy;
-    Case older = new Case(ContactId = customer, Subject = 'Older', Status = 'New', Origin = 'Web');
-    insert older;
     Datetime threeDaysAgo = Datetime.now().addDays(-3);
-    Test.setCreatedDate(older.Id, threeDaysAgo);
-    TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{
-      source('Cases', 'Case', 'CreatedDate', 'ContactId')
-    };
+    Id customer = busyDay(threeDaysAgo);
 
     TimeDriveController.TimelineSummary summary = TimeDriveController.getSummary(customer, null, null, null, null);
     String today = Datetime.now().format('yyyy-MM-dd');
     String quiet = threeDaysAgo.format('yyyy-MM-dd');
     Assert.areEqual(2, summary.days.size());
     Assert.areEqual(today, summary.days[0].key);
-    Assert.areEqual(61, summary.days[0].count, 'the 60 and the setup case');
+    Assert.areEqual(60, summary.days[0].count, 'the busy day');
 
     List<TimeDriveController.EngagementEvent> page = TimeDriveController.getDays(
       customer,
@@ -221,30 +234,19 @@ private class TimeDriveControllerTest {
     Assert.areEqual(2, page.size(), 'the busy day grouped, the quiet day in full');
     TimeDriveController.EngagementEvent grouped = page[0];
     Assert.isTrue(grouped.grouped);
-    Assert.areEqual(61, grouped.groupCount);
+    Assert.areEqual(60, grouped.groupCount);
     Assert.areEqual(today, grouped.dayKey);
     Assert.isTrue(grouped.firstAt <= grouped.occurredAt);
-    Assert.areEqual('Salesforce · Case', grouped.sourceLabel);
+    Assert.areEqual('Salesforce · Task', grouped.sourceLabel);
     Assert.isFalse(page[1].grouped);
-    Assert.areEqual(older.Id, page[1].recordId);
+    Assert.areEqual(olderId(), page[1].recordId);
     Assert.areEqual(quiet, page[1].dayKey);
   }
 
   @IsTest
   static void pagesCountOnlyThePeriodsTheSummaryFoundBusy() {
-    Id customer = contactId();
-    List<Case> busy = new List<Case>();
-    for (Integer i = 0; i < 60; i++) {
-      busy.add(new Case(ContactId = customer, Subject = 'Busy ' + i, Status = 'New', Origin = 'Web'));
-    }
-    insert busy;
-    Case older = new Case(ContactId = customer, Subject = 'Older', Status = 'New', Origin = 'Web');
-    insert older;
     Datetime threeDaysAgo = Datetime.now().addDays(-3);
-    Test.setCreatedDate(older.Id, threeDaysAgo);
-    TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{
-      source('Cases', 'Case', 'CreatedDate', 'ContactId')
-    };
+    Id customer = busyDay(threeDaysAgo);
     String today = Datetime.now().format('yyyy-MM-dd');
     String quiet = threeDaysAgo.format('yyyy-MM-dd');
 
@@ -262,11 +264,12 @@ private class TimeDriveControllerTest {
       new List<String>{ quiet },
       new List<String>()
     );
+    Integer queries = Limits.getQueries() - before;
     Assert.areEqual(1, page.size());
-    Assert.areEqual(older.Id, page[0].recordId);
+    Assert.areEqual(olderId(), page[0].recordId);
     // The rows (one query); what the user may do with them is asked for when
     // a row's menu opens, not here.
-    Assert.areEqual(1, Limits.getQueries() - before, 'the rows only: no count, no rights');
+    Assert.areEqual(1, queries, 'the rows only: no count, no rights');
 
     // A busy day and a quiet one: the busy one counted and grouped, the
     // quiet one read, the same as counting both.
@@ -281,32 +284,21 @@ private class TimeDriveControllerTest {
     );
     Assert.areEqual(2, page.size());
     Assert.isTrue(page[0].grouped);
-    Assert.areEqual(61, page[0].groupCount);
-    Assert.areEqual(older.Id, page[1].recordId);
+    Assert.areEqual(60, page[0].groupCount);
+    Assert.areEqual(olderId(), page[1].recordId);
 
     // A summary out of date (it called today quiet): read as rows, and
     // grouped by type as any busy day read as rows is.
     page = TimeDriveController.getDays(customer, null, null, null, null, new List<String>{ today }, new List<String>());
     Assert.areEqual(1, page.size());
     Assert.isTrue(page[0].grouped);
-    Assert.areEqual(61, page[0].groupCount);
+    Assert.areEqual(60, page[0].groupCount);
   }
 
   @IsTest
   static void theSummarysSourceCountsSaveTheDaysQueries() {
-    Id customer = contactId();
-    List<Case> busy = new List<Case>();
-    for (Integer i = 0; i < 60; i++) {
-      busy.add(new Case(ContactId = customer, Subject = 'Busy ' + i, Status = 'New', Origin = 'Web'));
-    }
-    insert busy;
-    Case older = new Case(ContactId = customer, Subject = 'Older', Status = 'New', Origin = 'Web');
-    insert older;
     Datetime threeDaysAgo = Datetime.now().addDays(-3);
-    Test.setCreatedDate(older.Id, threeDaysAgo);
-    TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{
-      source('Cases', 'Case', 'CreatedDate', 'ContactId')
-    };
+    Id customer = busyDay(threeDaysAgo);
     String today = Datetime.now().format('yyyy-MM-dd');
     String quiet = threeDaysAgo.format('yyyy-MM-dd');
 
@@ -317,7 +309,7 @@ private class TimeDriveControllerTest {
     for (TimeDriveController.DaySummary d : summary.days) {
       Assert.areEqual(new List<Integer>{ 0 }, d.src);
       if (d.key == today) {
-        Assert.areEqual(new List<Integer>{ 61 }, d.n);
+        Assert.areEqual(new List<Integer>{ 60 }, d.n);
       } else {
         Assert.isNull(d.n, 'a quiet period keeps no counts');
       }
@@ -328,7 +320,7 @@ private class TimeDriveControllerTest {
     TimeDriveController.BusyCount known = new TimeDriveController.BusyCount();
     known.key = today;
     known.source = 'Cases';
-    known.count = 61;
+    known.count = 60;
     Integer before = Limits.getQueries();
     List<TimeDriveController.EngagementEvent> page = TimeDriveController.getPageDays(
       customer,
@@ -345,7 +337,7 @@ private class TimeDriveControllerTest {
     Assert.areEqual(1, page.size());
     Assert.isTrue(page[0].grouped);
     Assert.isTrue(page[0].allDay, 'a count for the day says no hour');
-    Assert.areEqual(61, page[0].groupCount);
+    Assert.areEqual(60, page[0].groupCount);
     Integer withHint = Limits.getQueries() - before;
     before = Limits.getQueries();
     TimeDriveController.getDays(customer, null, null, null, null, new List<String>{ today }, new List<String>{ today });
@@ -395,9 +387,9 @@ private class TimeDriveControllerTest {
   static void daysThatFollowOneAnotherInTheSummaryAreReadAsOneRange() {
     Id customer = contactId();
     // Items on five days with gaps between them, and one more further back.
-    List<Case> cases = new List<Case>();
+    List<Task> cases = new List<Task>();
     for (Integer i = 0; i < 6; i++) {
-      cases.add(new Case(ContactId = customer, Subject = 'Case ' + i, Status = 'New', Origin = 'Web'));
+      cases.add(new Task(WhoId = customer, Subject = 'Case ' + i, Status = 'Not Started'));
     }
     insert cases;
     List<String> keys = new List<String>();
@@ -407,9 +399,7 @@ private class TimeDriveControllerTest {
       Test.setCreatedDate(cases[i].Id, at);
       keys.add(at.format('yyyy-MM-dd'));
     }
-    TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{
-      source('Cases', 'Case', 'CreatedDate', 'ContactId')
-    };
+    TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ source('Cases', 'Task', 'CreatedDate', 'WhoId') };
     // The first five follow one another in the summary: one run. The sixth
     // is not asked with them.
     List<String> run = new List<String>{ keys[4], keys[3], keys[2], keys[1], keys[0] };
@@ -465,9 +455,9 @@ private class TimeDriveControllerTest {
     // comes back full is read again from its oldest day, so none are missed.
     Contact fresh = new Contact(LastName = 'Read in full');
     insert fresh;
-    List<Case> cases = new List<Case>();
+    List<Task> cases = new List<Task>();
     for (Integer i = 0; i < 12; i++) {
-      cases.add(new Case(ContactId = fresh.Id, Subject = 'Case ' + i, Status = 'New', Origin = 'Web'));
+      cases.add(new Task(WhoId = fresh.Id, Subject = 'Case ' + i, Status = 'Not Started'));
     }
     insert cases;
     List<String> keys = new List<String>();
@@ -478,7 +468,7 @@ private class TimeDriveControllerTest {
         Test.setCreatedDate(cases[i].Id, at.addMinutes(-i));
       }
     }
-    Time_Drive_Source__mdt source = source('Cases', 'Case', 'CreatedDate', 'ContactId');
+    Time_Drive_Source__mdt source = source('Cases', 'Task', 'CreatedDate', 'WhoId');
     source.Max_Records__c = 5;
     TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ source };
 
@@ -498,13 +488,13 @@ private class TimeDriveControllerTest {
 
     // One "quiet" day (the summary out of date) with more than Max Records:
     // counted, one grouped row with its true total, not 5 of its 8.
-    List<Case> more = new List<Case>();
+    List<Task> more = new List<Task>();
     for (Integer i = 0; i < 4; i++) {
-      more.add(new Case(ContactId = fresh.Id, Subject = 'More ' + i, Status = 'New', Origin = 'Web'));
+      more.add(new Task(WhoId = fresh.Id, Subject = 'More ' + i, Status = 'Not Started'));
     }
     insert more;
     Datetime first = Datetime.now().addDays(-1);
-    for (Case c : more) {
+    for (Task c : more) {
       Test.setCreatedDate(c.Id, first);
     }
     page = TimeDriveController.getDays(
@@ -586,7 +576,9 @@ private class TimeDriveControllerTest {
     Id customer = contactId();
     List<Time_Drive_Source__mdt> many = new List<Time_Drive_Source__mdt>();
     for (Integer i = 0; i < 5; i++) {
-      many.add(source('Cases_' + i, 'Case', 'CreatedDate', 'ContactId'));
+      Time_Drive_Source__mdt reviews = source('Cases_' + i, 'Task', 'CreatedDate', 'WhoId');
+      reviews.Filter__c = 'Subject LIKE \'Review%\'';
+      many.add(reviews);
     }
     TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ many[0] };
     // Ten years back and ahead: one source still fits by day...
@@ -599,7 +591,7 @@ private class TimeDriveControllerTest {
     Assert.areEqual('week', summary.unit);
     Assert.areEqual(1, summary.days.size());
     Assert.areEqual(week, summary.days[0].key, 'keyed by the week\'s first day');
-    Assert.areEqual(5, summary.days[0].count, 'the case, once per source');
+    Assert.areEqual(5, summary.days[0].count, 'the setup\'s review, once per source');
 
     List<TimeDriveController.EngagementEvent> page = TimeDriveController.getDays(
       customer,
@@ -1090,12 +1082,12 @@ private class TimeDriveControllerTest {
 
   @IsTest
   static void templatesFillTokensAndDropBlankParts() {
-    Opportunity o = [
-      SELECT Id, Amount, Account.Name, Description
-      FROM Opportunity
-      WHERE StageName = 'Closed Won'
-      LIMIT 1
-    ];
+    // Built in memory, with its account as a query would bring it.
+    Opportunity o = (Opportunity) JSON.deserialize(
+      '{"attributes":{"type":"Opportunity"},"Amount":3500,"Description":null,' +
+      '"Account":{"attributes":{"type":"Account"},"Name":"Ada Catering Co"}}',
+      Opportunity.class
+    );
     TimeDriveRow row = new TimeDriveRow(o);
     Assert.areEqual(
       'Ada Catering Co · ' + TimeDrivePlotter.format(3500, null, row, 'Amount'),
@@ -1235,8 +1227,8 @@ private class TimeDriveControllerTest {
   static void anAccountPageHasItsOwnSources() {
     Account acme = new Account(Name = 'Acme');
     insert acme;
-    insert new Case(AccountId = acme.Id, Subject = 'Login trouble');
-    Time_Drive_Source__mdt cases = source('Account_Cases', 'Case', 'CreatedDate', 'AccountId');
+    insert new Task(WhatId = acme.Id, Subject = 'Login trouble');
+    Time_Drive_Source__mdt cases = source('Account_Cases', 'Task', 'CreatedDate', 'WhatId');
     cases.Parent_Object__c = 'Account';
     TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ cases };
 
@@ -1287,7 +1279,9 @@ private class TimeDriveControllerTest {
 
   @IsTest
   static void anOpenedItemShowsTheDetailFieldsChosen() {
-    Time_Drive_Source__mdt cases = source('Cases', 'Case', 'CreatedDate', 'ContactId');
+    // The setup's review, as a source of its own.
+    Time_Drive_Source__mdt cases = items();
+    cases.Filter__c = 'Subject LIKE \'Review%\'';
     TimeDriveConfig.testDetailFields = new Map<String, List<Time_Drive_Detail_Field__mdt>>{
       'Cases' => new List<Time_Drive_Detail_Field__mdt>{
         new Time_Drive_Detail_Field__mdt(Field__c = 'Status'),
@@ -1300,8 +1294,9 @@ private class TimeDriveControllerTest {
     );
     Assert.areEqual(1, events.size());
     Assert.areEqual('Status', events[0].details[0].label, 'blank labels use the field label');
-    Assert.areEqual('New', events[0].details[0].value);
-    Assert.areEqual('Salesforce · Case', events[0].sourceLabel);
+    Assert.areEqual('Completed', events[0].details[0].value);
+    Assert.areEqual('The Savory Spot', events[0].details[1].value, 'a field through a lookup');
+    Assert.areEqual('Salesforce · Task', events[0].sourceLabel);
   }
 
   @IsTest
@@ -1688,27 +1683,27 @@ private class TimeDriveControllerTest {
   @IsTest
   static void configuredStylingReachesTheEvents() {
     TimeDriveController.TimelineResult result = TimeDriveController.getEvents(contactId());
-    Boolean sawCase = false;
+    Boolean sawReview = false;
     for (TimeDriveController.EngagementEvent e : result.events) {
-      if (e.type == 'case') {
-        sawCase = true;
-        Assert.areEqual('utility:case', e.icon);
-        Assert.areEqual('#1F7A8C', e.iconColour);
-        Assert.areEqual('Case updates', e.typeLabel);
+      if (e.type == 'review') {
+        sawReview = true;
+        Assert.areEqual('utility:favorite', e.icon);
+        Assert.areEqual('#B07A0C', e.iconColour);
+        Assert.areEqual('Reviews', e.typeLabel);
       }
     }
-    Assert.isTrue(sawCase);
+    Assert.isTrue(sawReview);
   }
 
   @IsTest
   static void viewAllPagesThroughEverySourceOfTheType() {
-    // Two sources of one type (Cases and Tasks), several items sharing a
+    // Two sources of one type (case items and task items), several sharing a
     // moment: pages of 3 bring back each item once, newest first.
     Contact fresh = new Contact(LastName = 'View all');
     insert fresh;
-    List<Case> cases = new List<Case>();
+    List<Task> cases = new List<Task>();
     for (Integer i = 0; i < 7; i++) {
-      cases.add(new Case(ContactId = fresh.Id, Subject = 'Case ' + i, Status = 'New', Origin = 'Web'));
+      cases.add(new Task(WhoId = fresh.Id, Subject = 'Case ' + i));
     }
     insert cases;
     List<Task> tasks = new List<Task>();
@@ -1724,11 +1719,11 @@ private class TimeDriveControllerTest {
     for (Integer i = 0; i < 4; i++) {
       Test.setCreatedDate(tasks[i].Id, base.addMinutes(-2 * i));
     }
+    Time_Drive_Source__mdt caseItems = items();
+    caseItems.Filter__c = 'Subject LIKE \'Case%\'';
     Time_Drive_Source__mdt taskSource = source('CaseTasks', 'Task', 'CreatedDate', 'WhoId');
-    TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{
-      source('Cases', 'Case', 'CreatedDate', 'ContactId'),
-      taskSource
-    };
+    taskSource.Filter__c = 'Subject LIKE \'Task%\'';
+    TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ caseItems, taskSource };
 
     Set<String> seen = new Set<String>();
     Datetime previous;
@@ -1780,15 +1775,13 @@ private class TimeDriveControllerTest {
     // The columns are the admin's detail fields, as an opened item's are.
     Contact fresh = new Contact(LastName = 'Columns');
     insert fresh;
-    Case broken = new Case(ContactId = fresh.Id, Subject = 'Broken', Status = 'New', Origin = 'Web');
+    Task broken = new Task(WhoId = fresh.Id, Subject = 'Broken', Status = 'Not Started');
     insert broken;
-    TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{
-      source('Cases', 'Case', 'CreatedDate', 'ContactId')
-    };
+    TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ source('Cases', 'Task', 'CreatedDate', 'WhoId') };
     TimeDriveConfig.testDetailFields = new Map<String, List<Time_Drive_Detail_Field__mdt>>{
       'Cases' => new List<Time_Drive_Detail_Field__mdt>{
         new Time_Drive_Detail_Field__mdt(Label = 'Status', Field__c = 'Status'),
-        new Time_Drive_Detail_Field__mdt(Label = 'Contact', Field__c = 'Contact.Name')
+        new Time_Drive_Detail_Field__mdt(Label = 'Contact', Field__c = 'Who.Name')
       }
     };
     TimeDriveController.GroupPage page = TimeDriveController.getGroupPage(
@@ -1803,7 +1796,7 @@ private class TimeDriveControllerTest {
     List<TimeDriveController.Detail> details = page.items[0].details;
     Assert.areEqual(2, details.size());
     Assert.areEqual('Status', details[0].label);
-    Assert.areEqual('New', details[0].value);
+    Assert.areEqual('Not Started', details[0].value);
     Assert.areEqual('Columns', details[1].value, 'the contact by name');
   }
 
@@ -1811,15 +1804,13 @@ private class TimeDriveControllerTest {
   static void groupedRowsSayWhetherTheyCanBeListed() {
     Contact fresh = new Contact(LastName = 'Pageable');
     insert fresh;
-    List<Case> cases = new List<Case>();
+    List<Task> cases = new List<Task>();
     for (Integer i = 0; i < 55; i++) {
-      cases.add(new Case(ContactId = fresh.Id, Subject = 'Case ' + i, Status = 'New', Origin = 'Web'));
+      cases.add(new Task(WhoId = fresh.Id, Subject = 'Case ' + i, Status = 'Not Started'));
     }
     insert cases;
     String day = Datetime.now().format('yyyy-MM-dd');
-    TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{
-      source('Cases', 'Case', 'CreatedDate', 'ContactId')
-    };
+    TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ source('Cases', 'Task', 'CreatedDate', 'WhoId') };
     List<TimeDriveController.EngagementEvent> page = TimeDriveController.getDays(
       fresh.Id,
       null,
@@ -1909,18 +1900,22 @@ private class TimeDriveControllerTest {
 
   @IsTest
   static void aSourceCanBeAJunctionWithItsFieldsReachedThroughIt() {
-    // OpportunityContactRole is the source (linked by ContactId); the date,
-    // title and filter are the Opportunity's, by path.
-    Time_Drive_Source__mdt source = source('Roles', 'OpportunityContactRole', 'Opportunity.CloseDate', 'ContactId');
-    source.Title__c = '{Opportunity.Name}';
-    source.Filter__c = 'Opportunity.IsWon = true';
-    source.Record_Id_Field__c = 'OpportunityId';
+    // Needs Shared Activities, which a scratch org may not have.
+    if (!Schema.getGlobalDescribe().containsKey('taskrelation')) {
+      return;
+    }
+    // TaskRelation is the source (linked by RelationId); the date, title and
+    // filter are the Task's, by path.
+    Time_Drive_Source__mdt source = source('Relations', 'TaskRelation', 'Task.ActivityDate', 'RelationId');
+    source.Title__c = '{Task.Subject}';
+    source.Filter__c = 'Task.Status = \'Completed\'';
+    source.Record_Id_Field__c = 'TaskId';
     TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ source };
 
     TimeDriveController.TimelineSummary summary = TimeDriveController.getSummary(contactId(), null, null, '1', null);
-    Assert.areEqual(1, summary.total, 'only the won opportunity is counted, by its close date');
+    Assert.areEqual(1, summary.total, 'only the completed order is counted, by its due date');
     Assert.areEqual(1, summary.days.size());
-    Assert.areEqual(String.valueOf(Date.today().addDays(-5)), summary.days[0].key);
+    Assert.areEqual(String.valueOf(Date.today().addDays(-3)), summary.days[0].key);
 
     List<TimeDriveController.EngagementEvent> page = TimeDriveController.getDays(
       contactId(),
@@ -1932,9 +1927,9 @@ private class TimeDriveControllerTest {
       null
     );
     Assert.areEqual(1, page.size());
-    Assert.areEqual('Holiday party', page[0].title, 'the title is read through the junction');
-    Assert.areEqual(Opportunity.SObjectType, page[0].recordId.getSObjectType(), 'it opens the opportunity');
-    Assert.areEqual('Opportunity', page[0].sourceObject);
+    Assert.areEqual('Order 1001', page[0].title, 'the title is read through the relation');
+    Assert.areEqual(Task.SObjectType, page[0].recordId.getSObjectType(), 'it opens the task');
+    Assert.areEqual('Task', page[0].sourceObject);
   }
 
   @IsTest
@@ -2100,16 +2095,20 @@ private class TimeDriveControllerTest {
 
   @IsTest
   static void aJunctionSourceCountsThroughTheJunctionAndGivesTheSameAnswer() {
-    // OpportunityContactRole links Opportunities to the Contact, as Setup
-    // saves it: the Opportunity is the source, the role the junction.
+    // Needs Shared Activities, which a scratch org may not have.
+    if (!Schema.getGlobalDescribe().containsKey('taskrelation')) {
+      return;
+    }
+    // TaskRelation links Tasks to the Contact, as Setup saves it: the Task is
+    // the source, the relation the junction.
     Contact c = [SELECT Id FROM Contact LIMIT 1];
-    Time_Drive_Source__mdt source = source('Opps', 'Opportunity', 'CloseDate', null);
+    Time_Drive_Source__mdt source = source('Shared_Tasks', 'Task', 'ActivityDate', null);
     source.Parent_Field__c = null;
-    source.Junction_Object__c = 'OpportunityContactRole';
-    source.Junction_Parent_Field__c = 'ContactId';
-    source.Junction_Record_Field__c = 'OpportunityId';
-    source.Title__c = '{Name}';
-    source.Filter__c = 'IsWon = true';
+    source.Junction_Object__c = 'TaskRelation';
+    source.Junction_Parent_Field__c = 'RelationId';
+    source.Junction_Record_Field__c = 'TaskId';
+    source.Title__c = '{Subject}';
+    source.Filter__c = 'Status = \'Completed\'';
     TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ source };
 
     TimeDriveDiagnostics.begin();
@@ -2121,7 +2120,7 @@ private class TimeDriveControllerTest {
     for (TimeDriveContext.DayCount d : counts) {
       total += d.count;
     }
-    Assert.areEqual(1, total, 'the won opportunity, counted from the role');
+    Assert.areEqual(1, total, 'the completed order, counted from the relation');
     String counted;
     for (TimeDriveDiagnostics.Query q : TimeDriveDiagnostics.queries) {
       if (q.kind == 'count') {
@@ -2129,12 +2128,12 @@ private class TimeDriveControllerTest {
       }
     }
     Assert.isNotNull(counted, 'the count was recorded');
-    Assert.isTrue(counted.contains('FROM OpportunityContactRole'), 'counted from the junction: ' + counted);
-    Assert.isTrue(counted.contains('Opportunity.CloseDate'), 'the date is read across the role: ' + counted);
-    Assert.isTrue(counted.contains('Opportunity.IsWon = true'), 'so is the filter: ' + counted);
+    Assert.isTrue(counted.contains('FROM TaskRelation'), 'counted from the junction: ' + counted);
+    Assert.isTrue(counted.contains('Task.ActivityDate'), 'the date is read across the relation: ' + counted);
+    Assert.isTrue(counted.contains('Task.Status = \'Completed\''), 'so is the filter: ' + counted);
 
     // A filter that can't be rewritten is counted the usual way, with the same answer.
-    source.Filter__c = 'Id IN (SELECT OpportunityId FROM OpportunityContactRole WHERE IsPrimary = false)';
+    source.Filter__c = 'Id IN (SELECT TaskId FROM TaskRelation WHERE IsWhat = false)';
     TimeDriveDiagnostics.begin();
     counts = provider.countDays(new TimeDriveContext(c.Id, null, since, source, null, null), TimeDriveContext.UNIT_DAY);
     for (TimeDriveDiagnostics.Query q : TimeDriveDiagnostics.queries) {
@@ -2142,10 +2141,7 @@ private class TimeDriveControllerTest {
         counted = q.soql;
       }
     }
-    Assert.isTrue(
-      counted.contains('FROM Opportunity '),
-      'a subquery in the filter keeps the original form: ' + counted
-    );
+    Assert.isTrue(counted.contains('FROM Task '), 'a subquery in the filter keeps the original form: ' + counted);
   }
 
   private static Time_Drive_Source__mdt source(String name, String objectName, String dateField, String parentField) {

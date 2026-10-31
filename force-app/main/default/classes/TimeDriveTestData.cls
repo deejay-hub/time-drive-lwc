@@ -9,6 +9,37 @@
  */
 @IsTest
 public class TimeDriveTestData {
+  /**
+   * Inserts a test's records, unless the org's own automation won't take
+   * them (a flow, process or validation rule an org adds, such as one that
+   * needs a setting tests can't see). Then nothing is kept and the answer is
+   * false: a test that needs those records has nothing of ours to test there.
+   *
+   * @param records the records to insert
+   * @return true when they were inserted
+   */
+  public static Boolean tryInsert(List<SObject> records) {
+    Savepoint before = Database.setSavepoint();
+    try {
+      insert records;
+      return true;
+    } catch (DmlException e) {
+      Database.rollback(before);
+      System.debug(LoggingLevel.WARN, 'Time Drive test: this org won\'t take the records. ' + e.getMessage());
+      return false;
+    }
+  }
+
+  /**
+   * Inserts one record, unless the org's own automation won't take it.
+   *
+   * @param record the record to insert
+   * @return true when it was inserted
+   */
+  public static Boolean tryInsert(SObject record) {
+    return tryInsert(new List<SObject>{ record });
+  }
+
   /** Puts the sources and their detail fields in place of the org's. */
   public static void useShipped() {
     TimeDriveConfig.testSources = sources();

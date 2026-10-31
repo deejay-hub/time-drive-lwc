@@ -1399,6 +1399,23 @@ describe("c-time-drive a file", () => {
       attributes: { recordId: "a01000000000001AAA", actionName: "view" }
     });
     expect(root.querySelector(".event-link").getAttribute("href")).toBe("/lightning/r/a01000000000001AAA/view");
+    expect(openTab).not.toHaveBeenCalled();
+  });
+
+  it("opens every other record in a tab of its own in a console app, as Time Warp does", async () => {
+    const root = await mountWith([EVENTS[0]]);
+    IsConsoleNavigation.emit(true);
+    await flush();
+    navigated.mockClear();
+    root.querySelector(".event-link").click();
+    expect(openTab).toHaveBeenCalledWith({
+      pageReference: {
+        type: "standard__recordPage",
+        attributes: { recordId: "a01000000000001AAA", actionName: "view" }
+      },
+      focus: true
+    });
+    expect(navigated).not.toHaveBeenCalled();
   });
 });
 

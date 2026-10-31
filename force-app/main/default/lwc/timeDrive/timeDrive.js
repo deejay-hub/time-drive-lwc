@@ -2212,23 +2212,20 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     }
   }
 
-  // In a console app, a file's preview opens in a tab of its own.
+  // In a console app, a record (or a file's preview) opens in a tab of its
+  // own, focused, as Salesforce's own related lists open them; elsewhere the
+  // page goes to it.
   @wire(IsConsoleNavigation) isConsoleNavigation;
 
   openRecord(event) {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.button === 1) return;
     event.preventDefault();
     const recordId = event.currentTarget.dataset.record;
-    if (isFileId(recordId)) {
-      const ref = filePreviewRef(recordId);
-      if (this.isConsoleNavigation) openTab({ pageReference: ref, focus: true });
-      else this[NavigationMixin.Navigate](ref);
-      return;
-    }
-    this[NavigationMixin.Navigate]({
-      type: "standard__recordPage",
-      attributes: { recordId, actionName: "view" }
-    });
+    const ref = isFileId(recordId)
+      ? filePreviewRef(recordId)
+      : { type: "standard__recordPage", attributes: { recordId, actionName: "view" } };
+    if (this.isConsoleNavigation) openTab({ pageReference: ref, focus: true });
+    else this[NavigationMixin.Navigate](ref);
   }
   // View all for a grouped row: its items a page at a time
   // (c/timeDriveGroup), its span and count in the page's state.
@@ -2242,7 +2239,6 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       count: String(event.groupCount ?? ""),
       label,
       icon: event.icon || "",
-      // Its columns are this object's compact layout.
       object: event.sourceObject ?? ""
     };
     return {
