@@ -112,8 +112,6 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
     if (spans.isEmpty()) {
       return rows;
     }
-    // A Date field is compared with days, a Date/Time one with instants.
-    Boolean byDay = isDate(dmoFields, dateField);
     Map<String, Object> binds = new Map<String, Object>{
       'individualIds' => new List<String>(individualIdsFor(context.contactId(), objects, context))
     };
@@ -126,9 +124,8 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
       s.Object_Name__c +
       ' WHERE ' +
       individualField +
-      ' IN :individualIds AND (' +
-      within(dateField, spans, byDay, binds) +
-      ')' +
+      ' IN :individualIds' +
+      context.dateCondition(dmo, dateField, binds) +
       (String.isBlank(s.Filter__c) ? '' : ' AND (' + s.Filter__c + ')') +
       ' ORDER BY ' +
       dateField +
@@ -284,29 +281,6 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
 
   private static String quoted(String value) {
     return '\'' + value.replace('\'', '\'\'') + '\'';
-  }
-
-  // The spans as SOQL conditions on the date field, their bounds bound as
-  // days (a Date field) or instants.
-  @TestVisible
-  private static String within(
-    String dateField,
-    List<TimeDriveController.TimeWindow> spans,
-    Boolean byDay,
-    Map<String, Object> binds
-  ) {
-    List<String> out = new List<String>();
-    for (Integer i = 0; i < spans.size(); i++) {
-      TimeDriveController.TimeWindow span = spans[i];
-      binds.put('since' + i, byDay ? (Object) span.since.date() : span.since);
-      String condition = dateField + ' >= :since' + i;
-      if (span.until != null) {
-        binds.put('until' + i, byDay ? (Object) span.until.date() : span.until);
-        condition += ' AND ' + dateField + ' <= :until' + i;
-      }
-      out.add('(' + condition + ')');
-    }
-    return String.join(out, ' OR ');
   }
 
   // A bound as a date literal (the user's day) or a UTC timestamp literal.

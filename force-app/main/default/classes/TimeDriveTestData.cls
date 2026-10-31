@@ -1,6 +1,6 @@
 /**
  * The sources the timeline once shipped with (orders, cases, opportunities,
- * reviews, Data 360 engagement and the loyalty example), kept for
+ * reviews and Data 360 engagement), kept for
  * the tests: they stand in for custom metadata records, so the tests don't
  * depend on what an org has configured. Orders and reviews are Tasks here
  * (the timeline needs only standard objects): "Order …" tasks are orders,
@@ -236,28 +236,6 @@ public class TimeDriveTestData {
         Use_Compact_Layout__c = false
       ),
       new Time_Drive_Source__mdt(
-        DeveloperName = 'Loyalty_Points_Example',
-        Label = 'Loyalty points (example)',
-        Active__c = false,
-        Sequence__c = 80,
-        Parent_Object__c = 'Contact',
-        Kind__c = 'Apex',
-        Provider_Class__c = 'TimeDriveExampleProvider',
-        Object_Name__c = 'Loyalty',
-        Date_Field__c = 'EarnedAt',
-        Id_Field__c = 'Id',
-        Record_Id_Field__c = 'OrderId',
-        Title__c = 'Earned {Points} points',
-        Subtitle__c = '{Reason}',
-        Event_Type__c = 'loyalty',
-        Event_Label__c = 'Loyalty points',
-        Category__c = 'Commerce',
-        Icon__c = 'utility:reward',
-        Icon_Colour__c = '#7A4CB8',
-        Max_Records__c = 200,
-        Use_Compact_Layout__c = false
-      ),
-      new Time_Drive_Source__mdt(
         DeveloperName = 'Opportunity_Lost',
         Label = 'Opportunity lost',
         Active__c = true,
@@ -483,39 +461,6 @@ public class TimeDriveTestData {
         Field__c = 'ssot__EngagementChannelActionId__c',
         Sequence__c = 10,
         Format__c = 'Text'
-      )
-    );
-    add(
-      out,
-      'Loyalty_Points_Example',
-      new Time_Drive_Detail_Field__mdt(
-        DeveloperName = 'Loyalty_Points_Example_Points',
-        Label = 'Points',
-        Field__c = 'Points',
-        Sequence__c = 10,
-        Format__c = 'Number'
-      )
-    );
-    add(
-      out,
-      'Loyalty_Points_Example',
-      new Time_Drive_Detail_Field__mdt(
-        DeveloperName = 'Loyalty_Points_Example_Balance',
-        Label = 'Balance',
-        Field__c = 'Balance',
-        Sequence__c = 20,
-        Format__c = 'Number'
-      )
-    );
-    add(
-      out,
-      'Loyalty_Points_Example',
-      new Time_Drive_Detail_Field__mdt(
-        DeveloperName = 'Loyalty_Points_Example_EarnedAt',
-        Label = 'Earned',
-        Field__c = 'EarnedAt',
-        Sequence__c = 30,
-        Format__c = 'Date/Time'
       )
     );
     return out;

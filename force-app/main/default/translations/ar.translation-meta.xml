@@ -97,6 +97,10 @@
         <name>Time_Drive_Delete_Done</name>
     </customLabels>
     <customLabels>
+        <label>تم حذف {0} "{1}".</label>
+        <name>Time_Drive_Delete_Done_Named</name>
+    </customLabels>
+    <customLabels>
         <label>تعذر الحذف</label>
         <name>Time_Drive_Delete_Failed</name>
     </customLabels>
@@ -107,6 +111,10 @@
     <customLabels>
         <label>حذف {0}</label>
         <name>Time_Drive_Delete_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>جارٍ الحذف…</label>
+        <name>Time_Drive_Deleting</name>
     </customLabels>
     <customLabels>
         <label>إخفاء التفاصيل</label>
@@ -707,6 +715,10 @@
     <customLabels>
         <label>{0} من {1} من الأنواع</label>
         <name>Time_Drive_Types_Some</name>
+    </customLabels>
+    <customLabels>
+        <label>جارٍ التحديث…</label>
+        <name>Time_Drive_Updating</name>
     </customLabels>
     <customLabels>
         <label>كل العناصر</label>

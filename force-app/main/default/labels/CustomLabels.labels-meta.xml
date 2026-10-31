@@ -185,6 +185,30 @@
         <value>Couldn't delete</value>
     </labels>
     <labels>
+        <fullName>Time_Drive_Delete_Done_Named</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Time Drive: after an item is deleted: {0} its object, {1} its name</shortDescription>
+        <value>{0} "{1}" was deleted.</value>
+    </labels>
+    <labels>
+        <fullName>Time_Drive_Deleting</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Time Drive: said (and shown as a spinner) while an item is being deleted</shortDescription>
+        <value>Deleting…</value>
+    </labels>
+    <labels>
+        <fullName>Time_Drive_Updating</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Time Drive: said while the timeline updates after a save on the page</shortDescription>
+        <value>Updating…</value>
+    </labels>
+    <labels>
         <fullName>Time_Drive_Button_Today</fullName>
         <categories>Time Drive</categories>
         <language>en_US</language>

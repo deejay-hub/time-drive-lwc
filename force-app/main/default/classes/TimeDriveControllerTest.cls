@@ -949,29 +949,64 @@ private class TimeDriveControllerTest {
   }
 
   @IsTest
-  static void data360RowsAreReadForTheSpansAskedOnly() {
-    // A page's quiet days, not the whole window: Max Records can't cut off
-    // days further back.
+  static void anApexSourcesHelpersReadOnlyWhatsAskedAndShown() {
+    // The days asked for (a page's quiet days), as a bound condition.
     Datetime a = Datetime.newInstance(2026, 1, 5, 0, 0, 0);
     Datetime b = Datetime.newInstance(2026, 1, 5, 23, 59, 59);
     Datetime c = Datetime.newInstance(2026, 3, 9, 0, 0, 0);
-    List<TimeDriveController.TimeWindow> spans = new List<TimeDriveController.TimeWindow>{
+    TimeDriveContext context = new TimeDriveContext(
+      null,
+      'Contact',
+      null,
+      source('Mine', 'Mine', null, null),
+      null,
+      null
+    );
+    context.ranges = new List<TimeDriveController.TimeWindow>{
       new TimeDriveController.TimeWindow(a, b),
       new TimeDriveController.TimeWindow(c, null)
     };
     Map<String, Object> binds = new Map<String, Object>();
     Assert.areEqual(
-      '(Check_in_Date__c >= :since0 AND Check_in_Date__c <= :until0) OR (Check_in_Date__c >= :since1)',
-      TimeDriveData360Provider.within('Check_in_Date__c', spans, true, binds)
+      ' AND ((ActivityDate >= :since0 AND ActivityDate <= :until0) OR (ActivityDate >= :since1))',
+      context.dateCondition(Task.SObjectType, 'ActivityDate', binds)
     );
     Assert.areEqual(Date.newInstance(2026, 1, 5), binds.get('since0'), 'a Date field gets days');
     Assert.areEqual(Date.newInstance(2026, 1, 5), binds.get('until0'));
     Assert.areEqual(Date.newInstance(2026, 3, 9), binds.get('since1'));
     Assert.isFalse(binds.containsKey('until1'));
-
     binds.clear();
-    TimeDriveData360Provider.within('ssot__EngagementDateTm__c', spans, false, binds);
-    Assert.areEqual(a, binds.get('since0'), 'a Date/Time field gets instants');
+    context.dateCondition(Contact.SObjectType, 'Account.CreatedDate', binds);
+    Assert.areEqual(a, binds.get('since0'), 'a Date/Time field, through a lookup, gets instants');
+    // The whole history: no condition at all.
+    TimeDriveContext whole = new TimeDriveContext(null, 'Contact', null, null, null, null);
+    Assert.areEqual('', whole.dateCondition(Task.SObjectType, 'ActivityDate', binds));
+
+    // For data from elsewhere: only the items on the days asked for.
+    Assert.isTrue(context.wants(Datetime.newInstance(2026, 1, 5, 9, 0, 0)));
+    Assert.isFalse(context.wants(Datetime.newInstance(2026, 2, 1, 9, 0, 0)), 'between the spans');
+    Assert.isTrue(context.wants(Date.newInstance(2026, 4, 1)), 'after a span with no end');
+    Assert.isFalse(context.wants(Date.newInstance(2026, 1, 4)));
+    Assert.isFalse(context.wants((Datetime) null));
+
+    // How its rows are plotted: only what the source left blank.
+    context.source.Title__c = '{Own}';
+    context.plotBy('When').title('{Name}').subtitle('{Place}').opens('RecordId');
+    Assert.areEqual('When', context.source.Date_Field__c);
+    Assert.areEqual('{Own}', context.source.Title__c, 'the source\'s own title stays');
+    Assert.areEqual('{Place}', context.source.Subtitle__c);
+    Assert.areEqual('RecordId', context.source.Record_Id_Field__c);
+
+    // The fields shown: the ones given, then the title's, subtitle's and
+    // details', once each, and nothing that isn't a field path.
+    context.draftDetailFields = new List<Time_Drive_Detail_Field__mdt>{
+      new Time_Drive_Detail_Field__mdt(Field__c = 'Account.Name'),
+      new Time_Drive_Detail_Field__mdt(Field__c = 'Id FROM User WHERE')
+    };
+    Assert.areEqual(
+      new List<String>{ 'Id', 'When', 'Own', 'Place', 'Account.Name' },
+      context.fieldsToQuery(new List<String>{ 'Id', 'When', 'id' })
+    );
   }
 
   @IsTest
@@ -1125,53 +1160,103 @@ private class TimeDriveControllerTest {
     Assert.areEqual('33', TimeDrivePlotter.format(33.3333, null, new TimeDriveRow(deal), 'Probability'));
   }
 
+  /**
+   * An Apex source of values from elsewhere (as an external system would
+   * send them): points earned for each order, as maps. It says its date,
+   * title, subtitle and click, which Setup doesn't ask an Apex source for.
+   */
+  public class PointsRows implements TimeDriveRowProvider {
+    /**
+     * The points earned for the contact's orders.
+     *
+     * @param context the request context
+     * @return a row for each order's points
+     */
+    public List<TimeDriveRow> getRows(TimeDriveContext context) {
+      context.plotBy('EarnedAt').title('Earned {Points} points').subtitle('{Reason}').opens('OrderId');
+      List<TimeDriveRow> rows = new List<TimeDriveRow>();
+      Integer balance = 0;
+      for (Task order : [
+        SELECT Id, Subject, CreatedDate
+        FROM Task
+        WHERE WhoId = :context.recordId AND Subject LIKE 'Order%'
+        ORDER BY CreatedDate
+      ]) {
+        balance += 100;
+        if (!context.wants(order.CreatedDate)) {
+          continue;
+        }
+        rows.add(
+          new TimeDriveRow(
+            new Map<String, Object>{
+              'Id' => 'points-' + order.Id,
+              'EarnedAt' => order.CreatedDate,
+              'Points' => 100,
+              'Balance' => balance,
+              'Reason' => order.Subject,
+              'OrderId' => order.Id
+            }
+          )
+        );
+      }
+      return rows;
+    }
+  }
+
   @IsTest
-  static void apexSourcesArePlottedFromTheirRecord() {
-    Time_Drive_Source__mdt loyalty = new Time_Drive_Source__mdt(
-      DeveloperName = 'Loyalty',
-      Label = 'Loyalty',
+  static void apexSourcesArePlottedFromTheirRows() {
+    // As Setup saves an Apex source: the class, its look and lens, no date or title.
+    Time_Drive_Source__mdt points = new Time_Drive_Source__mdt(
+      DeveloperName = 'Points',
+      Label = 'Points',
       Active__c = true,
       Sequence__c = 50,
       Parent_Object__c = 'Contact',
       Kind__c = 'Apex',
-      Provider_Class__c = 'TimeDriveExampleProvider',
-      Object_Name__c = 'Loyalty',
-      Date_Field__c = 'EarnedAt',
-      Record_Id_Field__c = 'OrderId',
-      Title__c = 'Earned {Points} points',
-      Subtitle__c = '{Reason}',
+      Provider_Class__c = 'TimeDriveControllerTest.PointsRows',
       Event_Type__c = 'loyalty',
       Event_Label__c = 'Loyalty points',
       Category__c = 'Commerce',
       Icon__c = 'utility:reward',
-      Icon_Colour__c = '#7A4CB8',
-      Use_Compact_Layout__c = true
+      Icon_Colour__c = '#7A4CB8'
     );
-    Time_Drive_Source__mdt orders = TimeDriveTestData.source('Order_Placed');
-    TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ orders, loyalty };
+    TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ points };
     TimeDriveConfig.testDetailFields = new Map<String, List<Time_Drive_Detail_Field__mdt>>{
-      'Loyalty' => new List<Time_Drive_Detail_Field__mdt>{
+      'Points' => new List<Time_Drive_Detail_Field__mdt>{
         new Time_Drive_Detail_Field__mdt(Label = 'Points', Field__c = 'Points', Format__c = 'Number'),
         new Time_Drive_Detail_Field__mdt(Label = null, Field__c = 'Balance')
       }
     };
 
     TimeDriveController.TimelineResult result = TimeDriveController.getEvents(contactId());
-    List<TimeDriveController.EngagementEvent> points = new List<TimeDriveController.EngagementEvent>();
-    for (TimeDriveController.EngagementEvent e : result.events) {
-      if (e.type == 'loyalty') {
-        points.add(e);
-      }
-    }
-    Assert.areEqual(countOf(result, 'purchase'), points.size(), 'one loyalty event per order');
-    TimeDriveController.EngagementEvent latest = points[0];
-    Assert.isTrue(latest.title.startsWith('Earned '), latest.title);
+    Assert.areEqual(2, countOf(result, 'loyalty'), 'points for each of the two orders');
+    TimeDriveController.EngagementEvent latest = result.events[0];
+    Assert.areEqual('Earned 100 points', latest.title, 'its own title, from plotBy');
+    Assert.isTrue(latest.subtitle.startsWith('Order '), latest.subtitle);
     Assert.areEqual('utility:reward', latest.icon);
     Assert.areEqual('Loyalty points', latest.typeLabel);
-    Assert.isNotNull(latest.recordId, 'links to the order through Record Id Field');
+    Assert.areEqual(Task.SObjectType, latest.recordId.getSObjectType(), 'a click opens the order');
     Assert.areEqual('Points', latest.details[0].label);
     Assert.areEqual('Balance', latest.details[1].label, 'blank labels fall back to the field name');
     Assert.isTrue(result.warnings.isEmpty(), String.join(result.warnings, ' | '));
+
+    // The same rows with nothing to open (data with no record behind it):
+    // no link, so the title is plain text.
+    List<TimeDriveRow> rows = new List<TimeDriveRow>{
+      new TimeDriveRow(new Map<String, Object>{ 'Id' => 'day-1', 'Day' => Date.today(), 'Summary' => 'Showers' }),
+      new TimeDriveRow(
+        new Map<String, Object>{ 'Id' => 'day-2', 'Day' => Date.today(), 'Summary' => 'Sun', 'Ref' => 'not-an-id' }
+      )
+    };
+    TimeDriveContext forecast = new TimeDriveContext(contactId(), 'Contact', null, points.clone(true), null, null);
+    forecast.plotBy('Day').title('{Summary}');
+    for (TimeDriveController.EngagementEvent e : TimeDrivePlotter.plot(forecast, rows)) {
+      Assert.isNull(e.recordId, 'no opens: nothing to link to');
+    }
+    // A key that holds no Salesforce Id doesn't link either.
+    TimeDriveContext refs = new TimeDriveContext(contactId(), 'Contact', null, points.clone(true), null, null);
+    refs.plotBy('Day').title('{Summary}').opens('Ref');
+    Assert.isNull(TimeDrivePlotter.plot(refs, rows)[1].recordId);
   }
 
   @IsTest

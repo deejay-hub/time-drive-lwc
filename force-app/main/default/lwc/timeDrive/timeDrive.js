@@ -487,9 +487,10 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     this.requestTimeline();
     // What they last chose is read alongside; a different lens asks again.
     this.loadPreference();
-    // A quick action saved (a new task, a logged call): refresh in place.
+    // A save on the page (a new task, a logged call, an edited record):
+    // refresh quietly, in place.
     this._refreshId = registerRefreshHandler(this, () => {
-      this.handleRefresh();
+      this.refreshQuietly();
       return Promise.resolve(true);
     });
     // Comfy or Compact spacing (see :host(.density_comfy)): the page's own
@@ -1350,7 +1351,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
 
   // A day's items, built for the template, kept per day: opening or closing
   // one item rebuilds its own day only, not every day drawn. Rebuilt when the
-  // day's events, its open items or the layout change. (A Map,
+  // day's events, its open or deleting items, or the layout change. (A Map,
   // changed in place: it isn't reactive, so keeping it doesn't re-render.)
   _builtDays = new Map();
   dayEvents(key, cached) {
@@ -1358,8 +1359,18 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       .filter((e) => this.expanded.has(e.id))
       .map((e) => e.id)
       .join(",");
+    const busy = cached
+      .filter((e) => this.deleting.has(e.id))
+      .map((e) => e.id)
+      .join(",");
     const built = this._builtDays.get(key);
-    if (built && built.events === cached && built.open === open && built.horizontal === this.horizontal) {
+    if (
+      built &&
+      built.events === cached &&
+      built.open === open &&
+      built.busy === busy &&
+      built.horizontal === this.horizontal
+    ) {
       return built.value;
     }
     const value = this.sortEvents(cached).map((e, i, list) => {
@@ -1375,7 +1386,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
         above: prev
       });
     });
-    this._builtDays.set(key, { events: cached, open, horizontal: this.horizontal, value });
+    this._builtDays.set(key, { events: cached, open, busy, horizontal: this.horizontal, value });
     return value;
   }
   // "4 items", from the summary.
@@ -1454,6 +1465,9 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     const classes = ["event", `event_${info.tone}`];
     if (last) classes.push("event_last");
     if (open) classes.push("event_open");
+    // Being deleted: dimmed, its menu a spinner, until it goes.
+    const deleting = this.deleting.has(event.id);
+    if (deleting) classes.push("event_deleting");
     const email = EMAIL_STATES[event.emailState];
     return {
       ...event,
@@ -1464,6 +1478,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       // The menu at the end of a Salesforce record's row: Edit and Delete as
       // the user's rights allow (the server says), none without either.
       menuRecordId: event.recordId && !event.grouped && (event.canEdit || event.canDelete) ? event.recordId : null,
+      deleting,
       canEdit: event.canEdit === true,
       canDelete: event.canDelete === true,
       // Highlights from the source's rules: an icon (or a dot) and what it says.
@@ -1999,13 +2014,14 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     this.hiddenTypes = new Set(this.typeOptions.map((o) => o.value).filter((type) => !shown.has(type)));
     this.applyQueryChange();
   }
-  // Refresh in place: what's on screen stays until the fresh summary and
-  // days replace it (no loading skeleton, so the card doesn't jump). After
-  // an error, the timeline loads again from the start.
-  // Refresh: the loading skeleton shows while it works, at the height the
-  // timeline already has (so the card doesn't jump), then the fresh days.
+  // The Refresh button: the loading skeleton shows while it works, at the
+  // height the timeline already has (so the card doesn't jump), then the
+  // fresh days. After an error, the timeline loads again from the start.
   handleRefresh() {
-    if (this.refreshing) return;
+    if (this.refreshing) {
+      this._refreshAgain = true;
+      return;
+    }
     const failed = Boolean(this.error);
     // Across, the skeleton replaces the track (and its scroll): remember the
     // day at the view's left edge, and how far into it, to come back to.
@@ -2019,8 +2035,41 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       this.refreshing = false;
       this.loaded = true;
       this.refreshHeight = null;
+      this.refreshQueued();
     });
   }
+
+  // A save on the page: what's on screen stays, a thin line says it's
+  // updating, and the fresh summary and days replace it as they arrive (the
+  // days drawn now stay until their fresh copies come). After an error, or
+  // before the timeline has loaded, it's an ordinary refresh.
+  refreshQuietly() {
+    if (this.refreshing) {
+      this._refreshAgain = true;
+      return;
+    }
+    if (this.error || !this.loaded) {
+      this.handleRefresh();
+      return;
+    }
+    this._keepStale = true;
+    this.refreshing = true;
+    this.updating = true;
+    this.requestTimeline(true).finally(() => {
+      this.refreshing = false;
+      this.updating = false;
+      this.refreshQueued();
+    });
+  }
+
+  // A save that came while a refresh ran: one more, quietly, so it shows.
+  refreshQueued() {
+    if (!this._refreshAgain) return;
+    this._refreshAgain = false;
+    this.refreshQuietly();
+  }
+
+  updating = false;
   // The body's content height, which the skeleton keeps (it sits inside the
   // body's padding), so the card doesn't jump. Not measured after an error:
   // the error's height isn't the timeline's.
@@ -2178,7 +2227,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   }
 
   pickRowMenu(event) {
-    const { recordId, objectLabel } = this.rowMenu;
+    const { id, recordId, objectLabel } = this.rowMenu;
     const value = event.currentTarget.dataset.value;
     this.rowMenu = null;
     if (value === "edit") {
@@ -2187,11 +2236,14 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
         attributes: { recordId, actionName: "edit" }
       });
     } else if (value === "delete") {
-      this.confirmDelete(recordId, objectLabel);
+      this.confirmDelete(id, recordId, objectLabel);
     }
   }
 
-  async confirmDelete(id, objectLabel) {
+  // The rows being deleted, by event id.
+  deleting = new Set();
+
+  async confirmDelete(eventId, recordId, objectLabel) {
     // "Delete Event" / "Are you sure you want to delete this event?"
     const what = objectLabel || LABELS.deleteItem;
     const title = format(LABELS.deleteTitle, what);
@@ -2201,15 +2253,67 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       ? await LightningConfirm.open({ label: title, message, theme: "warning" })
       : await TimeDriveConfirm.open({ size: "small", confirmLabel: LABELS.actionDelete, title, message });
     if (!yes) return;
+    const name = this.loadedEvents.find((e) => e.id === eventId)?.title?.trim();
+    this.deleting = new Set([...this.deleting, eventId]);
     try {
-      await deleteRecord(id);
-      this.dispatchEvent(new ShowToastEvent({ title: LABELS.deleteDone, variant: "success" }));
-      this.handleRefresh();
+      await deleteRecord(recordId);
+      // Gone from what's loaded at once, the counts with it: nothing to reload.
+      this.dropEvent(eventId);
+      this.dispatchEvent(
+        new ShowToastEvent({
+          // Event "Menu tasting" was deleted.
+          title: objectLabel && name ? format(LABELS.deleteDoneNamed, objectLabel, name) : LABELS.deleteDone,
+          variant: "success"
+        })
+      );
     } catch (e) {
       this.dispatchEvent(
         new ShowToastEvent({ title: LABELS.deleteFailed, message: describeError(e).message, variant: "error" })
       );
+    } finally {
+      const left = new Set(this.deleting);
+      left.delete(eventId);
+      this.deleting = left;
     }
+  }
+
+  // An item deleted: out of its day, and one fewer in the day's, the type's
+  // and the timeline's counts. A day left with nothing goes too.
+  dropEvent(eventId) {
+    let gone;
+    for (const cache of [this._dayCache, this._staleCache]) {
+      for (const [key, list] of cache ?? []) {
+        const found = list.find((e) => e.id === eventId);
+        if (found) {
+          gone = gone ?? found;
+          cache.set(
+            key,
+            list.filter((e) => e.id !== eventId)
+          );
+        }
+      }
+    }
+    if (!gone || !this.summary) return;
+    const summary = { ...this.summary };
+    const at = (summary.days ?? []).findIndex((d) => d.key === gone.dayKey);
+    if (at >= 0) {
+      const day = { ...summary.days[at], count: Math.max(0, (summary.days[at].count ?? 1) - 1) };
+      summary.days = day.count
+        ? summary.days.map((d, i) => (i === at ? day : d))
+        : summary.days.filter((d, i) => i !== at);
+      if (!day.count) {
+        this._dayCache.delete(gone.dayKey);
+        if (this.windowFrom > at) this.windowFrom--;
+      }
+    }
+    summary.types = (summary.types ?? []).map((t) => {
+      return t.type === gone.type ? { ...t, count: Math.max(0, t.count - 1) } : t;
+    });
+    summary.total = Math.max(0, (summary.total ?? 1) - 1);
+    summary.unfilteredTotal = Math.max(0, (summary.unfilteredTotal ?? 1) - 1);
+    this.summary = summary;
+    this.daysVersion++;
+    this.daysLoaded++;
   }
 
   // In a console app, a record (or a file's preview) opens in a tab of its

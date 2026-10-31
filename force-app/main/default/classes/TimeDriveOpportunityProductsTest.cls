@@ -179,8 +179,9 @@ private class TimeDriveOpportunityProductsTest {
     Time_Drive_Source__mdt own = source();
     own.Title__c = '{Product2.ProductCode}';
     TimeDriveContext mine = new TimeDriveContext(account('Acme'), 'Account', null, own, null, null);
-    TimeDriveOpportunityProducts.fillBlanks(mine);
+    List<TimeDriveController.EngagementEvent> coded = TimeDrivePlotter.run(new TimeDriveOpportunityProducts(), mine);
     Assert.areEqual('{Product2.ProductCode}', mine.source.Title__c);
+    Assert.areEqual('LAP-1', coded[coded.size() - 1].title, 'its own title, read with the rest');
   }
 
   @IsTest

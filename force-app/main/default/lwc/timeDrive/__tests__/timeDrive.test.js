@@ -12,6 +12,7 @@ import savePreference from "@salesforce/apex/TimeDriveController.savePreference"
 import getActivityActions from "@salesforce/apex/TimeDriveController.getActivityActions";
 import TimeDriveConfirm from "c/timeDriveConfirm";
 import { deleteRecord } from "lightning/uiRecordApi";
+import { registerRefreshHandler } from "lightning/refresh";
 import { navigated } from "lightning/navigation";
 import { IsConsoleNavigation, openTab } from "lightning/platformWorkspaceApi";
 import {
@@ -619,9 +620,31 @@ describe("c-time-drive", () => {
     TimeDriveConfirm.open = jest.fn().mockResolvedValueOnce(false);
     await pickDelete();
     expect(deleteRecord).not.toHaveBeenCalled();
+    // While it deletes: the row dims and its menu is a spinner, read out as Deleting.
+    let finish;
+    deleteRecord.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        })
+    );
+    const toasts = [];
+    element.addEventListener("lightning__showtoast", (e) => toasts.push(e.detail));
     TimeDriveConfirm.open = jest.fn().mockResolvedValueOnce(true);
     await pickDelete();
     expect(deleteRecord).toHaveBeenCalledWith("a01000000000001AAA");
+    const row = root.querySelector(".event_deleting");
+    expect(row).not.toBeNull();
+    expect(row.getAttribute("aria-busy")).toBe("true");
+    expect(row.querySelector(".row-menu_busy lightning-spinner").alternativeText).toBe("Deleting…");
+    expect(row.querySelector(".row-menu-button")).toBeNull();
+    // Done: the item goes at once, without reloading the timeline, and the toast names it.
+    finish();
+    await flush();
+    expect(root.querySelector(".event_deleting")).toBeNull();
+    expect([...root.querySelectorAll(".event-title")].map((n) => n.textContent)).not.toContain(EVENTS[0].title);
+    expect(root.querySelector(".skeleton-frame")).toBeNull();
+    expect(toasts.at(-1)).toMatchObject({ title: `Event "${EVENTS[0].title}" was deleted.`, variant: "success" });
     // Asked as Salesforce asks it.
     expect(TimeDriveConfirm.open).toHaveBeenCalledWith({
       size: "small",
@@ -1334,6 +1357,46 @@ describe("c-time-drive filters panel", () => {
     await flush();
     expect(summary().querySelector(".skeleton_summary")).toBeNull();
     expect(summary().textContent).toMatch(/2 of \d+ types · 2 items/);
+  });
+});
+
+describe("c-time-drive a save on the page", () => {
+  afterEach(() => {
+    while (document.body.firstChild) document.body.removeChild(document.body.firstChild);
+  });
+
+  it("refreshes in place, quietly, and keeps a save that comes while it does", async () => {
+    const element = createElement("c-time-drive", { is: TimeDrive });
+    element.recordId = "003000000000001AAA";
+    element.layout = "Vertical";
+    document.body.appendChild(element);
+    emitEvents({ events: EVENTS, warnings: [] });
+    await flush();
+    const root = element.shadowRoot;
+    const titles = () => root.querySelectorAll(".event-title").length;
+    const shown = titles();
+    expect(shown).toBeGreaterThan(0);
+    // Salesforce's refresh after a quick action saves (a new task, a logged call).
+    const pageRefresh = registerRefreshHandler.mock.calls.at(-1)[1];
+    const asked = getTimeline.mock.calls.length;
+    pageRefresh();
+    await flush();
+    expect(getTimeline.mock.calls.length).toBe(asked + 1);
+    // No skeleton: the timeline stays, with a thin line saying it's updating.
+    expect(root.querySelector(".skeleton-frame")).toBeNull();
+    expect(titles()).toBe(shown);
+    expect(root.querySelector(".updating .assistive-text").textContent).toBe("Updating…");
+    // A second save while it updates isn't lost: one more refresh follows.
+    pageRefresh();
+    await flush();
+    expect(getTimeline.mock.calls.length).toBe(asked + 1);
+    answer();
+    await flush();
+    expect(getTimeline.mock.calls.length).toBe(asked + 2);
+    answer();
+    await flush();
+    expect(root.querySelector(".updating")).toBeNull();
+    expect(titles()).toBe(shown);
   });
 });
 

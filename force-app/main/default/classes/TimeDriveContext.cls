@@ -21,6 +21,8 @@ public with sharing class TimeDriveContext {
   public static final String UNIT_DAY = 'day';
   public static final String UNIT_WEEK = 'week';
   public static final String UNIT_MONTH = 'month';
+  // A field a source names, as a field path and nothing else.
+  private static final Pattern FIELD_PATH = Pattern.compile('[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)*');
 
   public Id recordId;
   public String parentObject;
@@ -214,6 +216,167 @@ public with sharing class TimeDriveContext {
       return draftDetailFields;
     }
     return TimeDriveConfig.detailFields(source?.DeveloperName);
+  }
+
+  // ---- for Apex sources ------------------------------------------------------
+
+  /**
+   * How an Apex source's rows are plotted, said in getRows before anything
+   * else (Setup asks an Apex source for none of it): the row key holding each
+   * item's date, then its title, subtitle and the record a click opens, as
+   * context.plotBy('EarnedAt').title('Earned {Points} points').subtitle('{Reason}').
+   * A key is a map key, or a field path for record rows. Without a date,
+   * nothing is plotted.
+   * @param dateKey the key holding each item's Date or Datetime
+   * @return the plot, to add its title, subtitle and click to
+   */
+  public Plot plotBy(String dateKey) {
+    source = source == null ? new Time_Drive_Source__mdt() : source.clone(true);
+    if (String.isBlank(source.Date_Field__c)) {
+      source.Date_Field__c = dateKey;
+    }
+    return new Plot(this);
+  }
+
+  /** The rest of how an Apex source's rows are plotted (see plotBy). */
+  public class Plot {
+    private TimeDriveContext context;
+
+    private Plot(TimeDriveContext context) {
+      this.context = context;
+    }
+
+    /**
+     * The title, with {Key} filled from each row, as '{Product2.Name}'.
+     * @param template the title
+     * @return this plot
+     */
+    public Plot title(String template) {
+      if (String.isBlank(context.source.Title__c)) {
+        context.source.Title__c = template;
+      }
+      return this;
+    }
+
+    /**
+     * The line under the title, with {Key} filled from each row.
+     * @param template the subtitle
+     * @return this plot
+     */
+    public Plot subtitle(String template) {
+      if (String.isBlank(context.source.Subtitle__c)) {
+        context.source.Subtitle__c = template;
+      }
+      return this;
+    }
+
+    /**
+     * The key holding the Salesforce record a click opens (left out: the
+     * title isn't a link).
+     * @param recordIdKey the key holding a Salesforce Id
+     * @return this plot
+     */
+    public Plot opens(String recordIdKey) {
+      if (String.isBlank(context.source.Record_Id_Field__c)) {
+        context.source.Record_Id_Field__c = recordIdKey;
+      }
+      return this;
+    }
+  }
+
+  /**
+   * For record rows: the days the timeline asks for as a SOQL condition on a
+   * date field, its bounds bound (never written in): ' AND (...)', or blank
+   * for the whole history. A Date field is compared with days, a Date/Time
+   * with instants, as the field itself says.
+   * @param objectType the object queried
+   * @param field the date field (a path through lookups is fine)
+   * @param binds the query's binds, which the bounds are added to
+   * @return the condition to append after WHERE ..., or blank
+   */
+  public String dateCondition(Schema.SObjectType objectType, String field, Map<String, Object> binds) {
+    Schema.DescribeFieldResult d = TimeDriveConfig.fieldDescribe(String.valueOf(objectType), field);
+    Boolean byDay = d?.getType() == Schema.DisplayType.DATE;
+    List<String> out = new List<String>();
+    List<TimeDriveController.TimeWindow> windows = spans();
+    for (Integer i = 0; i < windows.size(); i++) {
+      List<String> bounds = new List<String>();
+      if (windows[i].since != null) {
+        binds.put('since' + i, byDay ? (Object) windows[i].since.date() : windows[i].since);
+        bounds.add(field + ' >= :since' + i);
+      }
+      if (windows[i].until != null) {
+        binds.put('until' + i, byDay ? (Object) windows[i].until.date() : windows[i].until);
+        bounds.add(field + ' <= :until' + i);
+      }
+      if (bounds.isEmpty()) {
+        return '';
+      }
+      out.add('(' + String.join(bounds, ' AND ') + ')');
+    }
+    return out.isEmpty() ? '' : ' AND (' + String.join(out, ' OR ') + ')';
+  }
+
+  /**
+   * For data from elsewhere: whether the timeline asks for an item at this
+   * moment (a page asks for a few days at a time, the summary for the whole
+   * window). Return only the items it wants.
+   * @param at the item's date and time
+   * @return true when it falls in a span asked for
+   */
+  public Boolean wants(Datetime at) {
+    if (at == null) {
+      return false;
+    }
+    for (TimeDriveController.TimeWindow w : spans()) {
+      if ((w.since == null || at >= w.since) && (w.until == null || at <= w.until)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * For data from elsewhere: whether the timeline asks for anything on this day.
+   * @param day the item's day
+   * @return true when the day overlaps a span asked for
+   */
+  public Boolean wants(Date day) {
+    if (day == null) {
+      return false;
+    }
+    Datetime starts = Datetime.newInstance(day, Time.newInstance(0, 0, 0, 0));
+    Datetime ends = Datetime.newInstance(day, Time.newInstance(23, 59, 59, 999));
+    for (TimeDriveController.TimeWindow w : spans()) {
+      if ((w.since == null || ends >= w.since) && (w.until == null || starts <= w.until)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * For record rows: the fields to SELECT, those given then those the
+   * source's title, subtitle and detail fields name, each once and only if
+   * it's a field path (so a source can't put anything else into the query).
+   * @param always the fields every row needs (its Id, the date)
+   * @return the fields to SELECT
+   */
+  public List<String> fieldsToQuery(List<String> always) {
+    List<String> wanted = new List<String>(always);
+    wanted.addAll(TimeDrivePlotter.tokens(source?.Title__c));
+    wanted.addAll(TimeDrivePlotter.tokens(source?.Subtitle__c));
+    for (Time_Drive_Detail_Field__mdt d : detailFields()) {
+      wanted.add(d.Field__c);
+    }
+    Set<String> seen = new Set<String>();
+    List<String> out = new List<String>();
+    for (String name : wanted) {
+      if (String.isNotBlank(name) && FIELD_PATH.matcher(name).matches() && seen.add(name.toLowerCase())) {
+        out.add(name);
+      }
+    }
+    return out;
   }
 
   /**

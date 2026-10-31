@@ -97,6 +97,10 @@
         <name>Time_Drive_Delete_Done</name>
     </customLabels>
     <customLabels>
+        <label>{0} "{1}" se eliminó.</label>
+        <name>Time_Drive_Delete_Done_Named</name>
+    </customLabels>
+    <customLabels>
         <label>No se pudo eliminar</label>
         <name>Time_Drive_Delete_Failed</name>
     </customLabels>
@@ -107,6 +111,10 @@
     <customLabels>
         <label>Eliminar {0}</label>
         <name>Time_Drive_Delete_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>Eliminando…</label>
+        <name>Time_Drive_Deleting</name>
     </customLabels>
     <customLabels>
         <label>Ocultar detalles</label>
@@ -707,6 +715,10 @@
     <customLabels>
         <label>{0} de {1} tipos</label>
         <name>Time_Drive_Types_Some</name>
+    </customLabels>
+    <customLabels>
+        <label>Actualizando…</label>
+        <name>Time_Drive_Updating</name>
     </customLabels>
     <customLabels>
         <label>Todos los elementos</label>

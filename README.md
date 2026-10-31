@@ -183,42 +183,150 @@ An event expands with, in order of preference:
 
 ### Writing an Apex source
 
-Return rows; the record says how to plot them.
+Most sources need no code: Setup plots any object linked to the page by a
+lookup or a junction. Write an Apex source when that isn't enough:
+
+- **Records further away**, such as an Account's products on all its
+  opportunities, two steps from the page.
+- **Data from elsewhere**, such as an external system, a calculation or a
+  forecast.
+
+**The contract.** Implement `TimeDriveRowProvider`, which has one method,
+`getRows(TimeDriveContext context)`. Return a `TimeDriveRow` for each item:
+either a record (`new TimeDriveRow(record)`) or a map of values
+(`new TimeDriveRow(map)`). First thing in `getRows`, say how to plot the
+rows:
 
 ```apex
-public with sharing class MyLoyaltyProvider implements TimeDriveRowProvider {
+context.plotBy('EarnedAt')               // the key holding each item's Date or Datetime
+  .title('Earned {Points} points')       // {Key} is filled from each row
+  .subtitle('{Reason}')                  // optional
+  .opens('OrderId');                     // optional: the key holding the Salesforce record a click opens
+```
+
+`opens` decides whether an item's title is a link. Call it when each row
+holds a Salesforce record to open, as the products example does with
+`.opens('Id')`. Leave it out when there's nothing to open (a weather
+forecast, an external system's entries) and the title is plain text, with
+no link and no Edit or Delete menu.
+
+Setup doesn't ask an Apex source for these, so without `plotBy` nothing is
+plotted. A key is a field path for record rows (`Product2.Name`) or a map key
+for value rows (`Points`). Everything else (icon, colour, lenses, the legend
+name and the fields an opened item shows) is chosen in Setup.
+
+**The steps**
+
+1. Write the class, using one of the two patterns below.
+2. Test it, to at least 85%. Give it test data or an `HttpCalloutMock`, call
+   `getRows` with a `TimeDriveContext`, and check its rows or the events
+   `TimeDrivePlotter.run` makes of them.
+3. In Time Drive Setup, add a source of kind **Apex** on the record page and
+   choose the class. Pick its look and lenses. Then type the fields an opened
+   item shows: a field path, or a map key. Saving asks you to confirm you've
+   thought about how the class scales, because it runs every time a timeline
+   with the source loads.
+
+#### Records a query can reach
+
+`TimeDriveOpportunityProducts` is the shipped example. It plots an Account's
+products on all its opportunities:
+
+```apex
+public with sharing class TimeDriveOpportunityProducts implements TimeDriveRowProvider {
+  private static final String CLOSE_DATE = 'Opportunity.CloseDate';
+
   public List<TimeDriveRow> getRows(TimeDriveContext context) {
     List<TimeDriveRow> rows = new List<TimeDriveRow>();
-    // context.recordId, context.since, context.maxRecords(), context.priorEvents
-    for (LoyaltyApi.Entry entry : LoyaltyApi.entriesFor(context.recordId, context.since)) {
-      rows.add(
-        new TimeDriveRow(
-          new Map<String, Object>{
-            'Id' => entry.id, // Id Field
-            'EarnedAt' => entry.earnedAt, // Date Field (Datetime or Date)
-            'Points' => entry.points, // {Points} in the title, or a detail field
-            'Reason' => entry.reason
-          }
-        )
-      );
+    if (context.recordId?.getSObjectType() != Account.SObjectType) {
+      return rows;
     }
-    // Report what couldn't be read with context.warn('...').
+    context.plotBy(CLOSE_DATE).title('{Product2.Name}').subtitle('{Opportunity.Name}').opens('Id');
+    Map<String, Object> binds = new Map<String, Object>{
+      'accountId' => context.recordId,
+      'most' => context.maxRecords()
+    };
+    String soql =
+      'SELECT ' + String.join(context.fieldsToQuery(new List<String>{ 'Id', CLOSE_DATE }), ', ') +
+      ' FROM OpportunityLineItem WHERE Opportunity.AccountId = :accountId' +
+      context.dateCondition(OpportunityLineItem.SObjectType, CLOSE_DATE, binds) +
+      ' ORDER BY ' + CLOSE_DATE + ' DESC, Id DESC LIMIT :most';
+    for (SObject item : Database.queryWithBinds(soql, binds, AccessLevel.USER_MODE)) {
+      rows.add(new TimeDriveRow(item));
+    }
     return rows;
   }
 }
 ```
 
-Then add a Time Drive Source record: Kind **Apex**, Provider Class
-`MyLoyaltyProvider`, Date Field `EarnedAt`, Title `Earned {Points} points`,
-Subtitle `{Reason}`, an Event Type, Category, Icon and colour, and Detail
-Field records for what the expanded event shows. `TimeDriveExampleProvider`
-and its `Loyalty_Points_Example` record are a working example: activate the
-record to see it.
+- `fieldsToQuery` adds the fields your title, subtitle and the source's detail
+  fields name, so whatever an admin chooses in Setup is read.
+- `dateCondition` keeps the query to the days the timeline asks for. It works
+  out whether the field is a Date or a Date/Time.
 
-A class that needs full control over every event (its own types and
-details) can implement `TimeDriveProvider` and return
-`TimeDriveController.EngagementEvent`s itself; the record's
-icon and colour still apply through `context.styled(event)`.
+#### Data from elsewhere
+
+Each row is a map, and its keys are what the title, subtitle and detail fields
+name. Give every row a unique `Id` key. Return only the items `context.wants`,
+because a page asks for a few days at a time:
+
+```apex
+public with sharing class MyLoyaltyProvider implements TimeDriveRowProvider {
+  public List<TimeDriveRow> getRows(TimeDriveContext context) {
+    context.plotBy('EarnedAt').title('Earned {Points} points').subtitle('{Reason}');
+    List<TimeDriveRow> rows = new List<TimeDriveRow>();
+    for (LoyaltyApi.Entry entry : LoyaltyApi.entriesFor(context.recordId)) {
+      if (context.wants(entry.earnedAt)) {
+        rows.add(
+          new TimeDriveRow(
+            new Map<String, Object>{
+              'Id' => entry.id,
+              'EarnedAt' => entry.earnedAt, // a Datetime or a Date
+              'Points' => entry.points,
+              'Reason' => entry.reason
+            }
+          )
+        );
+      }
+    }
+    return rows;
+  }
+}
+```
+
+Leave out `opens` here: these items have nothing in Salesforce to open, so
+their titles are plain text. They also can't be highlighted or listed in View
+all.
+
+#### What `context` gives you
+
+| | |
+|---|---|
+| `recordId` | The record the timeline is on |
+| `since`, `until` | The timeline's window. `until` is null for "up to now" |
+| `maxRecords()` | The source's record cap |
+| `plotBy(key).title(…).subtitle(…).opens(…)` | How the rows are plotted |
+| `fieldsToQuery(always)` | Record rows: the fields to SELECT |
+| `dateCondition(objectType, field, binds)` | Record rows: the days asked for, as a bound condition |
+| `wants(dateOrDatetime)` | Data from elsewhere: whether the timeline asks for that moment |
+| `warn(message)` | A note the timeline shows, such as "Couldn't reach the loyalty service" |
+
+#### Good practice
+
+- **Query in user mode** (`AccessLevel.USER_MODE`), so people see only what
+  they're allowed to.
+- **Cache callouts.** The timeline asks a source for its whole window to
+  count the summary, then again for the days on screen, each in its own
+  request. Keep what a callout returns in Platform Cache (`TimeDriveCache`)
+  for a while, so a page view doesn't call out several times. Set a short
+  callout timeout.
+- **Failures are contained.** A class that throws is named on the timeline
+  and the other sources still load. Prefer `warn` for problems you expect.
+
+A class that needs full control over each event (its own types and details)
+can implement `TimeDriveProvider` instead and return
+`TimeDriveController.EngagementEvent`s itself. The source's icon and colour
+still apply through `context.styled(event)`.
 
 ## Diagnostics
 

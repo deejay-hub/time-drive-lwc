@@ -17,6 +17,9 @@ import deleteConfirm from "@salesforce/label/c.Time_Drive_Delete_Confirm";
 import deleteItem from "@salesforce/label/c.Time_Drive_Delete_Item";
 import deleteDone from "@salesforce/label/c.Time_Drive_Delete_Done";
 import deleteFailed from "@salesforce/label/c.Time_Drive_Delete_Failed";
+import deleteDoneNamed from "@salesforce/label/c.Time_Drive_Delete_Done_Named";
+import deleting from "@salesforce/label/c.Time_Drive_Deleting";
+import updating from "@salesforce/label/c.Time_Drive_Updating";
 import buttonToday from "@salesforce/label/c.Time_Drive_Button_Today";
 import buttonLiteOn from "@salesforce/label/c.Time_Drive_Button_Lite_On";
 import buttonLiteOff from "@salesforce/label/c.Time_Drive_Button_Lite_Off";
@@ -180,6 +183,9 @@ export const LABELS = Object.freeze({
   deleteItem,
   deleteDone,
   deleteFailed,
+  deleteDoneNamed,
+  deleting,
+  updating,
   buttonToday,
   buttonLiteOn,
   buttonLiteOff,
@@ -324,7 +330,7 @@ export const LABELS = Object.freeze({
   groupBack,
   groupBackRecord,
   groupLoadingMore,
-  groupShown
+  groupShown,
 });
 
 /** Fills a label's {0}, {1} ... with the values given: format(LABELS.itemsMany, 12). */

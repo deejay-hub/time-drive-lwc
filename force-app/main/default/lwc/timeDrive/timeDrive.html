@@ -274,6 +274,12 @@
 
     <!-- Everything under the header. -->
     <div class="below-header">
+      <template lwc:if={updating}>
+        <div class="updating" role="status">
+          <span class="updating-bar" aria-hidden="true"></span>
+          <span class="assistive-text">{labels.updating}</span>
+        </div>
+      </template>
       <div class="body">
         <template lwc:if={isLoading}>
           <div class="skeleton-frame" role="status" aria-busy="true" style={skeletonFrameStyle}>
@@ -432,7 +438,7 @@
                     </div>
                     <ol class="events" onscroll={handleColumnScroll} ontransitionend={handleColumnResize}>
                       <template for:each={group.events} for:item="item">
-                        <li key={item.id} class={item.itemClass} style={item.itemStyle}>
+                        <li key={item.id} class={item.itemClass} style={item.itemStyle} aria-busy={item.deleting}>
                           <div class="event-row">
                             <!-- Only the chevron expands; the title can then be a link. A busy day's
                              grouped row has no details, so no chevron. -->
@@ -527,7 +533,15 @@
                             </template>
                             <!-- Edit and Delete for a Salesforce record; the rest of the
                                  rows keep the column so the times line up. -->
-                            <template lwc:if={item.menuRecordId}>
+                            <template lwc:if={item.deleting}>
+                              <span class="row-menu row-menu_busy" role="status">
+                                <lightning-spinner
+                                  size="x-small"
+                                  alternative-text={labels.deleting}
+                                ></lightning-spinner>
+                              </span>
+                            </template>
+                            <template lwc:elseif={item.menuRecordId}>
                               <span class="row-menu">
                                 <button
                                   type="button"
