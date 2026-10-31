@@ -557,6 +557,34 @@
         <name>Time_Drive_Row_No_Actions</name>
     </customLabels>
     <customLabels>
+        <label>abandonado</label>
+        <name>Time_Drive_Server_Action_Abandoned</name>
+    </customLabels>
+    <customLabels>
+        <label>añadido a</label>
+        <name>Time_Drive_Server_Action_Added</name>
+    </customLabels>
+    <customLabels>
+        <label>con clic</label>
+        <name>Time_Drive_Server_Action_Clicked</name>
+    </customLabels>
+    <customLabels>
+        <label>abierto</label>
+        <name>Time_Drive_Server_Action_Opened</name>
+    </customLabels>
+    <customLabels>
+        <label>vista de página</label>
+        <name>Time_Drive_Server_Action_Page_View</name>
+    </customLabels>
+    <customLabels>
+        <label>enviado</label>
+        <name>Time_Drive_Server_Action_Sent</name>
+    </customLabels>
+    <customLabels>
+        <label>visto</label>
+        <name>Time_Drive_Server_Action_Viewed</name>
+    </customLabels>
+    <customLabels>
         <label>{0}: un origen de Apex necesita una clase proveedora.</label>
         <name>Time_Drive_Server_Apex_Needs_Class</name>
     </customLabels>

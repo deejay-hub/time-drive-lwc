@@ -19,6 +19,8 @@ public with sharing class TimeDrivePlotter {
   private static final Pattern TOKEN = Pattern.compile('\\{([A-Za-z0-9_.]+)\\}');
   public static final String SEPARATOR = ' · ';
   private static final Integer MAX_PLACES = 6;
+  // Each picklist's labels by value, in the user's language, once a request.
+  private static Map<Schema.SObjectField, Map<String, String>> picklistLabels = new Map<Schema.SObjectField, Map<String, String>>();
 
   /**
    * Events from either kind of provider.
@@ -64,7 +66,7 @@ public with sharing class TimeDrivePlotter {
         .source(context.sourceObject, context.sourceLabel)
         .record(salesforceId(row.get(context.recordIdField())));
       for (Time_Drive_Detail_Field__mdt d : detailFields) {
-        e.detail(detailLabel(d, row), format(row.get(d.Field__c), d.Format__c, row, d.Field__c));
+        e.detail(detailOf(d, row));
       }
       if (TimeDriveConfig.dateOwner(s) == 'Event' && row.get(TimeDriveConfig.datePrefix(s) + 'IsAllDayEvent') == true) {
         e.allDay = true;
@@ -177,16 +179,93 @@ public with sharing class TimeDrivePlotter {
     if (value instanceof Boolean) {
       return (Boolean) value ? Label.Time_Drive_Server_Yes : Label.Time_Drive_Server_No;
     }
-    if (value instanceof Double) {
-      value = Decimal.valueOf((Double) value);
+    Decimal amount = amountOf(value);
+    Schema.DescribeFieldResult field = row?.describe(path);
+    if (amount != null) {
+      // In the user's locale (1,200.5 or 1.200,5); money with its currency
+      // (AUD 1,200), as the components can't fill a title themselves.
+      return isMoney(format, field) ? currencyOf(row) + ' ' + money(amount) : plain(amount, field);
     }
-    if (value instanceof Decimal) {
-      Schema.DescribeFieldResult field = row?.describe(path);
-      Boolean asCurrency =
-        format == 'Currency' || (String.isBlank(format) && field?.getType() == Schema.DisplayType.CURRENCY);
-      return asCurrency ? '$' + String.valueOf(((Decimal) value).setScale(2)) : plain((Decimal) value, field);
+    if (value instanceof String && field != null) {
+      return picklistLabel((String) value, field);
     }
     return String.valueOf(value);
+  }
+
+  /**
+   * A detail field's label and value for a row: a number keeps its amount
+   * (and money its currency) for the components to show in the user's own way.
+   *
+   * @param d the detail field
+   * @param row the row
+   * @return the detail
+   */
+  @TestVisible
+  private static TimeDriveController.Detail detailOf(Time_Drive_Detail_Field__mdt d, TimeDriveRow row) {
+    Object value = row.get(d.Field__c);
+    TimeDriveController.Detail detail = new TimeDriveController.Detail(
+      detailLabel(d, row),
+      format(value, d.Format__c, row, d.Field__c)
+    );
+    detail.amount = amountOf(value);
+    if (detail.amount != null && isMoney(d.Format__c, row.describe(d.Field__c))) {
+      detail.currencyCode = currencyOf(row);
+    }
+    return detail;
+  }
+
+  // A number as a Decimal, or null for anything else (dates included).
+  private static Decimal amountOf(Object value) {
+    if (value instanceof Decimal) {
+      return (Decimal) value;
+    }
+    if (value instanceof Double) {
+      return Decimal.valueOf((Double) value);
+    }
+    if (value instanceof Integer || value instanceof Long) {
+      return Decimal.valueOf(String.valueOf(value));
+    }
+    return null;
+  }
+
+  private static Boolean isMoney(String format, Schema.DescribeFieldResult field) {
+    return format == 'Currency' || (String.isBlank(format) && field?.getType() == Schema.DisplayType.CURRENCY);
+  }
+
+  // The row's own currency (a record's CurrencyIsoCode where the org has
+  // several, or a CurrencyIsoCode key in a map), else the user's.
+  private static String currencyOf(TimeDriveRow row) {
+    Object own;
+    try {
+      own = row?.get('CurrencyIsoCode');
+    } catch (Exception e) {
+      own = null;
+    }
+    return own instanceof String && String.isNotBlank((String) own) ? (String) own : UserInfo.getDefaultCurrency();
+  }
+
+  // A picklist's value as its label in the user's language (each value of a
+  // multi-select); highlights still compare the values themselves.
+  private static String picklistLabel(String value, Schema.DescribeFieldResult field) {
+    Schema.DisplayType type = field.getType();
+    if (type != Schema.DisplayType.PICKLIST && type != Schema.DisplayType.MULTIPICKLIST) {
+      return value;
+    }
+    // By field token, which is each object's own (Case.Status isn't Task.Status).
+    Schema.SObjectField key = field.getSObjectField();
+    Map<String, String> labels = picklistLabels.get(key);
+    if (labels == null) {
+      labels = new Map<String, String>();
+      for (Schema.PicklistEntry entry : field.getPicklistValues()) {
+        labels.put(entry.getValue(), entry.getLabel());
+      }
+      picklistLabels.put(key, labels);
+    }
+    List<String> shown = new List<String>();
+    for (String part : value.split(';')) {
+      shown.add(labels.containsKey(part) ? labels.get(part) : part);
+    }
+    return String.join(shown, '; ');
   }
 
   // A number to its field's decimal places (at most 6), without trailing
@@ -195,9 +274,21 @@ public with sharing class TimeDrivePlotter {
   @TestVisible
   private static String plain(Decimal value, Schema.DescribeFieldResult field) {
     Integer places = field == null ? MAX_PLACES : Math.min(Math.max(field.getScale(), 0), MAX_PLACES);
-    return value.setScale(Math.min(value.scale(), places), System.RoundingMode.HALF_UP)
-      .stripTrailingZeros()
-      .toPlainString();
+    // Grouped and separated as the user's locale does it.
+    return value.setScale(Math.min(value.scale(), places), System.RoundingMode.HALF_UP).stripTrailingZeros().format();
+  }
+
+  // Money to two places in the user's locale (1,200.50 or 1.200,50):
+  // Decimal.format() drops trailing zeros, so they go back after its mark.
+  @TestVisible
+  private static String money(Decimal amount) {
+    String text = amount.setScale(2, System.RoundingMode.HALF_UP).format();
+    String mark = Decimal.valueOf('1.5').format().substring(1, 2);
+    Integer at = text.lastIndexOf(mark);
+    if (at < 0) {
+      return text + mark + '00';
+    }
+    return text.length() - at == 2 ? text + '0' : text;
   }
 
   // Dates plot at midday, so they land on their own day in any time zone.
@@ -226,6 +317,11 @@ public with sharing class TimeDrivePlotter {
   // saves a record with no label of its own as Label = the field (a label
   // is required), so that counts as none.
   private static String detailLabel(Time_Drive_Detail_Field__mdt d, TimeDriveRow row) {
+    // A custom label ($Label.Points) is shown in the user's language.
+    if (String.isNotBlank(d.Label) && d.Label.startsWith(TimeDriveConfig.LABEL_PREFIX)) {
+      String translated = TimeDriveConfig.customLabel(d.Label.substring(TimeDriveConfig.LABEL_PREFIX.length()));
+      return translated == null ? d.Label : translated;
+    }
     if (String.isNotBlank(d.Label) && d.Label != String.valueOf(d.Field__c).left(40)) {
       return d.Label;
     }

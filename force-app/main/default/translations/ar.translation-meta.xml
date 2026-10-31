@@ -557,6 +557,34 @@
         <name>Time_Drive_Row_No_Actions</name>
     </customLabels>
     <customLabels>
+        <label>مهجور</label>
+        <name>Time_Drive_Server_Action_Abandoned</name>
+    </customLabels>
+    <customLabels>
+        <label>أُضيف إلى</label>
+        <name>Time_Drive_Server_Action_Added</name>
+    </customLabels>
+    <customLabels>
+        <label>نُقر عليه</label>
+        <name>Time_Drive_Server_Action_Clicked</name>
+    </customLabels>
+    <customLabels>
+        <label>فُتح</label>
+        <name>Time_Drive_Server_Action_Opened</name>
+    </customLabels>
+    <customLabels>
+        <label>مشاهدة صفحة</label>
+        <name>Time_Drive_Server_Action_Page_View</name>
+    </customLabels>
+    <customLabels>
+        <label>أُرسل</label>
+        <name>Time_Drive_Server_Action_Sent</name>
+    </customLabels>
+    <customLabels>
+        <label>شوهد</label>
+        <name>Time_Drive_Server_Action_Viewed</name>
+    </customLabels>
+    <customLabels>
         <label>{0}: يحتاج مصدر Apex إلى فئة موفّر.</label>
         <name>Time_Drive_Server_Apex_Needs_Class</name>
     </customLabels>

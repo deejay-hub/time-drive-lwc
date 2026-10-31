@@ -8,6 +8,7 @@ import { LightningElement, api, wire } from "lwc";
 import { NavigationMixin } from "lightning/navigation";
 import { IsConsoleNavigation, openTab } from "lightning/platformWorkspaceApi";
 import { LABELS, format } from "c/timeDriveLabels";
+import { localDetails } from "c/timeDriveFormat";
 import getTimeline from "@salesforce/apex/TimeDriveController.getTimeline";
 import getTimelineDiagnosed from "@salesforce/apex/TimeDriveController.getTimelineDiagnosed";
 import getDays from "@salesforce/apex/TimeDriveController.getPageDays";
@@ -1515,6 +1516,8 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       // An open event is its own surface: the rail pauses under its node.
       railBottomClass: `rail${last || open ? " rail_none" : ""}`,
       chevronClass: open ? "chevron chevron_open" : "chevron",
+      // Numbers and money in the user's locale.
+      details: localDetails(event.details),
       hasDetails: event.details?.length > 0,
       // A fixed name; aria-expanded says whether it's open.
       toggleLabel: format(LABELS.detailsToggle, title),

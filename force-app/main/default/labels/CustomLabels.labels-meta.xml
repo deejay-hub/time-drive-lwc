@@ -329,6 +329,62 @@
         <value>{0}: only {1} items are plotted (its Max Records), so some may be missing.</value>
     </labels>
     <labels>
+        <fullName>Time_Drive_Server_Action_Sent</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Time Drive: a Data 360 engagement's action: sent (Email sent)</shortDescription>
+        <value>sent</value>
+    </labels>
+    <labels>
+        <fullName>Time_Drive_Server_Action_Opened</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Time Drive: a Data 360 engagement's action: opened (Email opened)</shortDescription>
+        <value>opened</value>
+    </labels>
+    <labels>
+        <fullName>Time_Drive_Server_Action_Clicked</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Time Drive: a Data 360 engagement's action: clicked (Email clicked)</shortDescription>
+        <value>clicked</value>
+    </labels>
+    <labels>
+        <fullName>Time_Drive_Server_Action_Viewed</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Time Drive: a Data 360 engagement's action: viewed</shortDescription>
+        <value>viewed</value>
+    </labels>
+    <labels>
+        <fullName>Time_Drive_Server_Action_Page_View</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Time Drive: a Data 360 engagement's action: a page view</shortDescription>
+        <value>page view</value>
+    </labels>
+    <labels>
+        <fullName>Time_Drive_Server_Action_Added</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Time Drive: a Data 360 engagement's action: added to (a cart)</shortDescription>
+        <value>added to</value>
+    </labels>
+    <labels>
+        <fullName>Time_Drive_Server_Action_Abandoned</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Time Drive: a Data 360 engagement's action: abandoned (a cart)</shortDescription>
+        <value>abandoned</value>
+    </labels>
+    <labels>
         <fullName>Time_Drive_Server_Bad_Years</fullName>
         <categories>Time Drive</categories>
         <language>en_US</language>

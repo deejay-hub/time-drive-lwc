@@ -603,14 +603,15 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
   // "Open" -> "opened", "Page View" -> "page view"; others as they are.
   @TestVisible
   private static String actionText(String action) {
+    // In the user's language.
     Map<String, String> past = new Map<String, String>{
-      'send' => 'sent',
-      'open' => 'opened',
-      'click' => 'clicked',
-      'view' => 'viewed',
-      'pageview' => 'page view',
-      'add' => 'added to',
-      'abandon' => 'abandoned'
+      'send' => Label.Time_Drive_Server_Action_Sent,
+      'open' => Label.Time_Drive_Server_Action_Opened,
+      'click' => Label.Time_Drive_Server_Action_Clicked,
+      'view' => Label.Time_Drive_Server_Action_Viewed,
+      'pageview' => Label.Time_Drive_Server_Action_Page_View,
+      'add' => Label.Time_Drive_Server_Action_Added,
+      'abandon' => Label.Time_Drive_Server_Action_Abandoned
     };
     if (String.isBlank(action)) {
       return null;

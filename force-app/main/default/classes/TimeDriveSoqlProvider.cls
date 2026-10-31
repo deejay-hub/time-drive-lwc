@@ -69,6 +69,13 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
     for (Time_Drive_Detail_Field__mdt d : context.detailFields()) {
       fields.add(d.Field__c);
     }
+    // Where the org has several currencies, each record's own, so its money shows in it.
+    if (
+      UserInfo.isMultiCurrencyOrganization() &&
+      TimeDriveConfig.fieldDescribe(s.Object_Name__c, 'CurrencyIsoCode') != null
+    ) {
+      fields.add('CurrencyIsoCode');
+    }
     // What the highlights read.
     fields.addAll(TimeDriveHighlights.fieldsOf(context.highlightRules()));
     // Events say whether they're all day (shown instead of a time).

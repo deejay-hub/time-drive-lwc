@@ -16,6 +16,7 @@ import SHORT_TIME_FORMAT from "@salesforce/i18n/dateTime.shortTimeFormat";
 import ZONE from "@salesforce/i18n/timeZone";
 import { describeError, describeProblems } from "c/timeDriveErrors";
 import { LABELS, format } from "c/timeDriveLabels";
+import { detailText } from "c/timeDriveFormat";
 
 const PAGE_SIZE = 50;
 // The page fits the window, at least this tall (px), Lightning's margin below.
@@ -235,7 +236,7 @@ export default class TimeDriveGroup extends NavigationMixin(LightningElement) {
         when: this.whenText(item)
       };
       for (const d of item.details ?? []) {
-        row[`detail${labels.indexOf(d.label)}`] = d.value;
+        row[`detail${labels.indexOf(d.label)}`] = detailText(d);
       }
       return row;
     });

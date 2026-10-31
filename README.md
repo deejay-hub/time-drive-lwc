@@ -247,10 +247,13 @@ public with sharing class TimeDriveOpportunityProducts implements TimeDriveRowPr
       'most' => context.maxRecords()
     };
     String soql =
-      'SELECT ' + String.join(context.fieldsToQuery(new List<String>{ 'Id', CLOSE_DATE }), ', ') +
+      'SELECT ' +
+      String.join(context.fieldsToQuery(new List<String>{ 'Id', CLOSE_DATE }), ', ') +
       ' FROM OpportunityLineItem WHERE Opportunity.AccountId = :accountId' +
       context.dateCondition(OpportunityLineItem.SObjectType, CLOSE_DATE, binds) +
-      ' ORDER BY ' + CLOSE_DATE + ' DESC, Id DESC LIMIT :most';
+      ' ORDER BY ' +
+      CLOSE_DATE +
+      ' DESC, Id DESC LIMIT :most';
     for (SObject item : Database.queryWithBinds(soql, binds, AccessLevel.USER_MODE)) {
       rows.add(new TimeDriveRow(item));
     }
@@ -300,16 +303,16 @@ all.
 
 #### What `context` gives you
 
-| | |
-|---|---|
-| `recordId` | The record the timeline is on |
-| `since`, `until` | The timeline's window. `until` is null for "up to now" |
-| `maxRecords()` | The source's record cap |
-| `plotBy(key).title(…).subtitle(…).opens(…)` | How the rows are plotted |
-| `fieldsToQuery(always)` | Record rows: the fields to SELECT |
-| `dateCondition(objectType, field, binds)` | Record rows: the days asked for, as a bound condition |
-| `wants(dateOrDatetime)` | Data from elsewhere: whether the timeline asks for that moment |
-| `warn(message)` | A note the timeline shows, such as "Couldn't reach the loyalty service" |
+|                                             |                                                                         |
+| ------------------------------------------- | ----------------------------------------------------------------------- |
+| `recordId`                                  | The record the timeline is on                                           |
+| `since`, `until`                            | The timeline's window. `until` is null for "up to now"                  |
+| `maxRecords()`                              | The source's record cap                                                 |
+| `plotBy(key).title(…).subtitle(…).opens(…)` | How the rows are plotted                                                |
+| `fieldsToQuery(always)`                     | Record rows: the fields to SELECT                                       |
+| `dateCondition(objectType, field, binds)`   | Record rows: the days asked for, as a bound condition                   |
+| `wants(dateOrDatetime)`                     | Data from elsewhere: whether the timeline asks for that moment          |
+| `warn(message)`                             | A note the timeline shows, such as "Couldn't reach the loyalty service" |
 
 #### Good practice
 
@@ -322,6 +325,29 @@ all.
   callout timeout.
 - **Failures are contained.** A class that throws is named on the timeline
   and the other sources still load. Prefer `warn` for problems you expect.
+
+#### Time zones and translations
+
+The timeline shows every date, time and number in the viewer's own time zone,
+language and locale. Your rows get the same treatment as Setup's sources, as
+long as you hand over real values rather than text:
+
+- **Dates and times.** Give a `Datetime` for a moment and a `Date` for a whole
+  day (a day plots at midday, so it stays on its day in every time zone). When
+  a service sends times as text, parse them with their zone
+  (`2026-10-31T09:00:00Z` or `+11:00`), so they land at the right moment.
+- **Numbers and money.** Give numbers as numbers (`Decimal`, `Integer`,
+  `Double`), not formatted strings. They show grouped as the viewer's locale
+  does (1,200.5 or 1.200,5). A detail field with the Currency format shows in
+  the viewer's currency, or in a row's own when it has a `CurrencyIsoCode` key
+  (records have it in multi-currency orgs; add it to `always` when you query).
+- **Picklists** on records show their labels in the viewer's language.
+- **Words you write.** Text in `title` and `subtitle` is shown as you wrote
+  it. For translated text, pass a custom label:
+  `.title(System.Label.Points_Earned)`, whose text can hold tokens such as
+  `{Points}`. A detail field's label can be `$Label.Points` too.
+- **Text from elsewhere.** Ask the service for the viewer's language
+  (`UserInfo.getLanguage()`, `UserInfo.getLocale()`) where it supports one.
 
 A class that needs full control over each event (its own types and details)
 can implement `TimeDriveProvider` instead and return
@@ -408,7 +434,7 @@ In Lightning App Builder, open a Contact record page and drag
 | History (years)        | 0.5        | How far back to plot: 0.25, 0.5, 1, 2 ... 10 years                                                                                                                                                                                               |
 | Future (years)         | None       | How far ahead to plot future-dated records: None (up to today), or 0.25 ... 10 years                                                                                                                                                             |
 | Vertical Mode Height   | 560        | Vertical only: the list's height before it scrolls (320 to 1600)                                                                                                                                                                                 |
-| Phone Mode Height | (blank) | Salesforce mobile app on a phone only: the list's greatest height in pixels. Blank fits the screen, whatever the phone, and follows rotating it (240 to 1600) |
+| Phone Mode Height      | (blank)    | Salesforce mobile app on a phone only: the list's greatest height in pixels. Blank fits the screen, whatever the phone, and follows rotating it (240 to 1600)                                                                                    |
 | Horizontal Mode Height | 260        | Horizontal only: the day columns' height (240 to 1000)                                                                                                                                                                                           |
 
 ## Develop

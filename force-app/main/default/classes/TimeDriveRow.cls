@@ -155,7 +155,9 @@ public with sharing class TimeDriveRow {
   @TestVisible
   private static String plainLabel(Schema.DescribeFieldResult field) {
     String label = field.getLabel();
-    return field.getType() == Schema.DisplayType.REFERENCE && label.endsWith(' ID') && label.length() > 3
+    return field.getType() == Schema.DisplayType.REFERENCE &&
+      label.endsWith(' ID') &&
+      label.length() > 3
       ? label.removeEnd(' ID')
       : label;
   }
@@ -168,8 +170,12 @@ public with sharing class TimeDriveRow {
    * @return the field's describe result, or null
    */
   public Schema.DescribeFieldResult describe(String path) {
-    if (record == null || String.isBlank(path) || path.contains('.')) {
+    if (record == null || String.isBlank(path)) {
       return null;
+    }
+    // A path through lookups (Opportunity.StageName) is described where it lives.
+    if (path.contains('.')) {
+      return TimeDriveConfig.fieldDescribe(String.valueOf(record.getSObjectType()), path);
     }
     Schema.SObjectField field = fieldsOf(record.getSObjectType()).get(path.toLowerCase());
     return field?.getDescribe();

@@ -1143,21 +1143,86 @@ private class TimeDriveControllerTest {
     // Map rows from Apex providers fill the same way, keys in any case.
     TimeDriveRow mapRow = new TimeDriveRow(new Map<String, Object>{ 'Points' => 120, 'Tier' => null });
     Assert.areEqual('Earned 120 points', TimeDrivePlotter.fill('Earned {points} points · {Tier}', mapRow));
-    Assert.areEqual('$12.50', TimeDrivePlotter.format(12.5, 'Currency', mapRow, 'Points'));
+    // Money in the user's currency, to two places in their locale.
+    String mark = Decimal.valueOf('1.5').format().substring(1, 2);
+    Assert.areEqual(
+      UserInfo.getDefaultCurrency() + ' 12' + mark + '50',
+      TimeDrivePlotter.format(12.5, 'Currency', mapRow, 'Points')
+    );
+    Assert.areEqual(
+      UserInfo.getDefaultCurrency() + ' 3' + mark + '00',
+      TimeDrivePlotter.format(3, 'Currency', mapRow, 'x')
+    );
+    Assert.areEqual('7' + mark + '25', TimeDrivePlotter.money(7.249));
+    // A row of its own currency shows in it.
+    TimeDriveRow euros = new TimeDriveRow(new Map<String, Object>{ 'CurrencyIsoCode' => 'EUR' });
+    Assert.areEqual('EUR 1' + mark + '50', TimeDrivePlotter.format(1.5, 'Currency', euros, 'x'));
     Assert.areEqual(
       Date.newInstance(2026, 3, 4).format(),
       TimeDrivePlotter.format(Datetime.newInstance(2026, 3, 4, 9, 0, 0), 'Date', mapRow, 'x')
     );
     Assert.areEqual('Yes', TimeDrivePlotter.format(true, null, mapRow, 'x'));
 
-    // Numbers lose floating-point noise and trailing zeros.
-    Assert.areEqual('2713.31', TimeDrivePlotter.format(2713.3099999999999, null, mapRow, 'x'));
-    Assert.areEqual('2713.31', TimeDrivePlotter.format(Double.valueOf('2713.31'), null, mapRow, 'x'));
+    // Numbers lose floating-point noise and trailing zeros, grouped as the user's locale does.
+    String exact = Decimal.valueOf('2713.31').format();
+    Assert.areEqual(exact, TimeDrivePlotter.format(2713.3099999999999, null, mapRow, 'x'));
+    Assert.areEqual(exact, TimeDrivePlotter.format(Double.valueOf('2713.31'), null, mapRow, 'x'));
     Assert.areEqual('2', TimeDrivePlotter.format(2.000000, null, mapRow, 'x'));
-    Assert.areEqual('1500', TimeDrivePlotter.format(1500, null, mapRow, 'x'));
+    Assert.areEqual(Decimal.valueOf(1500).format(), TimeDrivePlotter.format(1500, null, mapRow, 'x'));
+    Assert.areEqual(Decimal.valueOf(9).format(), TimeDrivePlotter.format(9L, null, mapRow, 'x'));
     // A field's own decimal places win: Probability has none.
     Opportunity deal = new Opportunity(Probability = 33.3333);
     Assert.areEqual('33', TimeDrivePlotter.format(33.3333, null, new TimeDriveRow(deal), 'Probability'));
+  }
+
+  @IsTest
+  static void detailsCarryTheirAmountsCurrenciesAndLabels() {
+    Schema.PicklistEntry stage = Opportunity.StageName.getDescribe().getPicklistValues()[0];
+    Opportunity o = new Opportunity(Amount = 3500, Probability = 40, StageName = stage.getValue());
+    TimeDriveRow row = new TimeDriveRow(o);
+
+    // Money keeps its amount and currency for the components to write.
+    TimeDriveController.Detail amount = TimeDrivePlotter.detailOf(
+      new Time_Drive_Detail_Field__mdt(Field__c = 'Amount'),
+      row
+    );
+    Assert.areEqual(3500, amount.amount);
+    Assert.areEqual(UserInfo.getDefaultCurrency(), amount.currencyCode);
+    Assert.areEqual(Opportunity.Amount.getDescribe().getLabel(), amount.label);
+
+    // A plain number keeps its amount, with no currency.
+    TimeDriveController.Detail chance = TimeDrivePlotter.detailOf(
+      new Time_Drive_Detail_Field__mdt(Field__c = 'Probability'),
+      row
+    );
+    Assert.areEqual(40, chance.amount);
+    Assert.isNull(chance.currencyCode);
+
+    // A picklist shows its label in the user's language; text has no amount.
+    TimeDriveController.Detail shown = TimeDrivePlotter.detailOf(
+      new Time_Drive_Detail_Field__mdt(Field__c = 'StageName'),
+      row
+    );
+    Assert.areEqual(stage.getLabel(), shown.value);
+    Assert.isNull(shown.amount);
+
+    // A $Label detail label is the custom label's text; an unknown one stays as typed.
+    Assert.areEqual(
+      Label.Time_Drive_Server_Yes,
+      TimeDrivePlotter.detailOf(
+          new Time_Drive_Detail_Field__mdt(Label = '$Label.Time_Drive_Server_Yes', Field__c = 'Amount'),
+          row
+        )
+        .label
+    );
+    Assert.areEqual(
+      '$Label.No_Such_Label_Here',
+      TimeDrivePlotter.detailOf(
+          new Time_Drive_Detail_Field__mdt(Label = '$Label.No_Such_Label_Here', Field__c = 'Amount'),
+          row
+        )
+        .label
+    );
   }
 
   /**

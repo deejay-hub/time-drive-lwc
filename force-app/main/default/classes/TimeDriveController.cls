@@ -2418,6 +2418,18 @@ public with sharing class TimeDriveController {
     }
 
     /**
+     * Adds a detail already built (an amount, say), unless it has nothing to show.
+     * @param d the detail
+     * @return this event
+     */
+    public EngagementEvent detail(Detail d) {
+      if (d != null && String.isNotBlank(d.value)) {
+        details.add(d);
+      }
+      return this;
+    }
+
+    /**
      * Orders events newest first.
      * @param other the event to compare with
      * @return a negative number when this event is newer
@@ -2441,8 +2453,15 @@ public with sharing class TimeDriveController {
   public class Detail {
     @AuraEnabled
     public String label;
+    // The words to show; for a number, the user's locale's (the components
+    // format amount and currencyCode, when there, in the user's own way).
     @AuraEnabled
     public String value;
+    @AuraEnabled
+    public Decimal amount;
+    // The amount's currency (ISO code), when it's money.
+    @AuraEnabled
+    public String currencyCode;
 
     /**
      * Builds a detail.

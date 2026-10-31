@@ -32,9 +32,14 @@ public with sharing class TimeDriveOpportunityProducts implements TimeDriveRowPr
       'accountId' => context.recordId,
       'most' => context.maxRecords()
     };
+    List<String> always = new List<String>{ 'Id', CLOSE_DATE };
+    // Where the org has several currencies, each product's own, so its prices show in it.
+    if (UserInfo.isMultiCurrencyOrganization()) {
+      always.add('CurrencyIsoCode');
+    }
     String soql =
       'SELECT ' +
-      String.join(context.fieldsToQuery(new List<String>{ 'Id', CLOSE_DATE }), ', ') +
+      String.join(context.fieldsToQuery(always), ', ') +
       ' FROM OpportunityLineItem WHERE Opportunity.AccountId = :accountId' +
       context.dateCondition(OpportunityLineItem.SObjectType, CLOSE_DATE, binds) +
       ' ORDER BY ' +
