@@ -25,9 +25,9 @@ Open **Customize**, choose the record page, then **Add a source**. See the [FAQs
 ## Apex sources
 
 ```apex
-public with sharing class LoyaltyProvider implements TimeDriveProvider {
-  public List<TimeDriveController.EngagementEvent> getEvents(TimeDriveContext context) {
-    return new List<TimeDriveController.EngagementEvent>();
+public with sharing class LoyaltySource extends TimeDriveApexSource {
+  public override List<TimeDriveRow> rows(TimeDriveContext context) {
+    return new List<TimeDriveRow>();
   }
 }
 ```

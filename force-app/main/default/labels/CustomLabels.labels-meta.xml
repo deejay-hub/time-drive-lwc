@@ -318,7 +318,7 @@
         <language>en_US</language>
         <protected>false</protected>
         <shortDescription>Time Drive: warning: the class is not a provider</shortDescription>
-        <value>{0}: {1} is not a TimeDriveRowProvider or TimeDriveProvider class.</value>
+        <value>{0}: {1} doesn't extend TimeDriveApexSource.</value>
     </labels>
     <labels>
         <fullName>Time_Drive_Server_Max_Records</fullName>

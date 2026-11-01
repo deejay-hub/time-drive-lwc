@@ -7,6 +7,11 @@
 )
 @IsTest
 private class TimeDriveControllerTest {
+  // What the Apex test sources were asked for in this test.
+  static Integer apexRowsRead = 0;
+  static List<TimeDriveController.TimeWindow> apexSpansAsked = new List<TimeDriveController.TimeWindow>();
+  static List<TimeDriveContext.DayCount> givenCounts;
+
   // A well-formed Id for tests: the object's key prefix and a number.
   private static Id fakeId(String prefix, Integer n) {
     return Id.valueOf(prefix + String.valueOf(n).leftPad(12, '0'));
@@ -1275,15 +1280,18 @@ private class TimeDriveControllerTest {
    * An Apex source of values from elsewhere (as an external system would
    * send them): points earned for each order, as maps. It says its date,
    * title, subtitle and click, which Setup doesn't ask an Apex source for.
+   * It doesn't count, so the summary reads its rows.
    */
-  public class PointsRows implements TimeDriveRowProvider {
+  public virtual class PointsRows extends TimeDriveApexSource {
     /**
      * The points earned for the contact's orders.
      *
      * @param context the request context
      * @return a row for each order's points
      */
-    public List<TimeDriveRow> getRows(TimeDriveContext context) {
+    public override List<TimeDriveRow> rows(TimeDriveContext context) {
+      apexRowsRead++;
+      apexSpansAsked.addAll(context.spans());
       context.plotBy('EarnedAt').title('Earned {Points} points').subtitle('{Reason}').opens('OrderId');
       List<TimeDriveRow> rows = new List<TimeDriveRow>();
       Integer balance = 0;
@@ -1314,23 +1322,243 @@ private class TimeDriveControllerTest {
     }
   }
 
-  @IsTest
-  static void apexSourcesArePlottedFromTheirRows() {
-    // As Setup saves an Apex source: the class, its look and lens, no date or title.
-    Time_Drive_Source__mdt points = new Time_Drive_Source__mdt(
+  /** The same points, counted: one for each order, as it was placed. */
+  public class CountedPoints extends PointsRows {
+    /**
+     * The contact's orders, counted.
+     *
+     * @param context the request context
+     * @param unit the period to count by
+     * @return the counts
+     */
+    public override List<TimeDriveContext.DayCount> counts(TimeDriveContext context, String unit) {
+      TimeDriveContext.Counter counter = context.counter(unit);
+      for (Task order : [SELECT CreatedDate FROM Task WHERE WhoId = :context.recordId AND Subject LIKE 'Order%']) {
+        counter.add(order.CreatedDate);
+      }
+      return counter.counts();
+    }
+  }
+
+  /** Counts as a test gives them (givenCounts), and no rows. */
+  public class GivenCounts extends TimeDriveApexSource {
+    /**
+     * No rows.
+     *
+     * @param context the request context
+     * @return none
+     */
+    public override List<TimeDriveRow> rows(TimeDriveContext context) {
+      return new List<TimeDriveRow>();
+    }
+
+    /**
+     * The test's counts.
+     *
+     * @param context the request context
+     * @param unit the period to count by
+     * @return givenCounts
+     */
+    public override List<TimeDriveContext.DayCount> counts(TimeDriveContext context, String unit) {
+      return givenCounts;
+    }
+  }
+
+  // An Apex source as Setup saves one: the class, its look and lens, no date or title.
+  private static Time_Drive_Source__mdt pointsSource(String className) {
+    return new Time_Drive_Source__mdt(
       DeveloperName = 'Points',
       Label = 'Points',
       Active__c = true,
       Sequence__c = 50,
       Parent_Object__c = 'Contact',
       Kind__c = 'Apex',
-      Provider_Class__c = 'TimeDriveControllerTest.PointsRows',
+      Provider_Class__c = className,
       Event_Type__c = 'loyalty',
       Event_Label__c = 'Loyalty points',
       Category__c = 'Commerce',
       Icon__c = 'utility:reward',
       Icon_Colour__c = '#7A4CB8'
     );
+  }
+
+  @IsTest
+  static void apexSourcesThatCountAreReadOnlyForTheDaysOnScreen() {
+    Id customer = contactId();
+    TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{
+      pointsSource('TimeDriveControllerTest.CountedPoints')
+    };
+
+    TimeDriveController.TimelineSummary summary = TimeDriveController.getSummary(customer, null, null, null, null);
+    Assert.areEqual(2, summary.total, 'both orders, counted');
+    Assert.isTrue(summary.counted.contains('Points'), 'counted, not read');
+    Assert.areEqual(0, apexRowsRead, 'the summary never reads its rows');
+
+    String today = Datetime.now().format('yyyy-MM-dd');
+    List<TimeDriveController.EngagementEvent> page = TimeDriveController.getPageDays(
+      customer,
+      null,
+      null,
+      null,
+      null,
+      new List<String>{ today },
+      new List<String>(),
+      null,
+      null,
+      null
+    );
+    Assert.areEqual(2, page.size(), 'the day on screen, in full');
+    Assert.areEqual('Earned 100 points', page[0].title);
+    Assert.areEqual(1, apexRowsRead, 'read once, for that day');
+    for (TimeDriveController.TimeWindow span : apexSpansAsked) {
+      Assert.areEqual(Date.today(), span.since.date(), 'only the day on screen is asked for');
+    }
+
+    // A source that doesn't count is read for the summary instead.
+    apexRowsRead = 0;
+    TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{
+      pointsSource('TimeDriveControllerTest.PointsRows')
+    };
+    summary = TimeDriveController.getSummary(customer, null, null, null, null);
+    Assert.areEqual(2, summary.total);
+    Assert.isFalse(summary.counted.contains('Points'), 'read, not counted');
+    Assert.areEqual(1, apexRowsRead);
+  }
+
+  @IsTest
+  static void apexCountsAreAddedUpIntoThePeriodsAskedFor() {
+    TimeDriveContext context = new TimeDriveContext(
+      contactId(),
+      'Contact',
+      null,
+      pointsSource('TimeDriveControllerTest.GivenCounts'),
+      null,
+      null
+    );
+    Date first = Date.newInstance(2026, 3, 1);
+    context.ranges = new List<TimeDriveController.TimeWindow>{
+      new TimeDriveController.TimeWindow(
+        Datetime.newInstance(first, Time.newInstance(0, 0, 0, 0)),
+        Datetime.newInstance(Date.newInstance(2026, 4, 30), Time.newInstance(23, 59, 59, 0))
+      )
+    };
+    givenCounts = new List<TimeDriveContext.DayCount>{
+      new TimeDriveContext.DayCount('2026-03-02', 9, 2),
+      new TimeDriveContext.DayCount('2026-03-20', null, 3),
+      new TimeDriveContext.DayCount('2026-04-05', null, 1),
+      // Outside the days asked for, empty, or blank: left out.
+      new TimeDriveContext.DayCount('2025-12-31', null, 7),
+      new TimeDriveContext.DayCount('2026-04-06', null, 0),
+      new TimeDriveContext.DayCount(null, null, 4),
+      null
+    };
+    GivenCounts source = new GivenCounts();
+
+    // Daily totals asked for by month: added up into each month.
+    Map<String, Integer> byMonth = new Map<String, Integer>();
+    for (TimeDriveContext.DayCount c : source.countDays(context, TimeDriveContext.UNIT_MONTH)) {
+      byMonth.put(c.dayKey, c.count);
+      Assert.isNull(c.hour);
+    }
+    Assert.areEqual(new Map<String, Integer>{ '2026-03-01' => 5, '2026-04-01' => 1 }, byMonth);
+
+    // By hour: a count's own hour is kept; a day's total stays the day's.
+    Map<String, Integer> byHour = new Map<String, Integer>();
+    for (TimeDriveContext.DayCount c : source.countDays(context, TimeDriveContext.UNIT_HOUR)) {
+      byHour.put(c.dayKey + ' ' + c.hour, c.count);
+    }
+    Assert.areEqual(
+      new Map<String, Integer>{ '2026-03-02 9' => 2, '2026-03-20 null' => 3, '2026-04-05 null' => 1 },
+      byHour
+    );
+
+    // No counts: the source doesn't count.
+    givenCounts = null;
+    Assert.isNull(source.countDays(context, TimeDriveContext.UNIT_DAY));
+  }
+
+  @IsTest
+  static void apexSourcesCountRecordsByAQueryOrItemsOneAtATime() {
+    Id customer = contactId();
+    TimeDriveContext context = new TimeDriveContext(
+      customer,
+      'Contact',
+      Datetime.now().addDays(-30),
+      pointsSource('TimeDriveControllerTest.CountedPoints'),
+      null,
+      null
+    );
+    Map<String, Object> binds = new Map<String, Object>{ 'who' => customer };
+    String orders = 'WhoId = :who AND Subject LIKE \'Order%\'';
+    for (
+      String unit : new List<String>{
+        TimeDriveContext.UNIT_DAY,
+        TimeDriveContext.UNIT_WEEK,
+        TimeDriveContext.UNIT_MONTH
+      }
+    ) {
+      Integer total = 0;
+      for (TimeDriveContext.DayCount c : context.countBy(Task.SObjectType, 'CreatedDate', orders, binds, unit)) {
+        total += c.count;
+      }
+      Assert.areEqual(2, total, 'both orders, by ' + unit);
+    }
+    // A date-only field, and through a lookup.
+    Integer placed = 0;
+    for (
+      TimeDriveContext.DayCount c : context.countBy(
+        Task.SObjectType,
+        'ActivityDate',
+        orders,
+        binds,
+        TimeDriveContext.UNIT_MONTH
+      )
+    ) {
+      placed += c.count;
+    }
+    Assert.areEqual(2, placed);
+    Assert.areEqual(
+      1,
+      context.countBy(
+          Task.SObjectType,
+          'Account.CreatedDate',
+          'Subject = \'Order 1001\' AND WhoId = :who',
+          binds,
+          TimeDriveContext.UNIT_DAY
+        )
+        .size()
+    );
+    // The caller's binds are left as they were.
+    Assert.areEqual(new Set<String>{ 'who' }, binds.keySet());
+    // Not a date field: no count.
+    try {
+      context.countBy(Task.SObjectType, 'Subject) FROM User --', orders, binds, TimeDriveContext.UNIT_DAY);
+      Assert.fail('only a field path is counted by');
+    } catch (IllegalArgumentException e) {
+      Assert.isTrue(e.getMessage().contains('Task'), e.getMessage());
+    }
+
+    // One at a time: moments and daily totals, only the days asked for.
+    TimeDriveContext.Counter counter = context.counter(TimeDriveContext.UNIT_HOUR);
+    Datetime nine = Datetime.newInstance(Date.today(), Time.newInstance(9, 15, 0, 0));
+    counter.add(nine).add(nine.addMinutes(30)).add(Datetime.now().addYears(-1)).add((Datetime) null);
+    counter.add(Date.today().addDays(-1), 4).add(Date.today().addDays(-1), 0).add(Date.today().addYears(-1), 9);
+    Map<String, Integer> counted = new Map<String, Integer>();
+    for (TimeDriveContext.DayCount c : counter.counts()) {
+      counted.put(c.dayKey + ' ' + c.hour, c.count);
+    }
+    Assert.areEqual(
+      new Map<String, Integer>{
+        String.valueOf(Date.today()) + ' 9' => 2,
+        String.valueOf(Date.today().addDays(-1)) + ' null' => 4
+      },
+      counted
+    );
+  }
+
+  @IsTest
+  static void apexSourcesArePlottedFromTheirRows() {
+    Time_Drive_Source__mdt points = pointsSource('TimeDriveControllerTest.PointsRows');
     TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ points };
     TimeDriveConfig.testDetailFields = new Map<String, List<Time_Drive_Detail_Field__mdt>>{
       'Points' => new List<Time_Drive_Detail_Field__mdt>{

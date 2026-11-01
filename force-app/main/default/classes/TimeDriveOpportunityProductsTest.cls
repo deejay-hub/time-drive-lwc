@@ -219,18 +219,49 @@ private class TimeDriveOpportunityProductsTest {
   }
 
   @IsTest
+  static void countsEveryProductByPeriodWithoutReadingThem() {
+    if (!made()) {
+      return;
+    }
+    TimeDriveContext ctx = context(account('Acme'), Datetime.now().addYears(-1));
+    TimeDriveOpportunityProducts products = new TimeDriveOpportunityProducts();
+
+    Integer before = Limits.getQueries();
+    List<TimeDriveContext.DayCount> byDay = products.countDays(ctx, TimeDriveContext.UNIT_DAY);
+    Assert.areEqual(1, Limits.getQueries() - before, 'one grouped query');
+    Map<String, Integer> counted = new Map<String, Integer>();
+    for (TimeDriveContext.DayCount c : byDay) {
+      counted.put(c.dayKey, c.count);
+    }
+    // The two opportunities in the last year: not the old pilot, not Globex's deal.
+    Assert.areEqual(
+      new Map<String, Integer>{
+        String.valueOf(Date.today().addDays(-10)) => 2,
+        String.valueOf(Date.today().addMonths(-3)) => 1
+      },
+      counted
+    );
+    Integer total = 0;
+    for (TimeDriveContext.DayCount c : products.countDays(ctx, TimeDriveContext.UNIT_MONTH)) {
+      total += c.count;
+    }
+    Assert.areEqual(3, total, 'the same products, by month');
+  }
+
+  @IsTest
   static void showsNothingOffAnAccountPage() {
     Contact person = new Contact(LastName = 'Park', AccountId = account('Acme'));
     insert person;
     TimeDriveContext ctx = new TimeDriveContext(person.Id, 'Contact', null, source(), null, null);
     Assert.isTrue(new TimeDriveOpportunityProducts().getRows(ctx).isEmpty(), 'products belong on the account');
+    Assert.isTrue(new TimeDriveOpportunityProducts().countDays(ctx, TimeDriveContext.UNIT_DAY).isEmpty());
   }
 
   @IsTest
   static void isOfferedInSetupAsAnApexSource() {
     Boolean offered = false;
     for (TimeDriveSetupController.Option o : TimeDriveSetupController.getApexProviders()) {
-      offered = offered || (o.value == 'TimeDriveOpportunityProducts' && o.detail == 'Returns rows to plot');
+      offered = offered || o.value == 'TimeDriveOpportunityProducts';
     }
     Assert.isTrue(offered, 'Setup lists it among the Apex sources');
   }

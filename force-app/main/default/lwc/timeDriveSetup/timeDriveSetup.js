@@ -2461,7 +2461,7 @@ export default class TimeDriveSetup extends LightningElement {
           ? "Data model objects in Data 360 that you can read."
           : `Only ${this.uiKind === "custom" ? "custom" : "standard"} objects that link to a ${this.parentLabel} are listed.`;
       case "apex":
-        return "Classes that implement TimeDriveProvider or TimeDriveRowProvider.";
+        return "Classes that extend TimeDriveApexSource.";
       case "date":
         return "The date places each item on the timeline.";
       case "lenses":
@@ -3071,7 +3071,7 @@ export default class TimeDriveSetup extends LightningElement {
             ? "There are no Data 360 data model objects you can read here. Is Data 360 set up, with access to its data space?"
             : `No ${this.uiKind === "custom" ? "custom" : "standard"} objects you can read link to a ${this.parentLabel}.`;
         case "apex":
-          return "No class here implements TimeDriveProvider or TimeDriveRowProvider yet. Ask a developer to write one, then come back.";
+          return "No class here extends TimeDriveApexSource yet. Ask a developer to write one, then come back.";
         case "date":
           // Nothing at all to read is a matter of access, not of dates.
           return this.fields?.length
@@ -5111,7 +5111,8 @@ export default class TimeDriveSetup extends LightningElement {
         `${this.draft.providerClass || "This class"} runs every time a timeline with this source loads, for every ` +
         "person who opens one. Code that reads too many records, queries in a loop or calls out slowly can make " +
         "every timeline slow, or stop it loading, as the data grows. Check it against the largest records your org " +
-        "has, and keep it within Salesforce's limits.",
+        "has, and keep it within Salesforce's limits. A class that counts its items is only asked for the days on " +
+        "screen; one that doesn't is read for the whole timeline, up to its Max Records.",
       acknowledgement:
         "I've thought about how this class scales and performs with our data, and I take responsibility for it.",
       confirmLabel: "Save"

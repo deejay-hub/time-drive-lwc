@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Provider_Class__c</fullName>
     <fieldManageability>SubscriberControlled</fieldManageability>
-    <inlineHelpText>Apex class implementing TimeDriveProvider. Leave blank to use the generic SOQL provider with the fields below.</inlineHelpText>
+    <inlineHelpText>For an Apex source: the class extending TimeDriveApexSource that supplies its items. Blank for Salesforce and Data 360 sources.</inlineHelpText>
     <label>Provider Class</label>
     <length>255</length>
     <required>false</required>

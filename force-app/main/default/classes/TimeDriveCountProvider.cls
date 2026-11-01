@@ -5,8 +5,9 @@
  * screen, and a busy day's counts become grouped rows instead.
  *
  * The generic SOQL provider (an aggregate query) and the Data 360 provider
- * (SQL run in Data 360) implement it. A provider that doesn't, or whose
- * count fails, is read as rows (up to its Max Records).
+ * (SQL run in Data 360) implement it, and so does TimeDriveApexSource, for
+ * an Apex source's counts. A provider that can't count (returns null) or
+ * whose count fails is read as rows (up to its Max Records).
  */
 public interface TimeDriveCountProvider {
   /**

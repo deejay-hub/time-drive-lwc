@@ -133,42 +133,107 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
   }
 
   /**
-   * Items per hour, day, week or month in the context's spans. Spans are
-   * batched so no query can return more than 2,000 groups; before a batch
-   * that could use more query rows than are left, a COUNT() (one row) checks
-   * how many records there really are.
+   * Items per hour, day, week or month in the context's spans (see
+   * countGrouped).
    *
    * @param context the request context
    * @param unit the period to count by
    * @return the count for each period that has records
    */
-  // One count query for each batch of periods, on purpose: a grouped query returns at most 2,000 groups,
-  // and each batch is checked against the query-row limit before it runs.
-  @SuppressWarnings('PMD.OperationWithLimitsInLoop')
   public List<TimeDriveContext.DayCount> countDays(TimeDriveContext context, String unit) {
-    List<TimeDriveContext.DayCount> counts = new List<TimeDriveContext.DayCount>();
     Query q = new Query(context);
     if (q.link == null) {
-      return counts;
+      return new List<TimeDriveContext.DayCount>();
     }
     Time_Drive_Source__mdt s = context.source;
-    // Date-only fields have no hour, and no time zone to convert from. Some
-    // (Task and Event ActivityDate) take no date functions either, so they're
-    // grouped by the date itself and rolled up into weeks or months here.
+    // Through the junction when the source has one (see Query.countsViaJunction).
+    SourceCount counted = new SourceCount(q);
+    counted.label = s.Label;
+    counted.sourceName = s.DeveloperName;
+    counted.objectName = q.countsViaJunction ? q.countObject : s.Object_Name__c;
+    counted.dateRef = (q.countsViaJunction ? q.countPrefix : '') + s.Date_Field__c;
+    counted.dateOnly = q.dateOnly;
+    // Probed only when it matters: a date-only field counted by week or month.
+    counted.groupsByPeriod =
+      !q.dateOnly ||
+      unit == TimeDriveContext.UNIT_DAY ||
+      unit == TimeDriveContext.UNIT_HOUR ||
+      acceptsDateFunctions(s.Object_Name__c, s.Date_Field__c, TimeDriveConfig.dateOwner(s));
+    counted.binds = q.binds;
+    counted.allRows = q.allRows();
+    return countGrouped(counted, context.spans(), unit);
+  }
+
+  /**
+   * What a grouped count needs: the object and date to count by, and how to
+   * write the condition for some spans (binding their ends in binds).
+   */
+  public abstract class CountedQuery {
+    public String label;
+    public String sourceName;
+    public String objectName;
+    // The date as the query reaches it (a path through lookups is fine).
+    public String dateRef;
+    public Boolean dateOnly = false;
+    // Whether the date can be grouped by CALENDAR_MONTH() and the like (a
+    // Date/Time always can; Task and Event ActivityDate can't).
+    public Boolean groupsByPeriod = true;
+    public Map<String, Object> binds = new Map<String, Object>();
+    public String allRows = '';
+
+    /**
+     * The WHERE condition for these spans.
+     *
+     * @param spans the spans to count in
+     * @return the condition, without WHERE
+     */
+    public abstract String conditions(List<TimeDriveController.TimeWindow> spans);
+  }
+
+  // A source's own query, through its junction when it counts through one.
+  private class SourceCount extends CountedQuery {
+    private Query q;
+
+    SourceCount(Query q) {
+      this.q = q;
+    }
+
+    public override String conditions(List<TimeDriveController.TimeWindow> spans) {
+      return q.conditions(spans, q.countsViaJunction);
+    }
+  }
+
+  /**
+   * Items per hour, day, week or month in some spans: COUNT(Id) grouped by
+   * the period, in the user's time zone. Spans are batched so no query can
+   * return more than 2,000 groups; before a batch that could use more query
+   * rows than are left, a COUNT() (one row) checks how many records there
+   * really are. Date-only fields have no hour, and one that takes no date
+   * functions is grouped by the date itself and rolled up here.
+   *
+   * @param q the object, date and condition to count
+   * @param spans the spans to count in
+   * @param unit the period to count by
+   * @return the count for each period that has records
+   */
+  // One count query for each batch of periods, on purpose: a grouped query returns at most 2,000 groups,
+  // and each batch is checked against the query-row limit before it runs. The names in it are checked
+  // field paths and object names; values are bound; the query runs in user mode.
+  @SuppressWarnings('PMD.OperationWithLimitsInLoop, PMD.ApexSOQLInjection')
+  public static List<TimeDriveContext.DayCount> countGrouped(
+    CountedQuery q,
+    List<TimeDriveController.TimeWindow> spans,
+    String unit
+  ) {
+    List<TimeDriveContext.DayCount> counts = new List<TimeDriveContext.DayCount>();
     String grain = q.dateOnly && unit == TimeDriveContext.UNIT_HOUR ? TimeDriveContext.UNIT_DAY : unit;
-    // A date field that takes no date functions is counted by the day and
-    // rolled up here; one that does (most do) is grouped by the week or month.
-    String rollUp = q.dateOnly && grain != TimeDriveContext.UNIT_DAY && !acceptsDateFunctions(s) ? grain : null;
+    String rollUp = q.dateOnly && grain != TimeDriveContext.UNIT_DAY && !q.groupsByPeriod ? grain : null;
     if (rollUp != null) {
       grain = TimeDriveContext.UNIT_DAY;
     }
     Map<String, TimeDriveContext.DayCount> rolled = new Map<String, TimeDriveContext.DayCount>();
-    // Through the junction when the source has one (see Query.countsViaJunction).
-    Boolean viaJunction = q.countsViaJunction;
-    String countFrom = viaJunction ? q.countObject : s.Object_Name__c;
-    String dateRef = (viaJunction ? q.countPrefix : '') + s.Date_Field__c;
-    String local = q.dateOnly ? dateRef : 'convertTimezone(' + dateRef + ')';
-    String day = q.dateOnly ? dateRef : 'DAY_ONLY(' + local + ')';
+    String local = q.dateOnly ? q.dateRef : 'convertTimezone(' + q.dateRef + ')';
+    String day = q.dateOnly ? q.dateRef : 'DAY_ONLY(' + local + ')';
     List<String> groups = new List<String>();
     if (grain == TimeDriveContext.UNIT_WEEK) {
       groups.addAll(new List<String>{ 'CALENDAR_YEAR(' + local + ')', 'WEEK_IN_YEAR(' + local + ')' });
@@ -185,41 +250,41 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
       selected.add(groups[i] + ' g' + i);
     }
 
-    for (List<TimeDriveController.TimeWindow> batch : batches(context.spans(), daysPerBatch(grain))) {
-      String conditions = q.conditions(batch, viaJunction);
+    for (List<TimeDriveController.TimeWindow> batch : batches(spans, daysPerBatch(grain))) {
+      String conditions = q.conditions(batch);
       Integer most = 0;
       for (TimeDriveController.TimeWindow span : batch) {
         most += TimeDriveContext.periods(span.since.date(), lastDay(span), grain);
       }
       if (Limits.getQueryRows() + most > Limits.getLimitQueryRows()) {
-        String checkSoql = 'SELECT COUNT() FROM ' + countFrom + ' WHERE ' + conditions + q.allRows();
+        String checkSoql = 'SELECT COUNT() FROM ' + q.objectName + ' WHERE ' + conditions + q.allRows;
         Long checkStart = TimeDriveDiagnostics.clock();
         Integer total = Database.countQueryWithBinds(checkSoql, q.binds, AccessLevel.USER_MODE);
-        TimeDriveDiagnostics.query(s.DeveloperName, 'count check', checkSoql, q.binds, 1, checkStart, null);
+        TimeDriveDiagnostics.query(q.sourceName, 'count check', checkSoql, q.binds, 1, checkStart, null);
         most = Math.min(most, total);
         if (Limits.getQueryRows() + most > Limits.getLimitQueryRows()) {
-          throw new CountException('Counting ' + s.Label + ' would pass the query row limit.');
+          throw new CountException('Counting ' + q.label + ' would pass the query row limit.');
         }
       }
       String groupSoql =
         'SELECT ' +
         String.join(selected, ', ') +
         ', COUNT(Id) n FROM ' +
-        countFrom +
+        q.objectName +
         ' WHERE ' +
         conditions +
         ' GROUP BY ' +
         String.join(groups, ', ') +
-        q.allRows();
+        q.allRows;
       Long groupStart = TimeDriveDiagnostics.clock();
       List<SObject> grouped;
       try {
         grouped = Database.queryWithBinds(groupSoql, q.binds, AccessLevel.USER_MODE);
       } catch (Exception e) {
-        TimeDriveDiagnostics.query(s.DeveloperName, 'count', groupSoql, q.binds, 0, groupStart, e.getMessage());
+        TimeDriveDiagnostics.query(q.sourceName, 'count', groupSoql, q.binds, 0, groupStart, e.getMessage());
         throw e;
       }
-      TimeDriveDiagnostics.query(s.DeveloperName, 'count', groupSoql, q.binds, grouped.size(), groupStart, null);
+      TimeDriveDiagnostics.query(q.sourceName, 'count', groupSoql, q.binds, grouped.size(), groupStart, null);
       for (SObject row : grouped) {
         if (rollUp != null) {
           String key = TimeDriveContext.periodKey(firstDay(row, grain), rollUp);
@@ -250,16 +315,18 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
    * no row tries the function, and a refusal means it is counted by day as
    * before. The answer is kept for the rest of the request.
    *
-   * @param s the source
+   * @param objectName the object queried
+   * @param dateField the date field (a path through lookups is fine)
+   * @param dateOwner the object the date belongs to, or null when unknown
    * @return true when the field can be grouped by week or month
    */
   // The names go into the probe as written, so they must be plain identifiers or paths (checked below);
   // the query runs in user mode.
   @SuppressWarnings('PMD.ApexSOQLInjection')
-  private static Boolean acceptsDateFunctions(Time_Drive_Source__mdt s) {
-    String key = (s.Object_Name__c + '.' + s.Date_Field__c).toLowerCase();
+  public static Boolean acceptsDateFunctions(String objectName, String dateField, String dateOwner) {
+    String key = (objectName + '.' + dateField).toLowerCase();
     // A date reached through a junction is the date of the object it leads to.
-    String ownKey = (TimeDriveConfig.dateOwner(s) + '.' + s.Date_Field__c.substringAfterLast('.')).toLowerCase();
+    String ownKey = (dateOwner + '.' + dateField.substringAfterLast('.')).toLowerCase();
     if (NO_DATE_FUNCTIONS.contains(key) || NO_DATE_FUNCTIONS.contains(ownKey)) {
       return false;
     }
@@ -268,28 +335,28 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
       return known;
     }
     if (
-      !Pattern.matches('[A-Za-z0-9_.]+', String.valueOf(s.Date_Field__c)) ||
-      !Pattern.matches('[A-Za-z0-9_]+', String.valueOf(s.Object_Name__c))
+      !Pattern.matches('[A-Za-z0-9_.]+', String.valueOf(dateField)) ||
+      !Pattern.matches('[A-Za-z0-9_]+', String.valueOf(objectName))
     ) {
       return false;
     }
     Boolean accepts;
     String probe =
       'SELECT CALENDAR_YEAR(' +
-      s.Date_Field__c +
+      dateField +
       ') y, COUNT(Id) n FROM ' +
-      s.Object_Name__c +
+      objectName +
       ' WHERE Id = null GROUP BY CALENDAR_YEAR(' +
-      s.Date_Field__c +
+      dateField +
       ')';
     Long probeStart = TimeDriveDiagnostics.clock();
     try {
       // The shape the count uses, matching no row: only the function is tried.
       Database.query(probe, AccessLevel.USER_MODE);
-      TimeDriveDiagnostics.query(s.DeveloperName, 'probe', probe, null, 0, probeStart, null);
+      TimeDriveDiagnostics.query(objectName, 'probe', probe, null, 0, probeStart, null);
       accepts = true;
     } catch (Exception e) {
-      TimeDriveDiagnostics.query(s.DeveloperName, 'probe', probe, null, 0, probeStart, e.getMessage());
+      TimeDriveDiagnostics.query(objectName, 'probe', probe, null, 0, probeStart, e.getMessage());
       // Not accepted, or not readable: the day-by-day count as before.
       accepts = false;
     }

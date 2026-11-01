@@ -318,7 +318,7 @@ export const LABELS = Object.freeze({
   groupBack,
   groupBackRecord,
   groupLoadingMore,
-  groupShown
+  groupShown,
 });
 
 /** Fills a label's {0}, {1} ... with the values given: format(LABELS.itemsMany, 12). */

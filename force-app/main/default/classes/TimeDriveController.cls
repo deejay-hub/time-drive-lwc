@@ -1154,7 +1154,7 @@ public with sharing class TimeDriveController {
     List<Problem> problems;
     TimeWindow window;
     List<Time_Drive_Source__mdt> sources;
-    List<Object> providers = new List<Object>();
+    List<TimeDriveRowProvider> providers = new List<TimeDriveRowProvider>();
     Boolean counting = false;
     // What the summary counts per: day, week or month.
     String unit = TimeDriveContext.UNIT_DAY;
@@ -1810,6 +1810,11 @@ public with sharing class TimeDriveController {
       Long startedAt = TimeDriveDiagnostics.clock();
       try {
         List<TimeDriveContext.DayCount> found = ((TimeDriveCountProvider) providers[i]).countDays(context, grain);
+        if (found == null) {
+          // An Apex source that doesn't count: read as rows.
+          uncounted.add(i);
+          return null;
+        }
         TimeDriveDiagnostics.phase(sources[i].DeveloperName, 'count by ' + grain, startedAt, found.size());
         return found;
       } catch (Exception e) {
@@ -1839,7 +1844,7 @@ public with sharing class TimeDriveController {
         List<EngagementEvent> events = read(i, context);
         // Read for itself (not only as another source's prior events): say
         // when Max Records cut it short.
-        if (!counts(i) && providers[i] instanceof TimeDriveRowProvider && events.size() >= context.maxRecords()) {
+        if (!counts(i) && providers[i] != null && events.size() >= context.maxRecords()) {
           context.warn(
             String.format(Label.Time_Drive_Server_Max_Records, new List<String>{ sources[i].Label, String.valueOf(context.maxRecords()) })
           );

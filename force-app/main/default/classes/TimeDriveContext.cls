@@ -318,6 +318,142 @@ public with sharing class TimeDriveContext {
   }
 
   /**
+   * For an Apex source's counts, from a query written once: the object, its
+   * date field and the condition that finds this record's items (its values
+   * bound in binds). Time Drive groups them by the period asked for, in the
+   * user's time zone and the days asked for, in user mode, within the
+   * platform's limits: countBy(OpportunityLineItem.SObjectType,
+   * 'Opportunity.CloseDate', 'Opportunity.AccountId = :accountId', binds, unit).
+   * @param objectType the object to count
+   * @param field its date field (a path through lookups is fine)
+   * @param condition the condition after WHERE, without the dates, or blank
+   * @param binds the condition's values by name, or null
+   * @param unit the period asked for (counts' unit)
+   * @return the counts
+   */
+  public List<DayCount> countBy(
+    Schema.SObjectType objectType,
+    String field,
+    String condition,
+    Map<String, Object> binds,
+    String unit
+  ) {
+    String objectName = String.valueOf(objectType);
+    Schema.DescribeFieldResult d = field == null || !FIELD_PATH.matcher(field).matches()
+      ? null
+      : TimeDriveConfig.fieldDescribe(objectName, field);
+    if (d == null) {
+      throw new IllegalArgumentException(objectName + ' has no date field ' + field + ' to count by.');
+    }
+    RecordCount q = new RecordCount(condition, field);
+    q.label = source?.Label;
+    q.sourceName = source?.DeveloperName;
+    q.objectName = objectName;
+    q.dateRef = field;
+    q.dateOnly = d.getType() == Schema.DisplayType.DATE;
+    q.groupsByPeriod =
+      !q.dateOnly ||
+      unit == UNIT_DAY ||
+      unit == UNIT_HOUR ||
+      TimeDriveSoqlProvider.acceptsDateFunctions(objectName, field, null);
+    q.binds = binds == null ? new Map<String, Object>() : new Map<String, Object>(binds);
+    return TimeDriveSoqlProvider.countGrouped(q, spans(), unit);
+  }
+
+  // An Apex source's own condition, and the days asked for on its date.
+  private class RecordCount extends TimeDriveSoqlProvider.CountedQuery {
+    private String condition;
+    private String field;
+    private Integer bound = 0;
+
+    RecordCount(String condition, String field) {
+      this.condition = condition;
+      this.field = field;
+    }
+
+    public override String conditions(List<TimeDriveController.TimeWindow> spans) {
+      List<String> dates = new List<String>();
+      for (TimeDriveController.TimeWindow span : spans) {
+        String clause = field + ' >= :timeDriveSince' + bound;
+        binds.put('timeDriveSince' + bound, dateOnly ? (Object) span.since.date() : span.since);
+        if (span.until != null) {
+          clause += ' AND ' + field + ' <= :timeDriveUntil' + bound;
+          binds.put('timeDriveUntil' + bound, dateOnly ? (Object) span.until.date() : span.until);
+        }
+        bound++;
+        dates.add('(' + clause + ')');
+      }
+      return (String.isBlank(condition) ? '' : '(' + condition + ') AND ') + '(' + String.join(dates, ' OR ') + ')';
+    }
+  }
+
+  /**
+   * For an Apex source's counts from data elsewhere: add each item's moment,
+   * or each day's total, and return counter.counts(). Only the days asked
+   * for are kept.
+   * @param unit the period asked for (counts' unit)
+   * @return an empty counter
+   */
+  public Counter counter(String unit) {
+    return new Counter(this, unit);
+  }
+
+  /** Items added up by day (and hour, when counted by hour), in the user's time zone. */
+  public class Counter {
+    private TimeDriveContext context;
+    private String unit;
+    private Map<String, DayCount> byDay = new Map<String, DayCount>();
+
+    private Counter(TimeDriveContext context, String unit) {
+      this.context = context;
+      this.unit = unit;
+    }
+
+    /**
+     * Counts one item at this moment.
+     * @param at the item's date and time
+     * @return this counter
+     */
+    public Counter add(Datetime at) {
+      if (context.wants(at)) {
+        tally(at.date(), unit == UNIT_HOUR ? at.hour() : null, 1);
+      }
+      return this;
+    }
+
+    /**
+     * Counts a day's items, as a service's daily totals give them.
+     * @param day the day
+     * @param count how many items it has
+     * @return this counter
+     */
+    public Counter add(Date day, Integer count) {
+      if (count != null && count > 0 && context.wants(day)) {
+        tally(day, null, count);
+      }
+      return this;
+    }
+
+    /**
+     * The counts so far.
+     * @return a count for each day (or hour) with items
+     */
+    public List<DayCount> counts() {
+      return byDay.values();
+    }
+
+    private void tally(Date day, Integer hour, Integer count) {
+      String key = String.valueOf(day) + '|' + hour;
+      DayCount same = byDay.get(key);
+      if (same == null) {
+        byDay.put(key, new DayCount(String.valueOf(day), hour, count));
+      } else {
+        same.count += count;
+      }
+    }
+  }
+
+  /**
    * For data from elsewhere: whether the timeline asks for an item at this
    * moment (a page asks for a few days at a time, the summary for the whole
    * window). Return only the items it wants.

@@ -577,7 +577,7 @@
         <name>Time_Drive_Server_Apex_Needs_Class</name>
     </customLabels>
     <customLabels>
-        <label>{0}: {1} ليست فئة TimeDriveRowProvider أو TimeDriveProvider.</label>
+        <label>{0}: {1} لا توسّع TimeDriveApexSource.</label>
         <name>Time_Drive_Server_Bad_Provider</name>
     </customLabels>
     <customLabels>

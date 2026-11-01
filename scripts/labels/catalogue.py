@@ -41,7 +41,7 @@ LABELS = [
     # ---- server messages (Server_*: used by Apex, not the components). {0}... are filled in with String.format;
     # no straight apostrophes: String.format treats them as quotes.
     ("Server_Apex_Needs_Class", "warning: an Apex source has no class", "{0}: an Apex source needs a Provider Class.", "{0}: un origen de Apex necesita una clase proveedora.", "{0}: يحتاج مصدر Apex إلى فئة موفّر."),
-    ("Server_Bad_Provider", "warning: the class is not a provider", "{0}: {1} is not a TimeDriveRowProvider or TimeDriveProvider class.", "{0}: {1} no es una clase TimeDriveRowProvider ni TimeDriveProvider.", "{0}: {1} ليست فئة TimeDriveRowProvider أو TimeDriveProvider."),
+    ("Server_Bad_Provider", "warning: the class is not a provider", "{0}: {1} doesn't extend TimeDriveApexSource.", "{0}: {1} no extiende TimeDriveApexSource.", "{0}: {1} لا توسّع TimeDriveApexSource."),
     ("Server_Max_Records", "warning: a source was cut short", "{0}: only {1} items are plotted (its Max Records), so some may be missing.", "{0}: solo se muestran {1} elementos (su máximo de registros), así que puede faltar alguno.", "{0}: يتم عرض {1} عنصرًا فقط (الحد الأقصى للسجلات)، وقد تكون هناك عناصر ناقصة."),
     ("Server_Action_Sent", "a Data 360 engagement's action: sent (Email sent)", "sent", "enviado", "أُرسل"),
     ("Server_Action_Opened", "a Data 360 engagement's action: opened (Email opened)", "opened", "abierto", "فُتح"),

@@ -172,8 +172,7 @@ person accounts) that Time Drive Setup switches on to fit the org.
 An event expands with its source's **Time Drive Detail Field** records
 (Source, Field, Label, Sequence, Format: Text, Date, Date/Time, Currency or
 Number), the fields the admin chose in Setup. Blank labels use the field's
-label. An event with none opens on its title, subtitle and source alone. An
-events provider (`TimeDriveProvider`) builds its own details instead.
+label. An event with none opens on its title, subtitle and source alone.
 
 ### Writing an Apex source
 
@@ -185,11 +184,24 @@ lookup or a junction. Write an Apex source when that isn't enough:
 - **Data from elsewhere**, such as an external system, a calculation or a
   forecast.
 
-**The contract.** Implement `TimeDriveRowProvider`, which has one method,
-`getRows(TimeDriveContext context)`. Return a `TimeDriveRow` for each item:
-either a record (`new TimeDriveRow(record)`) or a map of values
-(`new TimeDriveRow(map)`). First thing in `getRows`, say how to plot the
-rows:
+**The contract.** Extend `TimeDriveApexSource`. Time Drive asks it two
+things, and it answers each its own way:
+
+| Method                             | Time Drive asks                              | When                                           |
+| ---------------------------------- | -------------------------------------------- | ---------------------------------------------- |
+| `rows(context)` (required)         | The items on the days in `context.spans()`   | The days on screen, a few at a time            |
+| `counts(context, unit)` (optional) | How many items each period of the window has | The summary: the day list, overview and counts |
+
+A source that counts covers any amount of history. The summary takes only
+its counts, `rows` is asked only for the days on screen, and a busy day shows
+as one grouped row from its count. A source that doesn't count (leave
+`counts` out, or return null) is read in full for the summary, up to its Max
+Records, and the timeline says so when it reaches them. That's fine for a
+short history; anything that can grow should count.
+
+`rows` returns a `TimeDriveRow` for each item: a record
+(`new TimeDriveRow(record)`) or a map of values (`new TimeDriveRow(map)`).
+First thing in `rows`, say how to plot them:
 
 ```apex
 context.plotBy('EarnedAt')               // the key holding each item's Date or Datetime
@@ -209,12 +221,25 @@ plotted. A key is a field path for record rows (`Product2.Name`) or a map key
 for value rows (`Points`). Everything else (icon, colour, lenses, the legend
 name and the fields an opened item shows) is chosen in Setup.
 
+`counts` returns a `TimeDriveContext.DayCount` for each period with items.
+Count by the period asked for (`unit`: hour, day, week or month) or by any
+shorter one: Time Drive adds up daily totals into weeks or months, and a
+day's total when asked by hour makes a busy day one grouped row. Counts
+outside the days asked for are left out. Two helpers build them:
+
+- `context.countBy(objectType, dateField, condition, binds, unit)` for
+  records: the condition that finds this record's items, written once. Time
+  Drive groups them by the period in one query (in the user's time zone, in
+  user mode, within the platform's limits).
+- `context.counter(unit)` for data from elsewhere: `add(moment)` for each
+  item, or `add(day, count)` for a day's total, then `counts()`.
+
 **The steps**
 
 1. Write the class, using one of the two patterns below.
 2. Test it, to at least 85%. Give it test data or an `HttpCalloutMock`, call
-   `getRows` with a `TimeDriveContext`, and check its rows or the events
-   `TimeDrivePlotter.run` makes of them.
+   `rows` and `counts` with a `TimeDriveContext`, and check what they return
+   or the events `TimeDrivePlotter.run` makes of them.
 3. In Time Drive Setup, add a source of kind **Apex** on the record page and
    choose the class. Pick its look and lenses. Then type the fields an opened
    item shows: a field path, or a map key. Saving asks you to confirm you've
@@ -227,10 +252,24 @@ name and the fields an opened item shows) is chosen in Setup.
 products on all its opportunities:
 
 ```apex
-public with sharing class TimeDriveOpportunityProducts implements TimeDriveRowProvider {
+public with sharing class TimeDriveOpportunityProducts extends TimeDriveApexSource {
   private static final String CLOSE_DATE = 'Opportunity.CloseDate';
+  private static final String THIS_ACCOUNT = 'Opportunity.AccountId = :accountId';
 
-  public List<TimeDriveRow> getRows(TimeDriveContext context) {
+  public override List<TimeDriveContext.DayCount> counts(TimeDriveContext context, String unit) {
+    if (context.recordId?.getSObjectType() != Account.SObjectType) {
+      return new List<TimeDriveContext.DayCount>();
+    }
+    return context.countBy(
+      OpportunityLineItem.SObjectType,
+      CLOSE_DATE,
+      THIS_ACCOUNT,
+      new Map<String, Object>{ 'accountId' => context.recordId },
+      unit
+    );
+  }
+
+  public override List<TimeDriveRow> rows(TimeDriveContext context) {
     List<TimeDriveRow> rows = new List<TimeDriveRow>();
     if (context.recordId?.getSObjectType() != Account.SObjectType) {
       return rows;
@@ -243,7 +282,8 @@ public with sharing class TimeDriveOpportunityProducts implements TimeDriveRowPr
     String soql =
       'SELECT ' +
       String.join(context.fieldsToQuery(new List<String>{ 'Id', CLOSE_DATE }), ', ') +
-      ' FROM OpportunityLineItem WHERE Opportunity.AccountId = :accountId' +
+      ' FROM OpportunityLineItem WHERE ' +
+      THIS_ACCOUNT +
       context.dateCondition(OpportunityLineItem.SObjectType, CLOSE_DATE, binds) +
       ' ORDER BY ' +
       CLOSE_DATE +
@@ -256,6 +296,8 @@ public with sharing class TimeDriveOpportunityProducts implements TimeDriveRowPr
 }
 ```
 
+- `countBy` and `rows` share the condition, so the counts and the items
+  always agree.
 - `fieldsToQuery` adds the fields your title, subtitle and the source's detail
   fields name, so whatever an admin chooses in Setup is read.
 - `dateCondition` keeps the query to the days the timeline asks for. It works
@@ -264,26 +306,38 @@ public with sharing class TimeDriveOpportunityProducts implements TimeDriveRowPr
 #### Data from elsewhere
 
 Each row is a map, and its keys are what the title, subtitle and detail fields
-name. Give every row a unique `Id` key. Return only the items `context.wants`,
-because a page asks for a few days at a time:
+name. Give every row a unique `Id` key. Ask the service only for the days in
+`context.spans()`, and return only the items `context.wants`:
 
 ```apex
-public with sharing class MyLoyaltyProvider implements TimeDriveRowProvider {
-  public List<TimeDriveRow> getRows(TimeDriveContext context) {
+public with sharing class MyLoyaltySource extends TimeDriveApexSource {
+  // The summary: one call for the window's daily totals.
+  public override List<TimeDriveContext.DayCount> counts(TimeDriveContext context, String unit) {
+    TimeDriveContext.Counter counter = context.counter(unit);
+    for (LoyaltyApi.Total total : LoyaltyApi.dailyTotals(context.recordId, context.since, context.until)) {
+      counter.add(total.day, total.entries);
+    }
+    return counter.counts();
+  }
+
+  // The days on screen.
+  public override List<TimeDriveRow> rows(TimeDriveContext context) {
     context.plotBy('EarnedAt').title('Earned {Points} points').subtitle('{Reason}');
     List<TimeDriveRow> rows = new List<TimeDriveRow>();
-    for (LoyaltyApi.Entry entry : LoyaltyApi.entriesFor(context.recordId)) {
-      if (context.wants(entry.earnedAt)) {
-        rows.add(
-          new TimeDriveRow(
-            new Map<String, Object>{
-              'Id' => entry.id,
-              'EarnedAt' => entry.earnedAt, // a Datetime or a Date
-              'Points' => entry.points,
-              'Reason' => entry.reason
-            }
-          )
-        );
+    for (TimeDriveController.TimeWindow span : context.spans()) {
+      for (LoyaltyApi.Entry entry : LoyaltyApi.entriesFor(context.recordId, span.since, span.until)) {
+        if (context.wants(entry.earnedAt)) {
+          rows.add(
+            new TimeDriveRow(
+              new Map<String, Object>{
+                'Id' => entry.id,
+                'EarnedAt' => entry.earnedAt, // a Datetime or a Date
+                'Points' => entry.points,
+                'Reason' => entry.reason
+              }
+            )
+          );
+        }
       }
     }
     return rows;
@@ -291,34 +345,42 @@ public with sharing class MyLoyaltyProvider implements TimeDriveRowProvider {
 }
 ```
 
+How you count is yours to choose: a totals endpoint, as here; a cached copy;
+or counting the items of one fetch with `counter.add(entry.earnedAt)`. If the
+service can't help at all, leave `counts` out.
+
 Leave out `opens` here: these items have nothing in Salesforce to open, so
 their titles are plain text. They also can't be highlighted or listed in View
 all.
 
 #### What `context` gives you
 
-|                                             |                                                                         |
-| ------------------------------------------- | ----------------------------------------------------------------------- |
-| `recordId`                                  | The record the timeline is on                                           |
-| `since`, `until`                            | The timeline's window. `until` is null for "up to now"                  |
-| `maxRecords()`                              | The source's record cap                                                 |
-| `plotBy(key).title(…).subtitle(…).opens(…)` | How the rows are plotted                                                |
-| `fieldsToQuery(always)`                     | Record rows: the fields to SELECT                                       |
-| `dateCondition(objectType, field, binds)`   | Record rows: the days asked for, as a bound condition                   |
-| `wants(dateOrDatetime)`                     | Data from elsewhere: whether the timeline asks for that moment          |
-| `warn(message)`                             | A note the timeline shows, such as "Couldn't reach the loyalty service" |
+|                                                      |                                                                         |
+| ---------------------------------------------------- | ----------------------------------------------------------------------- |
+| `recordId`                                           | The record the timeline is on                                           |
+| `since`, `until`                                     | The timeline's window. `until` is null for "up to now"                  |
+| `spans()`                                            | The days asked for: the window, or the days on screen                   |
+| `maxRecords()`                                       | The source's record cap                                                 |
+| `plotBy(key).title(…).subtitle(…).opens(…)`          | How the rows are plotted                                                |
+| `fieldsToQuery(always)`                              | Record rows: the fields to SELECT                                       |
+| `dateCondition(objectType, field, binds)`            | Record rows: the days asked for, as a bound condition                   |
+| `wants(dateOrDatetime)`                              | Data from elsewhere: whether the timeline asks for that moment          |
+| `countBy(objectType, field, condition, binds, unit)` | Counts of records, grouped by the period in one query                   |
+| `counter(unit)`                                      | Counts of items from elsewhere, added one at a time or by the day       |
+| `warn(message)`                                      | A note the timeline shows, such as "Couldn't reach the loyalty service" |
 
 #### Good practice
 
+- **Count anything that can grow.** Without `counts`, every timeline load
+  reads the source's whole window.
 - **Query in user mode** (`AccessLevel.USER_MODE`), so people see only what
   they're allowed to.
-- **Cache callouts.** The timeline asks a source for its whole window to
-  count the summary, then again for the days on screen, each in its own
-  request. Keep what a callout returns in Platform Cache (`TimeDriveCache`)
-  for a while, so a page view doesn't call out several times. Set a short
-  callout timeout.
+- **Cache callouts.** The summary and each page are their own requests. Keep
+  what a callout returns in Platform Cache (`TimeDriveCache`) for a while, so
+  a page view doesn't call out several times. Set a short callout timeout.
 - **Failures are contained.** A class that throws is named on the timeline
-  and the other sources still load. Prefer `warn` for problems you expect.
+  and the other sources still load. A `counts` that throws is read as rows
+  instead. Prefer `warn` for problems you expect.
 
 #### Time zones and translations
 
@@ -342,11 +404,6 @@ long as you hand over real values rather than text:
   `{Points}`. A detail field's label can be `$Label.Points` too.
 - **Text from elsewhere.** Ask the service for the viewer's language
   (`UserInfo.getLanguage()`, `UserInfo.getLocale()`) where it supports one.
-
-A class that needs full control over each event (its own types and details)
-can implement `TimeDriveProvider` instead and return
-`TimeDriveController.EngagementEvent`s itself. The source's icon and colour
-still apply through `context.styled(event)`.
 
 ## Diagnostics
 

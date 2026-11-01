@@ -3,7 +3,9 @@
  * opportunity of the account (Account › Opportunity › Opportunity Product),
  * two steps from the page, further than Setup's lookups and junctions reach.
  *
- * An Apex source returns rows and Time Drive plots them. Here each row is an
+ * An Apex source answers two questions. counts: how many products each
+ * period has, for the timeline's summary (one grouped query, whatever the
+ * history). rows: the products on the days on screen. Each row is an
  * Opportunity Product, so its fields fill the title, subtitle and the detail
  * fields chosen in Setup (Quantity, TotalPrice, Opportunity.StageName ...).
  * Setup asks an Apex source for no date, title, subtitle or click, so the
@@ -13,8 +15,29 @@
  * To use it, add a source of kind Apex on the Account page in Time Drive
  * Setup and choose this class.
  */
-public with sharing class TimeDriveOpportunityProducts implements TimeDriveRowProvider {
+public with sharing class TimeDriveOpportunityProducts extends TimeDriveApexSource {
   private static final String CLOSE_DATE = 'Opportunity.CloseDate';
+  private static final String THIS_ACCOUNT = 'Opportunity.AccountId = :accountId';
+
+  /**
+   * How many of the account's opportunity products each period has.
+   *
+   * @param context the request context
+   * @param unit the period to count by
+   * @return the counts; none off an account page
+   */
+  public override List<TimeDriveContext.DayCount> counts(TimeDriveContext context, String unit) {
+    if (context.recordId?.getSObjectType() != Account.SObjectType) {
+      return new List<TimeDriveContext.DayCount>();
+    }
+    return context.countBy(
+      OpportunityLineItem.SObjectType,
+      CLOSE_DATE,
+      THIS_ACCOUNT,
+      new Map<String, Object>{ 'accountId' => context.recordId },
+      unit
+    );
+  }
 
   /**
    * The account's opportunity products on the days asked for, newest first.
@@ -22,7 +45,7 @@ public with sharing class TimeDriveOpportunityProducts implements TimeDriveRowPr
    * @param context the request context
    * @return a row for each opportunity product; none off an account page
    */
-  public List<TimeDriveRow> getRows(TimeDriveContext context) {
+  public override List<TimeDriveRow> rows(TimeDriveContext context) {
     List<TimeDriveRow> rows = new List<TimeDriveRow>();
     if (context.recordId?.getSObjectType() != Account.SObjectType) {
       return rows;
@@ -40,7 +63,8 @@ public with sharing class TimeDriveOpportunityProducts implements TimeDriveRowPr
     String soql =
       'SELECT ' +
       String.join(context.fieldsToQuery(always), ', ') +
-      ' FROM OpportunityLineItem WHERE Opportunity.AccountId = :accountId' +
+      ' FROM OpportunityLineItem WHERE ' +
+      THIS_ACCOUNT +
       context.dateCondition(OpportunityLineItem.SObjectType, CLOSE_DATE, binds) +
       ' ORDER BY ' +
       CLOSE_DATE +

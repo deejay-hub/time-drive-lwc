@@ -23,17 +23,14 @@ public with sharing class TimeDrivePlotter {
   private static Map<Schema.SObjectField, Map<String, String>> picklistLabels = new Map<Schema.SObjectField, Map<String, String>>();
 
   /**
-   * Events from either kind of provider.
+   * A provider's rows, plotted.
    *
-   * @param provider a row provider or an event provider
+   * @param provider the source's provider
    * @param context the request context
    * @return the plotted events
    */
-  public static List<TimeDriveController.EngagementEvent> run(Object provider, TimeDriveContext context) {
-    if (provider instanceof TimeDriveRowProvider) {
-      return plot(context, ((TimeDriveRowProvider) provider).getRows(context));
-    }
-    return ((TimeDriveProvider) provider).getEvents(context);
+  public static List<TimeDriveController.EngagementEvent> run(TimeDriveRowProvider provider, TimeDriveContext context) {
+    return plot(context, provider.getRows(context));
   }
 
   /**

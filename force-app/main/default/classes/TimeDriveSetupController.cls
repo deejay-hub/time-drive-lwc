@@ -650,17 +650,15 @@ public with sharing class TimeDriveSetupController {
   }
 
   /**
-   * Apex classes that can feed the timeline: ones implementing
-   * TimeDriveProvider or TimeDriveRowProvider (the built-in Salesforce
-   * and Data 360 providers are left out: those kinds need no class).
-   * @return The classes, each saying whether it returns rows or finished events.
+   * Apex classes that can feed the timeline: ones extending
+   * TimeDriveApexSource.
+   * @return The classes.
    */
   // Setup only (requireSetupAccess()): class names, to offer as providers.
   @SuppressWarnings('PMD.ApexCRUDViolation')
   @AuraEnabled
   public static List<Option> getApexProviders() {
     requireSetupAccess();
-    Set<String> builtIn = new Set<String>{ 'TimeDriveSoqlProvider', 'TimeDriveData360Provider' };
     List<Option> out = new List<Option>();
     for (ApexClass c : [
       SELECT Name
@@ -669,7 +667,7 @@ public with sharing class TimeDriveSetupController {
       ORDER BY Name
       LIMIT 2000
     ]) {
-      if (builtIn.contains(c.Name) || c.Name.endsWithIgnoreCase('Test')) {
+      if (c.Name.endsWithIgnoreCase('Test')) {
         continue;
       }
       // A class that no longer compiles (or can't be made) is skipped, so one
@@ -684,10 +682,8 @@ public with sharing class TimeDriveSetupController {
       } catch (Exception e) {
         continue;
       }
-      Boolean rows = instance instanceof TimeDriveRowProvider;
-      Boolean events = instance instanceof TimeDriveProvider;
-      if (rows || events) {
-        out.add(new Option(c.Name, c.Name, rows ? 'Returns rows to plot' : 'Returns finished events'));
+      if (instance instanceof TimeDriveApexSource) {
+        out.add(new Option(c.Name, c.Name, null));
       }
     }
     return out;
@@ -1298,7 +1294,7 @@ public with sharing class TimeDriveSetupController {
       return p;
     }
     Time_Drive_Source__mdt s = d.toRecord();
-    Object provider = TimeDriveConfig.providerFor(s, p.warnings);
+    TimeDriveRowProvider provider = TimeDriveConfig.providerFor(s, p.warnings);
     if (provider == null) {
       return p;
     }

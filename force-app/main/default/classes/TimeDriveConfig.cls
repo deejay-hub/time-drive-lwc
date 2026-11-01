@@ -108,16 +108,16 @@ public with sharing class TimeDriveConfig {
   }
 
   /**
-   * The source's provider: a TimeDriveRowProvider (rows the record
-   * plots) or a TimeDriveProvider (finished events). With no Provider
+   * The source's provider: the rows its record plots. With no Provider
    * Class, Salesforce sources use the generic SOQL provider and Data 360
-   * sources the Data 360 one; Apex sources must name their class.
+   * sources the Data 360 one; Apex sources name a class extending
+   * TimeDriveApexSource.
    *
    * @param source the source to find a provider for
    * @param warnings receives a message when no usable provider can be made
    * @return the provider instance, or null when there is none
    */
-  public static Object providerFor(Time_Drive_Source__mdt source, List<String> warnings) {
+  public static TimeDriveRowProvider providerFor(Time_Drive_Source__mdt source, List<String> warnings) {
     String kind = new TimeDriveContext(null, null, null, source, null, null).kind();
     if (String.isBlank(source.Provider_Class__c)) {
       if (kind == TimeDriveContext.KIND_DATA_360) {
@@ -131,8 +131,8 @@ public with sharing class TimeDriveConfig {
     }
     Type providerType = Type.forName(source.Provider_Class__c);
     Object instance = providerType == null ? null : providerType.newInstance();
-    if (instance instanceof TimeDriveRowProvider || instance instanceof TimeDriveProvider) {
-      return instance;
+    if (instance instanceof TimeDriveApexSource) {
+      return (TimeDriveApexSource) instance;
     }
     warnings.add(
       String.format(Label.Time_Drive_Server_Bad_Provider, new List<String>{ source.Label, source.Provider_Class__c })
