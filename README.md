@@ -1,58 +1,161 @@
-# Time Drive
+<div align="center">
+	<img
+	width="50"
+	src="/force-app/main/default/lwc/timeDrive/timeDrive.svg">
+	<h1>Time Drive</h1>
+</div>
 
-A Lightning web component for **Contact**, **Account** and person account
-record pages that shows a customer's engagement in time order: tasks, calls,
-emails, events, cases, opportunities and any other Salesforce object, alongside
-digital engagement from the standard Data 360 engagement data model objects
-(DMOs). It needs no custom objects of its own.
+<h4 align="center">
+	<a href="#overview">Overview</a> |
+	<a href="#installation-instructions">Install Me</a> |
+	<a href="#how-it-works">How it Works</a> |
+	<a href="#faqs">FAQs</a> |
+	<a href="#contributing">Contribute</a>
+</h4>
 
-## Layout
+<h3 align="center">
+	A customer's engagement in time order, on any Contact or Account page<br><br>
+	<a href="https://github.com/deejay-hub/time-shift-lwc/network/members">
+    		<img alt="forks on github"
+		src="https://img.shields.io/github/forks/deejay-hub/time-shift-lwc?style=flat-square&logoColor=blue">
+  	</a>
+  	<a href="https://github.com/deejay-hub/time-shift-lwc/stargazers">
+    		<img alt="stars on github"
+		src="https://img.shields.io/github/stars/deejay-hub/time-shift-lwc?style=flat-square">
+  	</a>
+  	<a href="https://github.com/deejay-hub/time-shift-lwc/watchers">
+    		<img alt="watchers"
+		src="https://img.shields.io/github/watchers/deejay-hub/time-shift-lwc?style=flat-square">
+  	</a>
+  	<a href="https://github.com/deejay-hub/time-shift-lwc/issues">
+    		<img alt="issues"
+		src="https://img.shields.io/github/issues-raw/deejay-hub/time-shift-lwc?style=flat-square">
+  	</a>
+</h3>
 
-- **Vertical** in narrow regions: newest first, grouped by day, one coloured
-  node per event, click a row (or **Expand all**) for its details and source
-  object. The list is **Vertical Mode Height** (560px) tall and scrolls inside the
-  card; loading, empty and error states keep that height, so nothing jumps. From two weeks of
-  active days a **scrub tab** rides the list's right edge, tracking where you
-  are. Grab it (finger or mouse) and an overlay opens with the whole history
-  as heat bars, labelled by month (or by year on long histories), and a
-  bubble naming the day and month (or month and year) under your finger. Let
-  go to jump there; the overlay closes back to the tab. Focus the tab for the
-  arrow, Page and Home/End keys. Wheel and touch over the list scroll the page until you click (or tap) inside it; then they scroll the list, finely, until the pointer leaves the card (a faint ring shows it's engaged, and a "Click to scroll the timeline" hint shows the first time the wheel passes over it). The tab, the wheel over it and the keyboard always move the list, landing as far into a day as the tab is into its bar. A week of days draws from where you land and
-  more load as you scroll either way (up to four weeks drawn at once).
-- **Horizontal** once the card is 640px wide or more: each day is a column
-  along a time axis. From two weeks of active days a **seek bar** runs under
-  the columns, its handle (in the palette's colour) over the days in view.
-  Grab it and a larger overlay rises with the whole history as heat bars,
-  months or years under them, and a bubble naming the day; the columns
-  follow the pointer, and a click glides to a day. Focus the handle for the
-  arrow, Page and Home/End keys.
-- The **Layout** property can pin either one. In the **Salesforce mobile app on a phone** the card is always the vertical list, starts in Lite (titles only; the button after Today shows times and dates), has larger tap targets and a one-line header (Today, Filters and a ⋯ menu holding Refresh, Expand all and the Lite switch), and shows no activity buttons. The list fits the screen unless Phone Mode Height says otherwise.
+## Overview
 
-Toolbar: timeline view (All, Marketing, Commerce, Digital, Service),
-refresh, event types filter, and newest/oldest first. (How far back and
-ahead it plots is set by the History and Future properties.)
+A Lightning web component for **Contact**, **Account** and person account record pages that shows a customer's engagement in time order: tasks, calls, emails, events, cases, opportunities and any other Salesforce object, alongside digital engagement from the standard Data 360 engagement data model objects (DMOs).
 
-### Long histories
+- **Any object.** Plot standard and custom objects linked to the page by a lookup or a junction (TaskRelation, OpportunityContactRole), Files included.
+- **Data 360 engagement.** Email, messaging, web, search, app and cart engagement DMOs, matched to the person through identity resolution.
+- **Apex sources.** Bring in records further away or data from another system with a small class that counts and returns rows.
+- **Built to scale.** The summary counts each source instead of reading it, rows load only for the days on screen, and busy days fold into one grouped row with View all.
+- **Vertical and horizontal layouts.** A scrub tab or seek bar over the whole history, up to ten years each way, and a phone layout in the Salesforce mobile app.
+- **Guided setup.** Time Drive Setup adds sources step by step, fits the timeline to your org, and has lenses, detail fields and diagnostics.
+- **Multi language support.** Every string is a custom label (English, Spanish and Arabic); dates, numbers and money follow the user's locale and time zone; right-to-left languages mirror the card.
+- **Console ready.** Records open in a workspace tab in Console apps.
 
-History and Future reach up to ten years either way. The seek bar's and
-scrub tab's overlays keep their bars readable however long the span: one
-bar per active day while they fit (at least 6px wide across, 5px tall
-down), then one per week, month, quarter or year, the finest that fits.
-Long spans label years and the bubble reads the month and year; shorter
-ones label months and the bubble reads the day and month.
+## Installation Instructions
 
-### Language and direction
+Install the component from source control into a scratch org using the instructions below:
 
-Dates follow the user's Salesforce **locale** (Setup > Personal Information >
-Locale): day headers, months and years, "Today" / "Yesterday" ("Heute" /
-"Gestern" in German), and event times in the user's Salesforce **time zone**
-on that locale's clock. In right-to-left languages (Arabic, Hebrew, Farsi,
-Urdu) the card mirrors: text, icons and rows read right to left, the scrub
-tab sits on the left edge, panels open from the left. The horizontal time
-axis and its seek bar keep time running left to right, as charts and seek
-bars do; the text in each column still reads right to left.
+1. Set up your environment. Follow the steps in the [Quick Start: Lightning Web Components](https://trailhead.salesforce.com/content/learn/projects/quick-start-lightning-web-components/) Trailhead project. The steps include:
 
-## Where events come from
+- Enable Dev Hub in your Trailhead Playground
+- Install Salesforce CLI
+- Install Visual Studio Code
+- Install the Visual Studio Code Salesforce extensions, including the Lightning Web Components extension
+
+2. If you haven't already done so, authenticate with your hub org and provide it with an alias (**myhuborg** in the command below):
+
+```
+sf org login web -d -a myhuborg
+```
+
+3. Clone the time-shift-lwc repository:
+
+```
+gh repo clone https://github.com/deejay-hub/time-shift-lwc
+cd time-shift-lwc
+```
+
+4. Create a scratch org and provide it with an alias (**time-drive** in the command below). Use `config/person-accounts-scratch-def.json` instead to try person accounts:
+
+```
+sf org create scratch -d -f config/project-scratch-def.json -a time-drive -y 30
+```
+
+5. Deploy the app to your scratch org:
+
+```
+sf project deploy start --source-dir force-app
+```
+
+6. Optional, for orgs with Data 360 only: deploy the Data 360 counting class (it calls `ConnectApi.CdpQuery`, so it only compiles where Data 360 is provisioned):
+
+```
+sf project deploy start --source-dir force-app-data360
+```
+
+7. Assign the permission sets to the default user (**Time_Drive** to use the timeline, **Time_Drive_Setup** to configure it):
+
+```
+sf org assign permset --name Time_Drive --name Time_Drive_Setup
+```
+
+8. Load sample data: a few Cases and Opportunities on the three Contacts with the most cases (each seeded record's Description starts with `[Timeline sample]`):
+
+```
+sf apex run --file scripts/apex/seed-timeline-samples.apex
+```
+
+9. Open the scratch org:
+
+```
+sf org open
+```
+
+10. Optional: Run npm install to support linting, prettification and test runs
+
+```
+npm install
+```
+
+11. Open a Contact record, select **Edit Page** in Setup, and drag the **Time Drive** component onto the page (found under custom components). Account pages work the same way.
+
+12. Open the **Time Drive Setup** tab to add sources, fit the timeline to your org and run diagnostics.
+
+## How it Works
+
+#### Object Support
+
+Time Drive is installed as a custom component available in the App Builder component palette for **Contact** and **Account** record pages, person accounts included. It plots whatever its sources say: any standard or custom object, Data 360 engagement, and Apex sources.
+
+#### Layout
+
+- **Vertical** in narrow regions: newest first, grouped by day, one coloured node per event; click a row (or **Expand all**) for its details and source object. The list is **Vertical Mode Height** (560px) tall and scrolls inside the card; loading, empty and error states keep that height, so nothing jumps. From two weeks of active days a **scrub tab** rides the list's right edge, tracking where you are. Grab it (finger or mouse) and an overlay opens with the whole history as heat bars, labelled by month (or by year on long histories), and a bubble naming the day and month (or month and year) under your finger. Let go to jump there; the overlay closes back to the tab. Focus the tab for the arrow, Page and Home/End keys. Wheel and touch over the list scroll the page until you click (or tap) inside it; then they scroll the list, finely, until the pointer leaves the card (a faint ring shows it's engaged, and a "Click to scroll the timeline" hint shows the first time the wheel passes over it). The tab, the wheel over it and the keyboard always move the list, landing as far into a day as the tab is into its bar. A week of days draws from where you land and more load as you scroll either way (up to four weeks drawn at once).
+- **Horizontal** once the card is 640px wide or more: each day is a column along a time axis. From two weeks of active days a **seek bar** runs under the columns, its handle (in the palette's colour) over the days in view. Grab it and a larger overlay rises with the whole history as heat bars, months or years under them, and a bubble naming the day; the columns follow the pointer, and a click glides to a day. Focus the handle for the arrow, Page and Home/End keys.
+- The **Layout** property can pin either one. In the **Salesforce mobile app on a phone** the card is always the vertical list and fits the screen, starts in Lite (titles only; the button after Today shows times and dates), has larger tap targets and a one-line header (Today, Filters and a ⋯ menu holding Refresh, Expand all and the Lite switch), and shows no activity buttons.
+
+The header carries the lens as its heading, then **Today**, **Filters** (event types) and **Refresh**. How far back and ahead it plots is set by the History and Future properties. Each user's lens and Lite choice are kept for them in the org.
+
+#### Long Histories
+
+History and Future reach up to ten years either way. The seek bar's and scrub tab's overlays keep their bars readable however long the span: one bar per active day while they fit (at least 6px wide across, 5px tall down), then one per week, month, quarter or year, the finest that fits. Long spans label years and the bubble reads the month and year; shorter ones label months and the bubble reads the day and month.
+
+#### Language and Direction
+
+Dates follow the user's Salesforce **locale** (Setup > Personal Information > Locale): day headers, months and years, "Today" / "Yesterday" ("Heute" / "Gestern" in German), and event times in the user's Salesforce **time zone** on that locale's clock. Numbers and money follow the locale too, money in each record's own currency in multi-currency orgs. In right-to-left languages (Arabic, Hebrew, Farsi, Urdu) the card mirrors: text, icons and rows read right to left, the scrub tab sits on the left edge, panels open from the left. The horizontal time axis and its seek bar keep time running left to right, as charts and seek bars do; the text in each column still reads right to left.
+
+#### Component Properties
+
+The component has the following properties that can be set at design time in App Builder by an administrator
+
+| Property                      | Description                                                                                                                                                                                                                    | Validation                                   |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------- |
+| `Title`                       | The timeline's name for screen readers (the lens's name is the visible heading). Default Time Drive                                                                                                                            | String                                       |
+| `Layout`                      | Auto is vertical in narrow regions and horizontal from 640px wide. Default Auto                                                                                                                                                | Picklist (Auto, Vertical, Horizontal)        |
+| `Default Lens`                | The lens the timeline opens on. People can still pick another from the heading; a lens the org doesn't offer opens on All. Default All                                                                                         | Dynamic Picklist (the org's lenses)          |
+| `Open At`                     | Where the timeline opens: today's slot (with a placeholder when it has nothing), its earliest item or its latest. Default Today                                                                                                | Picklist (Today, Earliest item, Latest item) |
+| `Activity Actions`            | The record's New Task, New Event, Log a Call and Email, as the page layout's Activity composer offers them: none, folded into a + menu, a button each among the header buttons, or a button each with its name. Default Inline | Picklist (None, One button, Inline, Full)    |
+| `Display Density`             | Auto follows each user's Comfy or Compact setting; Comfy or Compact overrides it for this component. Default Auto                                                                                                              | Picklist (Auto, Comfy, Compact)              |
+| `History (years)`             | How far back the timeline plots. Default 0.5                                                                                                                                                                                   | Picklist (0.25 - 10)                         |
+| `Future (years)`              | How far ahead it plots future-dated records (scheduled orders, close dates); None is up to today. Default None                                                                                                                 | Picklist (None, 0.25 - 10)                   |
+| `Vertical Mode Height (px)`   | Vertical only: the list's greatest height; past it, items scroll inside. Default 560                                                                                                                                           | Integer min 320 max 1600                     |
+| `Horizontal Mode Height (px)` | Horizontal only: the day columns' height; busier days scroll inside their column. Default 260                                                                                                                                  | Integer min 240 max 1000                     |
+
+#### Where Events Come From
 
 | Events                       | Source                                   | Mode              |
 | ---------------------------- | ---------------------------------------- | ----------------- |
@@ -67,11 +170,9 @@ bars do; the text in each column still reads right to left.
 | App sessions and screens     | `ssot__DeviceApplicationEngagement__dlm` | Data 360          |
 | Add to cart, abandoned carts | `ssot__ShoppingCartEngagement__dlm`      | Data 360          |
 
-Every active source runs, Data 360 ones included, like any other. Busy days
-(over 50 events of a type) show one grouped row per type, its icon drawn as a
-stack. Every event's detail names the object it came from.
+Every active source runs, Data 360 ones included, like any other. Busy days (over 50 events of a type) show one grouped row per type, its icon drawn as a stack; for Salesforce sources its title links to all its items (View all). Every event's detail names the object it came from.
 
-### Data 360 data
+##### Data 360 Data
 
 Each engagement DMO is its own **Time Drive Source** record of Kind
 **Data 360** (`Data_360_Email`, `_Message`, `_Website`, `_Web_Search`, `_App`,
@@ -99,7 +200,7 @@ Each engagement DMO is its own **Time Drive Source** record of Kind
   records (shipped: Channel action).
 - **Access.** Users need read access to the DMOs (a Data Cloud permission set)
   in the data space the DMOs live in.
-- **Counting.** Deploy `force-app-data360` too (see Deploy): it counts each
+- **Counting.** Deploy `force-app-data360` too (see [Installation Instructions](#installation-instructions), step 6): it counts each
   DMO in Data 360 SQL (`GROUP BY` in the user's time zone), so the day list,
   minimap and totals cover every engagement record. Without it, or if a
   count's SQL isn't accepted, each DMO is read as rows: up to Max Records,
@@ -111,70 +212,48 @@ Each engagement DMO is its own **Time Drive Source** record of Kind
 Anything missing or unreadable shows as a warning on the timeline instead of
 an error, and the CRM events still load.
 
-## Configuring what's plotted
+#### Configuring What's Plotted
 
-Like Time Warp, the timeline plots whatever **Time Drive Source** custom
-metadata records say (Setup > Custom Metadata Types > Time Drive Source >
-Manage Records). One record per kind of event, and every record, whatever its
-Kind, plots the same way.
+Like Time Warp, the timeline plots whatever **Time Drive Source** custom metadata records say (Setup > Custom Metadata Types > Time Drive Source > Manage Records). Time Drive Setup writes them for you. One record per kind of event, and every record, whatever its Kind, plots the same way: each source returns **rows**, and `TimeDrivePlotter` turns them into events from the source record. Only where the rows come from differs:
 
-### One contract for every source
+| Kind       | Rows from                                           | Provider Class                                     |
+| ---------- | --------------------------------------------------- | -------------------------------------------------- |
+| Salesforce | Any standard or custom object, queried in user mode | Blank (`TimeDriveSoqlProvider`)                    |
+| Data 360   | One engagement DMO for the Contact's Individuals    | Blank (`TimeDriveData360Provider`)                 |
+| Apex       | Your class: an external system, a calculation       | Required (a class extending `TimeDriveApexSource`) |
 
-Each source returns **rows**; `TimeDrivePlotter` turns them into events
-from the source record. Only where the rows come from differs:
+When populating the metadata type the following is a description of the columns and their purpose
 
-| Kind       | Rows from                                           | Provider Class                     |
-| ---------- | --------------------------------------------------- | ---------------------------------- |
-| Salesforce | Any standard or custom object, queried in user mode | Blank (`TimeDriveSoqlProvider`)    |
-| Data 360   | One engagement DMO for the Contact's Individuals    | Blank (`TimeDriveData360Provider`) |
-| Apex       | Your class: an external system, a calculation       | Required                           |
+| Field Name                                                                   | Description                                                                                                                                                                 |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Active__c`, `Sequence__c`                                                   | Plot it or not; the order sources run in                                                                                                                                    |
+| `Kind__c`                                                                    | Salesforce, Data 360 or Apex (see above)                                                                                                                                    |
+| `Parent_Object__c`                                                           | The record page it serves (`Contact`)                                                                                                                                       |
+| `Provider_Class__c`                                                          | The Apex class, for Kind Apex                                                                                                                                               |
+| `Object_Name__c`                                                             | Salesforce: the object; Data 360: the DMO; Apex: a name for the footer ("Loyalty")                                                                                          |
+| `Parent_Field__c`                                                            | Salesforce: how records link to the page's record (`ContactId`)                                                                                                             |
+| `Junction_Object__c`, `Junction_Parent_Field__c`, `Junction_Record_Field__c` | Salesforce: indirect links, e.g. `OpportunityContactRole` / `ContactId` / `OpportunityId`                                                                                   |
+| `Individual_Field__c`, `Data_Space__c`                                       | Data 360: the DMO's Individual Id field (`ssot__IndividualId__c`) and its data space                                                                                        |
+| `Date_Field__c`, `Filter__c`                                                 | Date or date/time to plot by; an optional SOQL condition (`IsClosed = true`); Setup's builder writes conditions joined by AND, and shows any other filter as fixed text     |
+| `Id_Field__c`                                                                | Unique per event. Blank: `Id` (`ssot__Id__c` for Data 360 DMOs that have it)                                                                                                |
+| `Record_Id_Field__c`                                                         | A Salesforce record Id to link to and expand. Blank: `Id` for Salesforce, none otherwise                                                                                    |
+| `Title__c`, `Subtitle__c`                                                    | Templates with `{Field}` tokens, relationships included: `{Subject}`, `{Account.Name}`                                                                                      |
+| `Event_Type__c`, `Event_Label__c`, `Category__c`                             | Type key (filters, grouping), its legend name ("Case updates", or a `$Label.Name` to translate), and its default lens                                                       |
+| `Lenses__c`                                                                  | The lenses it is in, separated by semicolons (`Sales;Service`). Blank: Category is its one lens                                                                             |
+| `Icon__c`, `Icon_Colour__c`                                                  | SLDS icon (`utility:case`, `standard:case`) and its background colour (`#1F7A8C`)                                                                                           |
+| `History_Months__c`                                                          | How far back this source plots, when that's less than the timeline's own History                                                                                            |
+| `Max_Records__c`                                                             | Per-source cap, newest first (default 1000), for sources read rather than counted                                                                                           |
+| `Org_Fit__c`, `Requires__c`, `Variant_Group__c`, `Removed__c`                | Set by Time Drive Setup: shipped sources that Fit to your org turns on, the org features each needs, alternatives of which only one is active, and sources removed in Setup |
 
-### Source fields
+**Account pages and shared activities.** An account's activities come from `Task.AccountId` and `Event.AccountId`, the same field the standard timeline rolls up by: the account's own, its contacts', and those of its opportunities and contracts. An activity shared with a second contact of the account (Shared Activities) carries another account's Id there, so with Shared Activities in use, **Time Drive Setup > Fit to your org** switches each of Tasks, Calls, Emails and Events to its `_Every` variant (`Fit_Account_Tasks_Every` and so on): one query through `TaskRelation.AccountId` / `EventRelation.AccountId` that returns the account's own activities and the shared ones together, in place of the main source. Without Shared Activities the main sources stay. Cases with no contact are not part of the standard rollup either. A custom object joins an Account page through the field that holds the account (the setup asks "Which field holds the account?").
 
-| Field                                         | What it does                                                                                                                                                            |
-| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Active, Sequence                              | Plot it or not; the order sources run in                                                                                                                                |
-| Kind                                          | Salesforce, Data 360 or Apex (see above)                                                                                                                                |
-| Parent Object                                 | The record page it serves (`Contact`)                                                                                                                                   |
-| Provider Class                                | The Apex class, for Kind Apex                                                                                                                                           |
-| Object Name                                   | Salesforce: the object; Data 360: the DMO; Apex: a name for the footer ("Loyalty")                                                                                      |
-| Parent Field                                  | Salesforce: how records link to the page's record (`ContactId`)                                                                                                         |
-| Junction Object / Parent Field / Record Field | Salesforce: indirect links, e.g. `OpportunityContactRole` / `ContactId` / `OpportunityId`                                                                               |
-| Individual Field, Data Space                  | Data 360: the DMO's Individual Id field (`ssot__IndividualId__c`) and its data space                                                                                    |
-| Date Field, Filter                            | Date or date/time to plot by; an optional SOQL condition (`IsClosed = true`); Setup's builder writes conditions joined by AND, and shows any other filter as fixed text |
-| Id Field                                      | Unique per event. Blank: `Id` (`ssot__Id__c` for Data 360 DMOs that have it)                                                                                            |
-| Record Id Field                               | A Salesforce record Id to link to and expand. Blank: `Id` for Salesforce, none otherwise                                                                                |
-| Title, Subtitle                               | Templates with `{Field}` tokens, relationships included: `{Subject}`, `{Account.Name} · {Amount}`; separators around blank values drop out                              |
-| Event Type, Event Label, Category             | Type key (filters, grouping), its plural label ("Case updates"), and the view it belongs to                                                                             |
-| Icon, Icon Colour                             | SLDS icon (`utility:case`, `standard:case`) and its background colour (`#1F7A8C`)                                                                                       |
-| Amount Field                                  | Currency summed as the day's spend                                                                                                                                      |
-| Max Records                                   | Per-source cap, newest first (default 1000)                                                                                                                             |
-| Use Compact Layout                            | Expand a linked Salesforce record with its object's compact layout                                                                                                      |
+Shipped records: Tasks, Calls and Emails, and the `Fit_*` sources (Cases, Events, Email Messages, Opportunities and more for Contacts, Accounts and person accounts) that Time Drive Setup switches on to fit the org.
 
-**Account pages and shared activities.** An account's activities come from `Task.AccountId` and
-`Event.AccountId`, the same field the standard timeline rolls up by: the account's own, its
-contacts', and those of its opportunities and contracts. An activity shared with a second contact of
-the account (Shared Activities) carries another account's Id there, so with Shared Activities in
-use, **Time Drive Setup > Fit to your org** switches each of Tasks, Calls, Emails and Events to its
-`_Every` variant (`Fit_Account_Tasks_Every` and so on): one query through
-`TaskRelation.AccountId` / `EventRelation.AccountId` that returns the account's own activities and
-the shared ones together, in place of the main source. Without Shared Activities the main sources
-stay. Cases with no contact are not part of the standard rollup either. A custom object joins an
-Account page through the field that holds the account (the setup asks "Which field holds the
-account?").
+#### Expanding Records
 
-Shipped records: Tasks, Calls and Emails, and the `Fit_*` sources (Cases,
-Events, Email Messages, Opportunities and more for Contacts, Accounts and
-person accounts) that Time Drive Setup switches on to fit the org.
+An event expands with its source's **Time Drive Detail Field** records (Source, Field, Label, Sequence, Format: Text, Date, Date/Time, Currency or Number), the fields the admin chose in Setup. Blank labels use the field's label, and a label can be a `$Label.Name` to translate. An event with none opens on its title, subtitle and source alone.
 
-### Expanding records
-
-An event expands with its source's **Time Drive Detail Field** records
-(Source, Field, Label, Sequence, Format: Text, Date, Date/Time, Currency or
-Number), the fields the admin chose in Setup. Blank labels use the field's
-label. An event with none opens on its title, subtitle and source alone.
-
-### Writing an Apex source
+#### Writing an Apex Source
 
 Most sources need no code: Setup plots any object linked to the page by a
 lookup or a junction. Write an Apex source when that isn't enough:
@@ -246,7 +325,7 @@ outside the days asked for are left out. Two helpers build them:
    thought about how the class scales, because it runs every time a timeline
    with the source loads.
 
-#### Records a query can reach
+##### Records a query can reach
 
 `TimeDriveOpportunityProducts` is the shipped example. It plots an Account's
 products on all its opportunities:
@@ -303,7 +382,7 @@ public with sharing class TimeDriveOpportunityProducts extends TimeDriveApexSour
 - `dateCondition` keeps the query to the days the timeline asks for. It works
   out whether the field is a Date or a Date/Time.
 
-#### Data from elsewhere
+##### Data from elsewhere
 
 Each row is a map, and its keys are what the title, subtitle and detail fields
 name. Give every row a unique `Id` key. Ask the service only for the days in
@@ -353,7 +432,7 @@ Leave out `opens` here: these items have nothing in Salesforce to open, so
 their titles are plain text. They also can't be highlighted or listed in View
 all.
 
-#### What `context` gives you
+##### What `context` gives you
 
 |                                                      |                                                                         |
 | ---------------------------------------------------- | ----------------------------------------------------------------------- |
@@ -369,7 +448,7 @@ all.
 | `counter(unit)`                                      | Counts of items from elsewhere, added one at a time or by the day       |
 | `warn(message)`                                      | A note the timeline shows, such as "Couldn't reach the loyalty service" |
 
-#### Good practice
+##### Good practice
 
 - **Count anything that can grow.** Without `counts`, every timeline load
   reads the source's whole window.
@@ -382,7 +461,7 @@ all.
   and the other sources still load. A `counts` that throws is read as rows
   instead. Prefer `warn` for problems you expect.
 
-#### Time zones and translations
+##### Time zones and translations
 
 The timeline shows every date, time and number in the viewer's own time zone,
 language and locale. Your rows get the same treatment as Setup's sources, as
@@ -405,7 +484,7 @@ long as you hand over real values rather than text:
 - **Text from elsewhere.** Ask the service for the viewer's language
   (`UserInfo.getLanguage()`, `UserInfo.getLocale()`) where it supports one.
 
-## Diagnostics
+#### Diagnostics
 
 **Time Drive Setup > Diagnostics** (admins with Customize Application) runs a Contact or Account's
 timeline and shows what it did. Enter the Id, choose the layout and the History and Future years, and
@@ -432,84 +511,98 @@ The card logs a line for each request and draw (also to the console, as `[Time D
 `getTimeline` returns its own server time, so the split above is for the request the card made.
 Recording of queries is off for every other request, so a timeline pays nothing for it.
 
-## Sample Cases and Opportunities
+#### Scale
 
-Cases and Opportunities are plotted from the Contact's real records (cases by
-`ContactId`; opportunities by `ContactId` or an Opportunity Contact Role). To
-seed a few on the three Contacts with the most cases:
+The summary counts each source rather than reading it: an aggregate query per Salesforce object (a query row per day, not per record), SQL per Data 360 object, and `counts` for Apex sources. When History and Future make the window too long to count every source by day within 30,000 query rows (`COUNT_ROWS`), it counts by week (from 1 January: the 1st-7th, 8th-14th ...) or by month, and the list shows weeks or months. Rows are read only for the days (or weeks) on screen, and not at all for a busy one (over 50 items), which comes back as grouped counts.
 
-```sh
+#### Custom Labels
+
+Every string of the timeline (the Time Drive card, its filters, the View all page, record details and error messages) is a custom label (`Time_Drive_*`), in English with Spanish (`es`) and Arabic (`ar`) translations. Navigate to Setup -> Custom Labels to review or add translations for your chosen languages (you will need the Manage Translation permission). Setup's own text is not translated yet.
+
+- `scripts/labels/catalogue.py` is the list: a key, the English, the Spanish and the Arabic. Add or change a string there, then run `python3 -I scripts/labels/generate.py`. It writes `CustomLabels`, the `es` and `ar` translation files and the shared `c/timeDriveLabels` module the components import.
+- Fill in `{0}`, `{1}` ... with `format(LABELS.itemsMany, 12)`.
+- The translations are drafts: have a native speaker review them. Arabic has singular, dual and plural forms; each count here uses one plural form.
+- To see a language, turn on Translation Workbench in the org and add the language, or set a user's language to Spanish or Arabic.
+- In Jest the labels read as their English text (`jest-mocks/labelResolver.js`).
+
+#### Sample Data
+
+Cases and Opportunities are plotted from the Contact's real records (cases by `ContactId`; opportunities by `ContactId` or an Opportunity Contact Role). To seed a few on the three Contacts with the most cases:
+
+```
 sf apex run --file scripts/apex/seed-timeline-samples.apex --target-org <alias>
 ```
 
 Every seeded record's Description starts with `[Timeline sample]`.
 
-To see a long quiet stretch, `scripts/apex/seed-two-year-sample.apex` adds a
-Contact, **Riley Span**, with two tasks two years apart (tagged
-`[Two-year sample]`). Set History to 2 years or more to plot the older one.
+To see a long quiet stretch, `scripts/apex/seed-two-year-sample.apex` adds a Contact, **Riley Span**, with two tasks two years apart (tagged `[Two-year sample]`). Set History to 2 years or more to plot the older one.
 
-## Deploy
+## FAQs
 
-```sh
-npm install
-sf project deploy start --source-dir force-app --target-org <alias>
-# Orgs with Data 360 only: count Data 360 sources in Data 360 SQL.
-sf project deploy start --source-dir force-app-data360 --target-org <alias>
-```
+#### How do I choose the fields an opened item shows?
 
-`force-app-data360` holds `TimeDriveData360SqlRunner`, which calls
-`ConnectApi.CdpQuery` and so only compiles where Data 360 is provisioned.
+In Time Drive Setup, on each source's detail fields step. They are saved as **Time Drive Detail Field** records, in order. Time Drive doesn't use compact layouts.
 
-**Scale.** The summary counts each source rather than reading it: an
-aggregate query per Salesforce object (a query row per day, not per record)
-and SQL per Data 360 object. When History and Future make the window too long
-to count every source by day within 30,000 query rows (`COUNT_ROWS`), it
-counts by week (from 1 January: the 1st-7th, 8th-14th ...) or by month, and
-the list shows weeks or months. Rows are read only for the days (or weeks)
-on screen, and not at all for a busy one (over 50 items), which comes back as
-grouped counts.
+#### Does it support multiple languages other than English?
 
-In Lightning App Builder, open a Contact record page and drag
-**Time Drive** onto it.
+Yes - Supports a user's locale, language and time zone, and has custom labels for translation available. Default translations are available for Spanish and Arabic, and right-to-left languages mirror the card. Setup's own text is English for now.
 
-## App Builder properties
+#### Does it support Mobile?
 
-| Property               | Default    | Effect                                                                                                                                                                                                                                           |
-| ---------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Title                  | Time Drive | Card title                                                                                                                                                                                                                                       |
-| Layout                 | Auto       | Auto (vertical below 640px, horizontal above), Vertical or Horizontal                                                                                                                                                                            |
-| Activity Actions       | Inline     | The record's New Task, New Event, Log a Call and Email: None; One button (a + menu); Inline (a round button each among the tools); Full (a button each with its name, on a line above the header, or beside the tools in a wide horizontal card) |
-| Item Detail            | Max        | Max shows each item's time and date; Lite only its title and subtitle. A button after Today switches, and the choice is remembered per browser                                                                                                   |
-| Display Density        | Auto       | Auto follows each user's Comfy or Compact setting; Comfy or Compact overrides it for this component                                                                                                                                              |
-| Show Age               | Off        | Each item says how long ago it was ("3 days ago") beside its time                                                                                                                                                                                |
-| History (years)        | 0.5        | How far back to plot: 0.25, 0.5, 1, 2 ... 10 years                                                                                                                                                                                               |
-| Future (years)         | None       | How far ahead to plot future-dated records: None (up to today), or 0.25 ... 10 years                                                                                                                                                             |
-| Vertical Mode Height   | 560        | Vertical only: the list's height before it scrolls (320 to 1600)                                                                                                                                                                                 |
-| Phone Mode Height      | (blank)    | Salesforce mobile app on a phone only: the list's greatest height in pixels. Blank fits the screen, whatever the phone, and follows rotating it (240 to 1600)                                                                                    |
-| Horizontal Mode Height | 260        | Horizontal only: the day columns' height (240 to 1000)                                                                                                                                                                                           |
+Yes. In the Salesforce mobile app on a phone the card is the vertical list, fitted to the screen, with larger tap targets and a one-line header.
 
-## Develop
+#### Does it support Person Accounts?
 
-```sh
-npm run lint
-npm run test:unit
-```
+Yes. A person account's page plots the account's records and its own Contact's.
 
-Apex tests: `TimeDriveControllerTest`.
+#### Does it support Files?
 
-## Translations
+Yes. Files linked to the record (ContentDocumentLink) can be a source; a click opens the file preview.
 
-Every string of the timeline (the Time Drive card, its filters, the View all page,
-record details and error messages) is a custom label, in English with Spanish
-(`es`) and Arabic (`ar`) translations. Setup's own text is not translated yet.
+#### Does it support Junction Objects?
 
-- `scripts/labels/catalogue.py` is the list: a key, the English, the Spanish and the
-  Arabic. Add or change a string there, then run `python3 -I scripts/labels/generate.py`.
-  It writes `CustomLabels`, the `es` and `ar` translation files and the shared
-  `c/timeDriveLabels` module the components import.
-- Fill in `{0}`, `{1}` ... with `format(LABELS.itemsMany, 12)`.
-- The translations are drafts: have a native speaker review them. Arabic has
-  singular, dual and plural forms; each count here uses one plural form.
-- To see a language, turn on Translation Workbench in the org and add the language,
-  or set a user's language to Spanish or Arabic.
-- In Jest the labels read as their English text (`jest-mocks/labelResolver.js`).
+Yes. Setup offers junction objects such as TaskRelation and OpportunityContactRole, with the related record's fields by path.
+
+#### Does it support Data 360?
+
+Yes, in orgs with Data 360 provisioned. Engagement DMOs are matched to the person through identity resolution. Deploy `force-app-data360` as well so they are counted rather than read.
+
+#### Can it plot data from outside Salesforce?
+
+Yes, with an Apex source: a class extending `TimeDriveApexSource` that returns rows for the days asked for and, ideally, counts for the summary. See [Writing an Apex Source](#writing-an-apex-source).
+
+#### How far back can it go?
+
+Up to ten years back and ten ahead, set by the History and Future properties. Each source can look back less far than the timeline does.
+
+#### Why does the timeline say "only 1000 items are plotted (its Max Records)"?
+
+That source is read rather than counted, and it reached its Max Records. Salesforce and Data 360 sources count; an Apex source counts when its class implements `counts`.
+
+## Contributing
+
+Contributions are what make the trailblazer community such an amazing place. I regard this component as a way to inspire and learn from others. Any contributions you make are **greatly appreciated**.
+
+See [contributing.md](/contributing.md) for Time Drive principles, and [changelog.md](/changelog.md) for what changed in each version.
+
+## Utilities and Dependencies
+
+#### Dependencies
+
+- None. Time Drive uses no third-party JavaScript libraries.
+
+#### Code formatting
+
+[Prettier](https://prettier.io/) is a code formatter used to ensure consistent formatting across your code base. To use Prettier with Visual Studio Code, install [this extension](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) from the Visual Studio Code Marketplace. The [.prettierignore](/.prettierignore) and [.prettierrc](/.prettierrc) files are provided as part of this repository to control the behavior of the Prettier formatter. Run `npm run prettier` to format, or `npm run prettier:verify` to check.
+
+#### Code linting
+
+[ESLint](https://eslint.org/) is a popular JavaScript linting tool used to identify stylistic errors and erroneous constructs. To use ESLint with Visual Studio Code, install [this extension](https://marketplace.visualstudio.com/items?itemName=salesforce.salesforcedx-vscode-lwc) from the Visual Studio Code Marketplace. The [eslint.config.js](/eslint.config.js) file is provided as part of this repository. Run `npm run lint`.
+
+#### Code quality
+
+[Salesforce Code Analyzer](https://developer.salesforce.com/docs/platform/salesforce-code-analyzer/guide/code-analyzer.html) scans Apex, LWC and stylesheets for security, performance and best practice issues (PMD, ESLint, CPD, RetireJS and the SLDS rules). The [code-analyzer.yml](/code-analyzer.yml) file is provided as part of this repository. Run `sf code-analyzer run --rule-selector Recommended`.
+
+#### Tests
+
+LWC tests run with Jest (`npm run test:unit`). Apex tests are the `TimeDrive*Test` classes; run them in an org with `sf apex run test --test-level RunLocalTests --code-coverage`. Coverage is kept at 85% or more.
