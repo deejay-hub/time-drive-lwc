@@ -86,7 +86,6 @@ public class TimeDriveTestData {
         Icon__c = 'utility:case',
         Icon_Colour__c = '#1F7A8C',
         Max_Records__c = 1000,
-        Use_Compact_Layout__c = true,
         Kind__c = 'Salesforce'
       ),
       new Time_Drive_Source__mdt(
@@ -106,7 +105,6 @@ public class TimeDriveTestData {
         Icon__c = 'utility:case',
         Icon_Colour__c = '#1F7A8C',
         Max_Records__c = 1000,
-        Use_Compact_Layout__c = true,
         Kind__c = 'Salesforce'
       ),
       new Time_Drive_Source__mdt(
@@ -127,8 +125,7 @@ public class TimeDriveTestData {
         Event_Label__c = 'App events',
         Category__c = 'Digital',
         Icon__c = 'utility:phone_portrait',
-        Max_Records__c = 500,
-        Use_Compact_Layout__c = false
+        Max_Records__c = 500
       ),
       new Time_Drive_Source__mdt(
         DeveloperName = 'Data_360_Cart',
@@ -148,8 +145,7 @@ public class TimeDriveTestData {
         Event_Label__c = 'Cart events',
         Category__c = 'Commerce',
         Icon__c = 'utility:cart',
-        Max_Records__c = 500,
-        Use_Compact_Layout__c = false
+        Max_Records__c = 500
       ),
       new Time_Drive_Source__mdt(
         DeveloperName = 'Data_360_Email',
@@ -169,8 +165,7 @@ public class TimeDriveTestData {
         Event_Label__c = 'Email events',
         Category__c = 'Marketing',
         Icon__c = 'utility:email',
-        Max_Records__c = 500,
-        Use_Compact_Layout__c = false
+        Max_Records__c = 500
       ),
       new Time_Drive_Source__mdt(
         DeveloperName = 'Data_360_Message',
@@ -190,8 +185,7 @@ public class TimeDriveTestData {
         Event_Label__c = 'Push and SMS messages',
         Category__c = 'Marketing',
         Icon__c = 'utility:notification',
-        Max_Records__c = 500,
-        Use_Compact_Layout__c = false
+        Max_Records__c = 500
       ),
       new Time_Drive_Source__mdt(
         DeveloperName = 'Data_360_Web_Search',
@@ -211,8 +205,7 @@ public class TimeDriveTestData {
         Event_Label__c = 'Web searches',
         Category__c = 'Digital',
         Icon__c = 'utility:search',
-        Max_Records__c = 500,
-        Use_Compact_Layout__c = false
+        Max_Records__c = 500
       ),
       new Time_Drive_Source__mdt(
         DeveloperName = 'Data_360_Website',
@@ -232,8 +225,7 @@ public class TimeDriveTestData {
         Event_Label__c = 'Page views',
         Category__c = 'Digital',
         Icon__c = 'utility:world',
-        Max_Records__c = 500,
-        Use_Compact_Layout__c = false
+        Max_Records__c = 500
       ),
       new Time_Drive_Source__mdt(
         DeveloperName = 'Opportunity_Lost',
@@ -252,7 +244,6 @@ public class TimeDriveTestData {
         Icon__c = 'utility:close',
         Icon_Colour__c = '#C62F2F',
         Max_Records__c = 1000,
-        Use_Compact_Layout__c = true,
         Junction_Object__c = 'OpportunityContactRole',
         Junction_Parent_Field__c = 'ContactId',
         Junction_Record_Field__c = 'OpportunityId',
@@ -274,7 +265,6 @@ public class TimeDriveTestData {
         Icon__c = 'utility:opportunity',
         Icon_Colour__c = '#2F6FB0',
         Max_Records__c = 1000,
-        Use_Compact_Layout__c = true,
         Junction_Object__c = 'OpportunityContactRole',
         Junction_Parent_Field__c = 'ContactId',
         Junction_Record_Field__c = 'OpportunityId',
@@ -297,7 +287,6 @@ public class TimeDriveTestData {
         Icon__c = 'utility:check',
         Icon_Colour__c = '#2F6FB0',
         Max_Records__c = 1000,
-        Use_Compact_Layout__c = true,
         Junction_Object__c = 'OpportunityContactRole',
         Junction_Parent_Field__c = 'ContactId',
         Junction_Record_Field__c = 'OpportunityId',
@@ -321,7 +310,6 @@ public class TimeDriveTestData {
         Icon__c = 'utility:close',
         Icon_Colour__c = '#C62F2F',
         Max_Records__c = 1000,
-        Use_Compact_Layout__c = true,
         Kind__c = 'Salesforce'
       ),
       new Time_Drive_Source__mdt(
@@ -342,7 +330,6 @@ public class TimeDriveTestData {
         Icon__c = 'utility:check',
         Icon_Colour__c = '#2F7D4F',
         Max_Records__c = 1000,
-        Use_Compact_Layout__c = true,
         Kind__c = 'Salesforce'
       ),
       new Time_Drive_Source__mdt(
@@ -363,7 +350,6 @@ public class TimeDriveTestData {
         Icon__c = 'utility:clock',
         Icon_Colour__c = '#2F7D4F',
         Max_Records__c = 1000,
-        Use_Compact_Layout__c = true,
         Kind__c = 'Salesforce'
       ),
       new Time_Drive_Source__mdt(
@@ -384,7 +370,6 @@ public class TimeDriveTestData {
         Icon__c = 'utility:favorite',
         Icon_Colour__c = '#B07A0C',
         Max_Records__c = 1000,
-        Use_Compact_Layout__c = true,
         Kind__c = 'Salesforce'
       )
     };

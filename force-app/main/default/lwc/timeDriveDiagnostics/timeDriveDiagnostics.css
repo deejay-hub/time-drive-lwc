@@ -87,11 +87,6 @@
   list-style: none;
 }
 
-.tiles_wide {
-  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-  margin-bottom: var(--slds-g-spacing-3, 0.75rem);
-}
-
 .tile {
   display: grid;
   gap: 0.125rem;
@@ -99,10 +94,6 @@
   border: var(--slds-g-sizing-border-1, 1px) solid var(--d-rule);
   border-radius: 0.375rem;
   background: var(--d-sunk);
-}
-
-.tile_hot {
-  border-color: var(--d-slow);
 }
 
 .tile-label {

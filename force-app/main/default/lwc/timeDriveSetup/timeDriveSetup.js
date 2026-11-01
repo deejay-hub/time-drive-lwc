@@ -4388,8 +4388,7 @@ export default class TimeDriveSetup extends LightningElement {
     }
   }
 
-  // The compact layout's fields, in order: [{ name, label }].
-
+  // An object's fields for the preview: [{ name, label }].
   fieldsOf(objectName) {
     return objectName === this.draft.objectName ? (this.fields ?? []) : (this.previewFields[objectName] ?? []);
   }

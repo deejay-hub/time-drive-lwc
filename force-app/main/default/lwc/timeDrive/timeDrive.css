@@ -426,7 +426,6 @@
 .card_slds1 .event_open,
 .card_slds1 .issue,
 .card_slds1 .warning,
-.card_slds1 .track-end,
 .card_slds1 .scrub-bubble,
 .card_slds1 .seek-bubble {
   border-radius: 0.25rem;
@@ -937,8 +936,7 @@
    so the card is one height whatever it shows. */
 /* Illustrated states keep Comfy spacing whatever the user's density: the
    picture and its words are laid out as one piece. */
-.empty,
-.card_horizontal .track-end {
+.empty {
   --time-drive-space: 1rem;
 }
 
@@ -1177,8 +1175,7 @@
   background-color: var(--surface);
 }
 
-/* The days stack, and the room left after the last one goes to a dotted
-   box (see .track-end). */
+/* The days stack. */
 .track_bounded {
   display: flex;
   flex-direction: column;
@@ -1186,23 +1183,6 @@
 
 .track_bounded > .day {
   flex: none;
-}
-
-/* After the last day: the rest of the track, dotted, as the end of the
-   list: an illustration as large as the room allows, and one line. Sized
-   by the room left, never by what's in it, so it can't make the list
-   overflow. */
-.track-end {
-  box-sizing: border-box;
-  container-type: size;
-  display: flex;
-  flex: 1 0 3rem;
-  min-height: 3rem;
-  margin-top: calc(0.5 * var(--time-drive-space));
-  padding: calc(0.75 * var(--time-drive-space));
-  overflow: hidden;
-  border: 1px dashed color-mix(in srgb, var(--time-drive-muted) 45%, transparent);
-  border-radius: 0.5rem;
 }
 
 /* With the scrub tab over its edge, the tab shows the position and moves the
@@ -1736,31 +1716,6 @@
   position: relative;
 }
 
-/* Horizontal: only the width left after the last column, so it never adds
-   to the scroll; too narrow to read, it isn't drawn (see endClass). */
-.card_horizontal .track-end {
-  flex: 1 1 0;
-  min-width: 0;
-  margin: 0 0 0 calc(0.25 * var(--time-drive-space));
-  overflow: hidden;
-}
-
-.card_horizontal .track-end_narrow {
-  visibility: hidden;
-}
-
-/* The earliest end, before the first column: narrow, the tail takes the
-   room left over. */
-.card_horizontal .track-end_head {
-  flex: 0 0 9rem;
-  margin: 0 calc(0.25 * var(--time-drive-space)) 0 0;
-}
-
-/* Fit mode: both ends narrow; the days share the rest. */
-.card_fit.card_horizontal .track-end {
-  flex: 0 0 9rem;
-}
-
 /* "3 more" at the foot of a column with events hidden below. */
 .scroll-pill {
   position: absolute;
@@ -2180,23 +2135,6 @@
 .card_fit.card_horizontal .day {
   flex: 1 1 0;
   min-width: 0;
-}
-
-/* ---- vertical: the anchor at the foot of the list ----------------------------
-   As the Activity Timeline ends: a grey bar under the last day, with an info
-   icon and the line, sized by its words (the list is as tall as its days). */
-.track_bounded > .track-end_head {
-  margin: 0 0 calc(0.5 * var(--time-drive-space));
-}
-
-.track_bounded > .track-end {
-  container-type: normal;
-  flex: none;
-  min-height: 0;
-  padding: calc(0.75 * var(--time-drive-space)) calc(0.875 * var(--time-drive-space));
-  border: 0;
-  border-radius: 0.5rem;
-  background: var(--slds-g-color-surface-container-2, #f3f3f3);
 }
 
 /* The header while the timeline first loads: its title and buttons as

@@ -63,10 +63,6 @@
         <value xsi:type="xsd:double">1000</value>
     </values>
     <values>
-        <field>Use_Compact_Layout__c</field>
-        <value xsi:type="xsd:boolean">false</value>
-    </values>
-    <values>
         <field>Filter__c</field>
         <value xsi:type="xsd:string">(TaskSubtype = null OR TaskSubtype NOT IN (&apos;Call&apos;, &apos;Email&apos;, &apos;ListEmail&apos;))</value>
     </values>

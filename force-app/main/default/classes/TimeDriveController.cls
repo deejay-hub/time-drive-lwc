@@ -185,7 +185,7 @@ public with sharing class TimeDriveController {
   }
 
   /**
-   * getSummary and the first getDays in one request: the summary, and the
+   * getSummary and the first getPageDays in one request: the summary, and the
    * events of the days the card will draw first, so it needn't ask again. Not
    * cached (the events must be fresh). `focus` is where the card opens (today,
    * earliest or latest); `newestFirst` the list's order; `centred` puts that
@@ -515,38 +515,13 @@ public with sharing class TimeDriveController {
    * The timeline asks for a page at a time. Counted sources are queried for
    * those periods only, and not at all for a busy one: its counts come back
    * as grouped rows.
-   * @param contactId the Id of the Contact or Account the timeline is on
-   * @param categories the categories to show, or null for all
-   * @param hiddenTypes the event types to leave out
-   * @param historyYears how many years back to look
-   * @param futureYears how many years ahead to look, or blank for up to today
-   * @param dayKeys the period keys to read
-   * @param busyKeys the period keys that come back as grouped rows
-   * @return the events of those periods, newest first
-   */
-  // Not cached in the browser: Refresh must bring back new items on days
-  // already drawn (the component keeps the days it has fetched itself).
-  @AuraEnabled
-  public static List<EngagementEvent> getDays(
-    Id contactId,
-    List<String> categories,
-    List<String> hiddenTypes,
-    String historyYears,
-    String futureYears,
-    List<String> dayKeys,
-    List<String> busyKeys
-  ) {
-    return readDays(contactId, categories, hiddenTypes, historyYears, futureYears, dayKeys, busyKeys, null, null, null);
-  }
-
-  /**
-   * getDays, told what the summary already knows so fewer queries run:
-   * `emptySources` are counted sources the summary found nothing in for these
-   * days (not queried again), and `busyCounts` are its counts for the busy
-   * days (their grouped rows are built from them, not counted again; a
-   * grouped row then stands for the whole period, "All day"). Both are
-   * hints for what the user sees: leave them null and every source is
-   * queried as in getDays. `runs` are the days asked for that follow one
+   *
+   * The summary's hints mean fewer queries run: `emptySources` are counted
+   * sources the summary found nothing in for these days (not queried again),
+   * and `busyCounts` are its counts for the busy days (their grouped rows are
+   * built from them, not counted again; a grouped row then stands for the
+   * whole period, "All day"). Both are hints for what the user sees: leave
+   * them null and every source is queried. `runs` are the days asked for that follow one
    * another in the summary, each run's keys joined by commas: a run is read
    * as one span of dates, not one range per day (see runsOf).
    * @param contactId the Id of the Contact or Account the timeline is on
@@ -561,6 +536,8 @@ public with sharing class TimeDriveController {
    * @param runs the consecutive period keys, each run joined by commas
    * @return the events of those periods, newest first
    */
+  // Not cached in the browser: Refresh must bring back new items on days
+  // already drawn (the component keeps the days it has fetched itself).
   @AuraEnabled
   public static List<EngagementEvent> getPageDays(
     Id contactId,
@@ -2101,7 +2078,7 @@ public with sharing class TimeDriveController {
     public Integer unfilteredTotal = 0;
     // What each of days is: a day, or a week (from 1 January: the 1st-7th,
     // 8th-14th ...) or calendar month when the window is too long to count
-    // by day. Keys are the period's first day; getDays takes them as they are.
+    // by day. Keys are the period's first day; getPageDays takes them as they are.
     @AuraEnabled
     public String unit = TimeDriveContext.UNIT_DAY;
     // Newest first.

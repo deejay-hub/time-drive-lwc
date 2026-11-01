@@ -222,13 +222,16 @@ private class TimeDriveControllerTest {
     Assert.areEqual(today, summary.days[0].key);
     Assert.areEqual(60, summary.days[0].count, 'the busy day');
 
-    List<TimeDriveController.EngagementEvent> page = TimeDriveController.getDays(
+    List<TimeDriveController.EngagementEvent> page = TimeDriveController.getPageDays(
       customer,
       null,
       null,
       null,
       null,
       new List<String>{ today, quiet },
+      null,
+      null,
+      null,
       null
     );
     Assert.areEqual(2, page.size(), 'the busy day grouped, the quiet day in full');
@@ -255,14 +258,17 @@ private class TimeDriveControllerTest {
     // Platform Cache), so they are read before this is measured.
     TimeDriveConfig.sources('Contact');
     Integer before = Limits.getQueries();
-    List<TimeDriveController.EngagementEvent> page = TimeDriveController.getDays(
+    List<TimeDriveController.EngagementEvent> page = TimeDriveController.getPageDays(
       customer,
       null,
       null,
       null,
       null,
       new List<String>{ quiet },
-      new List<String>()
+      new List<String>(),
+      null,
+      null,
+      null
     );
     Integer queries = Limits.getQueries() - before;
     Assert.areEqual(1, page.size());
@@ -273,14 +279,17 @@ private class TimeDriveControllerTest {
 
     // A busy day and a quiet one: the busy one counted and grouped, the
     // quiet one read, the same as counting both.
-    page = TimeDriveController.getDays(
+    page = TimeDriveController.getPageDays(
       customer,
       null,
       null,
       null,
       null,
       new List<String>{ today, quiet },
-      new List<String>{ today }
+      new List<String>{ today },
+      null,
+      null,
+      null
     );
     Assert.areEqual(2, page.size());
     Assert.isTrue(page[0].grouped);
@@ -289,7 +298,18 @@ private class TimeDriveControllerTest {
 
     // A summary out of date (it called today quiet): read as rows, and
     // grouped by type as any busy day read as rows is.
-    page = TimeDriveController.getDays(customer, null, null, null, null, new List<String>{ today }, new List<String>());
+    page = TimeDriveController.getPageDays(
+      customer,
+      null,
+      null,
+      null,
+      null,
+      new List<String>{ today },
+      new List<String>(),
+      null,
+      null,
+      null
+    );
     Assert.areEqual(1, page.size());
     Assert.isTrue(page[0].grouped);
     Assert.areEqual(60, page[0].groupCount);
@@ -340,7 +360,18 @@ private class TimeDriveControllerTest {
     Assert.areEqual(60, page[0].groupCount);
     Integer withHint = Limits.getQueries() - before;
     before = Limits.getQueries();
-    TimeDriveController.getDays(customer, null, null, null, null, new List<String>{ today }, new List<String>{ today });
+    TimeDriveController.getPageDays(
+      customer,
+      null,
+      null,
+      null,
+      null,
+      new List<String>{ today },
+      new List<String>{ today },
+      null,
+      null,
+      null
+    );
     Assert.isTrue(withHint < Limits.getQueries() - before, 'the hint saves the count');
 
     // A source the summary found nothing in is not asked.
@@ -472,14 +503,17 @@ private class TimeDriveControllerTest {
     source.Max_Records__c = 5;
     TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ source };
 
-    List<TimeDriveController.EngagementEvent> page = TimeDriveController.getDays(
+    List<TimeDriveController.EngagementEvent> page = TimeDriveController.getPageDays(
       fresh.Id,
       null,
       null,
       null,
       null,
       keys,
-      new List<String>()
+      new List<String>(),
+      null,
+      null,
+      null
     );
     Assert.areEqual(12, page.size(), 'every item, though each read stops at 5');
     for (TimeDriveController.EngagementEvent e : page) {
@@ -497,14 +531,17 @@ private class TimeDriveControllerTest {
     for (Task c : more) {
       Test.setCreatedDate(c.Id, first);
     }
-    page = TimeDriveController.getDays(
+    page = TimeDriveController.getPageDays(
       fresh.Id,
       null,
       null,
       null,
       null,
       new List<String>{ keys[0] },
-      new List<String>()
+      new List<String>(),
+      null,
+      null,
+      null
     );
     Assert.areEqual(1, page.size(), String.valueOf(page));
     Assert.isTrue(page[0].grouped);
@@ -593,13 +630,16 @@ private class TimeDriveControllerTest {
     Assert.areEqual(week, summary.days[0].key, 'keyed by the week\'s first day');
     Assert.areEqual(5, summary.days[0].count, 'the setup\'s review, once per source');
 
-    List<TimeDriveController.EngagementEvent> page = TimeDriveController.getDays(
+    List<TimeDriveController.EngagementEvent> page = TimeDriveController.getPageDays(
       customer,
       null,
       null,
       '10',
       '10',
       new List<String>{ week },
+      null,
+      null,
+      null,
       null
     );
     Assert.areEqual(5, page.size());
@@ -631,13 +671,16 @@ private class TimeDriveControllerTest {
     source.Title__c = '{Subject}';
     TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ source };
 
-    List<TimeDriveController.EngagementEvent> page = TimeDriveController.getDays(
+    List<TimeDriveController.EngagementEvent> page = TimeDriveController.getPageDays(
       customer,
       null,
       null,
       '1',
       null,
       new List<String>{ String.valueOf(older), String.valueOf(newer) },
+      null,
+      null,
+      null,
       null
     );
     Set<String> titles = new Set<String>();
@@ -666,13 +709,16 @@ private class TimeDriveControllerTest {
 
     TimeDriveController.TimelineSummary summary = TimeDriveController.getSummary(customer, null, null, '1', null);
     Assert.areEqual(1, summary.total, 'counted without the deleted one');
-    List<TimeDriveController.EngagementEvent> page = TimeDriveController.getDays(
+    List<TimeDriveController.EngagementEvent> page = TimeDriveController.getPageDays(
       customer,
       null,
       null,
       '1',
       null,
       new List<String>{ String.valueOf(day) },
+      null,
+      null,
+      null,
       null
     );
     Assert.areEqual(1, page.size());
@@ -1643,14 +1689,17 @@ private class TimeDriveControllerTest {
     }
 
     // The same items as asking for those days separately.
-    List<TimeDriveController.EngagementEvent> separately = TimeDriveController.getDays(
+    List<TimeDriveController.EngagementEvent> separately = TimeDriveController.getPageDays(
       customer,
       null,
       null,
       '0.5',
       null,
       load.keys,
-      new List<String>()
+      new List<String>(),
+      null,
+      null,
+      null
     );
     Assert.areEqual(separately.size(), load.events.size());
 
@@ -1733,14 +1782,17 @@ private class TimeDriveControllerTest {
 
     TimeDriveController.TimelineSummary summary = TimeDriveController.getSummary(mine.Id, null, null, '0.5', null);
     Assert.areEqual(2, summary.total, 'on the account, and shared with it: once each');
-    List<TimeDriveController.EngagementEvent> events = TimeDriveController.getDays(
+    List<TimeDriveController.EngagementEvent> events = TimeDriveController.getPageDays(
       mine.Id,
       null,
       null,
       '0.5',
       null,
       new List<String>{ String.valueOf(day) },
-      new List<String>()
+      new List<String>(),
+      null,
+      null,
+      null
     );
     Set<String> titles = new Set<String>();
     for (TimeDriveController.EngagementEvent e : events) {
@@ -1961,14 +2013,17 @@ private class TimeDriveControllerTest {
     insert cases;
     String day = Datetime.now().format('yyyy-MM-dd');
     TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ source('Cases', 'Task', 'CreatedDate', 'WhoId') };
-    List<TimeDriveController.EngagementEvent> page = TimeDriveController.getDays(
+    List<TimeDriveController.EngagementEvent> page = TimeDriveController.getPageDays(
       fresh.Id,
       null,
       null,
       null,
       null,
       new List<String>{ day },
-      new List<String>{ day }
+      new List<String>{ day },
+      null,
+      null,
+      null
     );
     Assert.areEqual(1, page.size(), String.valueOf(page));
     Assert.isTrue(page[0].grouped);
@@ -1980,14 +2035,17 @@ private class TimeDriveControllerTest {
     d360.Parent_Object__c = 'Contact';
     d360.Active__c = true;
     TimeDriveConfig.testSources.add(d360);
-    page = TimeDriveController.getDays(
+    page = TimeDriveController.getPageDays(
       fresh.Id,
       null,
       null,
       null,
       null,
       new List<String>{ day },
-      new List<String>{ day }
+      new List<String>{ day },
+      null,
+      null,
+      null
     );
     for (TimeDriveController.EngagementEvent e : page) {
       if (e.grouped) {
@@ -2067,13 +2125,16 @@ private class TimeDriveControllerTest {
     Assert.areEqual(1, summary.days.size());
     Assert.areEqual(String.valueOf(Date.today().addDays(-3)), summary.days[0].key);
 
-    List<TimeDriveController.EngagementEvent> page = TimeDriveController.getDays(
+    List<TimeDriveController.EngagementEvent> page = TimeDriveController.getPageDays(
       contactId(),
       null,
       null,
       '1',
       null,
       new List<String>{ summary.days[0].key },
+      null,
+      null,
+      null,
       null
     );
     Assert.areEqual(1, page.size());
@@ -2102,13 +2163,16 @@ private class TimeDriveControllerTest {
 
     TimeDriveController.TimelineSummary summary = TimeDriveController.getSummary(fresh.Id, null, null, '1', null);
     Assert.areEqual(1, summary.total, 'counted without the deleted task');
-    List<TimeDriveController.EngagementEvent> page = TimeDriveController.getDays(
+    List<TimeDriveController.EngagementEvent> page = TimeDriveController.getPageDays(
       fresh.Id,
       null,
       null,
       '1',
       null,
       new List<String>{ String.valueOf(day) },
+      null,
+      null,
+      null,
       null
     );
     Assert.areEqual(1, page.size());

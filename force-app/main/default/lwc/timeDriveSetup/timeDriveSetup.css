@@ -398,258 +398,6 @@ button.kd-row:focus-visible {
   height: var(--slds-g-sizing-7, 1.5rem);
 }
 
-/* The hero: a band of spruce tint, edge to edge, with the timeline itself
-   on the right. */
-.kh-hero {
-  position: relative;
-  isolation: isolate;
-  display: grid;
-  gap: calc(1rem * var(--d));
-  margin: calc(-1.25rem * var(--d)) calc(-1 * var(--gutter)) 0;
-  padding: calc(2.25rem * var(--d)) var(--gutter) calc(1.5rem * var(--d));
-  overflow: clip;
-  background: var(--accent-wash);
-}
-
-/* The slides stack in one cell; the one showing fades in over the last. */
-.kh-slides {
-  display: grid;
-}
-
-.kh-slide {
-  display: grid;
-  grid-area: 1 / 1;
-  grid-template-columns: minmax(0, 1fr) minmax(20rem, 34rem);
-  align-items: center;
-  gap: calc(2.5rem * var(--d));
-  visibility: hidden;
-  opacity: 0;
-  transform: translateX(1rem);
-  transition:
-    opacity 260ms var(--ease-out),
-    transform 260ms var(--ease-out),
-    visibility 0s linear 260ms;
-}
-
-.kh-slide_on {
-  visibility: visible;
-  opacity: 1;
-  transform: none;
-  transition:
-    opacity 260ms var(--ease-out),
-    transform 260ms var(--ease-out),
-    visibility 0s;
-}
-
-/* Arrows and a dot per slide, under the slides. */
-.kh-carousel {
-  display: flex;
-  align-items: center;
-  gap: calc(0.75rem * var(--d));
-}
-
-.kh-carousel-arrow {
-  display: grid;
-  place-items: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border: var(--slds-g-sizing-border-1, 1px) solid var(--rule-strong);
-  border-radius: 50%;
-  background: var(--surface);
-  cursor: pointer;
-}
-
-.kh-carousel-arrow:hover {
-  border-color: var(--accent);
-}
-
-.kh-carousel-arrow lightning-icon {
-  --slds-c-icon-color-foreground-default: var(--ink);
-}
-
-.kh-dots {
-  display: flex;
-  gap: calc(0.5rem * var(--d));
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.kh-dot {
-  display: block;
-  width: 0.625rem;
-  height: 0.625rem;
-  padding: 0;
-  border: var(--slds-g-sizing-border-1, 1px) solid var(--accent);
-  border-radius: 999px;
-  background: var(--surface);
-  cursor: pointer;
-  transition:
-    width 200ms var(--ease-out),
-    background-color 200ms var(--ease-out);
-}
-
-.kh-dot_on {
-  width: var(--slds-g-sizing-8, 1.75rem);
-  background: var(--accent);
-}
-
-.kh-carousel-arrow:focus-visible,
-.kh-dot:focus-visible,
-.kh-video:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-/* The video placeholder: a framed still with a play button. */
-.kh-video {
-  position: relative;
-  justify-self: end;
-  width: 100%;
-  max-width: 34rem;
-  padding: calc(0.5rem * var(--d));
-  border: var(--slds-g-sizing-border-1, 1px) solid var(--accent-halo);
-  border-radius: var(--radius);
-  background: var(--surface);
-  box-shadow: var(--popover);
-  cursor: pointer;
-}
-
-.kh-video-art {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-.art-video-ground {
-  fill: var(--sunk);
-}
-
-.kh-video-play {
-  position: absolute;
-  inset: 50% auto auto 50%;
-  display: grid;
-  place-items: center;
-  width: 4.5rem;
-  height: 4.5rem;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow:
-    0 0 0 8px color-mix(in srgb, var(--surface) 75%, transparent),
-    var(--popover);
-  transform: translate(-50%, -50%);
-  transition:
-    transform 200ms var(--ease-out),
-    background-color 200ms var(--ease-out);
-}
-
-.kh-video:hover .kh-video-play {
-  background: var(--accent-hover);
-  transform: translate(-50%, -50%) scale(1.06);
-}
-
-.kh-video-label {
-  position: absolute;
-  inset: auto auto 1.25rem 1.25rem;
-  padding: calc(0.25rem * var(--d)) calc(0.625rem * var(--d));
-  border-radius: 999px;
-  background: var(--ink);
-  color: var(--surface);
-  font-size: var(--slds-g-font-scale-neg-1, 0.75rem);
-  font-weight: var(--slds-g-font-weight-7, 700);
-}
-
-/* A deeper wash behind the picture, and a spruce rule along the band's foot. */
-.kh-hero::before {
-  position: absolute;
-  inset-block: -20% -30%;
-  inset-inline-end: -8%;
-  z-index: -1;
-  width: 52%;
-  border-radius: 50%;
-  background: var(--accent-halo);
-  content: "";
-}
-
-.kh-hero::after {
-  position: absolute;
-  inset: auto 0 0;
-  height: 4px;
-  background: var(--accent);
-  content: "";
-}
-
-.kh-title-accent {
-  color: var(--accent);
-}
-
-.kh-hero-main {
-  display: grid;
-  gap: calc(1rem * var(--d));
-  min-width: 0;
-}
-
-.kh-title {
-  max-width: 22ch;
-  margin: 0;
-  color: var(--ink);
-  font-family: var(--display);
-  font-size: clamp(1.75rem, 1.25rem + 1.8cqi, 2.625rem);
-  font-weight: var(--slds-g-font-weight-4, 400);
-  line-height: 1.15;
-  text-wrap: balance;
-}
-
-.kh-lede {
-  max-width: 40rem;
-  color: var(--body);
-  font-size: 1.1875rem;
-  line-height: 1.6;
-  text-wrap: pretty;
-}
-
-.kh-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: calc(0.75rem * var(--d));
-  margin-top: calc(0.25rem * var(--d));
-}
-
-.kh-actions .primary {
-  margin-inline-start: 0;
-}
-
-/* The hero image: the timeline itself, on white, fading out below. */
-.kh-hero-figure {
-  justify-self: end;
-  width: 100%;
-  max-width: 24rem;
-  margin: 0;
-  padding: calc(0.5rem * var(--d));
-  overflow: clip;
-  border: var(--slds-g-sizing-border-1, 1px) solid var(--accent-halo);
-  border-radius: var(--radius);
-  background: var(--surface);
-  box-shadow: var(--popover);
-}
-
-.kh-hero-figure picture {
-  display: block;
-}
-
-.kh-hero-image {
-  display: block;
-  width: 100%;
-  height: auto;
-  border-radius: var(--radius-mid);
-}
-
-.kh-close-art svg {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
 /* Status pills: a dot and a word. Spruce is healthy; shelf is nothing yet. */
 .pill {
   display: inline-flex;
@@ -689,223 +437,13 @@ button.kd-row:focus-visible {
   margin-bottom: calc(1.5rem * var(--d));
 }
 
-/* On Home it sits above the hero band. */
-.kh-notice_home {
-  margin-bottom: calc(2.5rem * var(--d));
-}
-
-/* How it works: a numbered ruled list beside one featured fact. */
-.kh-how {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(20rem, 1.15fr);
-  align-items: stretch;
-  gap: 0 calc(2.5rem * var(--d));
-  padding: calc(2.5rem * var(--d)) 0 0;
-}
-
-.kh-section-title {
-  margin: 0 0 calc(1rem * var(--d));
-  color: var(--ink);
-  font-family: var(--display);
-  font-size: clamp(1.5rem, 1.2rem + 1cqi, 2rem);
-  font-weight: var(--slds-g-font-weight-4, 400);
-  line-height: 1.15;
-}
-
-.kh-steps {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  border-top: 1px solid var(--rule);
-  list-style: none;
-}
-
-/* The steps share the row's height, so the last rule meets the picture's
-   foot. */
-.kh-step {
-  display: flex;
-  flex: 1;
-  border-bottom: 1px solid var(--rule);
-}
-
-.kh-step-button {
-  display: grid;
-  grid-template-columns: 2.5rem minmax(0, 1fr);
-  align-content: center;
-  gap: calc(1rem * var(--d));
-  width: 100%;
-  padding: calc(0.875rem * var(--d)) calc(1rem * var(--d));
-  border: 0;
-  border-radius: var(--radius-mid);
-  background: none;
-  color: inherit;
-  font: inherit;
-  text-align: start;
-  cursor: pointer;
-  transition: background-color 140ms var(--ease-out);
-}
-
-.kh-step-button:hover {
-  background: var(--sunk);
-}
-
-.kh-step-button:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
-}
-
-/* The step whose picture is showing. */
-.kh-step_on .kh-step-button {
-  background: var(--surface);
-  box-shadow: inset 0 0 0 1px var(--accent);
-}
-
-.kh-step_on .kh-step-number {
-  background: var(--accent);
-  color: var(--on-accent);
-}
-
-.kh-step_on .kh-step-title {
-  color: var(--accent-deep);
-}
-
-.kh-step-number {
-  display: grid;
-  place-items: center;
-  width: var(--slds-g-sizing-9, 2rem);
-  height: var(--slds-g-sizing-9, 2rem);
-  border-radius: 50%;
-  background: var(--accent-wash);
-  color: var(--accent-deep);
-  font-family: var(--text);
-  font-size: 0.9375rem;
-  font-weight: var(--slds-g-font-weight-7, 700);
-  font-variant-numeric: tabular-nums;
-}
-
-.kh-step-text {
-  display: grid;
-  gap: calc(0.25rem * var(--d));
-}
-
-.kh-step-title {
-  color: var(--ink);
-  font-size: 1.0625rem;
-  font-weight: var(--slds-g-font-weight-7, 700);
-  line-height: 1.3;
-}
-
-.kh-step-body {
-  max-width: 62ch;
-  color: var(--body);
-  font-size: 0.9375rem;
-  line-height: 1.6;
-}
-
 /* How it works' picture: it stays beside the steps and changes with them. */
-/* The heading spans both columns; the steps and the picture below it share
-   one row, so their tops and bottoms line up. */
-.kh-how-main {
-  display: contents;
-}
-
-.kh-how-main .kh-section-title {
-  grid-column: 1 / -1;
-}
-
-.kh-how-picture {
-  display: grid;
-  align-content: center;
-  gap: calc(1rem * var(--d));
-  margin: 0;
-  padding: calc(1.25rem * var(--d));
-  border: var(--slds-g-sizing-border-1, 1px) solid var(--rule);
-  border-radius: var(--radius);
-  background: var(--accent-wash);
-}
-
-.kh-how-art {
-  display: block;
-  /* 40% less tall than the panel's full width would draw it, kept in
-     proportion and centred. */
-  width: 60%;
-  height: auto;
-  margin-inline: auto;
-  animation: picture-in 240ms var(--ease-out) both;
-}
 
 @keyframes picture-in {
   from {
     opacity: 0;
     transform: translateY(0.375rem);
   }
-}
-
-.kh-how-caption {
-  display: grid;
-  gap: calc(0.25rem * var(--d));
-}
-
-.kh-how-caption-title {
-  color: var(--ink);
-  font-family: var(--display);
-  font-size: 1.125rem;
-  font-weight: var(--slds-g-font-weight-4, 400);
-  line-height: var(--slds-g-font-line-height-2, 1.25);
-}
-
-.kh-how-caption-text {
-  color: var(--body);
-  font-size: 0.9375rem;
-}
-
-/* Works in horizontal too: the wide layout on the left, its words right. */
-.kh-wide {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(18rem, 1fr);
-  align-items: center;
-  gap: calc(2.5rem * var(--d));
-  padding-top: calc(2.5rem * var(--d));
-}
-
-.kh-wide-figure {
-  margin: 0;
-  padding: calc(0.5rem * var(--d));
-  overflow: clip;
-  border: var(--slds-g-sizing-border-1, 1px) solid var(--rule);
-  border-radius: var(--radius);
-  background: var(--surface);
-  box-shadow: var(--popover);
-}
-
-.kh-wide-image {
-  display: block;
-  width: 100%;
-  height: auto;
-  border-radius: var(--radius-mid);
-}
-
-.kh-wide-text {
-  display: grid;
-  gap: calc(1rem * var(--d));
-}
-
-.kh-wide-text .kh-section-title {
-  margin: 0;
-}
-
-.kh-wide-note {
-  padding: calc(0.875rem * var(--d)) calc(1rem * var(--d));
-  border-radius: var(--radius-mid);
-  background: var(--accent-wash);
-  color: var(--ink);
-  font-size: 0.9375rem;
-}
-
-/* FAQs: a ruled list; each question opens in place. */
-.kh-faq {
-  padding-top: calc(2.5rem * var(--d));
 }
 
 .kh-faq-list {
@@ -958,255 +496,6 @@ button.kd-row:focus-visible {
   color: var(--body);
   font-size: 0.9375rem;
   line-height: 1.6;
-}
-
-/* The close: every way forward. */
-.kh-close {
-  display: grid;
-  grid-template-columns: minmax(12rem, 17rem) minmax(0, 1fr);
-  align-items: center;
-  gap: calc(2rem * var(--d));
-  margin-top: calc(2.5rem * var(--d));
-  padding: calc(1.75rem * var(--d)) calc(2rem * var(--d));
-  border: var(--slds-g-sizing-border-1, 1px) solid var(--rule);
-  border-radius: var(--radius);
-  background: var(--surface);
-}
-
-.kh-close-main {
-  display: grid;
-  gap: calc(0.75rem * var(--d));
-}
-
-.kh-close-main .kh-section-title {
-  margin: 0;
-}
-
-.kh-close-text {
-  max-width: 48ch;
-  color: var(--body);
-}
-
-.kh-ways {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-  margin: calc(0.75rem * var(--d)) 0 0;
-  padding: 0;
-  border: var(--slds-g-sizing-border-1, 1px) solid var(--rule);
-  border-radius: var(--radius-mid);
-  list-style: none;
-}
-
-.kh-way {
-  display: grid;
-  align-content: start;
-  gap: calc(0.25rem * var(--d));
-  padding: calc(1rem * var(--d)) calc(1.25rem * var(--d));
-}
-
-.kh-way + .kh-way {
-  border-inline-start: 1px solid var(--rule);
-}
-
-.kh-way-title {
-  color: var(--ink);
-  font-weight: var(--slds-g-font-weight-7, 700);
-}
-
-.kh-way-text {
-  color: var(--body);
-  font-size: var(--slds-g-font-scale-1, 0.875rem);
-}
-
-.kh-way .text-link {
-  justify-self: start;
-  margin-top: calc(0.375rem * var(--d));
-}
-
-/* Drawn art: one ink stroke, spruce for what's on. */
-.art-line,
-.art-rail,
-.art-arrow,
-.art-tick {
-  fill: none;
-  stroke: var(--ink);
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.75;
-}
-
-.art-line {
-  stroke: var(--rule-strong);
-}
-
-.art-tick {
-  stroke: var(--accent);
-}
-
-.art-card {
-  fill: var(--surface);
-  stroke: var(--ink);
-  stroke-width: 1.75;
-}
-
-.art-card_on {
-  fill: var(--accent-wash);
-  stroke: var(--accent);
-}
-
-.art-node {
-  fill: var(--surface);
-  stroke: var(--ink);
-  stroke-width: 1.75;
-}
-
-.art-node_on {
-  fill: var(--accent);
-  stroke: var(--accent-deep);
-}
-
-.art-wash {
-  fill: var(--accent-wash);
-}
-
-.art-ink {
-  fill: none;
-  stroke: var(--ink);
-  stroke-linecap: round;
-  stroke-width: 5;
-}
-
-.art-ink_bold {
-  stroke-width: 9;
-}
-
-.kh-how-art .art-line {
-  stroke-width: 4;
-}
-
-.art-pill {
-  fill: var(--accent-wash);
-  stroke: var(--accent);
-  stroke-width: 1.75;
-}
-
-.art-dot {
-  fill: var(--dot);
-  stroke: var(--surface);
-  stroke-width: 3;
-}
-
-.art-stack {
-  fill: var(--surface);
-  stroke: #5b5fc7;
-  stroke-width: 2;
-}
-
-.art-rule {
-  fill: none;
-  stroke: var(--rule);
-  stroke-linecap: butt;
-  stroke-width: 4;
-}
-
-.art-rule_done {
-  stroke: var(--accent);
-}
-
-.art-rule_now {
-  stroke: var(--ink);
-}
-
-.art-card_soft {
-  fill: var(--sunk);
-  stroke: var(--rule);
-}
-
-.art-button {
-  fill: var(--accent);
-}
-
-.art-swarm circle {
-  fill: #5b5fc7;
-  opacity: 0.75;
-}
-
-.art-swarm circle:nth-child(3n) {
-  fill: #2f7d4f;
-}
-
-.art-swarm circle:nth-child(5n) {
-  fill: #e5532f;
-}
-
-.art-text {
-  fill: var(--ink);
-  font-family: var(--text);
-  font-size: 15px;
-  font-weight: var(--slds-g-font-weight-7, 700);
-}
-
-/* The close's picture: a source switched on, landing on its timeline. */
-.art-ring {
-  fill: none;
-  stroke: var(--accent-halo);
-  stroke-width: 1.5;
-  stroke-dasharray: 3 6;
-}
-
-.art-ring_inner {
-  stroke: var(--accent);
-  stroke-opacity: 0.35;
-  stroke-dasharray: none;
-}
-
-.art-card_lift {
-  filter: drop-shadow(0 8px 14px rgb(23 32 29 / 0.14));
-}
-
-.art-rail_soft {
-  stroke: var(--rule-strong);
-  stroke-width: 2;
-}
-
-.art-ink_thin {
-  stroke-width: 4;
-}
-
-.art-line_thin {
-  stroke: var(--rule-strong);
-  stroke-width: 3;
-}
-
-.art-switch {
-  fill: var(--accent);
-}
-
-.art-knob {
-  fill: var(--surface);
-}
-
-.art-badge {
-  fill: var(--accent);
-  stroke: var(--surface);
-  stroke-width: 4;
-}
-
-.art-tick_on {
-  stroke: var(--on-accent);
-  stroke-width: 3;
-}
-
-.art-spark {
-  fill: none;
-  stroke: var(--accent);
-  stroke-linecap: round;
-  stroke-width: 2;
-}
-
-.art-bar {
-  fill: var(--accent);
-  opacity: var(--h);
 }
 
 /* ---- The site: one page at a time, full width, a breadcrumb above ---------
@@ -1297,12 +586,6 @@ button.kd-row:focus-visible {
   font-size: 0.9375rem;
   font-weight: var(--slds-g-font-weight-7, 700);
   cursor: pointer;
-}
-
-.site-action {
-  flex: none;
-  height: 2.375rem;
-  margin-inline-start: auto;
 }
 
 .site-link:hover {
@@ -2735,10 +2018,6 @@ a.guided-button lightning-icon {
   animation: scene-in 200ms var(--ease-out) both;
 }
 
-.scene_back {
-  animation-name: scene-back;
-}
-
 @keyframes scene-in {
   from {
     opacity: 0;
@@ -3068,12 +2347,6 @@ a.guided-button lightning-icon {
     opacity: 0;
     transform: translateY(4px);
   }
-}
-
-.second {
-  display: grid;
-  gap: calc(0.75rem * var(--d));
-  margin-top: var(--space);
 }
 
 .second-question {
@@ -3668,11 +2941,6 @@ a.guided-button lightning-icon {
 .option_small .option-icon {
   width: 2.25rem;
   height: 2.25rem;
-}
-
-.second_tight {
-  display: grid;
-  gap: calc(0.375rem * var(--d));
 }
 
 .label-box {
@@ -4522,21 +3790,10 @@ a.guided-button lightning-icon {
 }
 
 @container setup (max-width: 1000px) {
-  .kh-slide,
-  .kh-how,
   .wz-body,
   .guided,
   .source-body {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .kh-slide,
-  .kh-how {
-    gap: calc(2rem * var(--d));
-  }
-
-  .kh-hero::before {
-    display: none;
   }
 
   .look {
@@ -4564,15 +3821,6 @@ a.guided-button lightning-icon {
   .wz-main {
     padding-inline-end: 0;
     border-inline-end: 0;
-  }
-
-  .kh-wide {
-    grid-template-columns: minmax(0, 1fr);
-    gap: calc(1.5rem * var(--d));
-  }
-
-  .kh-how-art {
-    width: min(100%, 22rem);
   }
 
   .wz-aside {
@@ -4632,21 +3880,6 @@ a.guided-button lightning-icon {
     grid-column: 2;
   }
 
-  .kh-close {
-    grid-template-columns: minmax(0, 1fr);
-    gap: calc(1.5rem * var(--d));
-    padding: calc(1.5rem * var(--d));
-  }
-
-  .kh-close-art {
-    max-width: var(--slds-g-sizing-13, 10rem);
-  }
-
-  .kh-way + .kh-way {
-    border-inline-start: 0;
-    border-top: 1px solid var(--rule);
-  }
-
   /* Two lines of summary: the date and the filter still show. */
   .row-summary {
     display: -webkit-box;
@@ -4695,10 +3928,6 @@ a.guided-button lightning-icon {
 
   .result-detail {
     display: none;
-  }
-
-  .pair {
-    grid-template-columns: 1fr;
   }
 }
 

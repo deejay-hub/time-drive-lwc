@@ -42,8 +42,9 @@ def camel(key):
 
 entries = catalogue.LABELS
 names = {PREFIX + k for k, *_ in entries}
-# Server_* labels are for Apex (Label.Time_Drive_Server_...): not in the components' module.
-js_entries = [e for e in entries if not e[0].startswith("Server_")]
+# Server_* labels are for Apex (Label.Time_Drive_Server_...) and Legend_* for
+# sources' legend names ($Label.Time_Drive_Legend_...): not in the components' module.
+js_entries = [e for e in entries if not e[0].startswith(("Server_", "Legend_"))]
 js_names = [camel(k) for k, *_ in js_entries]
 assert len(set(js_names)) == len(js_names), "two keys give the same JS name"
 

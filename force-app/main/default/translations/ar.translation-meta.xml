@@ -529,18 +529,6 @@
         <name>Time_Drive_Quarter</name>
     </customLabels>
     <customLabels>
-        <label>تعذّر تحميل هذه التفاصيل. {0}</label>
-        <name>Time_Drive_Rd_Failed</name>
-    </customLabels>
-    <customLabels>
-        <label>جارٍ تحميل التفاصيل</label>
-        <name>Time_Drive_Rd_Loading</name>
-    </customLabels>
-    <customLabels>
-        <label>لا توجد حقول في التخطيط المضغوط لهذا الكائن مرئية لك.</label>
-        <name>Time_Drive_Rd_No_Fields</name>
-    </customLabels>
-    <customLabels>
         <label>عناصر التفاعل</label>
         <name>Time_Drive_Region_Items</name>
     </customLabels>

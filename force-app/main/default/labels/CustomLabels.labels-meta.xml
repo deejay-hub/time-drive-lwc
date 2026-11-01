@@ -1353,30 +1353,6 @@
         <value>{0} couldn't be read.</value>
     </labels>
     <labels>
-        <fullName>Time_Drive_Rd_Loading</fullName>
-        <categories>Time Drive</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Time Drive: details loading</shortDescription>
-        <value>Loading details</value>
-    </labels>
-    <labels>
-        <fullName>Time_Drive_Rd_Failed</fullName>
-        <categories>Time Drive</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Time Drive: details couldn't load</shortDescription>
-        <value>These details couldn't load. {0}</value>
-    </labels>
-    <labels>
-        <fullName>Time_Drive_Rd_No_Fields</fullName>
-        <categories>Time Drive</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Time Drive: no visible fields</shortDescription>
-        <value>No fields in this object's compact layout are visible to you.</value>
-    </labels>
-    <labels>
         <fullName>Time_Drive_Filters_Cancel</fullName>
         <categories>Time Drive</categories>
         <language>en_US</language>

@@ -169,17 +169,11 @@ person accounts) that Time Drive Setup switches on to fit the org.
 
 ### Expanding records
 
-An event expands with, in order of preference:
-
-1. Its source's **Time Drive Detail Field** records (Source, Field,
-   Label, Sequence, Format: Text, Date, Date/Time, Currency or Number). Blank
-   labels use the field's label. Any source can have them; on a Salesforce
-   source they replace the compact layout.
-2. The linked record's compact layout (Use Compact Layout), through the
-   `timeDriveRecordDetails` component: an admin changes the fields in
-   Object Manager, and Lightning Data Service applies field-level security.
-   It loads only when the event is opened.
-3. The details an events provider builds itself.
+An event expands with its source's **Time Drive Detail Field** records
+(Source, Field, Label, Sequence, Format: Text, Date, Date/Time, Currency or
+Number), the fields the admin chose in Setup. Blank labels use the field's
+label. An event with none opens on its title, subtitle and source alone. An
+events provider (`TimeDriveProvider`) builds its own details instead.
 
 ### Writing an Apex source
 

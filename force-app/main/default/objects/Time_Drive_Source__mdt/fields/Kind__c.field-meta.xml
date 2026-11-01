@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Kind__c</fullName>
     <fieldManageability>SubscriberControlled</fieldManageability>
-    <inlineHelpText>Salesforce: a standard or custom object, queried by the generic SOQL provider and expanded with its compact layout (or Detail Fields). Data 360: an engagement DMO read by the Data 360 provider, expanded with Detail Fields. Apex: a provider class does it all.</inlineHelpText>
+    <inlineHelpText>Salesforce: a standard or custom object, queried by the generic SOQL provider and expanded with Detail Fields. Data 360: an engagement DMO read by the Data 360 provider, expanded with Detail Fields. Apex: a provider class does it all.</inlineHelpText>
     <label>Kind</label>
     <required>false</required>
     <type>Picklist</type>

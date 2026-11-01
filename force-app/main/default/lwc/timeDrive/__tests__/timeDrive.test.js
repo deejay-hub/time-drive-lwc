@@ -2563,8 +2563,6 @@ describe("c-time-drive configured sources", () => {
     await flush();
     const row = root.querySelector('.chevron-button[data-id="500A-Case_Opened"]').closest(".event");
     expect([...row.querySelectorAll(".fact")].map((f) => f.textContent)).toEqual(["StatusNew", "PriorityHigh"]);
-    // No record layout of its own: only what the source names.
-    expect(root.querySelector("c-time-drive-record-details")).toBeNull();
     // A source with no fields chosen opens on its title, subtitle and source alone.
     root.querySelector('.chevron-button[data-id="a05A-Loyalty"]').click();
     await flush();

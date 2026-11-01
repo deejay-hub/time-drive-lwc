@@ -181,10 +181,6 @@ LABELS = [
     ("Err_Busy", "error: too slow", "This took too long to load.", "La carga tardó demasiado.", "استغرق التحميل وقتاً طويلاً."),
     ("Err_Unknown", "error: something else", "Something went wrong.", "Algo salió mal.", "حدث خطأ ما."),
     ("Prob_Message", "which sources couldn't be read", "{0} couldn't be read.", "No se pudo leer {0}.", "تعذّرت قراءة {0}."),
-    # ---- record details
-    ("Rd_Loading", "details loading", "Loading details", "Cargando detalles", "جارٍ تحميل التفاصيل"),
-    ("Rd_Failed", "details couldn't load", "These details couldn't load. {0}", "No se pudieron cargar estos detalles. {0}", "تعذّر تحميل هذه التفاصيل. {0}"),
-    ("Rd_No_Fields", "no visible fields", "No fields in this object's compact layout are visible to you.", "No tienes visibles campos en el diseño compacto de este objeto.", "لا توجد حقول في التخطيط المضغوط لهذا الكائن مرئية لك."),
     # ---- the filters panel
     ("Filters_Cancel", "cancel the filters panel", "Cancel", "Cancelar", "إلغاء"),
     ("Filters_Apply", "apply the filters", "Apply", "Aplicar", "تطبيق"),

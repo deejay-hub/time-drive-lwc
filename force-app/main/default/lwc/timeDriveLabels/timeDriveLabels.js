@@ -139,16 +139,10 @@ import errSetup from "@salesforce/label/c.Time_Drive_Err_Setup";
 import errBusy from "@salesforce/label/c.Time_Drive_Err_Busy";
 import errUnknown from "@salesforce/label/c.Time_Drive_Err_Unknown";
 import probMessage from "@salesforce/label/c.Time_Drive_Prob_Message";
-import rdLoading from "@salesforce/label/c.Time_Drive_Rd_Loading";
-import rdFailed from "@salesforce/label/c.Time_Drive_Rd_Failed";
-import rdNoFields from "@salesforce/label/c.Time_Drive_Rd_No_Fields";
 import filtersCancel from "@salesforce/label/c.Time_Drive_Filters_Cancel";
 import filtersApply from "@salesforce/label/c.Time_Drive_Filters_Apply";
 import filtersClose from "@salesforce/label/c.Time_Drive_Filters_Close";
 import filtersEventTypes from "@salesforce/label/c.Time_Drive_Filters_Event_Types";
-import legendFiles from "@salesforce/label/c.Time_Drive_Legend_Files";
-import legendCalls from "@salesforce/label/c.Time_Drive_Legend_Calls";
-import legendEmails from "@salesforce/label/c.Time_Drive_Legend_Emails";
 import groupLoading from "@salesforce/label/c.Time_Drive_Group_Loading";
 import groupNothing from "@salesforce/label/c.Time_Drive_Group_Nothing";
 import groupNothingBody from "@salesforce/label/c.Time_Drive_Group_Nothing_Body";
@@ -305,16 +299,10 @@ export const LABELS = Object.freeze({
   errBusy,
   errUnknown,
   probMessage,
-  rdLoading,
-  rdFailed,
-  rdNoFields,
   filtersCancel,
   filtersApply,
   filtersClose,
   filtersEventTypes,
-  legendFiles,
-  legendCalls,
-  legendEmails,
   groupLoading,
   groupNothing,
   groupNothingBody,
@@ -330,7 +318,7 @@ export const LABELS = Object.freeze({
   groupBack,
   groupBackRecord,
   groupLoadingMore,
-  groupShown,
+  groupShown
 });
 
 /** Fills a label's {0}, {1} ... with the values given: format(LABELS.itemsMany, 12). */

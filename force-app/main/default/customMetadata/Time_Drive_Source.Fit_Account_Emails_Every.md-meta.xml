@@ -63,10 +63,6 @@
         <value xsi:type="xsd:double">1000</value>
     </values>
     <values>
-        <field>Use_Compact_Layout__c</field>
-        <value xsi:type="xsd:boolean">false</value>
-    </values>
-    <values>
         <field>Event_Label__c</field>
         <value xsi:type="xsd:string">$Label.Time_Drive_Legend_Emails</value>
     </values>

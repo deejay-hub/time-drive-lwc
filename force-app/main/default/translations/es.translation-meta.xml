@@ -529,18 +529,6 @@
         <name>Time_Drive_Quarter</name>
     </customLabels>
     <customLabels>
-        <label>No se pudieron cargar estos detalles. {0}</label>
-        <name>Time_Drive_Rd_Failed</name>
-    </customLabels>
-    <customLabels>
-        <label>Cargando detalles</label>
-        <name>Time_Drive_Rd_Loading</name>
-    </customLabels>
-    <customLabels>
-        <label>No tienes visibles campos en el diseño compacto de este objeto.</label>
-        <name>Time_Drive_Rd_No_Fields</name>
-    </customLabels>
-    <customLabels>
         <label>Elementos de interacción</label>
         <name>Time_Drive_Region_Items</name>
     </customLabels>
