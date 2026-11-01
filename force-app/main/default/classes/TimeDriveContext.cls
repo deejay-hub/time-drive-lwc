@@ -88,6 +88,10 @@ public with sharing class TimeDriveContext {
    * @return the Id to match
    */
   public Id parentIdFor(Schema.DescribeFieldResult link) {
+    // A file is linked to the record it was added on: a person account's are on the account.
+    if (link?.getName() == 'LinkedEntityId') {
+      return recordId;
+    }
     if (personContactId != null && link != null && link.getReferenceTo().contains(Contact.SObjectType)) {
       return personContactId;
     }

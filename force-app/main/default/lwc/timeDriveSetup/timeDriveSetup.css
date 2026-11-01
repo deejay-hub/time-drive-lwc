@@ -2857,6 +2857,19 @@ a.guided-button lightning-icon {
   gap: calc(0.5rem * var(--d));
 }
 
+/* All of the conditions, or any of them: above the rows once there are two. */
+.conditions-match {
+  display: block;
+  margin-bottom: calc(0.75rem * var(--d));
+}
+
+/* A picklist's values to match any of: a short list that scrolls when long. */
+.condition-values {
+  display: block;
+  max-height: 10rem;
+  overflow-y: auto;
+}
+
 .condition-join {
   color: var(--muted);
   font-size: var(--slds-g-font-scale-1, 0.875rem);

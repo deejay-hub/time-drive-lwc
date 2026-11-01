@@ -912,6 +912,155 @@ private class TimeDriveSetupControllerTest {
   }
 
   @IsTest
+  static void leadPagesGetTheirActivitiesFilesAndCampaigns() {
+    TimeDriveConfig.testSources = null;
+    TimeDriveSetupController.testFeatures = new Set<String>();
+    TimeDriveSetupController.QuickStartResult first = TimeDriveSetupController.quickStart('Lead');
+    Assert.areEqual(
+      new Set<String>{
+        'Fit_Lead_Tasks',
+        'Fit_Lead_Calls',
+        'Fit_Lead_Emails',
+        'Fit_Lead_Events',
+        'Fit_Lead_Files',
+        'Fit_Lead_Campaign_Members'
+      },
+      templateKeys(first.added)
+    );
+    // With Shared Activities, every lead's variant of each takes over.
+    TimeDriveSetupController.testFeatures = new Set<String>{ 'SharedActivities' };
+    TimeDriveSetupController.QuickStartResult shared = TimeDriveSetupController.quickStart('Lead');
+    Assert.areEqual(
+      new Set<String>{
+        'Fit_Lead_Tasks_Every',
+        'Fit_Lead_Calls_Every',
+        'Fit_Lead_Emails_Every',
+        'Fit_Lead_Events_Every'
+      },
+      templateKeys(shared.added)
+    );
+    Assert.isFalse(copyActive('Fit_Lead_Tasks'));
+    Assert.isTrue(copyActive('Fit_Lead_Tasks_Every'));
+    Assert.isTrue(copyActive('Fit_Lead_Files'), 'Files have no variant');
+
+    // Back by name, and a lead's timeline plots its task, file and campaign.
+    TimeDriveSetupController.testFeatures = new Set<String>();
+    TimeDriveSetupController.quickStart('Lead');
+    Lead prospect = new Lead(LastName = 'Okafor', Company = 'Okafor Ltd');
+    Campaign launch = new Campaign(Name = 'Spring launch', IsActive = true);
+    if (!TimeDriveTestData.tryInsert(new List<SObject>{ prospect, launch })) {
+      return;
+    }
+    Integer expected = 0;
+    expected += TimeDriveTestData.tryInsert(
+        new Task(WhoId = prospect.Id, Subject = 'Call the lead', ActivityDate = Date.today())
+      )
+      ? 1
+      : 0;
+    expected += TimeDriveTestData.tryInsert(
+        new ContentVersion(
+          Title = 'Brochure',
+          PathOnClient = 'brochure.txt',
+          VersionData = Blob.valueOf('Spring range'),
+          FirstPublishLocationId = prospect.Id
+        )
+      )
+      ? 1
+      : 0;
+    expected += TimeDriveTestData.tryInsert(
+        new CampaignMember(CampaignId = launch.Id, LeadId = prospect.Id, Status = 'Sent')
+      )
+      ? 1
+      : 0;
+    TimeDriveController.TimelineSummary summary = TimeDriveController.getSummary(prospect.Id, null, null, null, null);
+    Assert.areEqual(expected, summary.total, String.join(summary.warnings, ' | '));
+    Map<String, TimeDriveController.EngagementEvent> byType = new Map<String, TimeDriveController.EngagementEvent>();
+    for (
+      TimeDriveController.EngagementEvent e : TimeDriveController.getPageDays(
+        prospect.Id,
+        null,
+        null,
+        null,
+        null,
+        new List<String>{ Datetime.now().format('yyyy-MM-dd') },
+        new List<String>(),
+        null,
+        null,
+        null
+      )
+    ) {
+      byType.put(e.type, e);
+    }
+    if (byType.containsKey('file')) {
+      Assert.areEqual('Brochure', byType.get('file').title);
+      Assert.areEqual(
+        ContentDocument.SObjectType,
+        byType.get('file').recordId.getSObjectType(),
+        'a file opens its document'
+      );
+    }
+    if (byType.containsKey('campaign_member')) {
+      Assert.areEqual('Spring launch', byType.get('campaign_member').title);
+      Assert.areEqual(launch.Id, byType.get('campaign_member').recordId, 'a membership opens its campaign');
+    }
+  }
+
+  @IsTest
+  static void contactPagesGetTheirFilesAndCampaigns() {
+    TimeDriveConfig.testSources = null;
+    TimeDriveSetupController.testFeatures = new Set<String>();
+    Set<String> added = templateKeys(TimeDriveSetupController.quickStart('Contact').added);
+    Assert.isTrue(
+      added.containsAll(new Set<String>{ 'Fit_Contact_Files', 'Fit_Contact_Campaign_Members' }),
+      String.valueOf(added)
+    );
+
+    Contact member = new Contact(LastName = 'Ngata');
+    Campaign launch = new Campaign(Name = 'Spring launch', IsActive = true);
+    if (
+      !TimeDriveTestData.tryInsert(new List<SObject>{ member, launch }) ||
+      !TimeDriveTestData.tryInsert(new CampaignMember(CampaignId = launch.Id, ContactId = member.Id, Status = 'Sent'))
+    ) {
+      return;
+    }
+    TimeDriveController.EngagementEvent joined;
+    for (
+      TimeDriveController.EngagementEvent e : TimeDriveController.getPageDays(
+        member.Id,
+        null,
+        null,
+        null,
+        null,
+        new List<String>{ Datetime.now().format('yyyy-MM-dd') },
+        new List<String>(),
+        null,
+        null,
+        null
+      )
+    ) {
+      joined = e.type == 'campaign_member' ? e : joined;
+    }
+    Assert.isNotNull(joined, 'the contact\'s campaign is plotted');
+    Assert.areEqual('Spring launch', joined.title);
+    Assert.areEqual(launch.Id, joined.recordId, 'a membership opens its campaign');
+  }
+
+  @IsTest
+  static void aPersonAccountsFilesAreTheAccounts() {
+    Id accountId = Id.valueOf(Account.SObjectType.getDescribe().getKeyPrefix() + '0'.repeat(12));
+    Id contactId = Id.valueOf(Contact.SObjectType.getDescribe().getKeyPrefix() + '0'.repeat(12));
+    TimeDriveContext context = new TimeDriveContext(accountId, 'PersonAccount', null, null, null, null);
+    context.personContactId = contactId;
+    Assert.areEqual(
+      accountId,
+      context.parentIdFor(ContentDocumentLink.LinkedEntityId.getDescribe()),
+      'files are linked to the account'
+    );
+    Assert.areEqual(contactId, context.parentIdFor(Task.WhoId.getDescribe()), 'activities are linked to its contact');
+    Assert.areEqual(accountId, context.parentIdFor(Task.AccountId.getDescribe()));
+  }
+
+  @IsTest
   static void checkingAgainSwitchesToTheVariantThatFitsNow() {
     TimeDriveConfig.testSources = null;
     // First check: no Shared Activities, so Contact Tasks are read by Name.
@@ -1045,13 +1194,53 @@ private class TimeDriveSetupControllerTest {
   }
 
   @IsTest
+  static void anyOfTheConditionsAndOneOfAListRoundTrip() {
+    TimeDriveSetupController.SourceDraft d = orderDraft();
+    d.match = 'any';
+    TimeDriveSetupController.Condition statuses = condition('Status', 'oneOf', '', 'text');
+    statuses.values = new List<String>{ 'Closed', 'Can\'t fix' };
+    TimeDriveSetupController.Condition priorities = condition('Priority', 'notOneOf', '', 'text');
+    priorities.values = new List<String>{ 'Low' };
+    d.conditions = new List<TimeDriveSetupController.Condition>{
+      statuses,
+      priorities,
+      condition('Subject', 'contains', 'order', 'text')
+    };
+    String text = d.filterText();
+    Assert.areEqual(
+      'Status IN (\'Closed\', \'Can\\\'t fix\') OR Priority NOT IN (\'Low\') OR Subject LIKE \'%order%\'',
+      text
+    );
+
+    TimeDriveSetupController.FilterParts back = TimeDriveSetupController.filterParts(text);
+    Assert.areEqual('any', back.match);
+    Assert.areEqual(3, back.conditions.size());
+    Assert.areEqual('oneOf', back.conditions[0].operator);
+    Assert.areEqual(new List<String>{ 'Closed', 'Can\'t fix' }, back.conditions[0].values);
+    Assert.areEqual('notOneOf', back.conditions[1].operator);
+    TimeDriveSetupController.SourceDraft again = orderDraft();
+    again.match = back.match;
+    again.conditions = back.conditions;
+    Assert.areEqual(text, again.filterText(), 'The conditions write the same filter');
+
+    // A list with nothing chosen writes nothing; all is the default.
+    statuses.values = new List<String>();
+    d.match = null;
+    d.conditions = new List<TimeDriveSetupController.Condition>{
+      statuses,
+      condition('IsClosed', 'equals', 'true', 'boolean')
+    };
+    Assert.areEqual('IsClosed = true', d.filterText());
+  }
+
+  @IsTest
   static void aFilterTheBuilderCannotShowIsKeptAsText() {
     for (
       String text : new List<String>{
-        'TaskSubtype = null OR TaskSubtype NOT IN (\'Call\', \'Email\')',
-        'Subject LIKE \'%a%\' OR Subject LIKE \'%b%\'',
-        '(Status = \'Open\')',
-        'Status = \'Open\' AND Name IN (\'A\')',
+        'Status = \'Open\' AND Name = \'A\' OR Name = \'B\'',
+        'NOT Status = \'Open\'',
+        'Id IN (SELECT WhoId FROM Task)',
+        'Name IN (\'A\', 3)',
         'Status = \'it\' AND OR'
       }
     ) {
@@ -1059,5 +1248,18 @@ private class TimeDriveSetupControllerTest {
     }
     Assert.isNull(TimeDriveSetupController.conditionsOf(null));
     Assert.areEqual(1, TimeDriveSetupController.conditionsOf('Status = \'A AND B\'').size(), 'AND inside a value');
+    // What it can now show: OR, a list, and brackets around the whole filter.
+    TimeDriveSetupController.FilterParts tasks = TimeDriveSetupController.filterParts(
+      '(TaskSubtype = null OR TaskSubtype NOT IN (\'Call\', \'Email\', \'ListEmail\'))'
+    );
+    Assert.areEqual('any', tasks.match);
+    Assert.areEqual('blank', tasks.conditions[0].operator);
+    Assert.areEqual(new List<String>{ 'Call', 'Email', 'ListEmail' }, tasks.conditions[1].values);
+    Assert.areEqual('all', TimeDriveSetupController.filterParts('(Status = \'Open\')').match);
+    Assert.areEqual(
+      2,
+      TimeDriveSetupController.conditionsOf('(A__c = 1) AND (B__c = 2)')?.size() ?? 0,
+      'brackets around each part are not the whole'
+    );
   }
 }

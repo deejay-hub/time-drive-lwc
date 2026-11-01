@@ -134,6 +134,10 @@ public with sharing class TimeDriveSetupController {
   // a name yet).
   public static final String THIS_SOURCE = '__this__';
 
+  // How a filter's conditions combine: all of them (AND) or any (OR).
+  public static final String MATCH_ALL = 'all';
+  public static final String MATCH_ANY = 'any';
+
   // ---- fit the timeline to the org ------------------------------------------
 
   // The org features org-fitted sources can need, and how Setup names them.
@@ -154,7 +158,8 @@ public with sharing class TimeDriveSetupController {
   private static final List<String> PAGE_ORDER = new List<String>{
     'Contact',
     'Account',
-    TimeDriveController.PERSON_ACCOUNT
+    TimeDriveController.PERSON_ACCOUNT,
+    'Lead'
   };
 
   @TestVisible
@@ -2574,9 +2579,12 @@ public with sharing class TimeDriveSetupController {
     /** The field that dates each event. */
     @AuraEnabled
     public String dateField { get; set; }
-    /** The simple conditions of the filter, all of which must hold. */
+    /** The simple conditions of the filter: all of them must hold, or any (see match). */
     @AuraEnabled
     public List<Condition> conditions { get; set; }
+    /** all (AND) or any (OR): how the conditions combine. Blank is all. */
+    @AuraEnabled
+    public String match { get; set; }
     /** The filter text as written by hand, when it is not built from conditions. */
     @AuraEnabled
     public String filter { get; set; }
@@ -2673,9 +2681,10 @@ public with sharing class TimeDriveSetupController {
       dateField = s.Date_Field__c;
       filter = s.Filter__c;
       // A filter the builder made opens as its conditions; any other stays text.
-      List<Condition> parsed = conditionsOf(s.Filter__c);
-      if (parsed != null && !parsed.isEmpty()) {
-        conditions = parsed;
+      FilterParts parsed = filterParts(s.Filter__c);
+      if (parsed != null && !parsed.conditions.isEmpty()) {
+        conditions = parsed.conditions;
+        match = parsed.match;
         filter = null;
       }
       maxRecords = s.Max_Records__c;
@@ -2738,7 +2747,7 @@ public with sharing class TimeDriveSetupController {
           parts.add(part);
         }
       }
-      return parts.isEmpty() ? null : String.join(parts, ' AND ');
+      return parts.isEmpty() ? null : String.join(parts, match == MATCH_ANY ? ' OR ' : ' AND ');
     }
 
     /**
@@ -2824,60 +2833,141 @@ public with sharing class TimeDriveSetupController {
   }
 
   /**
-   * The conditions a filter was built from (Condition.soql() joined by AND),
-   * or null when it is anything else (an OR, NOT IN, brackets ...): such a
-   * filter, as one that ships with a source, is kept as the text it is.
+   * The conditions a filter was built from (Condition.soql() joined by AND,
+   * or by OR), or null when it is anything else (AND and OR mixed, NOT,
+   * a subquery ...): such a filter is kept as the text it is.
    * @param filter The filter text.
-   * @return The conditions, or null when the filter is not a plain AND of them.
+   * @return The conditions, or null when the filter is not a plain AND or OR of them.
    */
   @TestVisible
   private static List<Condition> conditionsOf(String filter) {
+    FilterParts parts = filterParts(filter);
+    return parts == null ? null : parts.conditions;
+  }
+
+  /** A filter read back as its conditions and how they combine. */
+  @TestVisible
+  private class FilterParts {
+    @TestVisible
+    List<Condition> conditions = new List<Condition>();
+    @TestVisible
+    String match = MATCH_ALL;
+  }
+
+  // The filter split at its AND or OR (outside quotes and brackets), each
+  // part a condition. Brackets around the whole filter, or a part, are dropped.
+  @TestVisible
+  private static FilterParts filterParts(String filter) {
     if (String.isBlank(filter)) {
       return null;
     }
+    String text = withoutOuterBrackets(filter.trim());
     List<String> parts = new List<String>();
+    Set<String> joins = new Set<String>();
     String current = '';
     Boolean quoted = false;
+    Integer depth = 0;
     Integer i = 0;
-    while (i < filter.length()) {
-      String ch = filter.substring(i, i + 1);
+    while (i < text.length()) {
+      String ch = text.substring(i, i + 1);
       if (quoted) {
         current += ch;
-        if (ch == '\\' && i + 1 < filter.length()) {
-          current += filter.substring(i + 1, i + 2);
+        if (ch == '\\' && i + 1 < text.length()) {
+          current += text.substring(i + 1, i + 2);
           i++;
         } else if (ch == '\'') {
           quoted = false;
         }
-      } else if (ch == '\'') {
-        quoted = true;
-        current += ch;
-      } else if (filter.substring(i, Math.min(i + 5, filter.length())) == ' AND ') {
+        i++;
+        continue;
+      }
+      String joiner = depth > 0 ? null : joinAt(text, i);
+      if (joiner != null) {
+        joins.add(joiner.trim());
         parts.add(current);
         current = '';
-        i += 5;
+        i += joiner.length();
         continue;
-      } else {
-        current += ch;
       }
+      if (ch == '\'') {
+        quoted = true;
+      } else if (ch == '(') {
+        depth++;
+      } else if (ch == ')') {
+        depth--;
+      }
+      current += ch;
       i++;
     }
-    if (quoted) {
+    if (quoted || depth != 0 || joins.size() > 1) {
       return null;
     }
     parts.add(current);
-    List<Condition> out = new List<Condition>();
+    FilterParts out = new FilterParts();
+    out.match = joins.contains('OR') ? MATCH_ANY : MATCH_ALL;
     for (String part : parts) {
-      Condition c = conditionOf(part.trim());
+      // Brackets around one condition are only brackets.
+      Condition c = conditionOf(withoutOuterBrackets(part.trim()));
       if (c == null) {
         return null;
       }
-      out.add(c);
+      out.conditions.add(c);
     }
     return out;
   }
 
+  // ' AND ' or ' OR ' starting at i, or null.
+  private static String joinAt(String text, Integer i) {
+    for (String joiner : new List<String>{ ' AND ', ' OR ' }) {
+      if (text.substring(i, Math.min(i + joiner.length(), text.length())) == joiner) {
+        return joiner;
+      }
+    }
+    return null;
+  }
+
+  // "(A OR B)" as "A OR B", when the brackets hold the whole of it.
+  private static String withoutOuterBrackets(String text) {
+    while (text.startsWith('(') && text.endsWith(')')) {
+      Integer depth = 0;
+      Boolean quoted = false;
+      Boolean wholly = true;
+      for (Integer i = 0; i < text.length() - 1; i++) {
+        String ch = text.substring(i, i + 1);
+        if (quoted) {
+          if (ch == '\\') {
+            i++;
+          } else if (ch == '\'') {
+            quoted = false;
+          }
+        } else if (ch == '\'') {
+          quoted = true;
+        } else if (ch == '(') {
+          depth++;
+        } else if (ch == ')' && --depth == 0) {
+          wholly = false;
+          break;
+        }
+      }
+      if (!wholly) {
+        return text;
+      }
+      text = text.substring(1, text.length() - 1).trim();
+    }
+    return text;
+  }
+
   private static Condition conditionOf(String part) {
+    Matcher listed = Pattern.compile('^([A-Za-z0-9_.]+) (IN|NOT IN) \\((.+)\\)$').matcher(part);
+    if (listed.matches()) {
+      List<String> values = quotedList(listed.group(3));
+      if (values == null) {
+        return null;
+      }
+      Condition c = condition(listed.group(1), listed.group(2) == 'IN' ? 'oneOf' : 'notOneOf', '', 'text');
+      c.values = values;
+      return c;
+    }
     Matcher blank = Pattern.compile('^([A-Za-z0-9_.]+) (=|!=) null$').matcher(part);
     if (blank.matches()) {
       return condition(blank.group(1), blank.group(2) == '=' ? 'blank' : 'notBlank', '', 'text');
@@ -2916,6 +3006,21 @@ public with sharing class TimeDriveSetupController {
     return null;
   }
 
+  // 'A', 'B' as A and B; null when any item isn't a quoted text.
+  private static List<String> quotedList(String text) {
+    List<String> out = new List<String>();
+    Matcher item = Pattern.compile('\\s*\'((?:[^\'\\\\]|\\\\.)*)\'\\s*(,|$)').matcher(text);
+    Integer at = 0;
+    while (at < text.length()) {
+      if (!item.find(at) || item.start() != at) {
+        return null;
+      }
+      out.add(unescaped(item.group(1)));
+      at = item.end();
+    }
+    return out.isEmpty() ? null : out;
+  }
+
   private static Condition condition(String field, String operator, String value, String valueType) {
     Condition c = new Condition();
     c.field = field;
@@ -2947,12 +3052,15 @@ public with sharing class TimeDriveSetupController {
     /** The field the condition tests, by path. */
     @AuraEnabled
     public String field { get; set; }
-    /** equals, notEquals, greater, less, contains, blank or notBlank. */
+    /** equals, notEquals, greater, less, contains, blank, notBlank, oneOf or notOneOf. */
     @AuraEnabled
     public String operator { get; set; }
     /** The value to compare with. */
     @AuraEnabled
     public String value { get; set; }
+    /** The values, for oneOf and notOneOf. */
+    @AuraEnabled
+    public List<String> values { get; set; }
     /** boolean, number, date, datetime or text: how the value is written. */
     @AuraEnabled
     public String valueType { get; set; }
@@ -2964,6 +3072,17 @@ public with sharing class TimeDriveSetupController {
     public String soql() {
       if (String.isBlank(field) || !Pattern.matches('[A-Za-z0-9_.]+', field)) {
         return null;
+      }
+      if (operator == 'oneOf' || operator == 'notOneOf') {
+        List<String> quoted = new List<String>();
+        for (String v : values == null ? new List<String>() : values) {
+          if (String.isNotBlank(v)) {
+            quoted.add('\'' + String.escapeSingleQuotes(v.trim()) + '\'');
+          }
+        }
+        return quoted.isEmpty()
+          ? null
+          : field + (operator == 'oneOf' ? ' IN (' : ' NOT IN (') + String.join(quoted, ', ') + ')';
       }
       Map<String, String> ops = new Map<String, String>{
         'equals' => '=',

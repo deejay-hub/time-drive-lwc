@@ -409,7 +409,7 @@ describe("c-time-drive-setup", () => {
     // Person Account pages stay out of sight until the timeline uses Person
     // Accounts.
     const pages = [...root.querySelectorAll("button.pcard")];
-    expect(pages.map((c) => c.querySelector(".pcard-name").textContent)).toEqual(["Contact", "Account"]);
+    expect(pages.map((c) => c.querySelector(".pcard-name").textContent)).toEqual(["Contact", "Account", "Lead"]);
     expect(pages[0].querySelector(".pcard-count").textContent).toBe("2 sources · 1 active");
 
     pages[0].click();
@@ -1576,6 +1576,24 @@ describe("c-time-drive-setup", () => {
     await flush();
     await toName();
     expect(label()).toBeUndefined();
+
+    // One of several values: the picklist's values to tick.
+    await backToFilter();
+    root.querySelector('[aria-label="Which records"] .option[data-value="some"]').click();
+    await flush();
+    await change(".condition-field", "TaskSubtype");
+    await change(".condition-op", "oneOf");
+    const values = root.querySelector(".condition-values");
+    expect(values.options.map((o) => o.value)).toEqual(expect.arrayContaining(["Call", "Email"]));
+    await change(".condition-values", ["Call", "Email"]);
+    expect(root.querySelector(".conditions-match")).toBeNull();
+
+    // A second condition: all of them, or any.
+    root.querySelector(".box-actions lightning-button").click();
+    await flush();
+    expect([...root.querySelectorAll(".condition-join")].map((j) => j.textContent)).toEqual(["Where", "and"]);
+    await change(".conditions-match", "any");
+    expect([...root.querySelectorAll(".condition-join")].map((j) => j.textContent)).toEqual(["Where", "or"]);
   });
 
   it("lists a source by the records it reads, and says on its page what the filter calls it", async () => {

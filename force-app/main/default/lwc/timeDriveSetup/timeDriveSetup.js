@@ -143,6 +143,12 @@ const PARENTS = [
     label: "Person Account",
     detail: "The timeline on person account pages. Records link by the Account or its Contact.",
     icon: "utility:person_account"
+  },
+  {
+    value: "Lead",
+    label: "Lead",
+    detail: "Time Drive on Lead record pages.",
+    icon: "utility:lead"
   }
 ];
 
@@ -465,6 +471,8 @@ const OPERATORS = {
   picklist: [
     { label: "is", value: "equals" },
     { label: "isn't", value: "notEquals" },
+    { label: "is one of", value: "oneOf" },
+    { label: "isn't one of", value: "notOneOf" },
     { label: "is blank", value: "blank" },
     { label: "isn't blank", value: "notBlank" }
   ],
@@ -518,6 +526,7 @@ function blankDraft() {
     dataSpace: null,
     dateField: null,
     conditions: [],
+    match: "all",
     filter: null,
     maxRecords: 1000,
     eventType: null,
@@ -3657,18 +3666,20 @@ export default class TimeDriveSetup extends LightningElement {
       const type = field?.type;
       const group = type === "boolean" ? "boolean" : type === "picklist" ? "picklist" : valueTypeOf(type);
       const valueless = c.operator === "blank" || c.operator === "notBlank";
+      const several = c.operator === "oneOf" || c.operator === "notOneOf";
       return {
         ...c,
         index,
         operators: OPERATORS[group] ?? OPERATORS.text,
         picklistValues: field?.values?.map((v) => ({ label: v.label, value: v.value })) ?? [],
-        isPicklist: !valueless && group === "picklist",
+        isPicklistList: several && group === "picklist",
+        isPicklist: !valueless && !several && group === "picklist",
         isBoolean: !valueless && group === "boolean",
         isDate: !valueless && (group === "date" || group === "datetime"),
         isNumber: !valueless && group === "number",
         isText: !valueless && group === "text",
         noField: !c.field,
-        joinText: index === 0 ? "Where" : "and",
+        joinText: index === 0 ? "Where" : this.draft.match === "any" ? "or" : "and",
         removeLabel: `Remove condition ${index + 1}`
       };
     });
@@ -3698,9 +3709,33 @@ export default class TimeDriveSetup extends LightningElement {
         const operator = valueType === "datetime" ? "greater" : "equals";
         return { ...c, field: value, valueType, operator, value: valueType === "boolean" ? "true" : "" };
       }
+      if (part === "operator") {
+        // One value or several: what was chosen carries over.
+        const several = value === "oneOf" || value === "notOneOf";
+        return several
+          ? { ...c, operator: value, values: c.values?.length ? c.values : c.value ? [c.value] : [], value: "" }
+          : { ...c, operator: value, value: c.value || c.values?.[0] || "", values: undefined };
+      }
       return { ...c, [part]: value };
     });
     this.update({ conditions });
+    this.syncDefaultLegend();
+  }
+
+  // All of the conditions, or any of them.
+  get matchOptions() {
+    return [
+      { label: "All of these", value: "all" },
+      { label: "Any of these", value: "any" }
+    ];
+  }
+
+  get showMatch() {
+    return (this.draft.conditions?.length ?? 0) > 1;
+  }
+
+  handleMatch(event) {
+    this.update({ match: event.detail.value });
     this.syncDefaultLegend();
   }
 
@@ -5045,12 +5080,14 @@ export default class TimeDriveSetup extends LightningElement {
         const row = this.conditionRows.find((r) => r.key === c.key);
         const op = row?.operators.find((o) => o.value === c.operator)?.label ?? c.operator;
         const blank = c.operator === "blank" || c.operator === "notBlank";
+        const label = (v) => row?.picklistValues.find((p) => p.value === v)?.label ?? v;
         let value = c.value;
         if (row?.isBoolean) value = c.value === "true" ? "ticked" : "not ticked";
-        else if (row?.isPicklist) value = row.picklistValues.find((v) => v.value === c.value)?.label ?? c.value;
+        else if (row?.isPicklistList) value = (c.values ?? []).map(label).join(", ");
+        else if (row?.isPicklist) value = label(c.value);
         return `${this.fieldLabel(c.field)} ${op}${blank ? "" : ` ${value}`}`;
       })
-      .join(" and ");
+      .join(d.match === "any" ? " or " : " and ");
   }
 
   // ---- saving --------------------------------------------------------------

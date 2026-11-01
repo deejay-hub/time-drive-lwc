@@ -1323,6 +1323,17 @@
                     </div>
                     <template lwc:if={showConditions}>
                       <div class="conditions-box">
+                        <template lwc:if={showMatch}>
+                          <lightning-radio-group
+                            class="conditions-match"
+                            name="match"
+                            label="Show records that match"
+                            type="button"
+                            options={matchOptions}
+                            value={draft.match}
+                            onchange={handleMatch}
+                          ></lightning-radio-group>
+                        </template>
                         <ul class="conditions">
                           <template for:each={conditionRows} for:item="c">
                             <li key={c.key} class="condition">
@@ -1350,7 +1361,19 @@
                                 onchange={handleConditionChange}
                               ></lightning-combobox>
                               <span class="condition-value">
-                                <template lwc:if={c.isPicklist}>
+                                <template lwc:if={c.isPicklistList}>
+                                  <lightning-checkbox-group
+                                    class="condition-values"
+                                    label="Values"
+                                    variant="label-hidden"
+                                    options={c.picklistValues}
+                                    value={c.values}
+                                    data-index={c.index}
+                                    data-part="values"
+                                    onchange={handleConditionChange}
+                                  ></lightning-checkbox-group>
+                                </template>
+                                <template lwc:elseif={c.isPicklist}>
                                   <lightning-combobox
                                     label="Value"
                                     variant="label-hidden"
