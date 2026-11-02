@@ -42,6 +42,9 @@ def camel(key):
 
 entries = catalogue.LABELS
 names = {PREFIX + k for k, *_ in entries}
+# A description is the label's Short Description in Setup: where it shows and why, in 80 characters.
+too_long = [k for k, what, *_ in entries if len(what) > 80]
+assert not too_long, f"descriptions over 80 characters: {too_long}"
 # Server_* labels are for Apex (Label.Time_Drive_Server_...) and Legend_* for
 # sources' legend names ($Label.Time_Drive_Legend_...): not in the components' module.
 js_entries = [e for e in entries if not e[0].startswith(("Server_", "Legend_"))]
@@ -60,7 +63,7 @@ generated = "".join(
     "        <categories>Time Drive</categories>\n"
     "        <language>en_US</language>\n"
     "        <protected>false</protected>\n"
-    f"        <shortDescription>{escape('Time Drive: ' + what)}</shortDescription>\n"
+    f"        <shortDescription>{escape(what)}</shortDescription>\n"
     f"        <value>{escape(en)}</value>\n"
     "    </labels>\n"
     for key, what, en, es, ar in entries
