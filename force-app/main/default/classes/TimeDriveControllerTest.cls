@@ -196,7 +196,7 @@ private class TimeDriveControllerTest {
     Assert.areEqual('On a day', events[0].title);
     Assert.areEqual(Date.today(), events[0].occurredAt.date(), 'on its day');
     Assert.areEqual(record, events[0].recordId, 'an Id given as text');
-    Assert.areEqual(1, warnings.size(), 'the two skipped rows are said once');
+    Assert.isTrue(warnings.isEmpty(), 'rows without a date are left out quietly');
   }
 
   @IsTest
@@ -1543,6 +1543,29 @@ private class TimeDriveControllerTest {
       },
       counted
     );
+  }
+
+  @IsTest
+  static void rowsWithoutADateAreLeftOutQuietly() {
+    TimeDriveContext context = new TimeDriveContext(
+      contactId(),
+      'Contact',
+      null,
+      pointsSource('TimeDriveControllerTest.PointsRows'),
+      null,
+      null
+    );
+    context.plotBy('Day').title('{Summary}');
+    List<TimeDriveController.EngagementEvent> events = TimeDrivePlotter.plot(
+      context,
+      new List<TimeDriveRow>{
+        new TimeDriveRow(new Map<String, Object>{ 'Id' => 'dated', 'Day' => Date.today(), 'Summary' => 'Sun' }),
+        new TimeDriveRow(new Map<String, Object>{ 'Id' => 'undated', 'Day' => null, 'Summary' => 'Rain' })
+      }
+    );
+    Assert.areEqual(1, events.size(), 'only the dated row is plotted');
+    Assert.areEqual('Sun', events[0].title);
+    Assert.isTrue(context.warnings.isEmpty(), 'no warning over the rest: ' + String.join(context.warnings, ' | '));
   }
 
   @IsTest

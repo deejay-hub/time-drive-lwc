@@ -72,12 +72,13 @@ public with sharing class TimeDrivePlotter {
       context.styled(e);
       events.add(e);
     }
+    // Items with no date are left out quietly, so a few gaps in the data don't
+    // put a warning over the rest; Diagnostics says how many.
     if (skipped > 0) {
-      context.warn(
-        String.format(
-          Label.Time_Drive_Server_Rows_No_Date,
-          new List<String>{ s.Label, String.valueOf(skipped), context.dateField() }
-        )
+      TimeDriveDiagnostics.note(
+        s.DeveloperName,
+        'Rows without a date',
+        skipped + ' had no ' + context.dateField() + ' and were left out.'
       );
     }
     // Enhanced Email's messages say who they went to and whether they were opened.

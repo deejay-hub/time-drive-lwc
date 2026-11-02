@@ -345,14 +345,6 @@
         <value>No identity link object ({0}): showing engagement for the Contact’s own Individual only.</value>
     </labels>
     <labels>
-        <fullName>Time_Drive_Server_Rows_No_Date</fullName>
-        <categories>Time Drive</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Time Drive: warning: rows without a date</shortDescription>
-        <value>{0}: {1} rows had no {2} and were not plotted.</value>
-    </labels>
-    <labels>
         <fullName>Time_Drive_Server_No_Object</fullName>
         <categories>Time Drive</categories>
         <language>en_US</language>

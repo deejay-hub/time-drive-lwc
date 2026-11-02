@@ -473,10 +473,6 @@
         <name>Time_Drive_Server_No_Object</name>
     </customLabels>
     <customLabels>
-        <label>{0}: لم يكن لدى {1} من الصفوف {2} ولم يتم عرضها.</label>
-        <name>Time_Drive_Server_Rows_No_Date</name>
-    </customLabels>
-    <customLabels>
         <label>أُرسل إلى: {0}</label>
         <name>Time_Drive_Server_Sent_To</name>
     </customLabels>
