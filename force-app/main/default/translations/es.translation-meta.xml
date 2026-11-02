@@ -81,20 +81,8 @@
         <name>Time_Drive_Collapse_All</name>
     </customLabels>
     <customLabels>
-        <label>{0} días</label>
-        <name>Time_Drive_Days_Many</name>
-    </customLabels>
-    <customLabels>
-        <label>1 día</label>
-        <name>Time_Drive_Days_One</name>
-    </customLabels>
-    <customLabels>
         <label>¿Seguro que quieres eliminar este {0}?</label>
         <name>Time_Drive_Delete_Confirm</name>
-    </customLabels>
-    <customLabels>
-        <label>Eliminado</label>
-        <name>Time_Drive_Delete_Done</name>
     </customLabels>
     <customLabels>
         <label>{0} "{1}" se eliminó.</label>
@@ -153,7 +141,7 @@
         <name>Time_Drive_Empty_Nothing</name>
     </customLabels>
     <customLabels>
-        <label>Error de configuración</label>
+        <label>Aún no está configurado</label>
         <name>Time_Drive_Empty_Setup_Heading</name>
     </customLabels>
     <customLabels>
@@ -197,10 +185,6 @@
         <name>Time_Drive_Error_Read_Title</name>
     </customLabels>
     <customLabels>
-        <label>Seguimientos</label>
-        <name>Time_Drive_Example_Legend</name>
-    </customLabels>
-    <customLabels>
         <label>Expandir todo</label>
         <name>Time_Drive_Expand_All</name>
     </customLabels>
@@ -231,54 +215,6 @@
     <customLabels>
         <label>Tipos de evento</label>
         <name>Time_Drive_Filters_Event_Types</name>
-    </customLabels>
-    <customLabels>
-        <label>{0} días sin actividad</label>
-        <name>Time_Drive_Gap_Day_Many</name>
-    </customLabels>
-    <customLabels>
-        <label>1 día sin actividad</label>
-        <name>Time_Drive_Gap_Day_One</name>
-    </customLabels>
-    <customLabels>
-        <label>{0} semestres sin actividad</label>
-        <name>Time_Drive_Gap_Half_Many</name>
-    </customLabels>
-    <customLabels>
-        <label>1 semestre sin actividad</label>
-        <name>Time_Drive_Gap_Half_One</name>
-    </customLabels>
-    <customLabels>
-        <label>{0} meses sin actividad</label>
-        <name>Time_Drive_Gap_Month_Many</name>
-    </customLabels>
-    <customLabels>
-        <label>1 mes sin actividad</label>
-        <name>Time_Drive_Gap_Month_One</name>
-    </customLabels>
-    <customLabels>
-        <label>{0} trimestres sin actividad</label>
-        <name>Time_Drive_Gap_Quarter_Many</name>
-    </customLabels>
-    <customLabels>
-        <label>1 trimestre sin actividad</label>
-        <name>Time_Drive_Gap_Quarter_One</name>
-    </customLabels>
-    <customLabels>
-        <label>{0} semanas sin actividad</label>
-        <name>Time_Drive_Gap_Week_Many</name>
-    </customLabels>
-    <customLabels>
-        <label>1 semana sin actividad</label>
-        <name>Time_Drive_Gap_Week_One</name>
-    </customLabels>
-    <customLabels>
-        <label>{0} años sin actividad</label>
-        <name>Time_Drive_Gap_Year_Many</name>
-    </customLabels>
-    <customLabels>
-        <label>1 año sin actividad</label>
-        <name>Time_Drive_Gap_Year_One</name>
     </customLabels>
     <customLabels>
         <label>Volver a {0}</label>
@@ -365,18 +301,6 @@
         <name>Time_Drive_Group_View_All</name>
     </customLabels>
     <customLabels>
-        <label>S{0} {1}</label>
-        <name>Time_Drive_Half</name>
-    </customLabels>
-    <customLabels>
-        <label>{0} en {1}</label>
-        <name>Time_Drive_Heat_On_Days</name>
-    </customLabels>
-    <customLabels>
-        <label>{0}: {1}</label>
-        <name>Time_Drive_Heat_Title</name>
-    </customLabels>
-    <customLabels>
         <label>Haz clic para desplazar la cronología</label>
         <name>Time_Drive_Hint_Scroll</name>
     </customLabels>
@@ -401,40 +325,8 @@
         <name>Time_Drive_Legend_Files</name>
     </customLabels>
     <customLabels>
-        <label>Elementos de la aplicación</label>
-        <name>Time_Drive_Many_App</name>
-    </customLabels>
-    <customLabels>
-        <label>Elementos del carrito</label>
-        <name>Time_Drive_Many_Cart</name>
-    </customLabels>
-    <customLabels>
-        <label>Actualizaciones de casos</label>
-        <name>Time_Drive_Many_Case</name>
-    </customLabels>
-    <customLabels>
-        <label>Elementos de correo electrónico</label>
-        <name>Time_Drive_Many_Email</name>
-    </customLabels>
-    <customLabels>
-        <label>Mensajes push y SMS</label>
-        <name>Time_Drive_Many_Message</name>
-    </customLabels>
-    <customLabels>
-        <label>Actualizaciones de oportunidades</label>
-        <name>Time_Drive_Many_Opportunity</name>
-    </customLabels>
-    <customLabels>
         <label>Elementos</label>
         <name>Time_Drive_Many_Other</name>
-    </customLabels>
-    <customLabels>
-        <label>Búsquedas web</label>
-        <name>Time_Drive_Many_Search</name>
-    </customLabels>
-    <customLabels>
-        <label>Vistas de página</label>
-        <name>Time_Drive_Many_Web</name>
     </customLabels>
     <customLabels>
         <label>Nueva actividad</label>
@@ -505,14 +397,6 @@
         <name>Time_Drive_Nothing_Week</name>
     </customLabels>
     <customLabels>
-        <label>{0} pedidos</label>
-        <name>Time_Drive_Orders_Many</name>
-    </customLabels>
-    <customLabels>
-        <label>1 pedido</label>
-        <name>Time_Drive_Orders_One</name>
-    </customLabels>
-    <customLabels>
         <label>Resumen de la cronología: elige un día</label>
         <name>Time_Drive_Overview_Pick_Day</name>
     </customLabels>
@@ -523,10 +407,6 @@
     <customLabels>
         <label>No se pudo leer {0}.</label>
         <name>Time_Drive_Prob_Message</name>
-    </customLabels>
-    <customLabels>
-        <label>T{0} {1}</label>
-        <name>Time_Drive_Quarter</name>
     </customLabels>
     <customLabels>
         <label>Elementos de interacción</label>
@@ -543,34 +423,6 @@
     <customLabels>
         <label>No puedes editar ni eliminar este elemento.</label>
         <name>Time_Drive_Row_No_Actions</name>
-    </customLabels>
-    <customLabels>
-        <label>abandonado</label>
-        <name>Time_Drive_Server_Action_Abandoned</name>
-    </customLabels>
-    <customLabels>
-        <label>añadido a</label>
-        <name>Time_Drive_Server_Action_Added</name>
-    </customLabels>
-    <customLabels>
-        <label>con clic</label>
-        <name>Time_Drive_Server_Action_Clicked</name>
-    </customLabels>
-    <customLabels>
-        <label>abierto</label>
-        <name>Time_Drive_Server_Action_Opened</name>
-    </customLabels>
-    <customLabels>
-        <label>vista de página</label>
-        <name>Time_Drive_Server_Action_Page_View</name>
-    </customLabels>
-    <customLabels>
-        <label>enviado</label>
-        <name>Time_Drive_Server_Action_Sent</name>
-    </customLabels>
-    <customLabels>
-        <label>visto</label>
-        <name>Time_Drive_Server_Action_Viewed</name>
     </customLabels>
     <customLabels>
         <label>{0}: un origen de Apex necesita una clase proveedora.</label>
@@ -657,72 +509,8 @@
         <name>Time_Drive_The_Week_Of</name>
     </customLabels>
     <customLabels>
-        <label>Aplicación</label>
-        <name>Time_Drive_Type_App</name>
-    </customLabels>
-    <customLabels>
-        <label>Llamadas</label>
-        <name>Time_Drive_Type_Call</name>
-    </customLabels>
-    <customLabels>
-        <label>Pedidos cancelados</label>
-        <name>Time_Drive_Type_Canceled</name>
-    </customLabels>
-    <customLabels>
-        <label>Actividad del carrito</label>
-        <name>Time_Drive_Type_Cart</name>
-    </customLabels>
-    <customLabels>
-        <label>Casos</label>
-        <name>Time_Drive_Type_Case</name>
-    </customLabels>
-    <customLabels>
-        <label>Pedidos entregados</label>
-        <name>Time_Drive_Type_Delivered</name>
-    </customLabels>
-    <customLabels>
-        <label>Correo electrónico</label>
-        <name>Time_Drive_Type_Email</name>
-    </customLabels>
-    <customLabels>
-        <label>Push y SMS</label>
-        <name>Time_Drive_Type_Message</name>
-    </customLabels>
-    <customLabels>
-        <label>Oportunidades perdidas</label>
-        <name>Time_Drive_Type_Opp_Lost</name>
-    </customLabels>
-    <customLabels>
-        <label>Oportunidades ganadas</label>
-        <name>Time_Drive_Type_Opp_Won</name>
-    </customLabels>
-    <customLabels>
-        <label>Oportunidades</label>
-        <name>Time_Drive_Type_Opportunity</name>
-    </customLabels>
-    <customLabels>
         <label>Otros</label>
         <name>Time_Drive_Type_Other</name>
-    </customLabels>
-    <customLabels>
-        <label>Pedidos realizados</label>
-        <name>Time_Drive_Type_Purchase</name>
-    </customLabels>
-    <customLabels>
-        <label>Reseñas</label>
-        <name>Time_Drive_Type_Review</name>
-    </customLabels>
-    <customLabels>
-        <label>Correos electrónicos</label>
-        <name>Time_Drive_Type_Sales_Email</name>
-    </customLabels>
-    <customLabels>
-        <label>Búsqueda web</label>
-        <name>Time_Drive_Type_Search</name>
-    </customLabels>
-    <customLabels>
-        <label>Sitio web</label>
-        <name>Time_Drive_Type_Web</name>
     </customLabels>
     <customLabels>
         <label>Todos los tipos</label>

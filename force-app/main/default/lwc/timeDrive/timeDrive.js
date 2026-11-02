@@ -206,6 +206,11 @@ function keyTime(key) {
   return new Date(y, m - 1, d).getTime();
 }
 
+// "item" as the start of a sentence: "Item".
+function sentenceStart(word) {
+  return word.charAt(0).toLocaleUpperCase(LOCALE) + word.slice(1);
+}
+
 export default class TimeDrive extends NavigationMixin(LightningElement) {
   @api
   get recordId() {
@@ -1261,7 +1266,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     const add = (key, kind, text) => {
       if (keys.has(key)) return;
       keys.add(key);
-      slots.push({ key, count: 0, orders: 0, placeholder: kind, placeholderText: text });
+      slots.push({ key, count: 0, placeholder: kind, placeholderText: text });
     };
     const ends = windowEnds(this.queryHistory, this.queryFuture, this.unit);
     if (ends.end) add(ends.end.key, "end");
@@ -1605,7 +1610,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     const strip = Math.max(200, this.cardWidth - 64);
     const cellSize = minCellSize(days, 6);
     const map = buildMinimap(
-      days.map((d) => ({ key: d.time, label: d.label, count: d.count, orders: d.orders })),
+      days.map((d) => ({ key: d.time, label: d.label, count: d.count })),
       { maxCells: Math.floor(strip / cellSize), minLabelGap: (56 / strip) * 100, minUnit: this.unit }
     );
     // One cell says nothing about where the activity is.
@@ -1663,7 +1668,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     // the list's height.
     const strip = Math.max(200, this.listHeight - 12);
     const map = buildMinimap(
-      days.map((d) => ({ key: d.time, label: d.label, count: d.count, orders: d.orders })),
+      days.map((d) => ({ key: d.time, label: d.label, count: d.count })),
       { maxCells: Math.floor(strip / minCellSize(days, 5)), minLabelGap: (20 / strip) * 100, minUnit: this.unit }
     );
     // One cell says nothing about where the activity is.
@@ -1825,7 +1830,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       return (ia === -1 ? known.length : ia) - (ib === -1 ? known.length : ib) || a.localeCompare(b);
     });
     return ordered.map((type) => {
-      const label = types.get(type).label || EVENT_TYPES[type]?.label || type;
+      const label = types.get(type).label || type;
       return {
         value: type,
         label,
@@ -2265,7 +2270,11 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       this.dispatchEvent(
         new ShowToastEvent({
           // Event "Menu tasting" was deleted.
-          title: objectLabel && name ? format(LABELS.deleteDoneNamed, objectLabel, name) : LABELS.deleteDone,
+          title: format(
+            LABELS.deleteDoneNamed,
+            objectLabel || sentenceStart(LABELS.deleteItem),
+            name || LABELS.noTitle
+          ),
           variant: "success"
         })
       );

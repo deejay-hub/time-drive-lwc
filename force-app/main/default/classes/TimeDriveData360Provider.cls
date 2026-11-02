@@ -16,8 +16,6 @@
  *      Unified Id, for DMOs keyed by the unified profile, and the source
  *      Individuals', for DMOs keyed by those.
  *
- * Rows also offer {Action}: the channel action read naturally ("opened",
- * "clicked"), for titles like "Email {Action}".
  *
  * Queries are dynamic so this class deploys to orgs without Data 360; a DMO
  * that doesn't exist, isn't mapped or isn't readable adds a warning instead.
@@ -27,7 +25,6 @@
 // splitting them up would only scatter what belongs together.
 @SuppressWarnings('PMD.CyclomaticComplexity, PMD.CognitiveComplexity, PMD.ExcessiveParameterList, PMD.NcssCount')
 public with sharing class TimeDriveData360Provider implements TimeDriveRowProvider, TimeDriveCountProvider {
-  private static final String ACTION_FIELD = 'ssot__EngagementChannelActionId__c';
   // A DMO query returning more rows than this fails ("too many rows for
   // direct assignment"), whatever the source's Max Records.
   public static final Integer MAX_DMO_ROWS = 2000;
@@ -92,15 +89,10 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
 
     String individualField = String.isBlank(s.Individual_Field__c) ? 'ssot__IndividualId__c' : s.Individual_Field__c;
     String dateField = context.dateField();
-    Boolean hasAction = dmoFields.containsKey(ACTION_FIELD.toLowerCase());
 
     Set<String> fields = new Set<String>{ context.idField(), dateField };
-    if (hasAction) {
-      fields.add(ACTION_FIELD);
-    }
     fields.addAll(TimeDrivePlotter.tokens(s.Title__c));
     fields.addAll(TimeDrivePlotter.tokens(s.Subtitle__c));
-    fields.remove('Action');
     for (String extra : new List<String>{ s.Record_Id_Field__c }) {
       fields.add(extra);
     }
@@ -136,7 +128,7 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
       List<SObject> found = Database.queryWithBinds(soql, binds, AccessLevel.USER_MODE);
       TimeDriveDiagnostics.query(s.DeveloperName, 'rows', soql, binds, found.size(), startedAt, null);
       for (SObject row : found) {
-        rows.add(new TimeDriveRow(row).put('Action', hasAction ? actionText((String) row.get(ACTION_FIELD)) : null));
+        rows.add(new TimeDriveRow(row));
       }
     } catch (Exception e) {
       TimeDriveDiagnostics.query(s.DeveloperName, 'rows', soql, binds, 0, startedAt, e.getMessage());
@@ -598,25 +590,5 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
       s.Link_Unified_Field__c = 'UnifiedRecordId__c';
     }
     return s;
-  }
-
-  // "Open" -> "opened", "Page View" -> "page view"; others as they are.
-  @TestVisible
-  private static String actionText(String action) {
-    // In the user's language.
-    Map<String, String> past = new Map<String, String>{
-      'send' => Label.Time_Drive_Server_Action_Sent,
-      'open' => Label.Time_Drive_Server_Action_Opened,
-      'click' => Label.Time_Drive_Server_Action_Clicked,
-      'view' => Label.Time_Drive_Server_Action_Viewed,
-      'pageview' => Label.Time_Drive_Server_Action_Page_View,
-      'add' => Label.Time_Drive_Server_Action_Added,
-      'abandon' => Label.Time_Drive_Server_Action_Abandoned
-    };
-    if (String.isBlank(action)) {
-      return null;
-    }
-    String key = action.toLowerCase().replaceAll('[^a-z]', '');
-    return past.containsKey(key) ? past.get(key) : action;
   }
 }

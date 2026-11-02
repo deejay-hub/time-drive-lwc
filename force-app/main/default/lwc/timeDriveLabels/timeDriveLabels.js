@@ -15,7 +15,6 @@ import actionDelete from "@salesforce/label/c.Time_Drive_Action_Delete";
 import deleteTitle from "@salesforce/label/c.Time_Drive_Delete_Title";
 import deleteConfirm from "@salesforce/label/c.Time_Drive_Delete_Confirm";
 import deleteItem from "@salesforce/label/c.Time_Drive_Delete_Item";
-import deleteDone from "@salesforce/label/c.Time_Drive_Delete_Done";
 import deleteFailed from "@salesforce/label/c.Time_Drive_Delete_Failed";
 import deleteDoneNamed from "@salesforce/label/c.Time_Drive_Delete_Done_Named";
 import deleting from "@salesforce/label/c.Time_Drive_Deleting";
@@ -86,50 +85,6 @@ import announceToday from "@salesforce/label/c.Time_Drive_Announce_Today";
 import weekOf from "@salesforce/label/c.Time_Drive_Week_Of";
 import weekOfWord from "@salesforce/label/c.Time_Drive_Week_Of_Word";
 import theWeekOf from "@salesforce/label/c.Time_Drive_The_Week_Of";
-import quarter from "@salesforce/label/c.Time_Drive_Quarter";
-import half from "@salesforce/label/c.Time_Drive_Half";
-import heatTitle from "@salesforce/label/c.Time_Drive_Heat_Title";
-import ordersOne from "@salesforce/label/c.Time_Drive_Orders_One";
-import ordersMany from "@salesforce/label/c.Time_Drive_Orders_Many";
-import heatOnDays from "@salesforce/label/c.Time_Drive_Heat_On_Days";
-import daysOne from "@salesforce/label/c.Time_Drive_Days_One";
-import daysMany from "@salesforce/label/c.Time_Drive_Days_Many";
-import gapDayOne from "@salesforce/label/c.Time_Drive_Gap_Day_One";
-import gapDayMany from "@salesforce/label/c.Time_Drive_Gap_Day_Many";
-import gapWeekOne from "@salesforce/label/c.Time_Drive_Gap_Week_One";
-import gapWeekMany from "@salesforce/label/c.Time_Drive_Gap_Week_Many";
-import gapMonthOne from "@salesforce/label/c.Time_Drive_Gap_Month_One";
-import gapMonthMany from "@salesforce/label/c.Time_Drive_Gap_Month_Many";
-import gapQuarterOne from "@salesforce/label/c.Time_Drive_Gap_Quarter_One";
-import gapQuarterMany from "@salesforce/label/c.Time_Drive_Gap_Quarter_Many";
-import gapHalfOne from "@salesforce/label/c.Time_Drive_Gap_Half_One";
-import gapHalfMany from "@salesforce/label/c.Time_Drive_Gap_Half_Many";
-import gapYearOne from "@salesforce/label/c.Time_Drive_Gap_Year_One";
-import gapYearMany from "@salesforce/label/c.Time_Drive_Gap_Year_Many";
-import typePurchase from "@salesforce/label/c.Time_Drive_Type_Purchase";
-import typeDelivered from "@salesforce/label/c.Time_Drive_Type_Delivered";
-import typeCanceled from "@salesforce/label/c.Time_Drive_Type_Canceled";
-import typeCart from "@salesforce/label/c.Time_Drive_Type_Cart";
-import manyCart from "@salesforce/label/c.Time_Drive_Many_Cart";
-import typeEmail from "@salesforce/label/c.Time_Drive_Type_Email";
-import manyEmail from "@salesforce/label/c.Time_Drive_Many_Email";
-import typeMessage from "@salesforce/label/c.Time_Drive_Type_Message";
-import manyMessage from "@salesforce/label/c.Time_Drive_Many_Message";
-import typeWeb from "@salesforce/label/c.Time_Drive_Type_Web";
-import manyWeb from "@salesforce/label/c.Time_Drive_Many_Web";
-import typeSearch from "@salesforce/label/c.Time_Drive_Type_Search";
-import manySearch from "@salesforce/label/c.Time_Drive_Many_Search";
-import typeApp from "@salesforce/label/c.Time_Drive_Type_App";
-import manyApp from "@salesforce/label/c.Time_Drive_Many_App";
-import typeCase from "@salesforce/label/c.Time_Drive_Type_Case";
-import manyCase from "@salesforce/label/c.Time_Drive_Many_Case";
-import typeReview from "@salesforce/label/c.Time_Drive_Type_Review";
-import typeCall from "@salesforce/label/c.Time_Drive_Type_Call";
-import typeSalesEmail from "@salesforce/label/c.Time_Drive_Type_Sales_Email";
-import typeOpportunity from "@salesforce/label/c.Time_Drive_Type_Opportunity";
-import manyOpportunity from "@salesforce/label/c.Time_Drive_Many_Opportunity";
-import typeOppWon from "@salesforce/label/c.Time_Drive_Type_Opp_Won";
-import typeOppLost from "@salesforce/label/c.Time_Drive_Type_Opp_Lost";
 import typeOther from "@salesforce/label/c.Time_Drive_Type_Other";
 import manyOther from "@salesforce/label/c.Time_Drive_Many_Other";
 import errOffline from "@salesforce/label/c.Time_Drive_Err_Offline";
@@ -175,7 +130,6 @@ export const LABELS = Object.freeze({
   deleteTitle,
   deleteConfirm,
   deleteItem,
-  deleteDone,
   deleteFailed,
   deleteDoneNamed,
   deleting,
@@ -246,50 +200,6 @@ export const LABELS = Object.freeze({
   weekOf,
   weekOfWord,
   theWeekOf,
-  quarter,
-  half,
-  heatTitle,
-  ordersOne,
-  ordersMany,
-  heatOnDays,
-  daysOne,
-  daysMany,
-  gapDayOne,
-  gapDayMany,
-  gapWeekOne,
-  gapWeekMany,
-  gapMonthOne,
-  gapMonthMany,
-  gapQuarterOne,
-  gapQuarterMany,
-  gapHalfOne,
-  gapHalfMany,
-  gapYearOne,
-  gapYearMany,
-  typePurchase,
-  typeDelivered,
-  typeCanceled,
-  typeCart,
-  manyCart,
-  typeEmail,
-  manyEmail,
-  typeMessage,
-  manyMessage,
-  typeWeb,
-  manyWeb,
-  typeSearch,
-  manySearch,
-  typeApp,
-  manyApp,
-  typeCase,
-  manyCase,
-  typeReview,
-  typeCall,
-  typeSalesEmail,
-  typeOpportunity,
-  manyOpportunity,
-  typeOppWon,
-  typeOppLost,
   typeOther,
   manyOther,
   errOffline,
@@ -318,7 +228,7 @@ export const LABELS = Object.freeze({
   groupBack,
   groupBackRecord,
   groupLoadingMore,
-  groupShown,
+  groupShown
 });
 
 /** Fills a label's {0}, {1} ... with the values given: format(LABELS.itemsMany, 12). */

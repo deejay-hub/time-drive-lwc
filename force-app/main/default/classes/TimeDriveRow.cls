@@ -49,7 +49,7 @@ public with sharing class TimeDriveRow {
   }
 
   /**
-   * Adds or overrides a value, e.g. the {Action} Data 360 rows offer.
+   * Adds or overrides a value.
    *
    * @param key the value's name
    * @param value the value

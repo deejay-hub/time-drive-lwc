@@ -16,38 +16,33 @@ import VIEW_SALES from "@salesforce/label/c.Time_Drive_View_Sales";
  * the component so the Jest tests can drive it directly.
  */
 
-// One entry per event type the Apex providers return: label, icon, tone (the
-// node colour, see .node_* in the CSS), and `many`, the title of a busy day's
-// grouped row ("212 Email items").
+// The icon and tone (the node colour, see .node_* in the CSS) of the event
+// types the shipped sources use, for an item whose source sets neither. Its
+// name always comes from its source (the legend name); "Other" is a last resort.
 export const EVENT_TYPES = {
-  purchase: { label: LABELS.typePurchase, icon: "utility:clock", tone: "commerce", many: LABELS.typePurchase },
-  delivered: { label: LABELS.typeDelivered, icon: "utility:check", tone: "commerce", many: LABELS.typeDelivered },
-  canceled: { label: LABELS.typeCanceled, icon: "utility:close", tone: "alert", many: LABELS.typeCanceled },
-  cart: { label: LABELS.typeCart, icon: "utility:cart", tone: "commerce", many: LABELS.manyCart },
-  email: { label: LABELS.typeEmail, icon: "utility:email", tone: "marketing", many: LABELS.manyEmail },
-  message: { label: LABELS.typeMessage, icon: "utility:notification", tone: "marketing", many: LABELS.manyMessage },
-  web: { label: LABELS.typeWeb, icon: "utility:world", tone: "digital", many: LABELS.manyWeb },
-  search: { label: LABELS.typeSearch, icon: "utility:search", tone: "digital", many: LABELS.manySearch },
-  app: { label: LABELS.typeApp, icon: "utility:phone_portrait", tone: "digital", many: LABELS.manyApp },
-  case: { label: LABELS.typeCase, icon: "utility:case", tone: "service", many: LABELS.manyCase },
-  review: { label: LABELS.typeReview, icon: "utility:favorite", tone: "feedback", many: LABELS.typeReview },
+  purchase: { icon: "utility:clock", tone: "commerce" },
+  delivered: { icon: "utility:check", tone: "commerce" },
+  canceled: { icon: "utility:close", tone: "alert" },
+  cart: { icon: "utility:cart", tone: "commerce" },
+  email: { icon: "utility:email", tone: "marketing" },
+  message: { icon: "utility:notification", tone: "marketing" },
+  web: { icon: "utility:world", tone: "digital" },
+  search: { icon: "utility:search", tone: "digital" },
+  app: { icon: "utility:phone_portrait", tone: "digital" },
+  case: { icon: "utility:case", tone: "service" },
+  review: { icon: "utility:favorite", tone: "feedback" },
   // Tasks by their Task Subtype (see the shipped Calls and Emails sources).
-  call: { label: LABELS.typeCall, icon: "standard:log_a_call", tone: "sales", many: LABELS.typeCall },
-  sales_email: { label: LABELS.typeSalesEmail, icon: "standard:email", tone: "sales", many: LABELS.typeSalesEmail },
-  opportunity: {
-    label: LABELS.typeOpportunity,
-    icon: "utility:opportunity",
-    tone: "sales",
-    many: LABELS.manyOpportunity
-  },
-  opportunity_won: { label: LABELS.typeOppWon, icon: "utility:check", tone: "sales", many: LABELS.typeOppWon },
-  opportunity_lost: { label: LABELS.typeOppLost, icon: "utility:close", tone: "alert", many: LABELS.typeOppLost }
+  call: { icon: "standard:log_a_call", tone: "sales" },
+  sales_email: { icon: "standard:email", tone: "sales" },
+  opportunity: { icon: "utility:opportunity", tone: "sales" },
+  opportunity_won: { icon: "utility:check", tone: "sales" },
+  opportunity_lost: { icon: "utility:close", tone: "alert" }
 };
 
 const FALLBACK_TYPE = { label: LABELS.typeOther, icon: "utility:record", tone: "digital", many: LABELS.manyOther };
 
 export function typeInfo(type) {
-  return EVENT_TYPES[type] ?? FALLBACK_TYPE;
+  return { ...FALLBACK_TYPE, ...EVENT_TYPES[type] };
 }
 
 // The timeline views in the header picker: each shows some event categories.
@@ -275,8 +270,6 @@ export function ago(iso, now = Date.now()) {
 // ---- minimap (horizontal layout) and scrubber (vertical) ---------------------
 
 const MONTH_FORMAT = calendar({ month: "short" });
-const MONTH_YEAR_FORMAT = calendar({ month: "short", year: "numeric" });
-const WEEK_FORMAT = calendar({ day: "numeric", month: "short", year: "numeric" });
 const LONG_GAP_DAYS = 7;
 const DAY_MS = 86400000;
 
@@ -308,62 +301,19 @@ function unitOrdinal(start, unit) {
   return d.getFullYear();
 }
 
-// "Oct 2026: 12 items, 3 orders on 5 days": a heat cell's tooltip.
-const UNIT_LIST = (() => {
-  try {
-    return new Intl.ListFormat(LANG, { style: "short", type: "unit" });
-  } catch {
-    return null;
-  }
-})();
-
-function heatTitle(period, { count, orders, days }) {
-  const parts = [count === 1 ? LABELS.itemsOne : format(LABELS.itemsMany, formatCount(count))];
-  if (orders) parts.push(orders === 1 ? LABELS.ordersOne : format(LABELS.ordersMany, orders));
-  let what = UNIT_LIST ? UNIT_LIST.format(parts) : parts.join(", ");
-  if (days) what = format(LABELS.heatOnDays, what, days === 1 ? LABELS.daysOne : format(LABELS.daysMany, days));
-  return format(LABELS.heatTitle, period, what);
-}
-
-// "3 quiet weeks": a quiet stretch between two cells.
-const QUIET = {
-  day: [LABELS.gapDayOne, LABELS.gapDayMany],
-  week: [LABELS.gapWeekOne, LABELS.gapWeekMany],
-  month: [LABELS.gapMonthOne, LABELS.gapMonthMany],
-  quarter: [LABELS.gapQuarterOne, LABELS.gapQuarterMany],
-  half: [LABELS.gapHalfOne, LABELS.gapHalfMany],
-  year: [LABELS.gapYearOne, LABELS.gapYearMany]
-};
-
-function quietText(n, unit) {
-  const [one, many] = QUIET[unit] ?? QUIET.day;
-  return n === 1 ? one : format(many, n);
-}
-
-function unitTitle(bucket, unit) {
-  const d = new Date(bucket.start);
-  if (unit === "day") return bucket.label;
-  if (unit === "week") return format(LABELS.weekOf, WEEK_FORMAT.format(d));
-  if (unit === "month") return MONTH_YEAR_FORMAT.format(d);
-  if (unit === "quarter") return format(LABELS.quarter, Math.floor(d.getMonth() / 3) + 1, d.getFullYear());
-  if (unit === "half") return format(LABELS.half, Math.floor(d.getMonth() / 6) + 1, d.getFullYear());
-  return String(d.getFullYear());
-}
-
 // Consecutive days in the same unit, in the order given: their day index
 // range and totals.
-function bucketsOf(days, unit, countOf, ordersOf) {
+function bucketsOf(days, unit, countOf) {
   const buckets = [];
   days.forEach((day, i) => {
     const start = unitStart(day.key, unit);
     let bucket = buckets[buckets.length - 1];
     if (!bucket || bucket.start !== start) {
-      bucket = { start, from: i, to: i, count: 0, orders: 0, label: day.label };
+      bucket = { start, from: i, to: i, count: 0, label: day.label };
       buckets.push(bucket);
     }
     bucket.to = i;
     bucket.count += countOf(day);
-    bucket.orders += ordersOf(day);
   });
   return buckets;
 }
@@ -389,15 +339,14 @@ export function buildMinimap(days, { maxCells = Infinity, minLabelGap = 0, minUn
   if (!days?.length) return { cells: [], gaps: [], months: [], years: [], now: null };
   // Days carry counts (from the server's summary) or their events.
   const countOf = (d) => d.count ?? d.events.length;
-  const ordersOf = (d) => d.orders ?? d.events.filter((e) => e.type === "purchase").length;
 
   const allowed = UNITS.slice(Math.max(0, UNITS.indexOf(minUnit)));
   let unit = allowed[0];
-  let buckets = bucketsOf(days, unit, countOf, ordersOf);
+  let buckets = bucketsOf(days, unit, countOf);
   for (const next of allowed.slice(1)) {
     if (buckets.length <= maxCells) break;
     unit = next;
-    buckets = bucketsOf(days, unit, countOf, ordersOf);
+    buckets = bucketsOf(days, unit, countOf);
   }
 
   const max = Math.max(...buckets.map((b) => b.count));
@@ -452,12 +401,11 @@ export function buildMinimap(days, { maxCells = Infinity, minLabelGap = 0, minUn
   for (const u of units) {
     if (u.bucket) {
       const { bucket, i } = u;
-      const { count, orders } = bucket;
+      const { count } = bucket;
       // Log scale: each doubling of activity moves about as far up the four
       // shades, so one very busy day doesn't flatten every other day.
       const level =
         count === 0 ? 0 : max <= 1 ? 4 : Math.min(4, 1 + Math.floor((Math.log1p(count) / Math.log1p(max)) * 3.999));
-      const activeDays = bucket.to - bucket.from + 1;
       cells.push({
         index: i,
         key: bucket.start,
@@ -466,9 +414,7 @@ export function buildMinimap(days, { maxCells = Infinity, minLabelGap = 0, minUn
         left: pct(u.left),
         width: pct(1),
         level,
-        hasOrder: orders > 0,
-        current: own?.i === i,
-        title: heatTitle(unitTitle(bucket, unit), { count, orders, days: unit === "day" ? 0 : activeDays })
+        current: own?.i === i
       });
       const date = new Date(bucket.start);
       const year = date.getFullYear();
@@ -498,8 +444,7 @@ export function buildMinimap(days, { maxCells = Infinity, minLabelGap = 0, minUn
         key: `g-${u.gapFrom}`,
         left: pct(u.gapFrom),
         width: pct(u.gapWidth),
-        days: quiet,
-        title: quietText(quiet, unit)
+        days: quiet
       });
     }
   }

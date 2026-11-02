@@ -81,20 +81,8 @@
         <name>Time_Drive_Collapse_All</name>
     </customLabels>
     <customLabels>
-        <label>{0} يوم</label>
-        <name>Time_Drive_Days_Many</name>
-    </customLabels>
-    <customLabels>
-        <label>يوم واحد</label>
-        <name>Time_Drive_Days_One</name>
-    </customLabels>
-    <customLabels>
         <label>هل أنت متأكد أنك تريد حذف هذا {0}؟</label>
         <name>Time_Drive_Delete_Confirm</name>
-    </customLabels>
-    <customLabels>
-        <label>تم الحذف</label>
-        <name>Time_Drive_Delete_Done</name>
     </customLabels>
     <customLabels>
         <label>تم حذف {0} "{1}".</label>
@@ -153,7 +141,7 @@
         <name>Time_Drive_Empty_Nothing</name>
     </customLabels>
     <customLabels>
-        <label>خطأ في الإعداد</label>
+        <label>لم يتم الإعداد بعد</label>
         <name>Time_Drive_Empty_Setup_Heading</name>
     </customLabels>
     <customLabels>
@@ -197,10 +185,6 @@
         <name>Time_Drive_Error_Read_Title</name>
     </customLabels>
     <customLabels>
-        <label>المتابعات</label>
-        <name>Time_Drive_Example_Legend</name>
-    </customLabels>
-    <customLabels>
         <label>توسيع الكل</label>
         <name>Time_Drive_Expand_All</name>
     </customLabels>
@@ -231,54 +215,6 @@
     <customLabels>
         <label>أنواع الأحداث</label>
         <name>Time_Drive_Filters_Event_Types</name>
-    </customLabels>
-    <customLabels>
-        <label>{0} يوم هادئ</label>
-        <name>Time_Drive_Gap_Day_Many</name>
-    </customLabels>
-    <customLabels>
-        <label>يوم هادئ واحد</label>
-        <name>Time_Drive_Gap_Day_One</name>
-    </customLabels>
-    <customLabels>
-        <label>{0} أنصاف سنة هادئة</label>
-        <name>Time_Drive_Gap_Half_Many</name>
-    </customLabels>
-    <customLabels>
-        <label>نصف سنة هادئ واحد</label>
-        <name>Time_Drive_Gap_Half_One</name>
-    </customLabels>
-    <customLabels>
-        <label>{0} شهر هادئ</label>
-        <name>Time_Drive_Gap_Month_Many</name>
-    </customLabels>
-    <customLabels>
-        <label>شهر هادئ واحد</label>
-        <name>Time_Drive_Gap_Month_One</name>
-    </customLabels>
-    <customLabels>
-        <label>{0} ربع هادئ</label>
-        <name>Time_Drive_Gap_Quarter_Many</name>
-    </customLabels>
-    <customLabels>
-        <label>ربع هادئ واحد</label>
-        <name>Time_Drive_Gap_Quarter_One</name>
-    </customLabels>
-    <customLabels>
-        <label>{0} أسبوع هادئ</label>
-        <name>Time_Drive_Gap_Week_Many</name>
-    </customLabels>
-    <customLabels>
-        <label>أسبوع هادئ واحد</label>
-        <name>Time_Drive_Gap_Week_One</name>
-    </customLabels>
-    <customLabels>
-        <label>{0} سنة هادئة</label>
-        <name>Time_Drive_Gap_Year_Many</name>
-    </customLabels>
-    <customLabels>
-        <label>سنة هادئة واحدة</label>
-        <name>Time_Drive_Gap_Year_One</name>
     </customLabels>
     <customLabels>
         <label>العودة إلى {0}</label>
@@ -365,18 +301,6 @@
         <name>Time_Drive_Group_View_All</name>
     </customLabels>
     <customLabels>
-        <label>النصف {0} {1}</label>
-        <name>Time_Drive_Half</name>
-    </customLabels>
-    <customLabels>
-        <label>{0} في {1}</label>
-        <name>Time_Drive_Heat_On_Days</name>
-    </customLabels>
-    <customLabels>
-        <label>{0}: {1}</label>
-        <name>Time_Drive_Heat_Title</name>
-    </customLabels>
-    <customLabels>
         <label>انقر لتمرير الجدول الزمني</label>
         <name>Time_Drive_Hint_Scroll</name>
     </customLabels>
@@ -401,40 +325,8 @@
         <name>Time_Drive_Legend_Files</name>
     </customLabels>
     <customLabels>
-        <label>عناصر التطبيق</label>
-        <name>Time_Drive_Many_App</name>
-    </customLabels>
-    <customLabels>
-        <label>عناصر السلة</label>
-        <name>Time_Drive_Many_Cart</name>
-    </customLabels>
-    <customLabels>
-        <label>تحديثات الحالات</label>
-        <name>Time_Drive_Many_Case</name>
-    </customLabels>
-    <customLabels>
-        <label>عناصر البريد الإلكتروني</label>
-        <name>Time_Drive_Many_Email</name>
-    </customLabels>
-    <customLabels>
-        <label>رسائل الإشعارات والرسائل النصية</label>
-        <name>Time_Drive_Many_Message</name>
-    </customLabels>
-    <customLabels>
-        <label>تحديثات الفرص</label>
-        <name>Time_Drive_Many_Opportunity</name>
-    </customLabels>
-    <customLabels>
         <label>العناصر</label>
         <name>Time_Drive_Many_Other</name>
-    </customLabels>
-    <customLabels>
-        <label>عمليات بحث الويب</label>
-        <name>Time_Drive_Many_Search</name>
-    </customLabels>
-    <customLabels>
-        <label>مشاهدات الصفحات</label>
-        <name>Time_Drive_Many_Web</name>
     </customLabels>
     <customLabels>
         <label>نشاط جديد</label>
@@ -505,14 +397,6 @@
         <name>Time_Drive_Nothing_Week</name>
     </customLabels>
     <customLabels>
-        <label>{0} طلب</label>
-        <name>Time_Drive_Orders_Many</name>
-    </customLabels>
-    <customLabels>
-        <label>طلب واحد</label>
-        <name>Time_Drive_Orders_One</name>
-    </customLabels>
-    <customLabels>
         <label>نظرة عامة على الجدول الزمني: اختر يوماً</label>
         <name>Time_Drive_Overview_Pick_Day</name>
     </customLabels>
@@ -523,10 +407,6 @@
     <customLabels>
         <label>تعذّرت قراءة {0}.</label>
         <name>Time_Drive_Prob_Message</name>
-    </customLabels>
-    <customLabels>
-        <label>الربع {0} {1}</label>
-        <name>Time_Drive_Quarter</name>
     </customLabels>
     <customLabels>
         <label>عناصر التفاعل</label>
@@ -543,34 +423,6 @@
     <customLabels>
         <label>لا يمكنك تعديل هذا العنصر أو حذفه.</label>
         <name>Time_Drive_Row_No_Actions</name>
-    </customLabels>
-    <customLabels>
-        <label>مهجور</label>
-        <name>Time_Drive_Server_Action_Abandoned</name>
-    </customLabels>
-    <customLabels>
-        <label>أُضيف إلى</label>
-        <name>Time_Drive_Server_Action_Added</name>
-    </customLabels>
-    <customLabels>
-        <label>نُقر عليه</label>
-        <name>Time_Drive_Server_Action_Clicked</name>
-    </customLabels>
-    <customLabels>
-        <label>فُتح</label>
-        <name>Time_Drive_Server_Action_Opened</name>
-    </customLabels>
-    <customLabels>
-        <label>مشاهدة صفحة</label>
-        <name>Time_Drive_Server_Action_Page_View</name>
-    </customLabels>
-    <customLabels>
-        <label>أُرسل</label>
-        <name>Time_Drive_Server_Action_Sent</name>
-    </customLabels>
-    <customLabels>
-        <label>شوهد</label>
-        <name>Time_Drive_Server_Action_Viewed</name>
     </customLabels>
     <customLabels>
         <label>{0}: يحتاج مصدر Apex إلى فئة موفّر.</label>
@@ -657,72 +509,8 @@
         <name>Time_Drive_The_Week_Of</name>
     </customLabels>
     <customLabels>
-        <label>التطبيق</label>
-        <name>Time_Drive_Type_App</name>
-    </customLabels>
-    <customLabels>
-        <label>المكالمات</label>
-        <name>Time_Drive_Type_Call</name>
-    </customLabels>
-    <customLabels>
-        <label>الطلبات الملغاة</label>
-        <name>Time_Drive_Type_Canceled</name>
-    </customLabels>
-    <customLabels>
-        <label>نشاط السلة</label>
-        <name>Time_Drive_Type_Cart</name>
-    </customLabels>
-    <customLabels>
-        <label>الحالات</label>
-        <name>Time_Drive_Type_Case</name>
-    </customLabels>
-    <customLabels>
-        <label>الطلبات المسلّمة</label>
-        <name>Time_Drive_Type_Delivered</name>
-    </customLabels>
-    <customLabels>
-        <label>البريد الإلكتروني</label>
-        <name>Time_Drive_Type_Email</name>
-    </customLabels>
-    <customLabels>
-        <label>الإشعارات والرسائل النصية</label>
-        <name>Time_Drive_Type_Message</name>
-    </customLabels>
-    <customLabels>
-        <label>الفرص الخاسرة</label>
-        <name>Time_Drive_Type_Opp_Lost</name>
-    </customLabels>
-    <customLabels>
-        <label>الفرص المكسوبة</label>
-        <name>Time_Drive_Type_Opp_Won</name>
-    </customLabels>
-    <customLabels>
-        <label>الفرص</label>
-        <name>Time_Drive_Type_Opportunity</name>
-    </customLabels>
-    <customLabels>
         <label>أخرى</label>
         <name>Time_Drive_Type_Other</name>
-    </customLabels>
-    <customLabels>
-        <label>الطلبات المقدّمة</label>
-        <name>Time_Drive_Type_Purchase</name>
-    </customLabels>
-    <customLabels>
-        <label>المراجعات</label>
-        <name>Time_Drive_Type_Review</name>
-    </customLabels>
-    <customLabels>
-        <label>رسائل البريد الإلكتروني</label>
-        <name>Time_Drive_Type_Sales_Email</name>
-    </customLabels>
-    <customLabels>
-        <label>بحث الويب</label>
-        <name>Time_Drive_Type_Search</name>
-    </customLabels>
-    <customLabels>
-        <label>موقع الويب</label>
-        <name>Time_Drive_Type_Web</name>
     </customLabels>
     <customLabels>
         <label>كل الأنواع</label>

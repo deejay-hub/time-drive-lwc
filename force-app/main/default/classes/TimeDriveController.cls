@@ -117,9 +117,6 @@ public with sharing class TimeDriveController {
       if (t.source != null) {
         day.add(summary.counted.indexOf(t.source), t.count);
       }
-      if (t.type == 'purchase') {
-        day.orders += t.count;
-      }
       summary.total += t.count;
     }
     // A page with no sources set up says so, rather than looking empty.
@@ -2114,8 +2111,6 @@ public with sharing class TimeDriveController {
     public String key;
     @AuraEnabled
     public Integer count = 0;
-    @AuraEnabled
-    public Integer orders = 0;
     // The counted sources with items this period (indices into the summary's
     // `counted`), and how many each has (parallel; kept for busy periods only,
     // where they build the grouped rows without counting again).

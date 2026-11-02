@@ -120,14 +120,11 @@ private class TimeDriveControllerTest {
     Id customer = contactId();
     TimeDriveController.TimelineSummary summary = TimeDriveController.getSummary(customer, null, null, null, null);
     Integer counted = 0;
-    Integer orders = 0;
     for (TimeDriveController.DaySummary day : summary.days) {
       counted += day.count;
-      orders += day.orders;
     }
     Assert.areEqual(summary.total, counted, 'every event is in a day');
     Assert.areEqual(summary.unfilteredTotal, summary.total, 'no filters');
-    Assert.areEqual(2, orders, 'both orders');
     Assert.isFalse(summary.types.isEmpty());
     Assert.isFalse(summary.noSources, 'the Contact page has sources');
     Assert.areEqual(Contact.SObjectType.getDescribe(SObjectDescribeOptions.DEFERRED).getLabel(), summary.page);
@@ -920,14 +917,6 @@ private class TimeDriveControllerTest {
   }
 
   @IsTest
-  static void data360ActionsReadNaturally() {
-    Assert.areEqual('opened', TimeDriveData360Provider.actionText('Open'));
-    Assert.areEqual('page view', TimeDriveData360Provider.actionText('Page View'));
-    Assert.areEqual('Bounce', TimeDriveData360Provider.actionText('Bounce'));
-    Assert.isNull(TimeDriveData360Provider.actionText(null));
-  }
-
-  @IsTest
   static void identityLinksFallBackToTheContactsOwnIndividual() {
     Id customer = contactId();
     List<String> warnings = new List<String>();
@@ -1608,9 +1597,9 @@ private class TimeDriveControllerTest {
       TimeDriveConfig.legendLabel(s)
     );
     // A custom label: its value in the viewer's language.
-    s.Event_Label__c = '$Label.Time_Drive_Example_Legend';
-    Assert.areEqual(System.Label.get('', 'Time_Drive_Example_Legend'), TimeDriveConfig.legendLabel(s));
-    Assert.areEqual('Follow-ups', TimeDriveConfig.customLabel('Time_Drive_Example_Legend'));
+    s.Event_Label__c = '$Label.Time_Drive_Legend_Calls';
+    Assert.areEqual(System.Label.get('', 'Time_Drive_Legend_Calls'), TimeDriveConfig.legendLabel(s));
+    Assert.areEqual('Calls', TimeDriveConfig.customLabel('Time_Drive_Legend_Calls'));
     // Words: as typed. A label that doesn't exist: the source's own name.
     s.Event_Label__c = 'Follow-ups';
     Assert.areEqual('Follow-ups', TimeDriveConfig.legendLabel(s));
@@ -2300,7 +2289,7 @@ private class TimeDriveControllerTest {
           Label = name,
           Kind__c = 'Data 360',
           Object_Name__c = name,
-          Title__c = 'Email {Action}',
+          Title__c = 'Email',
           Subtitle__c = '{ssot__Name__c}',
           Event_Type__c = 'email',
           Category__c = 'Marketing'

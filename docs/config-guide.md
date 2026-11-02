@@ -117,7 +117,7 @@ To find a person's engagement, the Data 360 provider:
 Check these before you go live:
 
 - **Identity link object.** Set it in **Time Drive Setting > Default** to your ruleset's link DMO (Data Cloud Setup > Data Model), for example `UnifiedLinkssotIndividualTimeDrive__dlm`. If the one set (default `IndividualIdentityLink__dlm`) isn't there, the ruleset's `UnifiedLinkssotIndividual…__dlm` is used, with `SourceRecordId__c` and `UnifiedRecordId__c`.
-- **Fields.** Check each source's Object Name, Individual Field, Date Field, Id Field and templates against your mappings. Rows also offer `{Action}`, the channel action read naturally ("opened", "clicked"), so titles read "Email {Action}".
+- **Fields.** Check each source's Object Name, Individual Field, Date Field, Id Field and templates against your mappings.
 - **Details.** Each DMO's expanded fields are its detail fields (shipped: Channel action).
 - **Access.** Users need read access to the DMOs (a Data Cloud permission set) in the data space they live in.
 - **Counting.** Deploy `force-app-data360` too: it counts each DMO in Data 360 SQL, so the day list, overview and totals cover every engagement record. Without it, or if a count's SQL isn't accepted, each DMO is read as rows, up to Max Records, with a warning when that cuts it short.

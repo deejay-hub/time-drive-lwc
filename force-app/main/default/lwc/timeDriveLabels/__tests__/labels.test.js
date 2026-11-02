@@ -62,7 +62,7 @@ describe("the timeline's custom labels", () => {
     const imported = [...source.matchAll(/c\.(Time_Drive_\w+)"/g)].map((m) => m[1]);
     // (Server_* labels are Apex's, Label.Time_Drive_Server_...; the rest are
     // named by sources and lenses as $Label.Time_Drive_...)
-    const mine = names.filter((n) => !/^Time_Drive_(Example_Legend|View_\w+|Server_\w+|Legend_\w+)$/.test(n));
+    const mine = names.filter((n) => !/^Time_Drive_(View_\w+|Server_\w+|Legend_\w+)$/.test(n));
     expect(imported.sort()).toEqual(mine.sort());
     // And each reads as its English text in the tests.
     expect(LABELS.buttonToday).toBe("Today");

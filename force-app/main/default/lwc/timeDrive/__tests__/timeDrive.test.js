@@ -201,6 +201,8 @@ const groupBusyDays = (events) => {
       const g = groups.get(e.type) ?? {
         id: `group-${day}-${e.type}`,
         type: e.type,
+        // The legend name, as the server copies it onto a grouped row.
+        typeLabel: e.typeLabel,
         category: e.category,
         dayKey: day,
         grouped: true,
@@ -756,13 +758,13 @@ describe("c-time-drive", () => {
     await flush();
     const root = element.shadowRoot;
     // A setup error, with its own illustration.
-    expect(root.querySelector(".empty h3").textContent).toBe("Setup Error");
-    expect(root.querySelector(".empty").textContent).toContain("This object has not been setup by your admin.");
+    expect(root.querySelector(".empty h3").textContent).toBe("Not set up yet");
+    expect(root.querySelector(".empty").textContent).toContain("This object hasn't been set up by your admin yet.");
     expect(root.querySelector(".empty lightning-illustration").illustrationName).toBe("access:request");
     root.querySelector(".filter-button").click();
     await flush();
     expect(filtersRoot(root).querySelector(".filter-none").textContent).toBe(
-      "This object has not been setup by your admin."
+      "This object hasn't been set up by your admin yet."
     );
     // Vertical, the empty state is as tall as it needs.
     expect(element.shadowRoot.querySelector(".empty").style.height).toBe("");
@@ -993,11 +995,10 @@ describe("buildMinimap", () => {
     expect(d.left + d.width).toBeCloseTo(100, 5);
   });
 
-  it("shades by activity, marks order days and long gaps, and labels months", () => {
+  it("shades by activity, marks long gaps, and labels months", () => {
     const map = buildMinimap([day(0, 4, true), day(1, 1), day(9, 2), day(100, 1)]);
     // Log scale: counts 4, 1, 2, 1 against a busiest day of 4.
     expect(map.cells.map((c) => c.level)).toEqual([4, 2, 3, 2]);
-    expect(map.cells.map((c) => c.hasOrder)).toEqual([true, false, false, false]);
     expect(map.gaps.map((g) => g.days)).toEqual([7, 90]);
     expect(map.months.length).toBeGreaterThanOrEqual(2);
     expect(buildMinimap([])).toEqual({ cells: [], gaps: [], months: [], years: [], now: null });
@@ -1045,12 +1046,10 @@ describe("buildMinimap on long histories", () => {
     expect(map.cells[0].from).toBe(0);
     expect(map.cells.at(-1).to).toBe(decade.length - 1);
     map.cells.slice(1).forEach((cell, i) => expect(cell.from).toBe(map.cells[i].to + 1));
-    expect(map.cells[0].title).toMatch(/items, \d+ orders? on \d+ days$/);
     // A tight strip falls back to quarters, then half-years, then years.
     expect(buildMinimap(decade, { maxCells: 45 }).unit).toBe("quarter");
     const half = buildMinimap(decade, { maxCells: 30 });
     expect(half.unit).toBe("half");
-    expect(half.cells[0].title).toMatch(/^H[12] \d{4}: /);
     expect(buildMinimap(decade, { maxCells: 15 }).unit).toBe("year");
   });
 
@@ -2204,6 +2203,7 @@ describe("c-time-drive drawing less", () => {
       const days = offsets.map((d, n) => ({
         id: `d${n}`,
         type: "web",
+        typeLabel: "Page views",
         category: "Digital",
         title: "Page view",
         subtitle: `Day ${d}`,
@@ -2334,6 +2334,7 @@ describe("c-time-drive drawing less", () => {
       const events = Array.from({ length: 300 }, (_, d) => ({
         id: `r${d}`,
         type: "web",
+        typeLabel: "Page views",
         category: "Digital",
         title: "Page view",
         subtitle: `Day ${d}`,
@@ -2398,6 +2399,7 @@ describe("c-time-drive busy days", () => {
       ...Array.from({ length: 45 }, (_, i) => ({
         id: `e${i}`,
         type: "email",
+        typeLabel: "Email items",
         category: "Marketing",
         title: "Email opened",
         occurredAt: minute(i),
@@ -2406,6 +2408,7 @@ describe("c-time-drive busy days", () => {
       ...Array.from({ length: 10 }, (_, i) => ({
         id: `w${i}`,
         type: "web",
+        typeLabel: "Page views",
         category: "Digital",
         title: "Page view",
         occurredAt: minute(60 + i),
@@ -2443,6 +2446,7 @@ describe("c-time-drive busy days", () => {
       ...Array.from({ length: 45 }, (_, i) => ({
         id: `e${i}`,
         type: "email",
+        typeLabel: "Email items",
         category: "Marketing",
         title: "Email opened",
         occurredAt: minute(i),
@@ -2451,6 +2455,7 @@ describe("c-time-drive busy days", () => {
       ...Array.from({ length: 10 }, (_, i) => ({
         id: `w${i}`,
         type: "web",
+        typeLabel: "Page views",
         category: "Digital",
         title: "Page view",
         occurredAt: minute(60 + i),
@@ -2597,6 +2602,7 @@ describe("c-time-drive accessibility", () => {
     id: `a${d}`,
     recordId: d % 3 === 0 ? `a0100000000000${String(d).padStart(2, "0")}AA` : undefined,
     type: d % 3 === 0 ? "purchase" : "web",
+    typeLabel: d % 3 === 0 ? "Orders placed" : "Website",
     category: d % 3 === 0 ? "Commerce" : "Digital",
     title: d % 3 === 0 ? "Order placed" : "Page view",
     subtitle: `Day ${d}`,
