@@ -55,3 +55,7 @@ $RECYCLE.BIN/
 
 # Code Analyzer scan output
 code-analyzer-results-*
+
+# Kept locally, not in the repo: Impeccable design surfaces and AppExchange artwork.
+.impeccable/surfaces/
+marketing/appexchange/
