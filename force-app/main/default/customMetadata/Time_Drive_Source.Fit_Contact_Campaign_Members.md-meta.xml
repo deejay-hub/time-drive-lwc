@@ -64,7 +64,7 @@
     </values>
     <values>
         <field>Icon_Colour__c</field>
-        <value xsi:type="xsd:string">#F49756</value>
+        <value xsi:type="xsd:string">#FF5D2D</value>
     </values>
     <values>
         <field>Max_Records__c</field>
