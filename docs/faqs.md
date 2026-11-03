@@ -52,6 +52,10 @@ Yes, with an Apex source: a class extending `TimeDriveApexSource` that returns r
 
 Up to ten years back and ten ahead, set by the History and Future properties. Each source can look back less far than the timeline does.
 
+## Can people see less than the page's date range?
+
+Yes. Unless the admin turns off **Let People Narrow the Date Range**, Filters offers **Back** and **Ahead**: how far either side of today to show, each up to the page's History or Future (for the next month only, Back None and Ahead 1 month). A narrower range also loads faster on a busy record. The choice is remembered for each person and shows as a chip in the header; its x goes back to the page's range. Nobody can widen the range past what the admin set.
+
 ## Why does the timeline say only some items are plotted (its Max Records)?
 
 That source is read rather than counted, and it reached its Max Records. Salesforce and Data 360 sources count; an Apex source counts when its class implements `counts`. See [Scale](config-guide.md#scale).

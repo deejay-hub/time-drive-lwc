@@ -1926,6 +1926,31 @@ private class TimeDriveControllerTest {
   }
 
   @IsTest
+  static void aNarrowedRangeStartsTodayOrSpansAMonth() {
+    Id customer = contactId();
+    Date today = Date.today();
+    delete [SELECT Id FROM Task];
+    insert new List<Task>{
+      new Task(WhoId = customer, Subject = 'Last week', ActivityDate = today.addDays(-7), Status = 'Completed'),
+      new Task(WhoId = customer, Subject = 'Today', ActivityDate = today, Status = 'Completed'),
+      new Task(WhoId = customer, Subject = 'In a fortnight', ActivityDate = today.addDays(14)),
+      new Task(WhoId = customer, Subject = 'In two months', ActivityDate = today.addMonths(2))
+    };
+    TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ source('Tasks', 'Task', 'ActivityDate', 'WhoId') };
+
+    // Next month: from today (History 0) to a month ahead.
+    TimeDriveController.TimelineSummary next = TimeDriveController.getSummary(customer, null, null, '0', '1m');
+    Assert.isTrue(next.warnings.isEmpty(), String.join(next.warnings, ' | '));
+    Assert.areEqual(2, next.total, 'today and the fortnight');
+    // Last month: a month back to today.
+    TimeDriveController.TimelineSummary last = TimeDriveController.getSummary(customer, null, null, '1m', null);
+    Assert.areEqual(2, last.total, 'last week and today');
+    // Starting today is for History only: Future 0 isn't a value.
+    TimeDriveController.TimelineSummary bad = TimeDriveController.getSummary(customer, null, null, '0.5', '0');
+    Assert.areEqual(1, bad.warnings.size());
+  }
+
+  @IsTest
   static void theTimelineComesWithTheDaysItOpensOn() {
     Id customer = contactId();
     Date today = Date.today();

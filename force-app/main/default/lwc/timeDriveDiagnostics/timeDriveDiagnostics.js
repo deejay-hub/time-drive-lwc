@@ -28,8 +28,8 @@ const seconds = (ms) => (ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(1)} s`)
 export default class TimeDriveDiagnostics extends LightningElement {
   recordId = "";
   layout = "Across";
-  history = "0.5";
-  future = "None";
+  history = "1";
+  future = "0.5";
 
   report;
   error;

@@ -13,7 +13,10 @@ public with sharing class TimeDriveController {
   // History and Future. Only these values; anything else falls back to the
   // default with a warning.
   public static final Set<Decimal> RANGE_YEARS = new Set<Decimal>{ 0.25, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-  public static final Decimal DEFAULT_HISTORY_YEARS = 0.5;
+  // A date range the user narrows it to (the Filters panel's Back and Ahead)
+  // can also be a month ("1m"), and start today (History "0").
+  private static final String ONE_MONTH = '1m';
+  public static final Decimal DEFAULT_HISTORY_YEARS = 1;
   // A day with more matching events than this comes back as one row per
   // event type ("212 Email events") instead of every event.
   public static final Integer GROUP_OVER = 50;
@@ -1016,8 +1019,36 @@ public with sharing class TimeDriveController {
     if (mine != null) {
       out.lens = mine.Last_Lens__c;
       out.itemDetail = mine.Item_Detail__c;
+      out.dateRange = mine.Date_Range__c;
     }
     return out;
+  }
+
+  /**
+   * Keeps how far back and ahead this person narrowed the timeline to, in
+   * months ("3,6"), or blank for the page's own History and Future. The
+   * timeline offers each side only up to the page's, and trims a kept one
+   * that no longer fits.
+   * @param dateRange the months back and ahead, or blank for none
+   */
+  @SuppressWarnings('PMD.ApexCRUDViolation')
+  @AuraEnabled
+  public static void saveDateRange(String dateRange) {
+    String kept = String.isBlank(dateRange) ? null : dateRange.trim().left(20);
+    Time_Drive_Preference__c mine = own();
+    if (mine == null && kept == null) {
+      return;
+    }
+    // Written as the system, as savePreference explains.
+    if (mine == null) {
+      Database.insert(
+        new Time_Drive_Preference__c(SetupOwnerId = UserInfo.getUserId(), Date_Range__c = kept),
+        AccessLevel.SYSTEM_MODE
+      );
+    } else {
+      mine.Date_Range__c = kept;
+      Database.update(mine, AccessLevel.SYSTEM_MODE);
+    }
   }
 
   /**
@@ -1055,12 +1086,14 @@ public with sharing class TimeDriveController {
     return row != null && row.Id != null && row.SetupOwnerId == UserInfo.getUserId() ? row : null;
   }
 
-  /** The user's saved choices: the lens and the label choice. */
+  /** The user's saved choices: the lens, the label choice and the date range. */
   public class Preference {
     @AuraEnabled
     public String lens;
     @AuraEnabled
     public String itemDetail;
+    @AuraEnabled
+    public String dateRange;
   }
 
   /** A view for the picker: the key sources use and its label. */
@@ -2261,7 +2294,9 @@ public with sharing class TimeDriveController {
   // falls back (History to half a year, Future to none) with a warning.
   @TestVisible
   private static TimeWindow windowFor(String historyYears, String futureYears, List<String> warnings) {
-    Decimal history = yearsFrom(historyYears, 'History', warnings);
+    Decimal history = String.isNotBlank(historyYears) && historyYears.trim() == '0'
+      ? 0
+      : yearsFrom(historyYears, 'History', warnings);
     Decimal future = yearsFrom(futureYears, 'Future', warnings);
     return new TimeWindow(history == null ? DEFAULT_HISTORY_YEARS : history, future);
   }
@@ -2269,6 +2304,9 @@ public with sharing class TimeDriveController {
   private static Decimal yearsFrom(String value, String name, List<String> warnings) {
     if (String.isBlank(value) || value.trim().equalsIgnoreCase('None')) {
       return null;
+    }
+    if (value.trim().equalsIgnoreCase(ONE_MONTH)) {
+      return Decimal.valueOf(1).divide(12, 6);
     }
     Decimal years;
     try {

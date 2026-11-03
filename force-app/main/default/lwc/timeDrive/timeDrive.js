@@ -16,6 +16,8 @@ import getRights from "@salesforce/apex/TimeDriveController.getRights";
 import getViews from "@salesforce/apex/TimeDriveController.getViews";
 import getPreference from "@salesforce/apex/TimeDriveController.getPreference";
 import savePreference from "@salesforce/apex/TimeDriveController.savePreference";
+import saveDateRange from "@salesforce/apex/TimeDriveController.saveDateRange";
+import USER_ID from "@salesforce/user/Id";
 import getActivityActions from "@salesforce/apex/TimeDriveController.getActivityActions";
 import TimeDriveConfirm from "c/timeDriveConfirm";
 import LightningConfirm from "lightning/confirm";
@@ -45,6 +47,10 @@ import {
   buildMinimap,
   dayAtPercent,
   currentPeriodKey,
+  lengthOptions,
+  lengthText,
+  lengthValue,
+  pageMonths,
   periodDate,
   windowEnds,
   dayWord,
@@ -211,6 +217,25 @@ function sentenceStart(word) {
   return word.charAt(0).toLocaleUpperCase(LOCALE) + word.slice(1);
 }
 
+// This browser's copy of the user's date range (their preference is the
+// truth, read after): per user, so a shared browser keeps each one's own.
+const RANGE_COPY = `timeDrive.dateRange.${USER_ID}`;
+function readRangeCopy() {
+  try {
+    return window.localStorage?.getItem(RANGE_COPY) ?? "";
+  } catch {
+    return "";
+  }
+}
+function keepRangeCopy(key) {
+  try {
+    if (key) window.localStorage?.setItem(RANGE_COPY, key);
+    else window.localStorage?.removeItem(RANGE_COPY);
+  } catch {
+    // No storage here: the saved preference still holds.
+  }
+}
+
 export default class TimeDrive extends NavigationMixin(LightningElement) {
   @api
   get recordId() {
@@ -259,8 +284,9 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     this.keepPreference(null, this._lite ? "lite" : "max");
   }
 
-  // The last lens and label choice are the user's own (Time Drive Preference),
-  // kept in the org: they follow the person to any browser. Nothing else is.
+  // The last lens, label choice and date range are the user's own (Time Drive
+  // Preference), kept in the org: they follow the person to any browser.
+  // Nothing else is.
   keepPreference(lens, itemDetail) {
     savePreference({ lens, itemDetail }).catch(() => {
       // Not kept (no access): the choice still holds for this visit.
@@ -279,6 +305,13 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       // Anything they chose meanwhile stands.
       if (this._lite === undefined && (kept?.itemDetail === "Lite" || kept?.itemDetail === "Max")) {
         this._lite = kept.itemDetail === "Lite";
+      }
+      // Their saved range (this browser's copy may be older).
+      const keptRange = kept?.dateRange ?? "";
+      if (!this._rangePicked && keptRange !== this.dateRange) {
+        this.dateRange = keptRange;
+        keepRangeCopy(keptRange);
+        this.applyQueryChange();
       }
       // Their last lens, while the org still offers it.
       if (!this._picked && kept?.lens && kept.lens !== this.view && this.offers(kept.lens)) {
@@ -309,20 +342,97 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   }
   set historyYears(value) {
     this._historyYears = value;
-    this.queryHistory = value == null || value === "" ? null : String(value);
+    this.syncWindow();
     this.requestTimeline();
   }
-  _historyYears = "0.5";
+  _historyYears = "1";
   @api
   get futureYears() {
     return this._futureYears;
   }
   set futureYears(value) {
     this._futureYears = value;
-    this.queryFuture = value == null || value === "" ? null : String(value);
+    this.syncWindow();
     this.requestTimeline();
   }
-  _futureYears = "None";
+  _futureYears = "0.5";
+  // App Builder "Let People Narrow the Date Range": Filters offers Back and
+  // Ahead, each up to History and Future (1 month, 3 months, 1 year ...).
+  @api
+  get allowDateRange() {
+    return this._allowDateRange;
+  }
+  set allowDateRange(value) {
+    this._allowDateRange = value !== false && value !== "false";
+    this.syncWindow();
+    this.requestTimeline();
+  }
+  _allowDateRange = true;
+  // How far back and ahead this person narrowed it to, in months ("3,6"),
+  // "" for none. Kept with their other choices; a copy in this browser lets
+  // the first request use it, not load the page's whole range first.
+  dateRange = readRangeCopy();
+
+  // Back and Ahead as Filters offers them: up to the page's History and Future.
+  get backOptions() {
+    return this._allowDateRange ? lengthOptions(this._historyYears, "back") : [];
+  }
+  get aheadOptions() {
+    return this._allowDateRange ? lengthOptions(this._futureYears, "ahead") : [];
+  }
+  // The range in use, in months: the one chosen, each side no further than
+  // the page's (History or Future may have been shortened since); null when
+  // it is the page's own.
+  get activeRange() {
+    if (!this.dateRange || !this._allowDateRange) return null;
+    const [back, ahead] = this.dateRange.split(",").map(Number);
+    if (!Number.isInteger(back) || !Number.isInteger(ahead)) return null;
+    const most = { back: pageMonths(this._historyYears, "back"), ahead: pageMonths(this._futureYears, "ahead") };
+    const range = { back: Math.min(back, most.back), ahead: Math.min(ahead, most.ahead) };
+    // The page's own, or nothing either side of today: no range.
+    const own = range.back === most.back && range.ahead === most.ahead;
+    return own || (!range.back && !range.ahead) ? null : range;
+  }
+  // History and Future as the server takes them: the range's, else the page's.
+  syncWindow() {
+    const range = this.activeRange;
+    const page = (value) => (value == null || value === "" ? null : String(value));
+    this.queryHistory = range ? lengthValue(range.back, "back") : page(this._historyYears);
+    this.queryFuture = range ? lengthValue(range.ahead, "ahead") : page(this._futureYears);
+  }
+  // A range chosen here, in months: kept, and the timeline loads for it. The
+  // page's own range keeps nothing.
+  chooseRange(back, ahead) {
+    const own = back >= pageMonths(this._historyYears, "back") && ahead >= pageMonths(this._futureYears, "ahead");
+    const key = own || (!back && !ahead) ? "" : `${back},${ahead}`;
+    if (key === this.dateRange) return;
+    this.dateRange = key;
+    this._rangePicked = true;
+    keepRangeCopy(key);
+    saveDateRange({ dateRange: key }).catch(() => {
+      // Not kept (no access): the range still holds for this visit.
+    });
+    this.applyQueryChange();
+  }
+  // What Filters starts on: the range in use, else the page's own.
+  get rangeBack() {
+    return String(this.activeRange?.back ?? pageMonths(this._historyYears, "back"));
+  }
+  get rangeAhead() {
+    return String(this.activeRange?.ahead ?? pageMonths(this._futureYears, "ahead"));
+  }
+  // "3 months back · 6 months ahead"; one side only when the other is none.
+  get rangeChipLabel() {
+    const range = this.activeRange;
+    if (!range) return "";
+    if (!range.ahead) return format(LABELS.rangeChipBack, lengthText(range.back));
+    if (!range.back) return format(LABELS.rangeChipAhead, lengthText(range.ahead));
+    return format(LABELS.rangeChip, lengthText(range.back), lengthText(range.ahead));
+  }
+  // The header's chip, while a range narrows the timeline: its x resets it.
+  handleRangeRemove() {
+    this.chooseRange(pageMonths(this._historyYears, "back"), pageMonths(this._futureYears, "ahead"));
+  }
 
   // App Builder "Activity Actions": the record's New Task, Log a Call,
   // Email, New Event ... as on the standard Activity component. None; One
@@ -452,8 +562,8 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   queryCategories = null;
   queryHidden = [];
   // The App Builder window (History and Future, in years).
-  queryHistory = "0.5";
-  queryFuture = "None";
+  queryHistory = "1";
+  queryFuture = "0.5";
 
   view = "All";
   hiddenTypes = new Set();
@@ -865,9 +975,13 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   // The filters as the server takes them: the lens viewed (All is a lens like the others).
   syncQuery() {
     const next = { categories: [this.view], hidden: [...this.hiddenTypes] };
+    const was = [this.queryHistory, this.queryFuture];
+    this.syncWindow();
     // A new query: its counts are on their way (the header says so until
     // the summary lands). The same query brings no new summary to wait for.
     const changed =
+      was[0] !== this.queryHistory ||
+      was[1] !== this.queryFuture ||
       JSON.stringify(next.categories) !== JSON.stringify(this.queryCategories) ||
       JSON.stringify([...next.hidden].sort()) !== JSON.stringify([...(this.queryHidden ?? [])].sort());
     if (changed) this.summaryPending = true;
@@ -1842,7 +1956,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
 
   // Filters button and panel.
   get filterCount() {
-    return this.hiddenTypes.size ? 1 : 0;
+    return (this.hiddenTypes.size ? 1 : 0) + (this.activeRange ? 1 : 0);
   }
   get hasFilters() {
     return this.filterCount > 0;
@@ -1899,7 +2013,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       ? LABELS.typesAll
       : format(LABELS.typesSome, this.typeOptions.length - hidden, this.typeOptions.length);
   }
-  // The App Builder's History and Future, as dates.
+  // The dates the timeline covers: the range chosen, else History and Future.
   get summaryWhen() {
     return windowRange(this.queryHistory, this.queryFuture, { short: this.cardWidth < WIDE_FROM });
   }
@@ -2015,11 +2129,12 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       requestAnimationFrame(() => button?.focus());
     }
   }
-  // Apply: the types to show, from the panel.
-  // Apply: the types to show, from the panel.
+  // Apply: the date range and the types to show, from the panel.
   handleFiltersApply(event) {
     const shown = new Set(event.detail.shown);
     this.hiddenTypes = new Set(this.typeOptions.map((o) => o.value).filter((type) => !shown.has(type)));
+    const { back, ahead } = event.detail;
+    if (Number.isInteger(back) && Number.isInteger(ahead)) this.chooseRange(back, ahead);
     this.applyQueryChange();
   }
   // The Refresh button: the loading skeleton shows while it works, at the

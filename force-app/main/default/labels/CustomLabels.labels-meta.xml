@@ -953,6 +953,94 @@
         <value>Event types</value>
     </labels>
     <labels>
+        <fullName>Time_Drive_Range_Heading</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Filters panel · heading of the date range choices</shortDescription>
+        <value>Date range</value>
+    </labels>
+    <labels>
+        <fullName>Time_Drive_Range_Back</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Filters panel · date range: how far back from today</shortDescription>
+        <value>Back</value>
+    </labels>
+    <labels>
+        <fullName>Time_Drive_Range_Ahead</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Filters panel · date range: how far ahead of today</shortDescription>
+        <value>Ahead</value>
+    </labels>
+    <labels>
+        <fullName>Time_Drive_Range_None</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Filters panel · date range length: none (Back starts today, Ahead ends it)</shortDescription>
+        <value>None</value>
+    </labels>
+    <labels>
+        <fullName>Time_Drive_Range_Month</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Filters panel and header chip · date range length</shortDescription>
+        <value>1 month</value>
+    </labels>
+    <labels>
+        <fullName>Time_Drive_Range_Months</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Filters panel and header chip · date range length: {0} months</shortDescription>
+        <value>{0} months</value>
+    </labels>
+    <labels>
+        <fullName>Time_Drive_Range_Year</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Filters panel and header chip · date range length</shortDescription>
+        <value>1 year</value>
+    </labels>
+    <labels>
+        <fullName>Time_Drive_Range_Years</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Filters panel and header chip · date range length: {0} years</shortDescription>
+        <value>{0} years</value>
+    </labels>
+    <labels>
+        <fullName>Time_Drive_Range_Chip</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timeline header · chip when narrowed: {0} back, {1} ahead (lengths)</shortDescription>
+        <value>{0} back · {1} ahead</value>
+    </labels>
+    <labels>
+        <fullName>Time_Drive_Range_Chip_Back</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timeline header · chip when narrowed to the past only: {0} a length</shortDescription>
+        <value>{0} back</value>
+    </labels>
+    <labels>
+        <fullName>Time_Drive_Range_Chip_Ahead</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timeline header · chip when narrowed to today onwards: {0} a length</shortDescription>
+        <value>{0} ahead</value>
+    </labels>
+    <labels>
         <fullName>Time_Drive_Legend_Files</fullName>
         <categories>Time Drive</categories>
         <language>en_US</language>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Date_Range__c</fullName>
+    <description>How far back and ahead this person narrowed the timeline to, in months (3,6: three back, six ahead); blank uses the page's History and Future.</description>
+    <label>Date Range</label>
+    <length>20</length>
+    <required>false</required>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

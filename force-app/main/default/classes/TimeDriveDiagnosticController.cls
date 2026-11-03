@@ -300,7 +300,7 @@ public with sharing class TimeDriveDiagnosticController {
     report.page.add(new Fact('Record', name, recordId + ' · ' + object1.getLabel(), null));
     report.page.add(new Fact('Sources used for', parentObject, parentObject == TimeDriveController.PERSON_ACCOUNT ? 'A person account has its own sources.' : 'Sources whose Parent Object is this.', null));
     report.page.add(new Fact('Layout', across ? 'Across (horizontal)' : 'Down (vertical)', across ? 'Opens on the 12 columns around Today.' : 'Opens on the first 7 days.', null));
-    report.page.add(new Fact('History / Future', (historyYears ?? '0.5') + ' / ' + (futureYears ?? 'None') + ' years', null, null));
+    report.page.add(new Fact('History / Future', (historyYears ?? '1') + ' / ' + (futureYears ?? 'None') + ' years', null, null));
     try {
       for (UserRecordAccess a : [
         SELECT RecordId, HasReadAccess, HasEditAccess, HasDeleteAccess

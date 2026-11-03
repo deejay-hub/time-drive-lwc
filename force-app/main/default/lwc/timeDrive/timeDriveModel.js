@@ -196,21 +196,63 @@ function addMonths(key, months) {
   return new Date(date.getFullYear(), date.getMonth() + months, Math.min(date.getDate(), last)).getTime();
 }
 
+// History or Future in months: years (0.25 to 10), "1m" for a month, or
+// "0" (History only: from today); null for none or anything else.
+function monthsIn(value) {
+  const text = String(value ?? "").trim();
+  if (text === "1m") return 1;
+  if (text === "0") return 0;
+  const years = Number(text);
+  return text && Number.isFinite(years) && years > 0 ? Math.round(years * 12) : null;
+}
+
+// The window's first and last days (day keys), from History and Future.
+function windowDays(historyYears, futureYears, now) {
+  const today = dayKey(new Date(now));
+  return {
+    from: addMonths(today, -pageMonths(historyYears, "back")),
+    to: addMonths(today, pageMonths(futureYears, "ahead"))
+  };
+}
+
+/**
+ * How far back or ahead a user can narrow the timeline to (the Filters
+ * panel's Back and Ahead), in months, each up to the page's own History or
+ * Future and relative to today. 0 is none: Back starts today, Ahead ends it.
+ */
+const LENGTHS = [0, 1, 3, 6, 12, 24, 36, 48, 60, 72, 84, 96, 108, 120];
+const LENGTH_NUMBER = new Intl.NumberFormat(LOCALE);
+
+/** A length in words: "None", "1 month", "3 months", "1 year", "2 years". */
+export function lengthText(months) {
+  if (!months) return LABELS.rangeNone;
+  if (months < 12) return months === 1 ? LABELS.rangeMonth : format(LABELS.rangeMonths, LENGTH_NUMBER.format(months));
+  return months === 12 ? LABELS.rangeYear : format(LABELS.rangeYears, LENGTH_NUMBER.format(months / 12));
+}
+
+/** History or Future as the server takes it, for a length in months. */
+export function lengthValue(months, side) {
+  if (!months) return side === "back" ? "0" : "None";
+  if (months === 1) return "1m";
+  return String(months / 12);
+}
+
+/** The page's History or Future in months (History unset: a year). */
+export function pageMonths(value, side) {
+  return monthsIn(value) ?? (side === "back" ? 12 : 0);
+}
+
+/** The lengths a side offers: up to the page's own, as { value, label }. */
+export function lengthOptions(pageValue, side) {
+  const most = pageMonths(pageValue, side);
+  return LENGTHS.filter((m) => m <= most).map((m) => ({ value: String(m), label: lengthText(m) }));
+}
+
 /**
  * The dates the timeline covers, as the server works them out: History years
  * back to Future years ahead (today, with none). "19 Apr – 19 Oct 2026" in the
  * user's locale; short, "Apr – Oct 2026".
  */
-// The window's first and last days (day keys), from History and Future.
-function windowDays(historyYears, futureYears, now) {
-  const months = (value) => {
-    const years = Number(value);
-    return Number.isFinite(years) && years > 0 ? Math.round(years * 12) : null;
-  };
-  const today = dayKey(new Date(now));
-  return { from: addMonths(today, -(months(historyYears) ?? 6)), to: addMonths(today, months(futureYears) ?? 0) };
-}
-
 export function windowRange(historyYears, futureYears, { short = false, now = Date.now() } = {}) {
   const { from, to } = windowDays(historyYears, futureYears, now);
   const range = short ? RANGE_FORMAT_SHORT : RANGE_FORMAT;
@@ -237,10 +279,9 @@ export function periodDate(key, unit) {
  */
 export function windowEnds(historyYears, futureYears, unit, now = Date.now()) {
   const { from, to } = windowDays(historyYears, futureYears, now);
-  const future = Number(futureYears);
   return {
     start: { key: periodKeyOf(from, unit), date: RANGE_FORMAT.format(from) },
-    end: Number.isFinite(future) && future > 0 ? { key: periodKeyOf(to, unit), date: RANGE_FORMAT.format(to) } : null
+    end: monthsIn(futureYears) > 0 ? { key: periodKeyOf(to, unit), date: RANGE_FORMAT.format(to) } : null
   };
 }
 

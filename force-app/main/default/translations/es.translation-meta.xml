@@ -409,6 +409,50 @@
         <name>Time_Drive_Prob_Message</name>
     </customLabels>
     <customLabels>
+        <label>Hacia adelante</label>
+        <name>Time_Drive_Range_Ahead</name>
+    </customLabels>
+    <customLabels>
+        <label>Hacia atrás</label>
+        <name>Time_Drive_Range_Back</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} atrás · {1} adelante</label>
+        <name>Time_Drive_Range_Chip</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} adelante</label>
+        <name>Time_Drive_Range_Chip_Ahead</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} atrás</label>
+        <name>Time_Drive_Range_Chip_Back</name>
+    </customLabels>
+    <customLabels>
+        <label>Intervalo de fechas</label>
+        <name>Time_Drive_Range_Heading</name>
+    </customLabels>
+    <customLabels>
+        <label>1 mes</label>
+        <name>Time_Drive_Range_Month</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} meses</label>
+        <name>Time_Drive_Range_Months</name>
+    </customLabels>
+    <customLabels>
+        <label>Ninguno</label>
+        <name>Time_Drive_Range_None</name>
+    </customLabels>
+    <customLabels>
+        <label>1 año</label>
+        <name>Time_Drive_Range_Year</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} años</label>
+        <name>Time_Drive_Range_Years</name>
+    </customLabels>
+    <customLabels>
         <label>Elementos de interacción</label>
         <name>Time_Drive_Region_Items</name>
     </customLabels>

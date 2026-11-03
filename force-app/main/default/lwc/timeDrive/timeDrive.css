@@ -458,6 +458,11 @@
   gap: calc(0.25 * var(--time-drive-space)) calc(0.75 * var(--time-drive-space));
 }
 
+/* A narrowed date range: its chip, with the dates beside it. */
+.range-chip + .summary {
+  margin-inline-end: auto;
+}
+
 .summary {
   color: var(--time-drive-muted);
   font-size: 0.75rem;

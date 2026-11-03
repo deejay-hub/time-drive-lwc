@@ -247,10 +247,15 @@
           </template>
         </div>
 
-        <!-- The event types panel (its own component, so opening it doesn't
-             re-render the timeline); nothing applies until Apply. -->
+        <!-- The date range and event types panel (its own component, so
+             opening it doesn't re-render the timeline); nothing applies until
+             Apply. -->
         <c-time-drive-filters
           options={typeOptions}
+          back-options={backOptions}
+          ahead-options={aheadOptions}
+          back={rangeBack}
+          ahead={rangeAhead}
           none-text={filterNoneText}
           slds1={slds1}
           onapply={handleFiltersApply}
@@ -259,6 +264,11 @@
       </div>
 
       <div class="summary-row">
+        <!-- A date range narrows the timeline: its name, and an x that goes
+             back to the page's own range. -->
+        <template lwc:if={activeRange}>
+          <lightning-pill class="range-chip" label={rangeChipLabel} onremove={handleRangeRemove}></lightning-pill>
+        </template>
         <template lwc:if={summaryAfterTools}>
           <p class="summary" aria-live="polite">
             {summaryWhen}<template lwc:if={summaryPending}

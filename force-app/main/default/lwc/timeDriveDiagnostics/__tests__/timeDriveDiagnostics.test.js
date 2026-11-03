@@ -203,8 +203,8 @@ describe("c-time-drive-diagnostics", () => {
       recordId: ID,
       mode: "config",
       layout: "Across",
-      historyYears: "0.5",
-      futureYears: "None"
+      historyYears: "1",
+      futureYears: "0.5"
     });
     const tabs = [...root.querySelectorAll(".tab")];
     expect(tabs.map((t) => t.textContent.trim())).toEqual(["Config", "Performance", "Output"]);

@@ -9,6 +9,7 @@ import getDays from "@salesforce/apex/TimeDriveController.getPageDays";
 import getRights from "@salesforce/apex/TimeDriveController.getRights";
 import getPreference from "@salesforce/apex/TimeDriveController.getPreference";
 import savePreference from "@salesforce/apex/TimeDriveController.savePreference";
+import saveDateRange from "@salesforce/apex/TimeDriveController.saveDateRange";
 import getActivityActions from "@salesforce/apex/TimeDriveController.getActivityActions";
 import TimeDriveConfirm from "c/timeDriveConfirm";
 import { deleteRecord } from "lightning/uiRecordApi";
@@ -19,6 +20,7 @@ import {
   ago,
   buildMinimap,
   dayAtPercent,
+  lengthOptions,
   percentAtDay,
   dayLabel,
   periodLabel,
@@ -42,7 +44,20 @@ jest.mock(
     virtual: true
   }
 );
+jest.mock("@salesforce/apex/TimeDriveController.saveDateRange", () => ({ default: jest.fn(() => Promise.resolve()) }), {
+  virtual: true
+});
 jest.mock("@salesforce/apex/TimeDriveController.getTimeline", () => ({ default: jest.fn() }), { virtual: true });
+// The window most tests were written for: half a year back, nothing ahead.
+// The defaults (a year back, half a year ahead) have their own test.
+const createTimeline = () => {
+  const element = createElement("c-time-drive", { is: TimeDrive });
+  element.historyYears = "0.5";
+  element.futureYears = "None";
+  return element;
+};
+// A date range chosen in one test isn't the next one's.
+afterEach(() => window.localStorage.clear());
 jest.mock(
   "@salesforce/apex/TimeDriveController.getRights",
   () => ({ default: jest.fn(() => Promise.resolve({ canEdit: true, canDelete: true })) }),
@@ -118,12 +133,15 @@ const DAY_KEY = new Intl.DateTimeFormat("en-CA", {
 });
 const dayKeyOf = (e) => DAY_KEY.format(new Date(e.occurredAt));
 // History and Future in years, as the server reads them: Future None is up to
-// the end of today.
+// the end of today; "1m" is a month, and History "0" starts today.
 const windowOf = ({ historyYears, futureYears }) => {
   const month = 30.44 * 86400000;
   const endOfToday = new Date(new Date().setHours(23, 59, 59, 999)).getTime();
-  const back = Number(historyYears) || 0.5;
-  const ahead = Number(futureYears) || 0;
+  const startOfToday = new Date(new Date().setHours(0, 0, 0, 0)).getTime();
+  const years = (value) => (value === "1m" ? 1 / 12 : Number(value));
+  if (historyYears === "0") return { since: startOfToday, until: endOfToday + (years(futureYears) || 0) * 12 * month };
+  const back = years(historyYears) || 0.5;
+  const ahead = years(futureYears) || 0;
   return { since: Date.now() - back * 12 * month, until: endOfToday + ahead * 12 * month };
 };
 const serverFilter = (events, { categories, hiddenTypes, rangeDays, search, historyYears, futureYears } = {}) => {
@@ -330,7 +348,7 @@ describe("c-time-drive", () => {
   });
 
   const render = async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     document.body.appendChild(element);
     emitEvents({ events: EVENTS, warnings: [] });
@@ -375,7 +393,7 @@ describe("c-time-drive", () => {
       id: `b${i}`,
       occurredAt: EVENTS[1].occurredAt
     }));
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     element.layout = "Vertical";
     document.body.appendChild(element);
@@ -428,7 +446,7 @@ describe("c-time-drive", () => {
   });
 
   it("never shows Expand all for an empty timeline, even while it refreshes", async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     document.body.appendChild(element);
     emitEvents({ events: [], warnings: [] });
@@ -440,7 +458,7 @@ describe("c-time-drive", () => {
   });
 
   it("draws a source's highlights after the title, as an icon or a dot, each saying what it means", async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     document.body.appendChild(element);
     emitEvents({
@@ -503,7 +521,7 @@ describe("c-time-drive", () => {
   });
 
   it("offers only what the user may do: Edit and Delete, Edit alone, or no menu at all", async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     document.body.appendChild(element);
     const at1 = EVENTS[0].occurredAt;
@@ -533,7 +551,7 @@ describe("c-time-drive", () => {
   });
 
   it("opens a menu with only what the user may do, and Edit opens the record's edit form", async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     document.body.appendChild(element);
     emitEvents({
@@ -558,7 +576,7 @@ describe("c-time-drive", () => {
   });
 
   it("asks what the user may do with a record only when its menu opens, once", async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     document.body.appendChild(element);
     getRights.mockClear();
@@ -592,7 +610,7 @@ describe("c-time-drive", () => {
   });
 
   it("says so when the record allows neither Edit nor Delete", async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     document.body.appendChild(element);
     emitEvents({ events: [{ ...EVENTS[0], canEdit: true, canDelete: true, objectLabel: "Event" }], warnings: [] });
@@ -606,7 +624,7 @@ describe("c-time-drive", () => {
   });
 
   it("deletes after a confirm, and not when it is declined", async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     document.body.appendChild(element);
     emitEvents({ events: [{ ...EVENTS[0], canEdit: true, canDelete: true, objectLabel: "Event" }], warnings: [] });
@@ -659,7 +677,7 @@ describe("c-time-drive", () => {
   it("asks for the days it opens on with the summary, and draws them without asking again", async () => {
     getDays.mockClear();
     getDays.mockImplementation(() => Promise.resolve([]));
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     element.layout = "Vertical";
     document.body.appendChild(element);
@@ -683,7 +701,7 @@ describe("c-time-drive", () => {
   });
 
   it("uses the horizontal layout when asked", async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     element.layout = "Horizontal";
     document.body.appendChild(element);
@@ -698,7 +716,7 @@ describe("c-time-drive", () => {
   });
 
   it("puts the year on every horizontal column when the days span years", async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     element.layout = "Horizontal";
     element.historyYears = "2";
@@ -718,7 +736,7 @@ describe("c-time-drive", () => {
     expect(element.shadowRoot.querySelector(".card").classList).toContain("card_slds1");
     document.body.removeChild(element);
     // SLDS 2 defines them.
-    element = createElement("c-time-drive", { is: TimeDrive });
+    element = createTimeline();
     element.recordId = "003000000000001AAA";
     element.style.setProperty("--slds-g-color-surface-1", "#ffffff");
     document.body.appendChild(element);
@@ -802,7 +820,7 @@ describe("c-time-drive sources that couldn't be read", () => {
     { source: "Order canceled", kind: "access" }
   ];
   const mountWith = async (events) => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     element.layout = "Vertical";
     document.body.appendChild(element);
@@ -879,7 +897,7 @@ describe("c-time-drive delight", () => {
   });
 
   it("offers a way back when filters hide everything", async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     document.body.appendChild(element);
     emitEvents({ warnings: [], events: EVENTS.filter((e) => e.category !== "Service") });
@@ -900,7 +918,7 @@ describe("c-time-drive delight", () => {
 
   it("opens on the lens chosen in App Builder, and on All when it isn't one", async () => {
     const open = async (defaultLens) => {
-      const element = createElement("c-time-drive", { is: TimeDrive });
+      const element = createTimeline();
       element.recordId = "003000000000001AAA";
       element.defaultLens = defaultLens;
       document.body.appendChild(element);
@@ -917,7 +935,7 @@ describe("c-time-drive delight", () => {
   });
 
   it("names the view as the heading and switches it from its menu", async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     document.body.appendChild(element);
     emitEvents({ events: EVENTS, warnings: [] });
@@ -959,7 +977,7 @@ describe("c-time-drive delight", () => {
   });
 
   it("closes the view menu on a press outside it", async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     document.body.appendChild(element);
     emitEvents({ events: EVENTS, warnings: [] });
@@ -1099,7 +1117,7 @@ describe("c-time-drive summary query", () => {
   });
 
   it("sends every parameter defined, so the wire service makes the request", async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     document.body.appendChild(element);
     await flush();
@@ -1116,7 +1134,7 @@ describe("c-time-drive loading", () => {
   });
 
   it("holds the horizontal layout's height and seek bar while loading", async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     element.layout = "Horizontal";
     element.horizontalHeight = 500;
@@ -1129,7 +1147,7 @@ describe("c-time-drive loading", () => {
   });
 
   it("holds the vertical layout's fixed height while loading", async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     element.layout = "Vertical";
     element.verticalHeight = 480;
@@ -1148,7 +1166,7 @@ describe("c-time-drive filters panel", () => {
     while (document.body.firstChild) document.body.removeChild(document.body.firstChild);
   });
   const mount = async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     element.layout = "Vertical";
     document.body.appendChild(element);
@@ -1170,19 +1188,19 @@ describe("c-time-drive filters panel", () => {
     emitEvents({ events: [...EVENTS, ahead], warnings: [] });
     await flush();
     const root = element.shadowRoot;
-    // Defaults: half a year back, nothing ahead.
-    expect(getSummary.getLastConfig()).toMatchObject({ historyYears: "0.5", futureYears: "None" });
-    expect(root.querySelector(".summary").textContent).toContain(windowRange("0.5", "None"));
-    expect(root.querySelectorAll(".event")).toHaveLength(4);
+    // Defaults: a year back, half a year ahead (the order 20 days ahead is in).
+    expect(getSummary.getLastConfig()).toMatchObject({ historyYears: "1", futureYears: "0.5" });
+    expect(root.querySelector(".summary").textContent).toContain(windowRange("1", "0.5"));
+    expect(root.querySelectorAll(".event")).toHaveLength(5);
 
     element.historyYears = "2";
-    element.futureYears = "0.25";
+    element.futureYears = "None";
     await flush();
-    expect(getSummary.getLastConfig()).toMatchObject({ historyYears: "2", futureYears: "0.25" });
-    expect(getDays.mock.calls.at(-1)[0]).toMatchObject({ historyYears: "2", futureYears: "0.25" });
-    expect(root.querySelector(".summary").textContent).toContain(windowRange("2", "0.25"));
-    // The order 20 days ahead is in the window now.
-    expect(root.querySelectorAll(".event")).toHaveLength(5);
+    expect(getSummary.getLastConfig()).toMatchObject({ historyYears: "2", futureYears: "None" });
+    expect(getDays.mock.calls.at(-1)[0]).toMatchObject({ historyYears: "2", futureYears: "None" });
+    expect(root.querySelector(".summary").textContent).toContain(windowRange("2", "None"));
+    // Nothing ahead: the order 20 days ahead is out.
+    expect(root.querySelectorAll(".event")).toHaveLength(4);
   });
 
   it("shortens the summary in a narrow card", async () => {
@@ -1316,8 +1334,8 @@ describe("c-time-drive filters panel", () => {
     const element = await mount();
     const root = element.shadowRoot;
     const panel = await open(root);
-    // The panel has event types only: no date range.
-    expect(panel.querySelector("lightning-radio-group")).toBeNull();
+    // The date range starts on the page's own.
+    expect(panel.querySelector("select.range-back").value).toBe("6");
     panel
       .querySelector("lightning-checkbox-group")
       .dispatchEvent(new CustomEvent("change", { detail: { value: ["purchase", "web"] } }));
@@ -1332,6 +1350,102 @@ describe("c-time-drive filters panel", () => {
     expect(button.getAttribute("aria-pressed")).toBe("true");
     expect(button.getAttribute("aria-label")).toBe("Filters, 1 active");
     expect(button.getAttribute("aria-expanded")).toBe("false");
+  });
+
+  it("narrows the date range from Filters, keeps it, and resets from its chip", async () => {
+    saveDateRange.mockClear();
+    const element = await mount();
+    const root = element.shadowRoot;
+    expect(root.querySelector("lightning-pill.range-chip")).toBeNull();
+    const panel = await open(root);
+    const back = panel.querySelector("select.range-back");
+    const ahead = panel.querySelector("select.range-ahead");
+    // Half a year back and nothing ahead: up to that, starting on it.
+    expect([...back.options].map((o) => o.textContent)).toEqual(["None", "1 month", "3 months", "6 months"]);
+    expect([...ahead.options].map((o) => o.textContent)).toEqual(["None"]);
+    expect(back.value).toBe("6");
+    back.value = "3";
+    back.dispatchEvent(new CustomEvent("change"));
+    await flush();
+    buttonByLabel(filtersRoot(root).querySelector(".filter-panel"), "Apply").click();
+    await settle();
+    expect(getSummary.getLastConfig()).toMatchObject({ historyYears: "0.25", futureYears: "None" });
+    expect(saveDateRange).toHaveBeenCalledWith({ dateRange: "3,0" });
+    expect(root.querySelector("lightning-pill.range-chip").label).toBe("3 months back");
+    expect(root.querySelector(".summary").textContent).toContain(windowRange("0.25", "None"));
+    expect(root.querySelector(".filter-button").getAttribute("aria-label")).toBe("Filters, 1 active");
+    // The panel opens on the range in use.
+    expect((await open(root)).querySelector("select.range-back").value).toBe("3");
+    filtersRoot(root).querySelector("lightning-button-icon.filter-close").click();
+    await flush();
+    // The chip's x: the page's own range again.
+    root.querySelector("lightning-pill.range-chip").dispatchEvent(new CustomEvent("remove"));
+    await flush();
+    expect(getSummary.getLastConfig()).toMatchObject({ historyYears: "0.5", futureYears: "None" });
+    expect(saveDateRange).toHaveBeenLastCalledWith({ dateRange: "" });
+    expect(root.querySelector("lightning-pill.range-chip")).toBeNull();
+    expect(root.querySelector(".filter-button").getAttribute("aria-label")).toBe("Filters");
+  });
+
+  it("offers Back and Ahead up to History and Future, and neither when the page says no", async () => {
+    const values = (page, side) => lengthOptions(page, side).map((o) => o.value);
+    expect(values("0.25", "back")).toEqual(["0", "1", "3"]);
+    expect(values("None", "ahead")).toEqual(["0"]);
+    expect(values("1", "ahead")).toEqual(["0", "1", "3", "6", "12"]);
+    expect(lengthOptions("2", "back").map((o) => o.label)).toEqual([
+      "None",
+      "1 month",
+      "3 months",
+      "6 months",
+      "1 year",
+      "2 years"
+    ]);
+    const element = await mount();
+    element.allowDateRange = false;
+    await flush();
+    const panel = await open(element.shadowRoot);
+    expect(panel.querySelector(".range-choices")).toBeNull();
+    expect(panel.querySelector("lightning-checkbox-group")).not.toBeNull();
+  });
+
+  it("opens on the user's saved range, trimmed to what the page allows", async () => {
+    const place = (history, future) => {
+      const element = createElement("c-time-drive", { is: TimeDrive });
+      element.recordId = "003000000000001AAA";
+      element.layout = "Vertical";
+      element.historyYears = history;
+      element.futureYears = future;
+      document.body.appendChild(element);
+      return element;
+    };
+    getPreference.mockResolvedValueOnce({ dateRange: "0,1" });
+    const element = place("1", "1");
+    emitEvents({ events: EVENTS, warnings: [] });
+    await flush();
+    expect(getSummary.getLastConfig()).toMatchObject({ historyYears: "0", futureYears: "1m" });
+    expect(element.shadowRoot.querySelector("lightning-pill.range-chip").label).toBe("1 month ahead");
+    document.body.removeChild(element);
+
+    // Next time, this browser's copy goes out with the first request.
+    getTimeline.mockClear();
+    const again = place("1", "1");
+    await flush();
+    expect(getTimeline.mock.calls[0][0]).toMatchObject({ historyYears: "0", futureYears: "1m" });
+    document.body.removeChild(again);
+
+    // Six months ahead on a page that allows three: three.
+    getPreference.mockResolvedValueOnce({ dateRange: "3,6" });
+    const shorter = place("1", "0.25");
+    await flush();
+    expect(getSummary.getLastConfig()).toMatchObject({ historyYears: "0.25", futureYears: "0.25" });
+    expect(shorter.shadowRoot.querySelector("lightning-pill.range-chip").label).toBe("3 months back · 3 months ahead");
+    document.body.removeChild(shorter);
+
+    // Only ahead, on a page with nothing ahead: its own range, no chip.
+    getPreference.mockResolvedValueOnce({ dateRange: "0,1" });
+    const past = await mount();
+    expect(getSummary.getLastConfig()).toMatchObject({ historyYears: "0.5", futureYears: "None" });
+    expect(past.shadowRoot.querySelector("lightning-pill.range-chip")).toBeNull();
   });
 
   it("shows a skeleton for the types and count until a filter's counts land", async () => {
@@ -1365,7 +1479,7 @@ describe("c-time-drive a save on the page", () => {
   });
 
   it("refreshes in place, quietly, and keeps a save that comes while it does", async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     element.layout = "Vertical";
     document.body.appendChild(element);
@@ -1406,7 +1520,7 @@ describe("c-time-drive a file", () => {
   });
 
   const mountWith = async (events) => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     element.layout = "Vertical";
     document.body.appendChild(element);
@@ -1503,7 +1617,7 @@ describe("c-time-drive a new filter", () => {
   };
 
   it("puts the days into the loading skeleton at once, as the counts do, until the new ones land", async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     element.layout = "Vertical";
     document.body.appendChild(element);
@@ -1526,7 +1640,7 @@ describe("c-time-drive a new filter", () => {
   });
 
   it("shows nothing new when Apply changes nothing", async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     element.layout = "Vertical";
     document.body.appendChild(element);
@@ -1551,7 +1665,7 @@ describe("c-time-drive all types", () => {
   });
 
   it("selects or clears every type at once", async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     element.layout = "Vertical";
     document.body.appendChild(element);
@@ -1581,7 +1695,7 @@ describe("c-time-drive record links", () => {
   });
 
   it("links CRM events to their record and expands only from the chevron", async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     element.layout = "Vertical";
     document.body.appendChild(element);
@@ -1631,7 +1745,7 @@ describe("c-time-drive drawing less", () => {
     else delete Element.prototype.scrollWidth;
   });
   const mount = async (layout, events = DAYS) => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     element.layout = layout;
     document.body.appendChild(element);
@@ -1777,7 +1891,7 @@ describe("c-time-drive drawing less", () => {
     };
     let last;
     const open = async (openAt, events = [future, ...DAYS]) => {
-      const element = createElement("c-time-drive", { is: TimeDrive });
+      const element = createTimeline();
       element.recordId = "003000000000001AAA";
       element.layout = "Vertical";
       element.futureYears = "1";
@@ -1839,7 +1953,7 @@ describe("c-time-drive drawing less", () => {
       }
     });
     try {
-      const element = createElement("c-time-drive", { is: TimeDrive });
+      const element = createTimeline();
       element.recordId = "003000000000001AAA";
       element.layout = "Horizontal";
       element.openAt = "Earliest item";
@@ -1863,7 +1977,7 @@ describe("c-time-drive drawing less", () => {
 
   it("goes back to today with the Today button", async () => {
     // Opened at the earliest item, far from today.
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     element.layout = "Vertical";
     element.openAt = "Earliest item";
@@ -1880,7 +1994,7 @@ describe("c-time-drive drawing less", () => {
     document.body.removeChild(element);
 
     // Across: today's column is scrolled into the middle.
-    const across = createElement("c-time-drive", { is: TimeDrive });
+    const across = createTimeline();
     across.recordId = "003000000000001AAA";
     across.layout = "Horizontal";
     across.openAt = "Earliest item";
@@ -1894,7 +2008,7 @@ describe("c-time-drive drawing less", () => {
   });
 
   it("tops and tails the days with the window's ends, as days of their own", async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     element.layout = "Vertical";
     element.futureYears = "1";
@@ -2213,7 +2327,7 @@ describe("c-time-drive drawing less", () => {
       served = { events: days, warnings: [] };
       getDays.mockClear();
       getDays.mockImplementation(() => Promise.resolve([]));
-      const element = createElement("c-time-drive", { is: TimeDrive });
+      const element = createTimeline();
       element.recordId = "003000000000001AAA";
       element.layout = "Horizontal";
       element.futureYears = "0.5";
@@ -2255,7 +2369,7 @@ describe("c-time-drive drawing less", () => {
       phases: [],
       notes: [{ source: "Calls", what: "Not queried", reason: "empty" }]
     });
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     element.layout = "Horizontal";
     element.diagnose = true;
@@ -2288,7 +2402,7 @@ describe("c-time-drive drawing less", () => {
     };
     try {
       getTimeline.mockClear();
-      const element = createElement("c-time-drive", { is: TimeDrive });
+      const element = createTimeline();
       element.recordId = "003000000000001AAA";
       document.body.appendChild(element);
       await flush();
@@ -2342,7 +2456,7 @@ describe("c-time-drive drawing less", () => {
         details: []
       }));
       getDays.mockClear();
-      const element = createElement("c-time-drive", { is: TimeDrive });
+      const element = createTimeline();
       element.recordId = "003000000000001AAA";
       element.layout = "Horizontal";
       element.historyYears = "2";
@@ -2415,7 +2529,7 @@ describe("c-time-drive busy days", () => {
         details: []
       }))
     ];
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     element.layout = "Vertical";
     document.body.appendChild(element);
@@ -2462,7 +2576,7 @@ describe("c-time-drive busy days", () => {
         details: []
       }))
     ];
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     element.layout = "Vertical";
     document.body.appendChild(element);
@@ -2534,7 +2648,7 @@ describe("c-time-drive configured sources", () => {
     }
   ];
   const mount = async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     element.layout = "Vertical";
     document.body.appendChild(element);
@@ -2610,7 +2724,7 @@ describe("c-time-drive accessibility", () => {
     details: [{ label: "Order", value: `O-${d}` }]
   }));
   const mount = async (layout, events = LONG) => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     element.layout = layout;
     document.body.appendChild(element);
@@ -2640,7 +2754,7 @@ describe("c-time-drive accessibility", () => {
   });
 
   it("announces loading, the days moved to, and names icons only when they add something", async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     element.layout = "Vertical";
     document.body.appendChild(element);
@@ -2697,7 +2811,7 @@ describe("periods on long windows", () => {
   });
 
   it("shows a week's items under the week, each with its day", async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     document.body.appendChild(element);
     getDays.mockImplementation((params) =>
@@ -2734,7 +2848,7 @@ describe("activity actions", () => {
   });
 
   it("offers the record's activity actions and opens one as Salesforce does", async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     document.body.appendChild(element);
     getActivityActions.emit([
@@ -2767,7 +2881,7 @@ describe("activity actions", () => {
     { apiName: "Global.NewEvent", label: "New Event", icon: "action:new_event" }
   ];
   const withActions = async (mode, layout) => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     if (mode) element.activityActionsMode = mode;
     if (layout) element.layout = layout;
@@ -2779,7 +2893,7 @@ describe("activity actions", () => {
   };
 
   it("names the standard actions with its own labels, and others as Salesforce does", async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     document.body.appendChild(element);
     getActivityActions.emit([
@@ -2803,7 +2917,7 @@ describe("activity actions", () => {
       disconnect() {}
     };
     try {
-      const element = createElement("c-time-drive", { is: TimeDrive });
+      const element = createTimeline();
       element.recordId = "003000000000001AAA";
       element.activityActionsMode = "Full";
       element.layout = "Vertical";
@@ -2836,7 +2950,7 @@ describe("activity actions", () => {
   });
 
   it("shows four Full actions in a wide card and puts any more in a menu", async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.recordId = "003000000000001AAA";
     element.activityActionsMode = "Full";
     document.body.appendChild(element);
@@ -2921,7 +3035,7 @@ describe("display density", () => {
   it("reads Compact from the page's spacing", async () => {
     const restore = withHooks({ "--slds-g-spacing-var-4": "0.5rem", "--lwc-varSpacingMedium": "0.5rem" });
     try {
-      const element = createElement("c-time-drive", { is: TimeDrive });
+      const element = createTimeline();
       document.body.appendChild(element);
       await flush();
       expect(element.classList.contains("density_compact")).toBe(true);
@@ -2933,7 +3047,7 @@ describe("display density", () => {
   it("reads Comfy from SLDS 1's own spacing when the SLDS 2 hook isn't there", async () => {
     const restore = withHooks({ "--lwc-varSpacingMedium": "1rem" });
     try {
-      const element = createElement("c-time-drive", { is: TimeDrive });
+      const element = createTimeline();
       document.body.appendChild(element);
       await flush();
       expect(element.classList.contains("density_comfy")).toBe(true);
@@ -2943,7 +3057,7 @@ describe("display density", () => {
   });
 
   it("defaults to Compact when the page's styles say nothing", async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     document.body.appendChild(element);
     await flush();
     expect(element.classList.contains("density_compact")).toBe(true);
@@ -2951,7 +3065,7 @@ describe("display density", () => {
   });
 
   it("lets the page's Display Density override the page's styles", async () => {
-    const element = createElement("c-time-drive", { is: TimeDrive });
+    const element = createTimeline();
     element.density = "Compact";
     document.body.appendChild(element);
     await flush();

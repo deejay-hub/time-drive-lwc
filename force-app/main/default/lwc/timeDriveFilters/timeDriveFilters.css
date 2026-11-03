@@ -35,6 +35,40 @@
   border-bottom: 1px solid var(--time-drive-rule);
 }
 
+/* The date range sits apart from the event types below it: Back and Ahead
+   side by side. */
+.range-choices {
+  display: grid;
+  gap: calc(0.5 * var(--time-drive-space));
+  min-width: 0;
+  margin: 0;
+  padding: 0 0 calc(0.75 * var(--time-drive-space));
+  border: 0;
+  border-bottom: 1px solid var(--time-drive-rule);
+}
+
+.range-choices .filter-heading {
+  margin-bottom: 0;
+  padding: 0;
+}
+
+.range-sides {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: calc(0.5 * var(--time-drive-space));
+}
+
+.range-side {
+  display: grid;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.range-label {
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+}
+
 /* Cancel and Apply at the top, always in reach; the options scroll below. */
 .filter-head {
   display: flex;

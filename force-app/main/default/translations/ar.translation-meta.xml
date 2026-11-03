@@ -409,6 +409,50 @@
         <name>Time_Drive_Prob_Message</name>
     </customLabels>
     <customLabels>
+        <label>إلى الأمام</label>
+        <name>Time_Drive_Range_Ahead</name>
+    </customLabels>
+    <customLabels>
+        <label>إلى الوراء</label>
+        <name>Time_Drive_Range_Back</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} إلى الوراء · {1} إلى الأمام</label>
+        <name>Time_Drive_Range_Chip</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} إلى الأمام</label>
+        <name>Time_Drive_Range_Chip_Ahead</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} إلى الوراء</label>
+        <name>Time_Drive_Range_Chip_Back</name>
+    </customLabels>
+    <customLabels>
+        <label>النطاق الزمني</label>
+        <name>Time_Drive_Range_Heading</name>
+    </customLabels>
+    <customLabels>
+        <label>شهر واحد</label>
+        <name>Time_Drive_Range_Month</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} أشهر</label>
+        <name>Time_Drive_Range_Months</name>
+    </customLabels>
+    <customLabels>
+        <label>لا شيء</label>
+        <name>Time_Drive_Range_None</name>
+    </customLabels>
+    <customLabels>
+        <label>سنة واحدة</label>
+        <name>Time_Drive_Range_Year</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} سنوات</label>
+        <name>Time_Drive_Range_Years</name>
+    </customLabels>
+    <customLabels>
         <label>عناصر التفاعل</label>
         <name>Time_Drive_Region_Items</name>
     </customLabels>

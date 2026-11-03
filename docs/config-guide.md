@@ -29,8 +29,9 @@ Open a Contact, Account or Lead record, choose **Edit Page**, and drag **Time Dr
 - **Open At** (default Today): today's slot (with a placeholder when it has nothing), the earliest item, or the latest.
 - **Activity Actions** (default Inline): the record's New Task, New Event, Log a Call and Email, as the page layout's Activity composer offers them. None, One button (a + menu), Inline (a button each among the header buttons) or Full (a button each with its name).
 - **Display Density** (default Auto): Auto follows each user's Comfy or Compact setting; Comfy or Compact overrides it.
-- **History (years)** (default 0.5): how far back it plots, from 0.25 to 10 years.
-- **Future (years)** (default None): how far ahead it plots future-dated records (scheduled orders, close dates). None is up to today; otherwise 0.25 to 10 years.
+- **History (years)** (default 1): how far back it plots, from 0.25 to 10 years.
+- **Future (years)** (default 0.5): how far ahead it plots future-dated records (scheduled orders, close dates). None is up to today; otherwise 0.25 to 10 years.
+- **Let People Narrow the Date Range** (default on): Filters offers **Back** and **Ahead**, how far either side of today to show (None, 1 month, 3 months, 6 months, 1 year, 2 years ...), each up to History or Future. Each person's choice is kept with their other preferences and shows as a chip in the header ("3 months back · 1 month ahead"); its x goes back to History and Future. A kept range longer than a page allows is trimmed to it there. Off: everyone sees History to Future.
 - **Vertical Mode Height (px)** (default 560, 320 to 1600): the list's greatest height. Past it, items scroll inside.
 - **Horizontal Mode Height (px)** (default 260, 240 to 1000): the day columns' height. Busier days scroll inside their column.
 

@@ -1,6 +1,6 @@
 <template>
-  <!-- The event types panel, under the toolbar's end; nothing applies until
-       Apply. -->
+  <!-- The date range and event types panel, under the toolbar's end;
+       nothing applies until Apply. -->
   <template lwc:if={isOpen}>
     <div
       class={panelClass}
@@ -31,6 +31,30 @@
         </template>
       </div>
       <div class="filter-body">
+        <!-- How far back and ahead, within the page's own range. -->
+        <template lwc:if={hasRanges}>
+          <fieldset class="range-choices">
+            <legend class="filter-heading">{labels.rangeHeading}</legend>
+            <div class="range-sides">
+              <label class="range-side">
+                <span class="range-label">{labels.rangeBack}</span>
+                <select class="slds-select range-back" onchange={handleBack}>
+                  <template for:each={backChoices} for:item="o">
+                    <option key={o.value} value={o.value} selected={o.selected}>{o.label}</option>
+                  </template>
+                </select>
+              </label>
+              <label class="range-side">
+                <span class="range-label">{labels.rangeAhead}</span>
+                <select class="slds-select range-ahead" onchange={handleAhead}>
+                  <template for:each={aheadChoices} for:item="o">
+                    <option key={o.value} value={o.value} selected={o.selected}>{o.label}</option>
+                  </template>
+                </select>
+              </label>
+            </div>
+          </fieldset>
+        </template>
         <template lwc:if={hasChoices}>
           <p class="filter-heading">{labels.filtersEventTypes}</p>
           <lightning-input

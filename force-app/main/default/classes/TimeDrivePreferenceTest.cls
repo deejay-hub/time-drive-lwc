@@ -52,6 +52,28 @@ private class TimeDrivePreferenceTest {
   }
 
   @IsTest
+  static void theDateRangeIsKeptUntilItIsCleared() {
+    User u = person('ranger', true);
+    System.runAs(u) {
+      // Clearing a range never chosen keeps nothing.
+      TimeDriveController.saveDateRange('');
+    }
+    Assert.areEqual(0, [SELECT COUNT() FROM Time_Drive_Preference__c WHERE SetupOwnerId = :u.Id]);
+    System.runAs(u) {
+      TimeDriveController.saveDateRange('next-1m');
+      TimeDriveController.savePreference('Activity', null);
+      TimeDriveController.Preference p = TimeDriveController.getPreference();
+      Assert.areEqual('next-1m', p.dateRange);
+      Assert.areEqual('Activity', p.lens, 'the range and the lens are kept apart');
+
+      TimeDriveController.saveDateRange(null);
+      p = TimeDriveController.getPreference();
+      Assert.isNull(p.dateRange, 'cleared: the page\'s own range');
+      Assert.areEqual('Activity', p.lens);
+    }
+  }
+
+  @IsTest
   static void anotherUsersChoiceIsNotMine() {
     User other;
     User me;

@@ -98,6 +98,17 @@ import filtersCancel from "@salesforce/label/c.Time_Drive_Filters_Cancel";
 import filtersApply from "@salesforce/label/c.Time_Drive_Filters_Apply";
 import filtersClose from "@salesforce/label/c.Time_Drive_Filters_Close";
 import filtersEventTypes from "@salesforce/label/c.Time_Drive_Filters_Event_Types";
+import rangeHeading from "@salesforce/label/c.Time_Drive_Range_Heading";
+import rangeBack from "@salesforce/label/c.Time_Drive_Range_Back";
+import rangeAhead from "@salesforce/label/c.Time_Drive_Range_Ahead";
+import rangeNone from "@salesforce/label/c.Time_Drive_Range_None";
+import rangeMonth from "@salesforce/label/c.Time_Drive_Range_Month";
+import rangeMonths from "@salesforce/label/c.Time_Drive_Range_Months";
+import rangeYear from "@salesforce/label/c.Time_Drive_Range_Year";
+import rangeYears from "@salesforce/label/c.Time_Drive_Range_Years";
+import rangeChip from "@salesforce/label/c.Time_Drive_Range_Chip";
+import rangeChipBack from "@salesforce/label/c.Time_Drive_Range_Chip_Back";
+import rangeChipAhead from "@salesforce/label/c.Time_Drive_Range_Chip_Ahead";
 import groupLoading from "@salesforce/label/c.Time_Drive_Group_Loading";
 import groupNothing from "@salesforce/label/c.Time_Drive_Group_Nothing";
 import groupNothingBody from "@salesforce/label/c.Time_Drive_Group_Nothing_Body";
@@ -213,6 +224,17 @@ export const LABELS = Object.freeze({
   filtersApply,
   filtersClose,
   filtersEventTypes,
+  rangeHeading,
+  rangeBack,
+  rangeAhead,
+  rangeNone,
+  rangeMonth,
+  rangeMonths,
+  rangeYear,
+  rangeYears,
+  rangeChip,
+  rangeChipBack,
+  rangeChipAhead,
   groupLoading,
   groupNothing,
   groupNothingBody,
