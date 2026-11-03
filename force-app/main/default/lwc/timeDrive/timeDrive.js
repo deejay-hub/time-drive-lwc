@@ -430,16 +430,16 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   // Email, New Event ... as on the standard Activity component. None; One
   // button (a + menu); Inline (a button each, among the tools); Full (a
   // button each with its name, on a line of its own, or among the tools in
-  // a wide horizontal card). Defaults to Inline.
+  // a wide horizontal card). Defaults to Full.
   @api
   get activityActionsMode() {
     return this._actionsMode;
   }
   set activityActionsMode(value) {
     const mode = String(value ?? "").toLowerCase();
-    this._actionsMode = ACTION_MODES.includes(mode) ? mode : "inline";
+    this._actionsMode = ACTION_MODES.includes(mode) ? mode : "full";
   }
-  _actionsMode = "inline";
+  _actionsMode = "full";
 
   // The actions, from the record's layout (see getActivityActions); none
   // asked for when the option is None.
@@ -2512,6 +2512,10 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   // With a pill in it, the summary lines its text up with the pill.
   get summaryClass() {
     return this.activeRange || this.typesHidden ? "summary summary_pills" : "summary";
+  }
+  // Full: the same summary on the tools' line.
+  get summaryToolsClass() {
+    return `${this.summaryClass} summary_tools`;
   }
   showMore() {
     const from = this.windowFrom + this.visibleDays;

@@ -2859,6 +2859,7 @@ describe("activity actions", () => {
   it("offers the record's activity actions and opens one as Salesforce does", async () => {
     const element = createTimeline();
     element.recordId = "003000000000001AAA";
+    element.activityActionsMode = "Inline";
     document.body.appendChild(element);
     getActivityActions.emit([
       { apiName: "Global.NewTask", label: "New Task", icon: "action:new_task", colour: "#3BA755" },
@@ -2904,6 +2905,7 @@ describe("activity actions", () => {
   it("names the standard actions with its own labels, and others as Salesforce does", async () => {
     const element = createTimeline();
     element.recordId = "003000000000001AAA";
+    element.activityActionsMode = "Inline";
     document.body.appendChild(element);
     getActivityActions.emit([
       { apiName: "Global.NewTask", label: "Create a task", icon: "action:new_task" },
@@ -2989,11 +2991,32 @@ describe("activity actions", () => {
     expect(element.shadowRoot.querySelector(".action-circle")).toBeNull();
   });
 
-  it("shows a round button each among the tools for Inline (the default)", async () => {
+  it("shows a round button each among the tools for Inline, and Full by default", async () => {
     const element = await withActions("Inline");
     expect(element.shadowRoot.querySelectorAll(".action-circle")).toHaveLength(2);
     const standard = await withActions(undefined);
-    expect(standard.shadowRoot.querySelectorAll(".action-circle")).toHaveLength(2);
+    expect(standard.shadowRoot.querySelector(".action-circle")).toBeNull();
+    const group = standard.shadowRoot.querySelector(".actions-group lightning-button-group");
+    expect([...group.querySelectorAll("lightning-button")].map((b) => b.label)).toEqual(["New Task", "New Event"]);
+  });
+
+  it("shows the filter pills on Full's summary line too", async () => {
+    const element = await withActions("Full", "Vertical");
+    const root = element.shadowRoot;
+    root.querySelector(".filter-button").click();
+    await flush();
+    const panel = filtersRoot(root).querySelector(".filter-panel");
+    panel
+      .querySelector("lightning-checkbox-group")
+      .dispatchEvent(new CustomEvent("change", { detail: { value: ["purchase", "web"] } }));
+    await flush();
+    [...filtersRoot(root).querySelectorAll(".filter-head lightning-button")].find((b) => b.label === "Apply").click();
+    await settle();
+    const summary = root.querySelector(".summary_tools");
+    expect(summary.querySelector("lightning-pill.types-pill").label).toMatch(/^2 of \d+ types$/);
+    summary.querySelector("lightning-pill.types-pill").dispatchEvent(new CustomEvent("remove"));
+    await flush();
+    expect(root.querySelector(".summary_tools lightning-pill")).toBeNull();
   });
 
   it("shows Full as a button group with the overflow menu at its end, on the view's line", async () => {

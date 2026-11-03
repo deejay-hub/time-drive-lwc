@@ -96,10 +96,25 @@
         <!-- Full: the filter summary shares the tools' line, on the left. -->
         <template lwc:if={actionsOnTitleRow}>
           <span class="row-break" aria-hidden="true"></span>
-          <p class="summary summary_tools" aria-live="polite">
-            {summaryWhen}<template lwc:if={summaryPending}
+          <!-- The same summary as under the header, pills and all. -->
+          <p class={summaryToolsClass} aria-live="polite">
+            <template lwc:if={activeRange}
+              ><lightning-pill
+                class="summary-pill range-pill"
+                label={summaryWhen}
+                onremove={handleRangeRemove}
+              ></lightning-pill></template
+            ><template lwc:else>{summaryWhen}</template
+            ><template lwc:if={summaryPending}
               >&nbsp;·&nbsp;<span class="skeleton skeleton_summary" aria-hidden="true"></span
               ><span class="assistive-text">{labels.statusUpdatingCounts}</span></template
+            ><template lwc:elseif={typesHidden}
+              >&nbsp;·&nbsp;<lightning-pill
+                class="summary-pill types-pill"
+                label={typesText}
+                onremove={handleTypesRemove}
+              ></lightning-pill
+              >&nbsp;·&nbsp;{countText}</template
             ><template lwc:else>{summaryRest}</template>
           </p>
         </template>

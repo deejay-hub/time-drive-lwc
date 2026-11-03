@@ -27,7 +27,7 @@ Open a Contact, Account or Lead record, choose **Edit Page**, and drag **Time Dr
 - **Layout** (default Auto): Auto is vertical in narrow regions and horizontal from 640px wide. Vertical or Horizontal pins one.
 - **Default Lens** (default All): the lens the timeline opens on. People can still pick another from the heading; a lens the org doesn't offer opens on All.
 - **Open At** (default Today): today's slot (with a placeholder when it has nothing), the earliest item, or the latest.
-- **Activity Actions** (default Inline): the record's New Task, New Event, Log a Call and Email, as the page layout's Activity composer offers them. None, One button (a + menu), Inline (a button each among the header buttons) or Full (a button each with its name).
+- **Activity Actions** (default Full): the record's New Task, New Event, Log a Call and Email, as the page layout's Activity composer offers them. None, One button (a + menu), Inline (a button each among the header buttons) or Full (a button each with its name).
 - **Display Density** (default Auto): Auto follows each user's Comfy or Compact setting; Comfy or Compact overrides it.
 - **History (years)** (default 1): how far back it plots, from 0.25 to 10 years.
 - **Future (years)** (default 0.5): how far ahead it plots future-dated records (scheduled orders, close dates). None is up to today; otherwise 0.25 to 10 years.
