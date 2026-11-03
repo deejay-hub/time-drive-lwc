@@ -318,6 +318,38 @@ private class TimeDriveControllerTest {
   }
 
   @IsTest
+  static void busyDaysWithoutTheirCountsAreCountedAgain() {
+    Id customer = busyDay(Datetime.now().addDays(-3));
+    String today = Datetime.now().format('yyyy-MM-dd');
+    List<String> days = new List<String>{ today };
+
+    // Counts that arrive empty, or that leave a busy period out, are no
+    // hint: the busy period is counted here and still comes back grouped.
+    TimeDriveController.BusyCount empty = new TimeDriveController.BusyCount();
+    TimeDriveController.BusyCount otherDay = new TimeDriveController.BusyCount();
+    otherDay.key = '2001-01-01';
+    otherDay.source = 'Cases';
+    otherDay.count = 60;
+    for (TimeDriveController.BusyCount given : new List<TimeDriveController.BusyCount>{ empty, otherDay }) {
+      List<TimeDriveController.EngagementEvent> page = TimeDriveController.getPageDays(
+        customer,
+        null,
+        null,
+        null,
+        null,
+        days,
+        days,
+        new List<String>(),
+        new List<TimeDriveController.BusyCount>{ given },
+        null
+      );
+      Assert.areEqual(1, page.size(), 'the busy day is still there');
+      Assert.isTrue(page[0].grouped);
+      Assert.areEqual(60, page[0].groupCount);
+    }
+  }
+
+  @IsTest
   static void theSummarysSourceCountsSaveTheDaysQueries() {
     Datetime threeDaysAgo = Datetime.now().addDays(-3);
     Id customer = busyDay(threeDaysAgo);

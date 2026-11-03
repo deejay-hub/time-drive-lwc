@@ -591,16 +591,7 @@ public with sharing class TimeDriveController {
     // What failed was already said with the summary.
     List<String> warnings = new List<String>();
     try {
-      Map<String, Map<String, Integer>> counted;
-      if (busyCounts != null) {
-        counted = new Map<String, Map<String, Integer>>();
-        for (BusyCount b : busyCounts) {
-          if (!counted.containsKey(b.key)) {
-            counted.put(b.key, new Map<String, Integer>());
-          }
-          counted.get(b.key).put(b.source, b.count);
-        }
-      }
+      Map<String, Map<String, Integer>> counted = countsByPeriod(busyKeys, busyCounts);
       List<EngagementEvent> events = new Run(
           contactId,
           warnings,
@@ -621,6 +612,35 @@ public with sharing class TimeDriveController {
     } catch (Exception e) {
       throw safeFailure(e);
     }
+  }
+
+  // The summary's counts for the busy periods, by period then source; null
+  // (count them here) when they don't cover every busy period: a period
+  // left without counts would come back empty.
+  @TestVisible
+  private static Map<String, Map<String, Integer>> countsByPeriod(
+    List<String> busyKeys,
+    List<BusyCount> busyCounts
+  ) {
+    if (busyCounts == null) {
+      return null;
+    }
+    Map<String, Map<String, Integer>> counted = new Map<String, Map<String, Integer>>();
+    for (BusyCount b : busyCounts) {
+      if (b?.key == null || b.source == null || b.count == null) {
+        return null;
+      }
+      if (!counted.containsKey(b.key)) {
+        counted.put(b.key, new Map<String, Integer>());
+      }
+      counted.get(b.key).put(b.source, b.count);
+    }
+    for (String key : busyKeys ?? new List<String>()) {
+      if (!counted.containsKey(key)) {
+        return null;
+      }
+    }
+    return counted;
   }
 
   /**
@@ -2138,14 +2158,17 @@ public with sharing class TimeDriveController {
     }
   }
 
-  /** The count for one source in one busy period, handed back with the periods asked for. */
+  /**
+   * The count for one source in one busy period, handed back with the periods asked for.
+   * Properties, not fields: the card's values reach a parameter only through setters.
+   */
   public class BusyCount {
     @AuraEnabled
-    public String key;
+    public String key { get; set; }
     @AuraEnabled
-    public String source;
+    public String source { get; set; }
     @AuraEnabled
-    public Integer count;
+    public Integer count { get; set; }
   }
 
   /** How many items a type has. */
