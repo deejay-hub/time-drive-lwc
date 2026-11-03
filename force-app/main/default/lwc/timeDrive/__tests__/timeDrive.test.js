@@ -1371,7 +1371,8 @@ describe("c-time-drive filters panel", () => {
     await settle();
     expect(getSummary.getLastConfig()).toMatchObject({ historyYears: "0.25", futureYears: "None" });
     expect(saveDateRange).toHaveBeenCalledWith({ dateRange: "3,0" });
-    // The dates it covers become the pill, in place of the page's.
+    // The dates it covers become the pill, in place of the page's, with no " · " after it.
+    expect(root.querySelector(".summary").textContent).toContain(`${windowRange("0.25", "None")}All types · `);
     expect(root.querySelector(".range-pill .slds-pill__label").textContent).toBe(windowRange("0.25", "None"));
     expect(root.querySelector(".summary").textContent).not.toContain(windowRange("0.5", "None"));
     expect(root.querySelector(".filter-button").getAttribute("aria-label")).toBe("Filters, 1 active");
@@ -1476,7 +1477,8 @@ describe("c-time-drive filters panel", () => {
     const pill = summary().querySelector(".types-pill");
     expect(pill.querySelector(".slds-pill__label").textContent).toMatch(/^2 of \d+ types$/);
     expect(pill.querySelector(".pill-remove").getAttribute("aria-label")).toMatch(/^Remove filter: 2 of \d+ types$/);
-    expect(summary().textContent).toMatch(/·\s2 items$/);
+    // No " · " after a pill: the count follows it.
+    expect(summary().textContent).toMatch(/\u00a0·\u00a02 of \d+ types2 items$/);
     pill.querySelector(".pill-remove").click();
     await flush();
     expect(summary().querySelector(".types-pill")).toBeNull();

@@ -2509,6 +2509,13 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   get typesHidden() {
     return this.hiddenTypes.size > 0;
   }
+  // A pill ends what it stands for: no " · " after it, only before.
+  get whenSeparator() {
+    return this.activeRange ? "" : "\u00a0·\u00a0";
+  }
+  get summaryRestShown() {
+    return this.activeRange ? this.summaryRest.replace(/^ · /, "") : this.summaryRest;
+  }
   // The pills' x, named for what it removes ("Remove filter: 2 of 6 types").
   get rangeRemoveLabel() {
     return format(LABELS.pillRemove, this.summaryWhen);

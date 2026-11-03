@@ -471,7 +471,9 @@
    colour it fills with while filters are on, mixed into the card's surface
    (light or dark). The text keeps its own colour. */
 .summary-pill {
+  /* What follows a pill stands off it by a space, not a " · ". */
   margin: 0;
+  margin-inline-end: 0.375rem;
   border-color: color-mix(in srgb, var(--time-drive-fill) 35%, var(--surface));
   background: color-mix(in srgb, var(--time-drive-fill) 10%, var(--surface));
 }

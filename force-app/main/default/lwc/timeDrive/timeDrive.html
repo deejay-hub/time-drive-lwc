@@ -111,10 +111,10 @@
                   <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon></button></span></template
             ><template lwc:else>{summaryWhen}</template
             ><template lwc:if={summaryPending}
-              >&nbsp;·&nbsp;<span class="skeleton skeleton_summary" aria-hidden="true"></span
+              >{whenSeparator}<span class="skeleton skeleton_summary" aria-hidden="true"></span
               ><span class="assistive-text">{labels.statusUpdatingCounts}</span></template
             ><template lwc:elseif={typesHidden}
-              >&nbsp;·&nbsp;<span class="slds-pill summary-pill types-pill"
+              >{whenSeparator}<span class="slds-pill summary-pill types-pill"
                 ><span class="slds-pill__label">{typesText}</span
                 ><button
                   type="button"
@@ -124,8 +124,8 @@
                   onclick={handleTypesRemove}
                 >
                   <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon></button></span
-              >&nbsp;·&nbsp;{countText}</template
-            ><template lwc:else>{summaryRest}</template>
+              >{countText}</template
+            ><template lwc:else>{summaryRestShown}</template>
           </p>
         </template>
 
@@ -306,10 +306,10 @@
                   <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon></button></span></template
             ><template lwc:else>{summaryWhen}</template
             ><template lwc:if={summaryPending}
-              >&nbsp;·&nbsp;<span class="skeleton skeleton_summary" aria-hidden="true"></span
+              >{whenSeparator}<span class="skeleton skeleton_summary" aria-hidden="true"></span
               ><span class="assistive-text">{labels.statusUpdatingCounts}</span></template
             ><template lwc:elseif={typesHidden}
-              >&nbsp;·&nbsp;<span class="slds-pill summary-pill types-pill"
+              >{whenSeparator}<span class="slds-pill summary-pill types-pill"
                 ><span class="slds-pill__label">{typesText}</span
                 ><button
                   type="button"
@@ -319,8 +319,8 @@
                   onclick={handleTypesRemove}
                 >
                   <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon></button></span
-              >&nbsp;·&nbsp;{countText}</template
-            ><template lwc:else>{summaryRest}</template>
+              >{countText}</template
+            ><template lwc:else>{summaryRestShown}</template>
           </p>
         </template>
         <!-- Says where the timeline moved to after a jump or as days load. -->
