@@ -264,16 +264,27 @@
       </div>
 
       <div class="summary-row">
-        <!-- A date range narrows the timeline: its name, and an x that goes
-             back to the page's own range. -->
-        <template lwc:if={activeRange}>
-          <lightning-pill class="range-chip" label={rangeChipLabel} onremove={handleRangeRemove}></lightning-pill>
-        </template>
+        <!-- A narrowed date range, or hidden types: their text becomes a pill,
+             whose x puts back the page's range, or every type. -->
         <template lwc:if={summaryAfterTools}>
-          <p class="summary" aria-live="polite">
-            {summaryWhen}<template lwc:if={summaryPending}
+          <p class={summaryClass} aria-live="polite">
+            <template lwc:if={activeRange}
+              ><lightning-pill
+                class="summary-pill range-pill"
+                label={summaryWhen}
+                onremove={handleRangeRemove}
+              ></lightning-pill></template
+            ><template lwc:else>{summaryWhen}</template
+            ><template lwc:if={summaryPending}
               >&nbsp;·&nbsp;<span class="skeleton skeleton_summary" aria-hidden="true"></span
               ><span class="assistive-text">{labels.statusUpdatingCounts}</span></template
+            ><template lwc:elseif={typesHidden}
+              >&nbsp;·&nbsp;<lightning-pill
+                class="summary-pill types-pill"
+                label={typesText}
+                onremove={handleTypesRemove}
+              ></lightning-pill
+              >&nbsp;·&nbsp;{countText}</template
             ><template lwc:else>{summaryRest}</template>
           </p>
         </template>

@@ -417,18 +417,6 @@
         <name>Time_Drive_Range_Back</name>
     </customLabels>
     <customLabels>
-        <label>{0} atrás · {1} adelante</label>
-        <name>Time_Drive_Range_Chip</name>
-    </customLabels>
-    <customLabels>
-        <label>{0} adelante</label>
-        <name>Time_Drive_Range_Chip_Ahead</name>
-    </customLabels>
-    <customLabels>
-        <label>{0} atrás</label>
-        <name>Time_Drive_Range_Chip_Back</name>
-    </customLabels>
-    <customLabels>
         <label>Intervalo de fechas</label>
         <name>Time_Drive_Range_Heading</name>
     </customLabels>

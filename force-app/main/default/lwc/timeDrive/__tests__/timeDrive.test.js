@@ -1356,7 +1356,7 @@ describe("c-time-drive filters panel", () => {
     saveDateRange.mockClear();
     const element = await mount();
     const root = element.shadowRoot;
-    expect(root.querySelector("lightning-pill.range-chip")).toBeNull();
+    expect(root.querySelector("lightning-pill.range-pill")).toBeNull();
     const panel = await open(root);
     const back = panel.querySelector("select.range-back");
     const ahead = panel.querySelector("select.range-ahead");
@@ -1371,19 +1371,20 @@ describe("c-time-drive filters panel", () => {
     await settle();
     expect(getSummary.getLastConfig()).toMatchObject({ historyYears: "0.25", futureYears: "None" });
     expect(saveDateRange).toHaveBeenCalledWith({ dateRange: "3,0" });
-    expect(root.querySelector("lightning-pill.range-chip").label).toBe("3 months back");
-    expect(root.querySelector(".summary").textContent).toContain(windowRange("0.25", "None"));
+    // The dates it covers become the pill, in place of the page's.
+    expect(root.querySelector("lightning-pill.range-pill").label).toBe(windowRange("0.25", "None"));
+    expect(root.querySelector(".summary").textContent).not.toContain(windowRange("0.5", "None"));
     expect(root.querySelector(".filter-button").getAttribute("aria-label")).toBe("Filters, 1 active");
     // The panel opens on the range in use.
     expect((await open(root)).querySelector("select.range-back").value).toBe("3");
     filtersRoot(root).querySelector("lightning-button-icon.filter-close").click();
     await flush();
     // The chip's x: the page's own range again.
-    root.querySelector("lightning-pill.range-chip").dispatchEvent(new CustomEvent("remove"));
+    root.querySelector("lightning-pill.range-pill").dispatchEvent(new CustomEvent("remove"));
     await flush();
     expect(getSummary.getLastConfig()).toMatchObject({ historyYears: "0.5", futureYears: "None" });
     expect(saveDateRange).toHaveBeenLastCalledWith({ dateRange: "" });
-    expect(root.querySelector("lightning-pill.range-chip")).toBeNull();
+    expect(root.querySelector("lightning-pill.range-pill")).toBeNull();
     expect(root.querySelector(".filter-button").getAttribute("aria-label")).toBe("Filters");
   });
 
@@ -1423,7 +1424,7 @@ describe("c-time-drive filters panel", () => {
     emitEvents({ events: EVENTS, warnings: [] });
     await flush();
     expect(getSummary.getLastConfig()).toMatchObject({ historyYears: "0", futureYears: "1m" });
-    expect(element.shadowRoot.querySelector("lightning-pill.range-chip").label).toBe("1 month ahead");
+    expect(element.shadowRoot.querySelector("lightning-pill.range-pill").label).toBe(windowRange("0", "1m"));
     document.body.removeChild(element);
 
     // Next time, this browser's copy goes out with the first request.
@@ -1438,14 +1439,14 @@ describe("c-time-drive filters panel", () => {
     const shorter = place("1", "0.25");
     await flush();
     expect(getSummary.getLastConfig()).toMatchObject({ historyYears: "0.25", futureYears: "0.25" });
-    expect(shorter.shadowRoot.querySelector("lightning-pill.range-chip").label).toBe("3 months back · 3 months ahead");
+    expect(shorter.shadowRoot.querySelector("lightning-pill.range-pill").label).toBe(windowRange("0.25", "0.25"));
     document.body.removeChild(shorter);
 
     // Only ahead, on a page with nothing ahead: its own range, no chip.
     getPreference.mockResolvedValueOnce({ dateRange: "0,1" });
     const past = await mount();
     expect(getSummary.getLastConfig()).toMatchObject({ historyYears: "0.5", futureYears: "None" });
-    expect(past.shadowRoot.querySelector("lightning-pill.range-chip")).toBeNull();
+    expect(past.shadowRoot.querySelector("lightning-pill.range-pill")).toBeNull();
   });
 
   it("shows a skeleton for the types and count until a filter's counts land", async () => {
@@ -1469,7 +1470,15 @@ describe("c-time-drive filters panel", () => {
     expect(summary().textContent).not.toMatch(/items/);
     await flush();
     expect(summary().querySelector(".skeleton_summary")).toBeNull();
-    expect(summary().textContent).toMatch(/2 of \d+ types · 2 items/);
+    // The types shown become a pill, its x shows every type again.
+    const pill = summary().querySelector("lightning-pill.types-pill");
+    expect(pill.label).toMatch(/^2 of \d+ types$/);
+    expect(summary().textContent).toMatch(/·\s2 items$/);
+    pill.dispatchEvent(new CustomEvent("remove"));
+    await flush();
+    expect(summary().querySelector("lightning-pill.types-pill")).toBeNull();
+    expect(summary().textContent).toContain("All types · 4 items");
+    expect(root.querySelector(".filter-button").getAttribute("aria-label")).toBe("Filters");
   });
 });
 

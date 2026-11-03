@@ -1017,30 +1017,6 @@
         <value>{0} years</value>
     </labels>
     <labels>
-        <fullName>Time_Drive_Range_Chip</fullName>
-        <categories>Time Drive</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Timeline header · chip when narrowed: {0} back, {1} ahead (lengths)</shortDescription>
-        <value>{0} back · {1} ahead</value>
-    </labels>
-    <labels>
-        <fullName>Time_Drive_Range_Chip_Back</fullName>
-        <categories>Time Drive</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Timeline header · chip when narrowed to the past only: {0} a length</shortDescription>
-        <value>{0} back</value>
-    </labels>
-    <labels>
-        <fullName>Time_Drive_Range_Chip_Ahead</fullName>
-        <categories>Time Drive</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Timeline header · chip when narrowed to today onwards: {0} a length</shortDescription>
-        <value>{0} ahead</value>
-    </labels>
-    <labels>
         <fullName>Time_Drive_Legend_Files</fullName>
         <categories>Time Drive</categories>
         <language>en_US</language>

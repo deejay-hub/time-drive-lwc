@@ -106,9 +106,6 @@ import rangeMonth from "@salesforce/label/c.Time_Drive_Range_Month";
 import rangeMonths from "@salesforce/label/c.Time_Drive_Range_Months";
 import rangeYear from "@salesforce/label/c.Time_Drive_Range_Year";
 import rangeYears from "@salesforce/label/c.Time_Drive_Range_Years";
-import rangeChip from "@salesforce/label/c.Time_Drive_Range_Chip";
-import rangeChipBack from "@salesforce/label/c.Time_Drive_Range_Chip_Back";
-import rangeChipAhead from "@salesforce/label/c.Time_Drive_Range_Chip_Ahead";
 import groupLoading from "@salesforce/label/c.Time_Drive_Group_Loading";
 import groupNothing from "@salesforce/label/c.Time_Drive_Group_Nothing";
 import groupNothingBody from "@salesforce/label/c.Time_Drive_Group_Nothing_Body";
@@ -232,9 +229,6 @@ export const LABELS = Object.freeze({
   rangeMonths,
   rangeYear,
   rangeYears,
-  rangeChip,
-  rangeChipBack,
-  rangeChipAhead,
   groupLoading,
   groupNothing,
   groupNothingBody,

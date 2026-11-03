@@ -48,7 +48,6 @@ import {
   dayAtPercent,
   currentPeriodKey,
   lengthOptions,
-  lengthText,
   lengthValue,
   pageMonths,
   periodDate,
@@ -421,15 +420,8 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   get rangeAhead() {
     return String(this.activeRange?.ahead ?? pageMonths(this._futureYears, "ahead"));
   }
-  // "3 months back · 6 months ahead"; one side only when the other is none.
-  get rangeChipLabel() {
-    const range = this.activeRange;
-    if (!range) return "";
-    if (!range.ahead) return format(LABELS.rangeChipBack, lengthText(range.back));
-    if (!range.back) return format(LABELS.rangeChipAhead, lengthText(range.ahead));
-    return format(LABELS.rangeChip, lengthText(range.back), lengthText(range.ahead));
-  }
-  // The header's chip, while a range narrows the timeline: its x resets it.
+
+  // The date pill's x: the page's own range again.
   handleRangeRemove() {
     this.chooseRange(pageMonths(this._historyYears, "back"), pageMonths(this._futureYears, "ahead"));
   }
@@ -2506,7 +2498,20 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   showEverything() {
     this.view = "All";
     this.hiddenTypes = new Set();
+    this.handleRangeRemove();
     this.applyQueryChange();
+  }
+  // The types pill's x: every type again.
+  handleTypesRemove() {
+    this.hiddenTypes = new Set();
+    this.applyQueryChange();
+  }
+  get typesHidden() {
+    return this.hiddenTypes.size > 0;
+  }
+  // With a pill in it, the summary lines its text up with the pill.
+  get summaryClass() {
+    return this.activeRange || this.typesHidden ? "summary summary_pills" : "summary";
   }
   showMore() {
     const from = this.windowFrom + this.visibleDays;

@@ -140,9 +140,6 @@ LABELS = [
     ("Range_Months", "Filters panel and header chip · date range length: {0} months", "{0} months", "{0} meses", "{0} أشهر"),
     ("Range_Year", "Filters panel and header chip · date range length", "1 year", "1 año", "سنة واحدة"),
     ("Range_Years", "Filters panel and header chip · date range length: {0} years", "{0} years", "{0} años", "{0} سنوات"),
-    ("Range_Chip", "Timeline header · chip when narrowed: {0} back, {1} ahead (lengths)", "{0} back · {1} ahead", "{0} atrás · {1} adelante", "{0} إلى الوراء · {1} إلى الأمام"),
-    ("Range_Chip_Back", "Timeline header · chip when narrowed to the past only: {0} a length", "{0} back", "{0} atrás", "{0} إلى الوراء"),
-    ("Range_Chip_Ahead", "Timeline header · chip when narrowed to today onwards: {0} a length", "{0} ahead", "{0} adelante", "{0} إلى الأمام"),
     # ---- legend names a source can start with
     ("Legend_Files", "Legend, filters and items · Files sources' name unless the admin renames", "Files & Notes", "Archivos y notas", "الملفات والملاحظات"),
     ("Legend_Calls", "Legend, filters and items · Calls sources' name unless the admin renames", "Calls", "Llamadas", "المكالمات"),

@@ -417,18 +417,6 @@
         <name>Time_Drive_Range_Back</name>
     </customLabels>
     <customLabels>
-        <label>{0} إلى الوراء · {1} إلى الأمام</label>
-        <name>Time_Drive_Range_Chip</name>
-    </customLabels>
-    <customLabels>
-        <label>{0} إلى الأمام</label>
-        <name>Time_Drive_Range_Chip_Ahead</name>
-    </customLabels>
-    <customLabels>
-        <label>{0} إلى الوراء</label>
-        <name>Time_Drive_Range_Chip_Back</name>
-    </customLabels>
-    <customLabels>
         <label>النطاق الزمني</label>
         <name>Time_Drive_Range_Heading</name>
     </customLabels>
