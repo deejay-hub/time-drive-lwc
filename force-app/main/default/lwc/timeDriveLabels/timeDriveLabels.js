@@ -101,6 +101,7 @@ import filtersEventTypes from "@salesforce/label/c.Time_Drive_Filters_Event_Type
 import rangeHeading from "@salesforce/label/c.Time_Drive_Range_Heading";
 import rangeBack from "@salesforce/label/c.Time_Drive_Range_Back";
 import rangeAhead from "@salesforce/label/c.Time_Drive_Range_Ahead";
+import pillRemove from "@salesforce/label/c.Time_Drive_Pill_Remove";
 import rangeNone from "@salesforce/label/c.Time_Drive_Range_None";
 import rangeMonth from "@salesforce/label/c.Time_Drive_Range_Month";
 import rangeMonths from "@salesforce/label/c.Time_Drive_Range_Months";
@@ -224,6 +225,7 @@ export const LABELS = Object.freeze({
   rangeHeading,
   rangeBack,
   rangeAhead,
+  pillRemove,
   rangeNone,
   rangeMonth,
   rangeMonths,

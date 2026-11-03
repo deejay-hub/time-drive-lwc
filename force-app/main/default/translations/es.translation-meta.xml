@@ -405,6 +405,10 @@
         <name>Time_Drive_Pill_Grouped</name>
     </customLabels>
     <customLabels>
+        <label>Quitar filtro: {0}</label>
+        <name>Time_Drive_Pill_Remove</name>
+    </customLabels>
+    <customLabels>
         <label>No se pudo leer {0}.</label>
         <name>Time_Drive_Prob_Message</name>
     </customLabels>

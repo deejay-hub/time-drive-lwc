@@ -135,6 +135,7 @@ LABELS = [
     ("Range_Heading", "Filters panel · heading of the date range choices", "Date range", "Intervalo de fechas", "النطاق الزمني"),
     ("Range_Back", "Filters panel · date range: how far back from today", "Back", "Hacia atrás", "إلى الوراء"),
     ("Range_Ahead", "Filters panel · date range: how far ahead of today", "Ahead", "Hacia adelante", "إلى الأمام"),
+    ("Pill_Remove", "Timeline header · a filter pill's x: {0} what it filters (its dates or types)", "Remove filter: {0}", "Quitar filtro: {0}", "إزالة عامل التصفية: {0}"),
     ("Range_None", "Filters panel · date range length: none (Back starts today, Ahead ends it)", "None", "Ninguno", "لا شيء"),
     ("Range_Month", "Filters panel and header chip · date range length", "1 month", "1 mes", "شهر واحد"),
     ("Range_Months", "Filters panel and header chip · date range length: {0} months", "{0} months", "{0} meses", "{0} أشهر"),

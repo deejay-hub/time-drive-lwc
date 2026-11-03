@@ -99,21 +99,31 @@
           <!-- The same summary as under the header, pills and all. -->
           <p class={summaryToolsClass} aria-live="polite">
             <template lwc:if={activeRange}
-              ><lightning-pill
-                class="summary-pill range-pill"
-                label={summaryWhen}
-                onremove={handleRangeRemove}
-              ></lightning-pill></template
+              ><span class="slds-pill summary-pill range-pill"
+                ><span class="slds-pill__label">{summaryWhen}</span
+                ><button
+                  type="button"
+                  class="slds-button slds-button_icon slds-pill__remove pill-remove"
+                  title={rangeRemoveLabel}
+                  aria-label={rangeRemoveLabel}
+                  onclick={handleRangeRemove}
+                >
+                  <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon></button></span></template
             ><template lwc:else>{summaryWhen}</template
             ><template lwc:if={summaryPending}
               >&nbsp;·&nbsp;<span class="skeleton skeleton_summary" aria-hidden="true"></span
               ><span class="assistive-text">{labels.statusUpdatingCounts}</span></template
             ><template lwc:elseif={typesHidden}
-              >&nbsp;·&nbsp;<lightning-pill
-                class="summary-pill types-pill"
-                label={typesText}
-                onremove={handleTypesRemove}
-              ></lightning-pill
+              >&nbsp;·&nbsp;<span class="slds-pill summary-pill types-pill"
+                ><span class="slds-pill__label">{typesText}</span
+                ><button
+                  type="button"
+                  class="slds-button slds-button_icon slds-pill__remove pill-remove"
+                  title={typesRemoveLabel}
+                  aria-label={typesRemoveLabel}
+                  onclick={handleTypesRemove}
+                >
+                  <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon></button></span
               >&nbsp;·&nbsp;{countText}</template
             ><template lwc:else>{summaryRest}</template>
           </p>
@@ -284,21 +294,31 @@
         <template lwc:if={summaryAfterTools}>
           <p class={summaryClass} aria-live="polite">
             <template lwc:if={activeRange}
-              ><lightning-pill
-                class="summary-pill range-pill"
-                label={summaryWhen}
-                onremove={handleRangeRemove}
-              ></lightning-pill></template
+              ><span class="slds-pill summary-pill range-pill"
+                ><span class="slds-pill__label">{summaryWhen}</span
+                ><button
+                  type="button"
+                  class="slds-button slds-button_icon slds-pill__remove pill-remove"
+                  title={rangeRemoveLabel}
+                  aria-label={rangeRemoveLabel}
+                  onclick={handleRangeRemove}
+                >
+                  <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon></button></span></template
             ><template lwc:else>{summaryWhen}</template
             ><template lwc:if={summaryPending}
               >&nbsp;·&nbsp;<span class="skeleton skeleton_summary" aria-hidden="true"></span
               ><span class="assistive-text">{labels.statusUpdatingCounts}</span></template
             ><template lwc:elseif={typesHidden}
-              >&nbsp;·&nbsp;<lightning-pill
-                class="summary-pill types-pill"
-                label={typesText}
-                onremove={handleTypesRemove}
-              ></lightning-pill
+              >&nbsp;·&nbsp;<span class="slds-pill summary-pill types-pill"
+                ><span class="slds-pill__label">{typesText}</span
+                ><button
+                  type="button"
+                  class="slds-button slds-button_icon slds-pill__remove pill-remove"
+                  title={typesRemoveLabel}
+                  aria-label={typesRemoveLabel}
+                  onclick={handleTypesRemove}
+                >
+                  <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon></button></span
               >&nbsp;·&nbsp;{countText}</template
             ><template lwc:else>{summaryRest}</template>
           </p>

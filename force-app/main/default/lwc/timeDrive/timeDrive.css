@@ -467,8 +467,13 @@
   row-gap: 0.25rem;
 }
 
+/* A filter that is on: a light tint of the Filters button's accent, the
+   colour it fills with while filters are on, mixed into the card's surface
+   (light or dark). The text keeps its own colour. */
 .summary-pill {
   margin: 0;
+  border-color: color-mix(in srgb, var(--time-drive-fill) 35%, var(--surface));
+  background: color-mix(in srgb, var(--time-drive-fill) 10%, var(--surface));
 }
 
 .summary {

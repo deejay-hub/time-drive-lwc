@@ -2509,6 +2509,13 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   get typesHidden() {
     return this.hiddenTypes.size > 0;
   }
+  // The pills' x, named for what it removes ("Remove filter: 2 of 6 types").
+  get rangeRemoveLabel() {
+    return format(LABELS.pillRemove, this.summaryWhen);
+  }
+  get typesRemoveLabel() {
+    return format(LABELS.pillRemove, this.typesText);
+  }
   // With a pill in it, the summary lines its text up with the pill.
   get summaryClass() {
     return this.activeRange || this.typesHidden ? "summary summary_pills" : "summary";
