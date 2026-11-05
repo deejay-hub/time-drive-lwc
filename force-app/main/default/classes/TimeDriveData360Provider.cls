@@ -161,6 +161,12 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
     Map<String, Schema.SObjectType> objects
   ) {
     Time_Drive_Source__mdt s = context.source;
+    // A filter only SOQL reads (TODAY, LAST_N_DAYS:90, INCLUDES ...) would
+    // fail in Data 360 SQL on every request: read as rows straight away.
+    if (soqlOnly(s.Filter__c)) {
+      TimeDriveDiagnostics.note(s.DeveloperName, 'Not counted', 'Its filter uses SOQL that Data 360 SQL doesn\'t read.');
+      return null;
+    }
     if (objectIn(objects, 'ssot__Individual__dlm') == null || String.isBlank(s.Object_Name__c)) {
       throw new CountException('No Data 360.');
     }
@@ -223,6 +229,23 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
       );
     }
     return counts;
+  }
+
+  // SOQL date literals (TODAY, LAST_N_DAYS:90, THIS_FISCAL_QUARTER ...),
+  // INCLUDES / EXCLUDES and binds: SOQL only, not Data 360 SQL.
+  private static final Pattern SOQL_ONLY = Pattern.compile(
+    '(?i)\\b(YESTERDAY|TODAY|TOMORROW|(LAST|THIS|NEXT)_(WEEK|MONTH|QUARTER|YEAR|FISCAL_QUARTER|FISCAL_YEAR)|(LAST|NEXT)_90_DAYS|(LAST|NEXT)_N_\\w+|N_\\w+_AGO)\\b|(?i)\\b(INCLUDES|EXCLUDES)\\s*\\(|:\\s*[A-Za-z_]'
+  );
+
+  // The filter, its quoted text left out, has SOQL that Data 360 SQL
+  // doesn't read.
+  @TestVisible
+  private static Boolean soqlOnly(String filter) {
+    if (String.isBlank(filter)) {
+      return false;
+    }
+    String unquoted = filter.replaceAll('\'(?:[^\'\\\\]|\\\\.)*\'', '\'\'');
+    return SOQL_ONLY.matcher(unquoted).find();
   }
 
   // The engagement time in the user's time zone; a day is the same day

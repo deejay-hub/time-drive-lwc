@@ -583,6 +583,77 @@ private class TimeDriveControllerTest {
   }
 
   @IsTest
+  static void aFullNewestDayIsCountedAndTheOlderDaysStillRead() {
+    // Max Records 5: the newest of three "quiet" days has 8 items, the older
+    // two 2 each. The first read is all the newest day's: it's counted, and
+    // the next read starts below it, instead of the same read again and the
+    // older days grouped.
+    Contact fresh = new Contact(LastName = 'Full newest day');
+    insert fresh;
+    List<Task> tasks = new List<Task>();
+    for (Integer i = 0; i < 12; i++) {
+      tasks.add(new Task(WhoId = fresh.Id, Subject = 'Item ' + i, Status = 'Not Started'));
+    }
+    insert tasks;
+    List<String> keys = new List<String>();
+    for (Integer d = 1; d <= 3; d++) {
+      keys.add(Datetime.now().addDays(-d).format('yyyy-MM-dd'));
+    }
+    for (Integer i = 0; i < 12; i++) {
+      Integer daysAgo = i < 8 ? 1 : (i < 10 ? 2 : 3);
+      Test.setCreatedDate(tasks[i].Id, Datetime.now().addDays(-daysAgo).addMinutes(-i));
+    }
+    Time_Drive_Source__mdt source = source('Items', 'Task', 'CreatedDate', 'WhoId');
+    source.Max_Records__c = 5;
+    TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ source };
+
+    Test.startTest();
+    List<TimeDriveController.EngagementEvent> page = TimeDriveController.getPageDays(
+      fresh.Id,
+      null,
+      null,
+      null,
+      null,
+      keys,
+      new List<String>(),
+      null,
+      null,
+      null
+    );
+    Integer queries = Limits.getQueries();
+    Test.stopTest();
+
+    Integer grouped = 0;
+    Integer items = 0;
+    for (TimeDriveController.EngagementEvent e : page) {
+      if (e.grouped) {
+        grouped++;
+        Assert.areEqual(keys[0], e.dayKey, 'only the full day is grouped');
+        Assert.areEqual(8, e.groupCount);
+      } else {
+        items++;
+      }
+    }
+    Assert.areEqual(1, grouped, String.valueOf(page));
+    Assert.areEqual(4, items, 'the older days show their items');
+    // Two reads (the full day, then the older ones) and the count.
+    Assert.isTrue(queries <= 4, 'queries: ' + queries);
+  }
+
+  @IsTest
+  static void data360FiltersInSoqlOnlyAreNotCountedInSql() {
+    // Read as rows, not a Data 360 SQL count bound to fail every request.
+    Assert.isTrue(TimeDriveData360Provider.soqlOnly('ssot__EngagementDateTm__c = LAST_N_DAYS:90'));
+    Assert.isTrue(TimeDriveData360Provider.soqlOnly('ssot__EngagementDateTm__c >= today'));
+    Assert.isTrue(TimeDriveData360Provider.soqlOnly('Channel__c INCLUDES (\'Email\')'));
+    Assert.isTrue(TimeDriveData360Provider.soqlOnly('Name = :value'));
+    // Plain conditions, and SOQL words inside quoted text, count as before.
+    Assert.isFalse(TimeDriveData360Provider.soqlOnly(null));
+    Assert.isFalse(TimeDriveData360Provider.soqlOnly('ssot__EngagementChannelActionId__c = \'Open\''));
+    Assert.isFalse(TimeDriveData360Provider.soqlOnly('Subject__c != \'Sale TODAY: 10:30\''));
+  }
+
+  @IsTest
   static void data360ReadsStayUnderTheDmoRowLimit() {
     // Data 360 refuses a DMO query of more than 2,000 rows; a source's Max
     // Records can't take a read past it.

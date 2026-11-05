@@ -179,7 +179,10 @@
   top: calc(100% + 0.25rem);
   inset-inline-start: 0;
   z-index: 20;
-  min-width: max(100%, 18rem);
+  /* Never wider than the card, which clips what overflows it (viewMenuStyle):
+     on a small card the 18rem gives way too. */
+  min-width: max(100%, min(18rem, var(--view-menu-max, 18rem)));
+  max-width: var(--view-menu-max, none);
   padding: 0.25rem 0;
   border-radius: 0.5rem;
   background: var(--surface);
@@ -199,7 +202,9 @@
   color: var(--time-drive-ink);
   font: inherit;
   text-align: start;
-  white-space: nowrap;
+  /* A long (translated) lens name wraps inside the menu rather than run
+     past the card's edge, where the card clips it. */
+  overflow-wrap: anywhere;
   cursor: pointer;
 }
 
@@ -995,11 +1000,13 @@
    above the slot unseen, so the drawing and the words centre as one group. */
 .illustration {
   display: flex;
-  flex: none;
+  /* 9rem tall, less in a short box: the words and the button under it keep
+     their room (translated, they can take two or three lines). */
+  flex: 0 1 9rem;
+  min-height: 3rem;
   align-items: flex-end;
   justify-content: center;
   width: 12rem;
-  height: 9rem;
   max-width: 100%;
   /* SLDS gives an illustration a bottom margin of its own. */
   margin-bottom: 0 !important;
@@ -1245,7 +1252,7 @@
   outline: none;
 }
 
-/* "Click to scroll the timeline": over the list's foot, briefly. */
+/* "Click to scroll": over the list's foot, briefly. */
 .scroll-hint {
   position: absolute;
   bottom: 0.75rem;
@@ -2338,10 +2345,14 @@
   margin-inline-start: 0;
 }
 
+/* Two lines at most: translated, the range, types and count rarely fit on
+   one, and the count at its end mustn't be the part cut off. */
 .card_phone .summary-row .summary {
+  display: -webkit-box;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .header-menu-button {
@@ -2374,10 +2385,11 @@
 
 /* Under the row menu's buttons: it is checking what the user may do, or may do nothing. */
 .row-popover-note {
+  /* Wraps (translated, it can be twice as long), never wider than the screen. */
+  max-width: min(20rem, calc(100vw - 1rem));
   padding: 0.375rem 0.75rem;
   color: var(--time-drive-muted);
   font-size: 0.75rem;
-  white-space: nowrap;
 }
 
 /* The row menu while it asks what the user may do: a spinner, the size of one item. */

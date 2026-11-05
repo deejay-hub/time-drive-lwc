@@ -32,6 +32,8 @@ describe("dates in the user's Salesforce locale", () => {
     expect(windowRange("0.5", "None", { now })).toBe("28. Feb. – 31. Aug. 2026");
     expect(windowRange("0.5", "0.25", { now })).toBe("28. Feb. – 30. Nov. 2026");
     expect(windowRange("10", "10", { now })).toBe("31. Aug. 2016 – 31. Aug. 2036");
-    expect(windowRange("10", "10", { now, short: true })).toBe("Aug. 2016 – Aug. 2036");
+    // A narrow card: numeric, two-digit years, both dates whole.
+    expect(windowRange("10", "10", { now, short: true })).toBe("31.08.16 – 31.08.36");
+    expect(windowRange("0.5", "None", { now, short: true })).toBe("28.02.26 – 31.08.26");
   });
 });

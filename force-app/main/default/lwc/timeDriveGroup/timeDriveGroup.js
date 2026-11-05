@@ -62,6 +62,9 @@ function recordHref(id) {
     : `/lightning/r/${id}/view`;
 }
 
+// Each View all page's table, as last built (see table()).
+const TABLES = new WeakMap();
+
 export default class TimeDriveGroup extends NavigationMixin(LightningElement) {
   labels = LABELS;
 
@@ -189,15 +192,51 @@ export default class TimeDriveGroup extends NavigationMixin(LightningElement) {
 
   // ---- the table -----------------------------------------------------------
 
+  // The table's rows and detail columns, kept between renders: a render (the
+  // loading flag, a resize) reuses them, and a new page only adds its own
+  // rows. A detail label keeps its column once it has one (new ones go at
+  // the end), so rows already built stay right.
+  // (Kept off the component, in TABLES: a field written while rendering
+  // would ask for another render.)
+  table() {
+    const t = TABLES.get(this) ?? { items: null, dateOnly: null, labels: [], index: new Map(), rows: [] };
+    if (t.items === this.items && t.dateOnly === this.dateOnly) return t;
+    const extends_ =
+      t.items &&
+      t.dateOnly === this.dateOnly &&
+      this.items.length >= t.items.length &&
+      t.items.every((item, i) => this.items[i] === item);
+    const start = extends_ ? t.items.length : 0;
+    const labels = extends_ ? [...t.labels] : [];
+    const index = extends_ ? new Map(t.index) : new Map();
+    const rows = extends_ ? [...t.rows] : [];
+    for (let i = start; i < this.items.length; i++) {
+      const item = this.items[i];
+      const row = {
+        id: item.id,
+        title: item.title,
+        recordUrl: item.recordId ? recordHref(item.recordId) : null,
+        subtitle: item.subtitle,
+        when: this.whenText(item)
+      };
+      for (const d of item.details ?? []) {
+        if (!d.label) continue;
+        if (!index.has(d.label)) {
+          index.set(d.label, labels.length);
+          labels.push(d.label);
+        }
+        row[`detail${index.get(d.label)}`] = detailText(d);
+      }
+      rows.push(row);
+    }
+    const built = { items: this.items, dateOnly: this.dateOnly, labels, index, rows };
+    TABLES.set(this, built);
+    return built;
+  }
+
   // Every item's detail labels, in the order they first appear, as columns.
   get detailLabels() {
-    const labels = [];
-    for (const item of this.items) {
-      for (const d of item.details ?? []) {
-        if (d.label && !labels.includes(d.label)) labels.push(d.label);
-      }
-    }
-    return labels;
+    return this.table().labels;
   }
 
   get columns() {
@@ -226,20 +265,7 @@ export default class TimeDriveGroup extends NavigationMixin(LightningElement) {
   }
 
   get rows() {
-    const labels = this.detailLabels;
-    return this.items.map((item) => {
-      const row = {
-        id: item.id,
-        title: item.title,
-        recordUrl: item.recordId ? recordHref(item.recordId) : null,
-        subtitle: item.subtitle,
-        when: this.whenText(item)
-      };
-      for (const d of item.details ?? []) {
-        row[`detail${labels.indexOf(d.label)}`] = detailText(d);
-      }
-      return row;
-    });
+    return this.table().rows;
   }
 
   whenText(item) {

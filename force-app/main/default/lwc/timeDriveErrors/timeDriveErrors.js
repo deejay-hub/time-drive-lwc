@@ -201,13 +201,17 @@ export function fitIllustrations(root) {
     const art = slot.querySelector("lightning-illustration");
     if (!art || watched.has(art)) continue;
     watched.add(art);
-    new ResizeObserver(() => {
+    const fit = new ResizeObserver(() => {
       const room = slot.clientHeight;
       const height = art.offsetHeight;
       const limit = room * OVERHANG;
       const scale = room && height > limit ? limit / height : 1;
       art.style.transform = scale < 1 ? `scale(${scale})` : "";
       art.style.transformOrigin = "center bottom";
-    }).observe(art);
+    });
+    fit.observe(art);
+    // The slot too: it shrinks in a short box (long translated words take
+    // its room), and the drawing has to follow.
+    fit.observe(slot);
   }
 }

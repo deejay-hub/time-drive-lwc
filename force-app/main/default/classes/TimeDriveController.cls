@@ -68,6 +68,20 @@ public with sharing class TimeDriveController {
     String historyYears,
     String futureYears
   ) {
+    return summarise(contactId, categories, hiddenTypes, historyYears, futureYears, null);
+  }
+
+  // The summary; `keep`, when given, gets its Run, so the days read in the
+  // same request reuse what it learned (its sources, rows read whole, counts
+  // that failed) instead of doing it all again.
+  private static TimelineSummary summarise(
+    Id contactId,
+    List<String> categories,
+    List<String> hiddenTypes,
+    String historyYears,
+    String futureYears,
+    List<Run> keep
+  ) {
     TimelineSummary summary = new TimelineSummary();
     if (contactId == null) {
       return summary;
@@ -83,6 +97,9 @@ public with sharing class TimeDriveController {
         windowFor(historyYears, futureYears, summary.warnings)
       );
       run.only = filters;
+      if (keep != null) {
+        keep.add(run);
+      }
       tallies = run.tallies();
       summary.unit = run.unit;
       summary.counted = run.countedNames;
@@ -298,7 +315,8 @@ public with sharing class TimeDriveController {
     Integer count
   ) {
     TimelineLoad out = new TimelineLoad();
-    out.summary = getSummary(contactId, categories, hiddenTypes, historyYears, futureYears);
+    List<Run> summaryRun = new List<Run>();
+    out.summary = summarise(contactId, categories, hiddenTypes, historyYears, futureYears, summaryRun);
     // A count of none asks for the summary alone (a refresh keeps its place and
     // asks for the days it is on).
     if (contactId == null || out.summary.days.isEmpty() || (count != null && count <= 0)) {
@@ -340,7 +358,8 @@ public with sharing class TimeDriveController {
       busy,
       emptySourcesFor(out.summary, wanted),
       busyCountsFor(out.summary, wanted),
-      runsOf(out.summary, wanted, new Set<String>(busy))
+      runsOf(out.summary, wanted, new Set<String>(busy)),
+      summaryRun.isEmpty() ? null : summaryRun[0]
     );
     return out;
   }
@@ -561,7 +580,8 @@ public with sharing class TimeDriveController {
       busyKeys,
       emptySources,
       busyCounts,
-      runs
+      runs,
+      null
     );
   }
 
@@ -586,7 +606,8 @@ public with sharing class TimeDriveController {
     List<String> busyKeys,
     List<String> emptySources,
     List<BusyCount> busyCounts,
-    List<String> runs
+    List<String> runs,
+    Run reuse
   ) {
     if (contactId == null || dayKeys == null || dayKeys.isEmpty()) {
       return new List<EngagementEvent>();
@@ -595,12 +616,17 @@ public with sharing class TimeDriveController {
     List<String> warnings = new List<String>();
     try {
       Map<String, Map<String, Integer>> counted = countsByPeriod(busyKeys, busyCounts);
-      List<EngagementEvent> events = new Run(
-          contactId,
-          warnings,
-          new List<Problem>(),
-          windowFor(historyYears, futureYears, warnings)
-        )
+      Run run = reuse;
+      if (run == null) {
+        run = new Run(contactId, warnings, new List<Problem>(), windowFor(historyYears, futureYears, warnings));
+      } else {
+        // The summary's, read in this request: its warnings and problems
+        // are said; the days apply the filters themselves.
+        run.warnings = warnings;
+        run.problems = new List<Problem>();
+        run.only = null;
+      }
+      List<EngagementEvent> events = run
         .days(
           new Set<String>(dayKeys),
           new Filters(categories, hiddenTypes),
@@ -736,12 +762,14 @@ public with sharing class TimeDriveController {
   }
 
   /**
-   * Every event, newest first (kept for callers that want the lot).
+   * Every event, newest first: every source read over the whole window, the
+   * heaviest read there is. For tests only; the timeline reads a summary and
+   * pages of days, and nothing on the client can call this.
    * @param contactId the Id of the Contact or Account the timeline is on
    * @return the events and any warnings and problems
    */
-  @AuraEnabled(cacheable=true)
-  public static TimelineResult getEvents(Id contactId) {
+  @TestVisible
+  private static TimelineResult getEvents(Id contactId) {
     TimelineResult result = new TimelineResult();
     if (contactId == null) {
       return result;
@@ -1460,8 +1488,9 @@ public with sharing class TimeDriveController {
             continue;
           }
         }
-        // Not counted (or the count failed): its rows, read once.
-        for (EngagementEvent e : rows(i)) {
+        // Not counted (or the count failed): its rows in these periods only
+        // (or the whole window's, when the summary already read them).
+        for (EngagementEvent e : rowsIn(i, keys)) {
           String key = periodOf(e);
           if (wanted.contains(key) && filters.shows(e)) {
             e.dayKey = key;
@@ -1647,6 +1676,8 @@ public with sharing class TimeDriveController {
       List<EngagementEvent> out = new List<EngagementEvent>();
       List<String> pending = new List<String>(periodKeys);
       pending.sort();
+      // Periods with more than the cap on their own: counted, not read.
+      List<String> overCap = new List<String>();
       Integer cap = rowCap(i);
       for (Integer round = 0; round < MAX_READS && !pending.isEmpty(); round++) {
         Set<String> wantedNow = new Set<String>(pending);
@@ -1663,29 +1694,38 @@ public with sharing class TimeDriveController {
           }
         }
         if (read.size() < cap) {
+          // Under the cap: these periods are complete (any set aside as
+          // over the cap are still counted, below).
           out.addAll(read);
-          return out;
+          pending = new List<String>();
+          break;
         }
         // Full: the periods after the oldest one read are complete.
-        List<String> rest = new List<String>();
-        for (String key : pending) {
-          if (key <= oldest) {
-            rest.add(key);
-          }
-        }
+        Boolean progressed = false;
         for (EngagementEvent e : read) {
           if (e.dayKey > oldest) {
             out.add(e);
+            progressed = true;
           }
         }
-        // Only the oldest period, still full: more than the cap on its own.
-        if (rest.size() == 1 && rest.size() == pending.size()) {
-          break;
+        // Every row from one period (the newest left): it has the cap or more
+        // on its own, so it's counted, and the next read starts below it.
+        // Reading it again would only return the same rows.
+        if (!progressed) {
+          overCap.add(oldest);
+        }
+        List<String> rest = new List<String>();
+        for (String key : pending) {
+          if (key < oldest || (progressed && key == oldest)) {
+            rest.add(key);
+          }
         }
         pending = rest;
       }
-      if (!pending.isEmpty()) {
-        out.addAll(countedRows(i, pending, grain));
+      // Out of reads: what's left is counted too.
+      overCap.addAll(pending);
+      if (!overCap.isEmpty()) {
+        out.addAll(countedRows(i, overCap, grain));
       }
       return out;
     }
@@ -1902,6 +1942,27 @@ public with sharing class TimeDriveController {
         rowsBySource.put(i, events);
       }
       return rowsBySource.get(i);
+    }
+
+    // A source's rows in some periods: those already read over the whole
+    // window (by the summary, in this request), else a read of just those
+    // periods, not of the window: a page of days shouldn't cost a full read.
+    List<EngagementEvent> rowsIn(Integer i, List<String> periodKeys) {
+      if (rowsBySource.containsKey(i)) {
+        return rowsBySource.get(i);
+      }
+      TimeDriveContext context = context(i);
+      context.ranges = windowsFor(periodKeys);
+      if (context.ranges.isEmpty()) {
+        return new List<EngagementEvent>();
+      }
+      List<EngagementEvent> events = read(i, context);
+      if (providers[i] != null && events.size() >= context.maxRecords()) {
+        context.warn(
+          String.format(Label.Time_Drive_Server_Max_Records, new List<String>{ sources[i].Label, String.valueOf(context.maxRecords()) })
+        );
+      }
+      return events;
     }
 
     // Whatever a provider returns, only what's inside the window plots.

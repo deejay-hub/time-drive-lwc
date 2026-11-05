@@ -693,6 +693,22 @@ describe("c-time-drive", () => {
     expect(getDays).not.toHaveBeenCalled();
   });
 
+  it("asks once for days that fail, and not again until Try again", async () => {
+    getDays.mockClear();
+    getDays.mockImplementation(() => Promise.reject({ body: { message: "timedrive:busy" } }));
+    const element = createTimeline();
+    element.recordId = "003000000000001AAA";
+    element.layout = "Vertical";
+    document.body.appendChild(element);
+    served = { events: EVENTS, warnings: [] };
+    answer();
+    await flush();
+    await flush();
+    // The error is shown, and the failed days aren't asked for on every render.
+    expect(getDays).toHaveBeenCalledTimes(1);
+    expect(element.shadowRoot.querySelector(".event")).toBeNull();
+  });
+
   it("asks only for the summary when it refreshes, and then for the days it is on", async () => {
     const element = await render();
     getDays.mockClear();
@@ -3020,6 +3036,39 @@ describe("activity actions", () => {
     const root = element.shadowRoot;
     expect(root.querySelectorAll(".actions-group lightning-button-group lightning-button")).toHaveLength(4);
     expect(root.querySelectorAll(".actions-group lightning-menu-item")).toHaveLength(2);
+  });
+
+  it("moves Full actions into the menu until the rest fit their row (long translated labels)", async () => {
+    // 600px of buttons on a 400px row, however many there are (jsdom doesn't
+    // lay out): one at a time they go in the menu, down to one.
+    const rect = jest.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function () {
+      const wide = this.classList?.contains("actions-group") ? 600 : 960;
+      return { width: wide, height: 32, top: 0, left: 0, right: wide, bottom: 32, x: 0, y: 0 };
+    });
+    const room = jest.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(function () {
+      return this.classList?.contains("title-row") ? 400 : 960;
+    });
+    try {
+      const element = createTimeline();
+      element.recordId = "003000000000001AAA";
+      element.activityActionsMode = "Full";
+      document.body.appendChild(element);
+      getActivityActions.emit(
+        ["NewTask", "LogACall", "NewEvent", "SendEmail"].map((name, i) => ({
+          apiName: `Global.${name}`,
+          label: `Registrar una acción ${i + 1}`,
+          icon: "action:new_task"
+        }))
+      );
+      emitEvents({ events: EVENTS, warnings: [] });
+      await flush();
+      const root = element.shadowRoot;
+      expect(root.querySelectorAll(".actions-group lightning-button-group lightning-button")).toHaveLength(1);
+      expect(root.querySelectorAll(".actions-group lightning-menu-item")).toHaveLength(3);
+    } finally {
+      rect.mockRestore();
+      room.mockRestore();
+    }
   });
 
   it("shows none when App Builder says None", async () => {

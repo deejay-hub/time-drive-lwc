@@ -92,7 +92,7 @@ const PREVIEW_DAY_PX = 96;
 // pauses this long (ms).
 const SETTLE_MS = 150;
 const FAST_SCROLL = 1.5;
-// How long the "Click to scroll the timeline" hint shows (ms).
+// How long the "Click to scroll" hint shows (ms).
 const HINT_MS = 1800;
 // Horizontal: columns either side of the view that get their events drawn;
 // the rest are date-only shells until scrolled near.
@@ -462,9 +462,30 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       style: `--action: ${a.colour || "#747474"}`
     }));
   }
-  // One in a narrow card, four in a wide one; the rest go in a menu beside them.
+  // One in a narrow card, up to four in a wide one (as many as fit: their
+  // labels can be twice as long translated); the rest go in a menu beside them.
   get actionsShownMax() {
-    return this.actionsNarrow ? NARROW_ACTIONS : WIDE_ACTIONS;
+    return this.actionsNarrow ? NARROW_ACTIONS : Math.min(WIDE_ACTIONS, this.actionsFit);
+  }
+  // The lens menu at most the card's width, less its side padding (cardWidth
+  // is rounded to 40px, so a little more), as the card clips what overflows.
+  get viewMenuStyle() {
+    return this.cardWidth > 0 ? `--view-menu-max: ${Math.max(160, this.cardWidth - 48)}px` : "";
+  }
+  // How many Full actions fit on the title row, measured after each render
+  // (fitActions); back to all four when the card's width changes.
+  actionsFit = WIDE_ACTIONS;
+  fitActions() {
+    if (!this.fullActionsOwnRow || this.actionsNarrow || this.actionsFit <= 1) return;
+    const group = this.template.querySelector(".actions-group:not(.actions-group_skeleton)");
+    const row = group?.parentElement;
+    if (!group || !row) return;
+    const room = row.clientWidth;
+    // Wider than its row: one more action goes in the menu (and this runs
+    // again after that render, until the rest fit).
+    if (room > 0 && group.getBoundingClientRect().width > room) {
+      this.actionsFit = Math.min(this.actionsFit, this.shownActions.length) - 1;
+    }
   }
   // Which fit when there are too many: Log a Call and Email first, then
   // New Event, New Task and any others; each group keeps the layout's order.
@@ -664,6 +685,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     }
     fitIllustrations(this.template);
     this.measureBeforeFirstRequest();
+    this.fitActions();
     this.loadNeededDays();
     this.focusViewMenu();
     this.listenToWheel();
@@ -720,7 +742,11 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   // Only a change of 40px or more redraws the minimap.
   noteWidth(width) {
     const rounded = Math.round(width / 40) * 40;
-    if (rounded && rounded !== this.cardWidth) this.cardWidth = rounded;
+    if (rounded && rounded !== this.cardWidth) {
+      this.cardWidth = rounded;
+      // Measured again for the new width (see fitActions).
+      this.actionsFit = WIDE_ACTIONS;
+    }
   }
 
   // "comfy" or "compact" when the page sets one; null for Auto.
@@ -1012,7 +1038,9 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   // Fetch the days about to be drawn that haven't been fetched yet: the first
   // pages in the vertical layout, the columns near the view in the horizontal.
   loadNeededDays() {
-    if (!this.summary || !this.recordId) return;
+    // Not while an error is shown: the days it failed on are still unread, so
+    // every render would ask for them again. Try again starts afresh.
+    if (!this.summary || !this.recordId || this.error) return;
     const days = this.orderedDays;
     const unread = (day) => !day.placeholder && !this._dayCache.has(day.key) && !this._loadingDays.has(day.key);
     // The drawn window; the direction it last moved (index order), once it has.

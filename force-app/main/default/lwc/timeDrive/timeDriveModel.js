@@ -186,7 +186,9 @@ export function periodLabel(key, unit, now = Date.now()) {
 }
 
 const RANGE_FORMAT = calendar({ day: "numeric", month: "short", year: "numeric" });
-const RANGE_FORMAT_SHORT = calendar({ month: "short", year: "numeric" });
+// A narrow card's: the locale's numeric date with a two-digit year (28.02.26,
+// 28/02/26, 02/28/26).
+const RANGE_FORMAT_SHORT = calendar({ day: "2-digit", month: "2-digit", year: "2-digit" });
 
 // A day months away, on the same day of the month or the month's last (as
 // Apex's Date.addMonths).
@@ -253,10 +255,17 @@ export function lengthOptions(pageValue, side) {
  * back to Future years ahead (today, with none). "19 Apr – 19 Oct 2026" in the
  * user's locale; short, "Apr – Oct 2026".
  */
+/**
+ * The window in the header: "28 Feb – 31 Aug 2026", or on a narrow card
+ * (`short`) "28/02/26 – 31/08/26". The short one keeps both dates whole:
+ * formatRange would drop a shared year in some locales (de: "28.02. – 31.08.26").
+ */
 export function windowRange(historyYears, futureYears, { short = false, now = Date.now() } = {}) {
   const { from, to } = windowDays(historyYears, futureYears, now);
-  const range = short ? RANGE_FORMAT_SHORT : RANGE_FORMAT;
-  return range.formatRange ? range.formatRange(from, to) : `${range.format(from)} – ${range.format(to)}`;
+  if (short) return `${RANGE_FORMAT_SHORT.format(from)} – ${RANGE_FORMAT_SHORT.format(to)}`;
+  return RANGE_FORMAT.formatRange
+    ? RANGE_FORMAT.formatRange(from, to)
+    : `${RANGE_FORMAT.format(from)} – ${RANGE_FORMAT.format(to)}`;
 }
 
 /** The window's first and last dates, each in the user's locale: { from: "22 Oct 2024", to: "22 Oct 2027" }. */
