@@ -2108,8 +2108,10 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   markFilterPress() {
     this.filtersPanel?.notePress();
   }
+  // The panel floats by the button, wherever it is when the panel opens and
+  // as the page scrolls.
   toggleFilters() {
-    this.filtersPanel?.toggle();
+    this.filtersPanel?.toggle(() => this.template.querySelector(".filter-button")?.getBoundingClientRect());
   }
   handleFiltersOpenChange(event) {
     const { open, returnFocus } = event.detail;

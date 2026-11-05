@@ -125,7 +125,7 @@
         <name>Time_Drive_Email_Opened</name>
     </customLabels>
     <customLabels>
-        <label>لم يُفتح بعد</label>
+        <label>لم يُفتح</label>
         <name>Time_Drive_Email_Unopened</name>
     </customLabels>
     <customLabels>

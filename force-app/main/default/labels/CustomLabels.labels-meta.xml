@@ -525,8 +525,8 @@
         <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Email message item · status after its title: not opened yet</shortDescription>
-        <value>Not opened yet</value>
+        <shortDescription>Email message item · status after its title: not opened</shortDescription>
+        <value>Unopened</value>
     </labels>
     <labels>
         <fullName>Time_Drive_Email_Bounced</fullName>

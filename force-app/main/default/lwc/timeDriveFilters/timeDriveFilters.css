@@ -1,17 +1,19 @@
-/* The Filters panel, under the toolbar's end (positioned against the
-   timeline's header row: this component's host isn't positioned). Its
-   colours and spacing come from the timeline's custom properties, which
-   reach in through the shadow boundary. */
+/* The Filters panel, floating over the page by the Filters button (placed
+   from script: see place()), so the card's clipped corners don't cut it
+   short; on the dropdown layer, as SLDS menus are. Its colours and spacing
+   come from the timeline's custom properties, which reach in through the
+   shadow boundary. */
 :host {
   display: contents;
 }
 
 .filter-panel {
-  position: absolute;
-  top: calc(100% + 0.375rem);
-  inset-inline-end: 0;
-  z-index: 20;
-  display: grid;
+  position: fixed;
+  z-index: 7000;
+  box-sizing: border-box;
+  /* The head keeps its height; the list takes what's left, and scrolls. */
+  display: flex;
+  flex-direction: column;
   gap: calc(0.75 * var(--time-drive-space));
   width: min(18rem, 100%);
   padding: calc(0.75 * var(--time-drive-space)) calc(1 * var(--time-drive-space));
@@ -71,6 +73,7 @@
 
 /* Cancel and Apply at the top, always in reach; the options scroll below. */
 .filter-head {
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -95,6 +98,8 @@
 }
 
 .filter-body {
+  flex: 0 1 auto;
+  min-height: 0;
   display: grid;
   gap: calc(0.75 * var(--time-drive-space));
   max-height: 20rem;

@@ -71,7 +71,7 @@ LABELS = [
     ("Error_Partial_Title", "Timeline notice · heading when some sources couldn't be read", "Some items couldn't be shown", "No se pudieron mostrar algunos elementos", "تعذّر عرض بعض العناصر"),
     # ---- email tracking
     ("Email_Opened", "Email message item · status after its title: opened", "Opened", "Abierto", "تم الفتح"),
-    ("Email_Unopened", "Email message item · status after its title: not opened yet", "Not opened yet", "Aún sin abrir", "لم يُفتح بعد"),
+    ("Email_Unopened", "Email message item · status after its title: not opened", "Unopened", "Sin abrir", "لم يُفتح"),
     ("Email_Bounced", "Email message item · status after its title: bounced", "Bounced", "Rebotado", "مرتد"),
     # ---- items, details, groups
     ("Details_Toggle", "Item · name of its open/close button: {0} its title (screen readers)", "Details: {0}", "Detalles: {0}", "التفاصيل: {0}"),

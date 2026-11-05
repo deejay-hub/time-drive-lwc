@@ -6,9 +6,23 @@
  *
  * The Filters button stays in the timeline's button group; it calls
  * toggle(), notePress() and close(), and hears openchange.
+ *
+ * The panel floats over the page, fixed to the button (toggle() is given
+ * where it is), so the card's clipped corners don't cut a long list short:
+ * below the button, or above it when there's more room there, no taller than
+ * the room, its list scrolling inside. It follows the button as the page
+ * scrolls.
  */
 import { LightningElement, api } from "lwc";
 import { LABELS } from "c/timeDriveLabels";
+
+// Room kept between the panel and the button, and the window's edges (px).
+const GAP = 6;
+const MARGIN = 8;
+// Less room than this below the button, and more above: the panel opens up.
+const ENOUGH_BELOW = 240;
+// The panel's widest (18rem).
+const WIDTH = 288;
 
 export default class TimeDriveFilters extends LightningElement {
   labels = LABELS;
@@ -33,8 +47,11 @@ export default class TimeDriveFilters extends LightningElement {
   // draft differs from it.
   opened = [];
 
+  // anchor: where the Filters button is now (a function returning its
+  // rectangle); without one the panel sits where the page puts it.
   @api
-  toggle() {
+  toggle(anchor) {
+    this._anchor = typeof anchor === "function" ? anchor : null;
     if (this.isOpen) this.close(true);
     else this.open();
   }
@@ -43,6 +60,7 @@ export default class TimeDriveFilters extends LightningElement {
   close(returnFocus = false) {
     if (!this.isOpen) return;
     this.isOpen = false;
+    this.unfollow();
     this.dispatchEvent(new CustomEvent("openchange", { detail: { open: false, returnFocus } }));
   }
 
@@ -59,6 +77,7 @@ export default class TimeDriveFilters extends LightningElement {
     this.draftAhead = String(this.ahead ?? "");
     this.isOpen = true;
     this._focusFirst = true;
+    this.follow();
     this.dispatchEvent(new CustomEvent("openchange", { detail: { open: true } }));
   }
 
@@ -76,9 +95,66 @@ export default class TimeDriveFilters extends LightningElement {
 
   disconnectedCallback() {
     document.removeEventListener("pointerdown", this._onDocumentPointer);
+    this.unfollow();
+  }
+
+  // While open, the panel keeps to the button as the page scrolls (any
+  // scrolling box: captured) or the window changes size.
+  follow() {
+    if (this._onMove || !this._anchor) return;
+    this._onMove = () => {
+      if (this._moveFrame) return;
+      // eslint-disable-next-line @lwc/lwc/no-async-operation
+      this._moveFrame = requestAnimationFrame(() => {
+        this._moveFrame = null;
+        this.place();
+      });
+    };
+    window.addEventListener("scroll", this._onMove, true);
+    window.addEventListener("resize", this._onMove);
+  }
+  unfollow() {
+    if (!this._onMove) return;
+    window.removeEventListener("scroll", this._onMove, true);
+    window.removeEventListener("resize", this._onMove);
+    if (this._moveFrame) cancelAnimationFrame(this._moveFrame);
+    this._onMove = null;
+    this._moveFrame = null;
+  }
+
+  // Puts the panel by the button: its end edge under the button's end (start
+  // to start right to left), below it or above, inside the window.
+  place() {
+    const panel = this.template.querySelector(".filter-panel");
+    const button = this._anchor?.();
+    if (!panel || !button || !button.width) return;
+    const width = Math.min(WIDTH, window.innerWidth - 2 * MARGIN);
+    const below = window.innerHeight - button.bottom - GAP - MARGIN;
+    const above = button.top - GAP - MARGIN;
+    const up = below < ENOUGH_BELOW && above > below;
+    panel.style.width = `${width}px`;
+    panel.style.maxHeight = `${Math.max(120, up ? above : below)}px`;
+    const rtl = getComputedStyle(panel).direction === "rtl";
+    const left = Math.min(
+      Math.max(MARGIN, rtl ? button.left : button.right - width),
+      window.innerWidth - width - MARGIN
+    );
+    const top = up ? button.top - GAP - panel.offsetHeight : button.bottom + GAP;
+    panel.style.left = `${left}px`;
+    panel.style.top = `${top}px`;
+    // A transformed parent moves "fixed" off the window: put it right.
+    const at = panel.getBoundingClientRect();
+    const dx = left - at.left;
+    const dy = top - at.top;
+    if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
+      panel.style.left = `${left + dx}px`;
+      panel.style.top = `${top + dy}px`;
+    }
   }
 
   renderedCallback() {
+    // Placed before it's painted, and again as it grows or shrinks.
+    if (this.isOpen) this.place();
     if (this._focusFirst) {
       this._focusFirst = false;
       (this.template.querySelector(".range-back") ?? this.template.querySelector(".all-types"))?.focus();

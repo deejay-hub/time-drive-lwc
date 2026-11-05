@@ -1320,6 +1320,44 @@ describe("c-time-drive filters panel", () => {
     expect(buttonByLabel(same, "Apply")).toBeUndefined();
   });
 
+  it("floats by the Filters button, above it when the room is there, and follows the page", async () => {
+    const element = await mount();
+    const root = element.shadowRoot;
+    // jsdom lays nothing out: the button where the test says, the panel where its style puts it.
+    let button = { top: 100, bottom: 132, left: 900, right: 932, width: 32, height: 32 };
+    const proto = Element.prototype;
+    const saved = proto.getBoundingClientRect;
+    proto.getBoundingClientRect = function () {
+      if (this.classList?.contains("filter-button")) return button;
+      if (this.classList?.contains("filter-panel")) {
+        return { left: parseFloat(this.style.left) || 0, top: parseFloat(this.style.top) || 0, width: 288, height: 0 };
+      }
+      return saved.call(this);
+    };
+    try {
+      const panel = await open(root);
+      // Under the button, its end edge under the button's, as tall as the room below.
+      expect(panel.style.top).toBe("138px");
+      expect(panel.style.left).toBe(`${932 - 288}px`);
+      expect(panel.style.maxHeight).toBe(`${window.innerHeight - 132 - 6 - 8}px`);
+      // The page scrolls the button near the window's foot: the panel goes above it.
+      button = {
+        top: window.innerHeight - 68,
+        bottom: window.innerHeight - 36,
+        left: 900,
+        right: 932,
+        width: 32,
+        height: 32
+      };
+      window.dispatchEvent(new CustomEvent("scroll"));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      expect(panel.style.maxHeight).toBe(`${window.innerHeight - 68 - 6 - 8}px`);
+      expect(panel.style.top).toBe(`${window.innerHeight - 68 - 6}px`);
+    } finally {
+      proto.getBoundingClientRect = saved;
+    }
+  });
+
   it("closes from the icon on the title, without applying", async () => {
     const element = await mount();
     const root = element.shadowRoot;
@@ -1858,7 +1896,7 @@ describe("c-time-drive drawing less", () => {
     const icons = [...root.querySelectorAll(".event-head")].map((h) => h.querySelector(".email-state"));
     expect(icons.map((i) => i?.iconName ?? null)).toEqual(["utility:preview", "utility:hide", "utility:warning", null]);
     expect(icons[0].alternativeText).toMatch(/^Opened /);
-    expect(icons[1].alternativeText).toBe("Not opened yet");
+    expect(icons[1].alternativeText).toBe("Unopened");
     expect(root.querySelector(".event-subtitle").textContent).toContain("Sent to: Sam Lee and 1 other");
   });
 
