@@ -1,0 +1,591 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Translations xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customLabels>
+        <label>אויסמעקן</label>
+        <name>Time_Drive_Action_Delete</name>
+    </customLabels>
+    <customLabels>
+        <label>רעדאַגירן</label>
+        <name>Time_Drive_Action_Edit</name>
+    </customLabels>
+    <customLabels>
+        <label>בליצבריוו</label>
+        <name>Time_Drive_Action_Email</name>
+    </customLabels>
+    <customLabels>
+        <label>פֿאַרשרײַבן אַ רוף</label>
+        <name>Time_Drive_Action_Log_Call</name>
+    </customLabels>
+    <customLabels>
+        <label>נײַע געשעעניש</label>
+        <name>Time_Drive_Action_New_Event</name>
+    </customLabels>
+    <customLabels>
+        <label>נײַע אויפֿגאַבע</label>
+        <name>Time_Drive_Action_New_Task</name>
+    </customLabels>
+    <customLabels>
+        <label>גאַנצן טאָג</label>
+        <name>Time_Drive_All_Day</name>
+    </customLabels>
+    <customLabels>
+        <label>צוגעגעבן {0}</label>
+        <name>Time_Drive_Announce_Added</name>
+    </customLabels>
+    <customLabels>
+        <label>צוגעגעבן {0} ביז {1}</label>
+        <name>Time_Drive_Announce_Added_Range</name>
+    </customLabels>
+    <customLabels>
+        <label>מע ווײַזט {0}</label>
+        <name>Time_Drive_Announce_Showing</name>
+    </customLabels>
+    <customLabels>
+        <label>מע ווײַזט {0} ביז {1}</label>
+        <name>Time_Drive_Announce_Showing_Range</name>
+    </customLabels>
+    <customLabels>
+        <label>מע ווײַזט הײַנט</label>
+        <name>Time_Drive_Announce_Today</name>
+    </customLabels>
+    <customLabels>
+        <label>גאָרנישט צווישן {0} און {1}</label>
+        <name>Time_Drive_Between</name>
+    </customLabels>
+    <customLabels>
+        <label>ווײַזן צײַטן און דאַטעס</label>
+        <name>Time_Drive_Button_Lite_Off</name>
+    </customLabels>
+    <customLabels>
+        <label>נאָר טיטלען</label>
+        <name>Time_Drive_Button_Lite_On</name>
+    </customLabels>
+    <customLabels>
+        <label>דערפֿרישן</label>
+        <name>Time_Drive_Button_Refresh</name>
+    </customLabels>
+    <customLabels>
+        <label>ווײַזן אַלץ</label>
+        <name>Time_Drive_Button_Show_Everything</name>
+    </customLabels>
+    <customLabels>
+        <label>הײַנט</label>
+        <name>Time_Drive_Button_Today</name>
+    </customLabels>
+    <customLabels>
+        <label>נאָך אַ מאָל</label>
+        <name>Time_Drive_Button_Try_Again</name>
+    </customLabels>
+    <customLabels>
+        <label>פֿאַרמאַכן אַלץ</label>
+        <name>Time_Drive_Collapse_All</name>
+    </customLabels>
+    <customLabels>
+        <label>צי איר ווילט טאַקע אויסמעקן דעם {0}?</label>
+        <name>Time_Drive_Delete_Confirm</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} „{1}“ איז אויסגעמעקט.</label>
+        <name>Time_Drive_Delete_Done_Named</name>
+    </customLabels>
+    <customLabels>
+        <label>ניט אויסגעמעקט</label>
+        <name>Time_Drive_Delete_Failed</name>
+    </customLabels>
+    <customLabels>
+        <label>עלעמענט</label>
+        <name>Time_Drive_Delete_Item</name>
+    </customLabels>
+    <customLabels>
+        <label>אויסמעקן {0}</label>
+        <name>Time_Drive_Delete_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>מע מעקט אויס…</label>
+        <name>Time_Drive_Deleting</name>
+    </customLabels>
+    <customLabels>
+        <label>באַהאַלטן פּרטים</label>
+        <name>Time_Drive_Details_Hide</name>
+    </customLabels>
+    <customLabels>
+        <label>ווײַזן פּרטים</label>
+        <name>Time_Drive_Details_Show</name>
+    </customLabels>
+    <customLabels>
+        <label>פּרטים: {0}</label>
+        <name>Time_Drive_Details_Toggle</name>
+    </customLabels>
+    <customLabels>
+        <label>צוריקגעשיקט</label>
+        <name>Time_Drive_Email_Bounced</name>
+    </customLabels>
+    <customLabels>
+        <label>געעפֿנט</label>
+        <name>Time_Drive_Email_Opened</name>
+    </customLabels>
+    <customLabels>
+        <label>ניט געעפֿנט</label>
+        <name>Time_Drive_Email_Unopened</name>
+    </customLabels>
+    <customLabels>
+        <label>נאָך קיין באַטייליקונג פֿאַר דעם קונה.</label>
+        <name>Time_Drive_Empty_Customer</name>
+    </customLabels>
+    <customLabels>
+        <label>קיין דאַטן</label>
+        <name>Time_Drive_Empty_No_Match</name>
+    </customLabels>
+    <customLabels>
+        <label>קיין דאַטן מיט די פֿילטערס.</label>
+        <name>Time_Drive_Empty_Nothing</name>
+    </customLabels>
+    <customLabels>
+        <label>ניט אײַנגעשטעלט</label>
+        <name>Time_Drive_Empty_Setup_Heading</name>
+    </customLabels>
+    <customLabels>
+        <label>קיין דאַטן צווישן {0} און {1}. קוקט איבער די פֿילטערס און פּרוּווט נאָך אַ מאָל.</label>
+        <name>Time_Drive_Empty_Window</name>
+    </customLabels>
+    <customLabels>
+        <label>איר האָט ניט קיין צוטריט צו עטלעכע פֿון די נייטיקע דאַטן.</label>
+        <name>Time_Drive_Err_Access</name>
+    </customLabels>
+    <customLabels>
+        <label>דאָס לאָדן האָט געדויערט צו לאַנג.</label>
+        <name>Time_Drive_Err_Busy</name>
+    </customLabels>
+    <customLabels>
+        <label>דער רעקאָרד איז ניט פֿאַראַן.</label>
+        <name>Time_Drive_Err_Not_Found</name>
+    </customLabels>
+    <customLabels>
+        <label>מע קען ניט דערגרייכן Salesforce.</label>
+        <name>Time_Drive_Err_Offline</name>
+    </customLabels>
+    <customLabels>
+        <label>עפּעס נייטיקס איז ניט אײַנגעשטעלט אין דער אָרגאַניזאַציע.</label>
+        <name>Time_Drive_Err_Setup</name>
+    </customLabels>
+    <customLabels>
+        <label>עפּעס איז ניט געגאַנגען.</label>
+        <name>Time_Drive_Err_Unknown</name>
+    </customLabels>
+    <customLabels>
+        <label>לאָדן איז דורכגעפֿאַלן</label>
+        <name>Time_Drive_Error_Load_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>עטלעכע עלעמענטן פֿעלן</label>
+        <name>Time_Drive_Error_Partial_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>לייענען איז דורכגעפֿאַלן</label>
+        <name>Time_Drive_Error_Read_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>אויפֿמאַכן אַלץ</label>
+        <name>Time_Drive_Expand_All</name>
+    </customLabels>
+    <customLabels>
+        <label>גאָרנישט צו פֿילטרירן אין דעם אָנבליק.</label>
+        <name>Time_Drive_Filter_None</name>
+    </customLabels>
+    <customLabels>
+        <label>פֿילטערס</label>
+        <name>Time_Drive_Filters</name>
+    </customLabels>
+    <customLabels>
+        <label>פֿילטערס, {0} אַקטיוו</label>
+        <name>Time_Drive_Filters_Active</name>
+    </customLabels>
+    <customLabels>
+        <label>אָנווענדן</label>
+        <name>Time_Drive_Filters_Apply</name>
+    </customLabels>
+    <customLabels>
+        <label>אָפּזאָגן</label>
+        <name>Time_Drive_Filters_Cancel</name>
+    </customLabels>
+    <customLabels>
+        <label>פֿאַרמאַכן</label>
+        <name>Time_Drive_Filters_Close</name>
+    </customLabels>
+    <customLabels>
+        <label>געשעעניש־סאָרטן</label>
+        <name>Time_Drive_Filters_Event_Types</name>
+    </customLabels>
+    <customLabels>
+        <label>צוריק צו {0}</label>
+        <name>Time_Drive_Group_Back</name>
+    </customLabels>
+    <customLabels>
+        <label>צוריק צום רעקאָרד</label>
+        <name>Time_Drive_Group_Back_Record</name>
+    </customLabels>
+    <customLabels>
+        <label>דאַטע</label>
+        <name>Time_Drive_Group_Col_Date</name>
+    </customLabels>
+    <customLabels>
+        <label>דאַטע/צײַט</label>
+        <name>Time_Drive_Group_Col_Date_Time</name>
+    </customLabels>
+    <customLabels>
+        <label>נאָמען</label>
+        <name>Time_Drive_Group_Col_Name</name>
+    </customLabels>
+    <customLabels>
+        <label>קיצור</label>
+        <name>Time_Drive_Group_Col_Summary</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}+ עלעמענטן</label>
+        <name>Time_Drive_Group_Count_More</name>
+    </customLabels>
+    <customLabels>
+        <label>פֿון</label>
+        <name>Time_Drive_Group_From</name>
+    </customLabels>
+    <customLabels>
+        <label>עלעמענטן</label>
+        <name>Time_Drive_Group_Heading</name>
+    </customLabels>
+    <customLabels>
+        <label>מע לאָדט</label>
+        <name>Time_Drive_Group_Loading</name>
+    </customLabels>
+    <customLabels>
+        <label>מע לאָדט נאָך עלעמענטן</label>
+        <name>Time_Drive_Group_Loading_More</name>
+    </customLabels>
+    <customLabels>
+        <label>גאָרנישט צו ווײַזן</label>
+        <name>Time_Drive_Group_Nothing</name>
+    </customLabels>
+    <customLabels>
+        <label>די עלעמענטן האָבן זיך אפֿשר געביטן זינט מע האָט געצייכנט די צײַטליניע. דערפֿרישט, אָדער גייט צוריק צו דער צײַטליניע.</label>
+        <name>Time_Drive_Group_Nothing_Body</name>
+    </customLabels>
+    <customLabels>
+        <label>ער ווײַזט די עלעמענטן הינטער איינער פֿון אַ צײַטליניעס געגרופּירטע שורות.</label>
+        <name>Time_Drive_Group_Open_Body</name>
+    </customLabels>
+    <customLabels>
+        <label>עפֿנט דעם בלאַט פֿון אַ צײַטליניע</label>
+        <name>Time_Drive_Group_Open_From</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} עלעמענטן געוויזן</label>
+        <name>Time_Drive_Group_Shown</name>
+    </customLabels>
+    <customLabels>
+        <label>לויט דאַטע</label>
+        <name>Time_Drive_Group_Sorted</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} רעקאָרדן געגרופּירט</label>
+        <name>Time_Drive_Group_Summary_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>1 רעקאָרד געגרופּירט</label>
+        <name>Time_Drive_Group_Summary_One</name>
+    </customLabels>
+    <customLabels>
+        <label>ביז</label>
+        <name>Time_Drive_Group_To</name>
+    </customLabels>
+    <customLabels>
+        <label>ווײַזן אַלע {0} {1}</label>
+        <name>Time_Drive_Group_View_All</name>
+    </customLabels>
+    <customLabels>
+        <label>קליקט צו בלעטערן</label>
+        <name>Time_Drive_Hint_Scroll</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} עלעמענטן</label>
+        <name>Time_Drive_Items_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>1 עלעמענט</label>
+        <name>Time_Drive_Items_One</name>
+    </customLabels>
+    <customLabels>
+        <label>רופֿן</label>
+        <name>Time_Drive_Legend_Calls</name>
+    </customLabels>
+    <customLabels>
+        <label>בליצבריוו</label>
+        <name>Time_Drive_Legend_Emails</name>
+    </customLabels>
+    <customLabels>
+        <label>טעקעס און נאָטיצן</label>
+        <name>Time_Drive_Legend_Files</name>
+    </customLabels>
+    <customLabels>
+        <label>עלעמענטן</label>
+        <name>Time_Drive_Many_Other</name>
+    </customLabels>
+    <customLabels>
+        <label>נײַע טעטיקייט</label>
+        <name>Time_Drive_Menu_New_Activity</name>
+    </customLabels>
+    <customLabels>
+        <label>אָנבליקן</label>
+        <name>Time_Drive_Menu_Views</name>
+    </customLabels>
+    <customLabels>
+        <label>נאָך {0} עלעמענטן: בלעטערט אַראָפּ</label>
+        <name>Time_Drive_More_Aria_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>נאָך {0} עלעמענטן דעם {1}: בלעטערט אַראָפּ</label>
+        <name>Time_Drive_More_Aria_Many_On</name>
+    </customLabels>
+    <customLabels>
+        <label>נאָך 1 עלעמענט: בלעטערט אַראָפּ</label>
+        <name>Time_Drive_More_Aria_One</name>
+    </customLabels>
+    <customLabels>
+        <label>נאָך 1 עלעמענט דעם {0}: בלעטערט אַראָפּ</label>
+        <name>Time_Drive_More_Aria_One_On</name>
+    </customLabels>
+    <customLabels>
+        <label>נאָך {0}</label>
+        <name>Time_Drive_More_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>נאָך 1</label>
+        <name>Time_Drive_More_One</name>
+    </customLabels>
+    <customLabels>
+        <label>איצט</label>
+        <name>Time_Drive_Near_Now</name>
+    </customLabels>
+    <customLabels>
+        <label>דעם חודש</label>
+        <name>Time_Drive_Near_This_Month</name>
+    </customLabels>
+    <customLabels>
+        <label>די וואָך</label>
+        <name>Time_Drive_Near_This_Week</name>
+    </customLabels>
+    <customLabels>
+        <label>הײַנט</label>
+        <name>Time_Drive_Near_Today</name>
+    </customLabels>
+    <customLabels>
+        <label>אײַער אַדמיניסטראַטאָר האָט נאָך ניט אײַנגעשטעלט דעם אָביעקט.</label>
+        <name>Time_Drive_No_Sources</name>
+    </customLabels>
+    <customLabels>
+        <label>(קיין טיטל)</label>
+        <name>Time_Drive_No_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>דעם חודש גאָרנישט</label>
+        <name>Time_Drive_Nothing_Month</name>
+    </customLabels>
+    <customLabels>
+        <label>הײַנט גאָרנישט</label>
+        <name>Time_Drive_Nothing_Today</name>
+    </customLabels>
+    <customLabels>
+        <label>די וואָך גאָרנישט</label>
+        <name>Time_Drive_Nothing_Week</name>
+    </customLabels>
+    <customLabels>
+        <label>צײַטליניע־איבערבליק: קלײַבט אַ טאָג</label>
+        <name>Time_Drive_Overview_Pick_Day</name>
+    </customLabels>
+    <customLabels>
+        <label>געגרופּירט</label>
+        <name>Time_Drive_Pill_Grouped</name>
+    </customLabels>
+    <customLabels>
+        <label>אַוועקנעמען פֿילטער: {0}</label>
+        <name>Time_Drive_Pill_Remove</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: לייענען איז דורכגעפֿאַלן.</label>
+        <name>Time_Drive_Prob_Message</name>
+    </customLabels>
+    <customLabels>
+        <label>פֿאָרויס</label>
+        <name>Time_Drive_Range_Ahead</name>
+    </customLabels>
+    <customLabels>
+        <label>צוריק</label>
+        <name>Time_Drive_Range_Back</name>
+    </customLabels>
+    <customLabels>
+        <label>צײַט־שטח</label>
+        <name>Time_Drive_Range_Heading</name>
+    </customLabels>
+    <customLabels>
+        <label>1 חודש</label>
+        <name>Time_Drive_Range_Month</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} חדשים</label>
+        <name>Time_Drive_Range_Months</name>
+    </customLabels>
+    <customLabels>
+        <label>קיין</label>
+        <name>Time_Drive_Range_None</name>
+    </customLabels>
+    <customLabels>
+        <label>1 יאָר</label>
+        <name>Time_Drive_Range_Year</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} יאָר</label>
+        <name>Time_Drive_Range_Years</name>
+    </customLabels>
+    <customLabels>
+        <label>באַטייליקונג־עלעמענטן</label>
+        <name>Time_Drive_Region_Items</name>
+    </customLabels>
+    <customLabels>
+        <label>אַקציעס</label>
+        <name>Time_Drive_Row_Actions</name>
+    </customLabels>
+    <customLabels>
+        <label>מע קאָנטראָלירט וואָס איר קענט טאָן…</label>
+        <name>Time_Drive_Row_Checking</name>
+    </customLabels>
+    <customLabels>
+        <label>רעדאַגירן און אויסמעקן ניט מעגלעך.</label>
+        <name>Time_Drive_Row_No_Actions</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: אַן Apex־מקור דאַרף אַ Provider Class.</label>
+        <name>Time_Drive_Server_Apex_Needs_Class</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: {1} פֿאַרברייטערט ניט TimeDriveApexSource.</label>
+        <name>Time_Drive_Server_Bad_Provider</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} „{1}“ איז ניט איינס פֿון 0.25, 0.5, 1, 2, 3 ... 10 יאָר, טאָ מע ניצט עס ניט.</label>
+        <name>Time_Drive_Server_Bad_Years</name>
+    </customLabels>
+    <customLabels>
+        <label>Data 360 איז ניטאָ אין דער אָרגאַניזאַציע, טאָ מע לאָזט אויס אירע מקורים.</label>
+        <name>Time_Drive_Server_Data360_Missing</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} באַטייליקונג איז ניט אין דער אָרגאַניזאַציעס דאַטן־מאָדעל ({1}).</label>
+        <name>Time_Drive_Server_Dmo_Missing</name>
+    </customLabels>
+    <customLabels>
+        <label>אידענטיטעט־לינקען</label>
+        <name>Time_Drive_Server_Identity_Links</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: מע ווײַזט נאָר {1} עלעמענטן (דער Max Records), טאָ עס קענען פֿעלן עטלעכע.</label>
+        <name>Time_Drive_Server_Max_Records</name>
+    </customLabels>
+    <customLabels>
+        <label>ניין</label>
+        <name>Time_Drive_Server_No</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: {1} האָט ניט קיין פֿעלד {2}.</label>
+        <name>Time_Drive_Server_No_Field</name>
+    </customLabels>
+    <customLabels>
+        <label>קיין אידענטיטעט־לינק־אָביעקט ({0}): מע ווײַזט נאָר דעם קאָנטאַקטס אייגענעם יחיד.</label>
+        <name>Time_Drive_Server_No_Identity_Link</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: שטעלט אַ Parent Field אָדער אַ Junction Object כּדי צו פֿאַרבינדן די רעקאָרדן מיטן בלאַט.</label>
+        <name>Time_Drive_Server_No_Link</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: ס׳איז ניטאָ קיין אָביעקט מיטן נאָמען {1}.</label>
+        <name>Time_Drive_Server_No_Object</name>
+    </customLabels>
+    <customLabels>
+        <label>צו: {0}</label>
+        <name>Time_Drive_Server_Sent_To</name>
+    </customLabels>
+    <customLabels>
+        <label>צו: {0} און 1 נאָך</label>
+        <name>Time_Drive_Server_Sent_To_One_Other</name>
+    </customLabels>
+    <customLabels>
+        <label>צו: {0} און {1} נאָך</label>
+        <name>Time_Drive_Server_Sent_To_Others</name>
+    </customLabels>
+    <customLabels>
+        <label>יאָ</label>
+        <name>Time_Drive_Server_Yes</name>
+    </customLabels>
+    <customLabels>
+        <label>מע לאָדט די צײַטליניע…</label>
+        <name>Time_Drive_Status_Loading</name>
+    </customLabels>
+    <customLabels>
+        <label>מע לאָדט דעם טאָג</label>
+        <name>Time_Drive_Status_Loading_Day</name>
+    </customLabels>
+    <customLabels>
+        <label>מע דערהײַנטיקט די צאָלן</label>
+        <name>Time_Drive_Status_Updating_Counts</name>
+    </customLabels>
+    <customLabels>
+        <label>די וואָך פֿון {0}</label>
+        <name>Time_Drive_The_Week_Of</name>
+    </customLabels>
+    <customLabels>
+        <label>אַנדערע</label>
+        <name>Time_Drive_Type_Other</name>
+    </customLabels>
+    <customLabels>
+        <label>אַלע סאָרטן</label>
+        <name>Time_Drive_Types_All</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} פֿון {1} סאָרטן</label>
+        <name>Time_Drive_Types_Some</name>
+    </customLabels>
+    <customLabels>
+        <label>מע דערהײַנטיקט…</label>
+        <name>Time_Drive_Updating</name>
+    </customLabels>
+    <customLabels>
+        <label>אַלע עלעמענטן</label>
+        <name>Time_Drive_View_All</name>
+    </customLabels>
+    <customLabels>
+        <label>האַנדל</label>
+        <name>Time_Drive_View_Commerce</name>
+    </customLabels>
+    <customLabels>
+        <label>דיגיטאַל</label>
+        <name>Time_Drive_View_Digital</name>
+    </customLabels>
+    <customLabels>
+        <label>מאַרקעטינג</label>
+        <name>Time_Drive_View_Marketing</name>
+    </customLabels>
+    <customLabels>
+        <label>פֿאַרקויף</label>
+        <name>Time_Drive_View_Sales</name>
+    </customLabels>
+    <customLabels>
+        <label>סערוויס</label>
+        <name>Time_Drive_View_Service</name>
+    </customLabels>
+    <customLabels>
+        <label>וואָך פֿון {0}</label>
+        <name>Time_Drive_Week_Of</name>
+    </customLabels>
+    <customLabels>
+        <label>וואָך פֿון</label>
+        <name>Time_Drive_Week_Of_Word</name>
+    </customLabels>
+</Translations>
