@@ -5,6 +5,7 @@
  * Anything else keeps the server's text.
  */
 import LOCALE from "@salesforce/i18n/locale";
+import { LABELS, format, labelNamed } from "c/timeDriveLabels";
 
 const formats = new Map();
 
@@ -48,4 +49,36 @@ export function detailText(detail) {
  */
 export function localDetails(details) {
   return details?.map((d) => (d.amount == null ? d : { ...d, value: detailText(d) }));
+}
+
+/**
+ * "Sent to: Sam Lee and 2 others", in the card's own words, from who and how
+ * many others the server sent (null without them). Apex words it too (the
+ * subtitle), but only in a language that is Active in Translation Language
+ * Settings; the card's labels are translated whatever.
+ *
+ * @param {{sentTo?: string, sentToOthers?: number}} e an event from the server
+ * @returns {string|null} the subtitle, or null
+ */
+export function sentToText(e) {
+  if (!e?.sentTo) return null;
+  const others = Number(e.sentToOthers ?? 0);
+  if (!(others > 0)) return format(LABELS.serverSentTo, e.sentTo);
+  return others === 1
+    ? format(LABELS.serverSentToOneOther, e.sentTo)
+    : format(LABELS.serverSentToOthers, e.sentTo, others);
+}
+
+/**
+ * An event from the server with the card's own copy of the Time Drive labels
+ * in it: its type's name (when the server says which label it comes from)
+ * and an email's "Sent to: ..." subtitle. The same event when nothing changes.
+ *
+ * @param {object} e an event from the server
+ * @returns {object} the event to show
+ */
+export function ownWords(e) {
+  const typeLabel = labelNamed(e?.typeLabelName, e?.typeLabel);
+  const subtitle = sentToText(e) ?? e?.subtitle;
+  return typeLabel === e?.typeLabel && subtitle === e?.subtitle ? e : { ...e, typeLabel, subtitle };
 }

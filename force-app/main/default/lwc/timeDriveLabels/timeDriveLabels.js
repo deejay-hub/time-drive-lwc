@@ -31,6 +31,9 @@ import filters from "@salesforce/label/c.Time_Drive_Filters";
 import filtersActive from "@salesforce/label/c.Time_Drive_Filters_Active";
 import typesAll from "@salesforce/label/c.Time_Drive_Types_All";
 import typesSome from "@salesforce/label/c.Time_Drive_Types_Some";
+import serverSentTo from "@salesforce/label/c.Time_Drive_Server_Sent_To";
+import serverSentToOneOther from "@salesforce/label/c.Time_Drive_Server_Sent_To_One_Other";
+import serverSentToOthers from "@salesforce/label/c.Time_Drive_Server_Sent_To_Others";
 import statusUpdatingCounts from "@salesforce/label/c.Time_Drive_Status_Updating_Counts";
 import statusLoading from "@salesforce/label/c.Time_Drive_Status_Loading";
 import statusLoadingDay from "@salesforce/label/c.Time_Drive_Status_Loading_Day";
@@ -107,6 +110,9 @@ import rangeMonth from "@salesforce/label/c.Time_Drive_Range_Month";
 import rangeMonths from "@salesforce/label/c.Time_Drive_Range_Months";
 import rangeYear from "@salesforce/label/c.Time_Drive_Range_Year";
 import rangeYears from "@salesforce/label/c.Time_Drive_Range_Years";
+import legendFiles from "@salesforce/label/c.Time_Drive_Legend_Files";
+import legendCalls from "@salesforce/label/c.Time_Drive_Legend_Calls";
+import legendEmails from "@salesforce/label/c.Time_Drive_Legend_Emails";
 import groupLoading from "@salesforce/label/c.Time_Drive_Group_Loading";
 import groupNothing from "@salesforce/label/c.Time_Drive_Group_Nothing";
 import groupNothingBody from "@salesforce/label/c.Time_Drive_Group_Nothing_Body";
@@ -155,6 +161,9 @@ export const LABELS = Object.freeze({
   filtersActive,
   typesAll,
   typesSome,
+  serverSentTo,
+  serverSentToOneOther,
+  serverSentToOthers,
   statusUpdatingCounts,
   statusLoading,
   statusLoadingDay,
@@ -231,6 +240,9 @@ export const LABELS = Object.freeze({
   rangeMonths,
   rangeYear,
   rangeYears,
+  legendFiles,
+  legendCalls,
+  legendEmails,
   groupLoading,
   groupNothing,
   groupNothingBody,
@@ -248,6 +260,144 @@ export const LABELS = Object.freeze({
   groupLoadingMore,
   groupShown,
 });
+
+// The same labels by their API names, for a name the server sends (a lens's or a
+// source's): the card shows its own copy, translated even before Apex's is.
+const BY_NAME = Object.freeze({
+  Time_Drive_Menu_Views: menuViews,
+  Time_Drive_Menu_New_Activity: menuNewActivity,
+  Time_Drive_Action_New_Task: actionNewTask,
+  Time_Drive_Action_New_Event: actionNewEvent,
+  Time_Drive_Action_Log_Call: actionLogCall,
+  Time_Drive_Action_Email: actionEmail,
+  Time_Drive_Row_Actions: rowActions,
+  Time_Drive_Row_Checking: rowChecking,
+  Time_Drive_Row_No_Actions: rowNoActions,
+  Time_Drive_Action_Edit: actionEdit,
+  Time_Drive_Action_Delete: actionDelete,
+  Time_Drive_Delete_Title: deleteTitle,
+  Time_Drive_Delete_Confirm: deleteConfirm,
+  Time_Drive_Delete_Item: deleteItem,
+  Time_Drive_Delete_Failed: deleteFailed,
+  Time_Drive_Delete_Done_Named: deleteDoneNamed,
+  Time_Drive_Deleting: deleting,
+  Time_Drive_Updating: updating,
+  Time_Drive_Button_Today: buttonToday,
+  Time_Drive_Button_Lite_On: buttonLiteOn,
+  Time_Drive_Button_Lite_Off: buttonLiteOff,
+  Time_Drive_Button_Refresh: buttonRefresh,
+  Time_Drive_Button_Try_Again: buttonTryAgain,
+  Time_Drive_Button_Show_Everything: buttonShowEverything,
+  Time_Drive_Expand_All: expandAll,
+  Time_Drive_Collapse_All: collapseAll,
+  Time_Drive_Filters: filters,
+  Time_Drive_Filters_Active: filtersActive,
+  Time_Drive_Types_All: typesAll,
+  Time_Drive_Types_Some: typesSome,
+  Time_Drive_Server_Sent_To: serverSentTo,
+  Time_Drive_Server_Sent_To_One_Other: serverSentToOneOther,
+  Time_Drive_Server_Sent_To_Others: serverSentToOthers,
+  Time_Drive_Status_Updating_Counts: statusUpdatingCounts,
+  Time_Drive_Status_Loading: statusLoading,
+  Time_Drive_Status_Loading_Day: statusLoadingDay,
+  Time_Drive_Region_Items: regionItems,
+  Time_Drive_Overview_Pick_Day: overviewPickDay,
+  Time_Drive_Hint_Scroll: hintScroll,
+  Time_Drive_Pill_Grouped: pillGrouped,
+  Time_Drive_All_Day: allDay,
+  Time_Drive_No_Title: noTitle,
+  Time_Drive_Error_Load_Title: errorLoadTitle,
+  Time_Drive_Error_Read_Title: errorReadTitle,
+  Time_Drive_Error_Partial_Title: errorPartialTitle,
+  Time_Drive_Email_Opened: emailOpened,
+  Time_Drive_Email_Unopened: emailUnopened,
+  Time_Drive_Email_Bounced: emailBounced,
+  Time_Drive_Details_Toggle: detailsToggle,
+  Time_Drive_Details_Show: detailsShow,
+  Time_Drive_Details_Hide: detailsHide,
+  Time_Drive_Items_One: itemsOne,
+  Time_Drive_Items_Many: itemsMany,
+  Time_Drive_More_One: moreOne,
+  Time_Drive_More_Many: moreMany,
+  Time_Drive_More_Aria_One: moreAriaOne,
+  Time_Drive_More_Aria_Many: moreAriaMany,
+  Time_Drive_More_Aria_One_On: moreAriaOneOn,
+  Time_Drive_More_Aria_Many_On: moreAriaManyOn,
+  Time_Drive_Group_View_All: groupViewAll,
+  Time_Drive_Group_Summary_One: groupSummaryOne,
+  Time_Drive_Group_Summary_Many: groupSummaryMany,
+  Time_Drive_Group_From: groupFrom,
+  Time_Drive_Group_To: groupTo,
+  Time_Drive_Empty_Setup_Heading: emptySetupHeading,
+  Time_Drive_Empty_No_Match: emptyNoMatch,
+  Time_Drive_Filter_None: filterNone,
+  Time_Drive_No_Sources: noSources,
+  Time_Drive_Empty_Window: emptyWindow,
+  Time_Drive_Empty_Customer: emptyCustomer,
+  Time_Drive_Empty_Nothing: emptyNothing,
+  Time_Drive_Between: between,
+  Time_Drive_Near_Now: nearNow,
+  Time_Drive_Near_This_Week: nearThisWeek,
+  Time_Drive_Near_This_Month: nearThisMonth,
+  Time_Drive_Near_Today: nearToday,
+  Time_Drive_Nothing_Today: nothingToday,
+  Time_Drive_Nothing_Week: nothingWeek,
+  Time_Drive_Nothing_Month: nothingMonth,
+  Time_Drive_Announce_Added: announceAdded,
+  Time_Drive_Announce_Added_Range: announceAddedRange,
+  Time_Drive_Announce_Showing: announceShowing,
+  Time_Drive_Announce_Showing_Range: announceShowingRange,
+  Time_Drive_Announce_Today: announceToday,
+  Time_Drive_Week_Of: weekOf,
+  Time_Drive_Week_Of_Word: weekOfWord,
+  Time_Drive_The_Week_Of: theWeekOf,
+  Time_Drive_Type_Other: typeOther,
+  Time_Drive_Many_Other: manyOther,
+  Time_Drive_Err_Offline: errOffline,
+  Time_Drive_Err_Access: errAccess,
+  Time_Drive_Err_Not_Found: errNotFound,
+  Time_Drive_Err_Setup: errSetup,
+  Time_Drive_Err_Busy: errBusy,
+  Time_Drive_Err_Unknown: errUnknown,
+  Time_Drive_Prob_Message: probMessage,
+  Time_Drive_Filters_Cancel: filtersCancel,
+  Time_Drive_Filters_Apply: filtersApply,
+  Time_Drive_Filters_Close: filtersClose,
+  Time_Drive_Filters_Event_Types: filtersEventTypes,
+  Time_Drive_Range_Heading: rangeHeading,
+  Time_Drive_Range_Back: rangeBack,
+  Time_Drive_Range_Ahead: rangeAhead,
+  Time_Drive_Pill_Remove: pillRemove,
+  Time_Drive_Range_None: rangeNone,
+  Time_Drive_Range_Month: rangeMonth,
+  Time_Drive_Range_Months: rangeMonths,
+  Time_Drive_Range_Year: rangeYear,
+  Time_Drive_Range_Years: rangeYears,
+  Time_Drive_Legend_Files: legendFiles,
+  Time_Drive_Legend_Calls: legendCalls,
+  Time_Drive_Legend_Emails: legendEmails,
+  Time_Drive_Group_Loading: groupLoading,
+  Time_Drive_Group_Nothing: groupNothing,
+  Time_Drive_Group_Nothing_Body: groupNothingBody,
+  Time_Drive_Group_Open_From: groupOpenFrom,
+  Time_Drive_Group_Open_Body: groupOpenBody,
+  Time_Drive_Group_Col_Name: groupColName,
+  Time_Drive_Group_Col_Summary: groupColSummary,
+  Time_Drive_Group_Col_Date: groupColDate,
+  Time_Drive_Group_Col_Date_Time: groupColDateTime,
+  Time_Drive_Group_Heading: groupHeading,
+  Time_Drive_Group_Count_More: groupCountMore,
+  Time_Drive_Group_Sorted: groupSorted,
+  Time_Drive_Group_Back: groupBack,
+  Time_Drive_Group_Back_Record: groupBackRecord,
+  Time_Drive_Group_Loading_More: groupLoadingMore,
+  Time_Drive_Group_Shown: groupShown,
+});
+
+/** A Time Drive label by its API name (Time_Drive_Legend_Emails), else the fallback. */
+export function labelNamed(name, fallback) {
+  return (name && BY_NAME[name]) || fallback;
+}
 
 /** Fills a label's {0}, {1} ... with the values given: format(LABELS.itemsMany, 12). */
 export function format(text, ...values) {

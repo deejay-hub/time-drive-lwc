@@ -185,6 +185,20 @@ public with sharing class TimeDriveConfig {
   }
 
   /**
+   * The custom label a view's Menu Label names ($Label.Time_Drive_View_Sales gives
+   * Time_Drive_View_Sales), or null when it's plain text. The card shows its own copy
+   * of a label it knows: Apex only translates a label once its language is Active in
+   * Translation Language Settings, the card's labels whatever.
+   *
+   * @param v the view
+   * @return the custom label's name, or null
+   */
+  public static String viewLabelName(Time_Drive_View__mdt v) {
+    String raw = v.Menu_Label__c?.trim();
+    return String.isNotBlank(raw) && raw.startsWith(LABEL_PREFIX) ? raw.substring(LABEL_PREFIX.length()).trim() : null;
+  }
+
+  /**
    * A view's picker label in the viewer's language: its Menu Label (or a custom label's), else its label.
    *
    * @param v the view
@@ -228,6 +242,31 @@ public with sharing class TimeDriveConfig {
    * @param s the source
    * @return the label to show for the source in the legend
    */
+  /**
+   * The custom label behind a source's name ($Label.Time_Drive_Legend_Emails in its
+   * Event Label, or the default label for its object), or null when its name is
+   * plain text or an object's: the card shows its own copy (see viewLabelName).
+   *
+   * @param s the source
+   * @return the custom label's name, or null
+   */
+  public static String legendLabelName(Time_Drive_Source__mdt s) {
+    if (s == null) {
+      return null;
+    }
+    String raw = s.getPopulatedFieldsAsMap().containsKey('Event_Label__c') ? s.Event_Label__c?.trim() : null;
+    if (String.isNotBlank(raw)) {
+      return raw.startsWith(LABEL_PREFIX) ? raw.substring(LABEL_PREFIX.length()).trim() : null;
+    }
+    if (
+      String.isBlank(s.Object_Name__c) ||
+      new TimeDriveContext(null, null, null, s, null, null).kind() != TimeDriveContext.KIND_SALESFORCE
+    ) {
+      return null;
+    }
+    return DEFAULT_LEGEND_LABELS.get(s.Object_Name__c.toLowerCase());
+  }
+
   public static String legendLabel(Time_Drive_Source__mdt s) {
     if (s == null) {
       return null;

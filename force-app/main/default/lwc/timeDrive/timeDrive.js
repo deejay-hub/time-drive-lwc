@@ -7,8 +7,8 @@
 import { LightningElement, api, wire } from "lwc";
 import { NavigationMixin } from "lightning/navigation";
 import { IsConsoleNavigation, openTab } from "lightning/platformWorkspaceApi";
-import { LABELS, format } from "c/timeDriveLabels";
-import { localDetails } from "c/timeDriveFormat";
+import { LABELS, format, labelNamed } from "c/timeDriveLabels";
+import { localDetails, ownWords } from "c/timeDriveFormat";
 import getTimeline from "@salesforce/apex/TimeDriveController.getTimeline";
 import getTimelineDiagnosed from "@salesforce/apex/TimeDriveController.getTimelineDiagnosed";
 import getDays from "@salesforce/apex/TimeDriveController.getPageDays";
@@ -40,6 +40,7 @@ import {
 import {
   EVENT_TYPES,
   VIEWS,
+  VIEW_LABELS,
   FORMATS,
   filePreviewRef,
   isFileId,
@@ -934,7 +935,11 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     this.summaryPending = false;
     this.refreshHeight = null;
     this.error = undefined;
-    this.summary = data;
+    // The types' names from the card's own labels, where the server says which.
+    this.summary = {
+      ...data,
+      types: (data.types ?? []).map((t) => (t.labelName ? { ...t, label: labelNamed(t.labelName, t.label) } : t))
+    };
     this.daysVersion++;
     // A new history opens at Open At; a refresh stays where it is.
     if (!this._keepStale) this._focusPending = true;
@@ -1204,7 +1209,9 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     const grouped = this.unit !== "day";
     const timeFormat = grouped ? DAY_SHORT_TIME_FORMAT : TIME_FORMAT;
     const byDay = new Map(keys.map((key) => [key, []]));
-    for (const e of events ?? []) {
+    for (const raw of events ?? []) {
+      // Its type's name and an email's subtitle in the card's own words.
+      const e = ownWords(raw);
       const at = new Date(e.occurredAt);
       // An all-day event has no time to show.
       byDay.get(e.dayKey)?.push({
@@ -1932,7 +1939,8 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   @wire(getViews)
   wiredViews({ data }) {
     if (!data?.length) return;
-    this.views = data;
+    // A lens named by a built-in label shows the card's own copy of it.
+    this.views = data.map((v) => ({ ...v, label: VIEW_LABELS[v.labelName] ?? labelNamed(v.labelName, v.label) }));
     // A default lens the org doesn't offer (switched off since the page was
     // built) opens on All.
     if (!data.some((v) => v.value === this.view)) {

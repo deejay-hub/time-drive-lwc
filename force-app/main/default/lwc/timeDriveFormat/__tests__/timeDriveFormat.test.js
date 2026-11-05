@@ -1,4 +1,4 @@
-import { detailText, localDetails } from "c/timeDriveFormat";
+import { detailText, localDetails, ownWords, sentToText } from "c/timeDriveFormat";
 
 describe("c-time-drive-format", () => {
   it("writes money in its own currency", () => {
@@ -24,5 +24,33 @@ describe("c-time-drive-format", () => {
     expect(first).toBe(text);
     expect(second).toEqual({ label: "Quantity", value: "1,200", amount: 1200 });
     expect(localDetails(undefined)).toBeUndefined();
+  });
+
+  it("words an email's recipients itself, whatever Apex sent", () => {
+    // Apex's text is only translated once the language is Active; the card's always.
+    expect(sentToText({ sentTo: "Sam Lee", sentToOthers: 0 })).toBe("Sent to: Sam Lee");
+    expect(sentToText({ sentTo: "Sam Lee", sentToOthers: 1 })).toBe("Sent to: Sam Lee and 1 other");
+    expect(sentToText({ sentTo: "Sam Lee", sentToOthers: 2 })).toBe("Sent to: Sam Lee and 2 others");
+    expect(sentToText({ subtitle: "Open" })).toBeNull();
+  });
+
+  it("shows its own copy of a Time Drive label the server names, else the server's text", () => {
+    const email = {
+      typeLabel: "SERVER",
+      typeLabelName: "Time_Drive_Legend_Emails",
+      subtitle: "SERVER",
+      sentTo: "Sam Lee",
+      sentToOthers: 2
+    };
+    expect(ownWords(email)).toMatchObject({ typeLabel: "Emails", subtitle: "Sent to: Sam Lee and 2 others" });
+    // A name an admin typed, or a label the card doesn't know: as sent.
+    expect(ownWords({ typeLabel: "Site visits", subtitle: "Open" })).toMatchObject({
+      typeLabel: "Site visits",
+      subtitle: "Open"
+    });
+    expect(ownWords({ typeLabel: "Mine", typeLabelName: "My_Own_Label" }).typeLabel).toBe("Mine");
+    // Nothing to change: the same event.
+    const plain = { typeLabel: "Calls" };
+    expect(ownWords(plain)).toBe(plain);
   });
 });

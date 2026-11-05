@@ -46,9 +46,13 @@ names = {PREFIX + k for k, *_ in entries}
 # A description is the label's Short Description in Setup: where it shows and why, in 80 characters.
 too_long = [k for k, what, *_ in entries if len(what) > 80]
 assert not too_long, f"descriptions over 80 characters: {too_long}"
-# Server_* labels are for Apex (Label.Time_Drive_Server_...) and Legend_* for
-# sources' legend names ($Label.Time_Drive_Legend_...): not in the components' module.
-js_entries = [e for e in entries if not e[0].startswith(("Server_", "Legend_"))]
+# Server_* labels are for Apex (Label.Time_Drive_Server_...): not in the components'
+# module, but for those the card also words itself. Apex only translates a label once
+# its language is Active in Translation Language Settings, the card's labels whatever,
+# so the card shows its own copy of the source names ($Label.Time_Drive_Legend_...)
+# and email subtitles the server sends (see labelNamed).
+CLIENT_TOO = {"Server_Sent_To", "Server_Sent_To_One_Other", "Server_Sent_To_Others"}
+js_entries = [e for e in entries if not e[0].startswith("Server_") or e[0] in CLIENT_TOO]
 js_names = [camel(k) for k, *_ in js_entries]
 assert len(set(js_names)) == len(js_names), "two keys give the same JS name"
 
@@ -151,6 +155,15 @@ write(
     + "\nexport const LABELS = Object.freeze({\n"
     + listing
     + "});\n\n"
+    "// The same labels by their API names, for a name the server sends (a lens's or a\n"
+    "// source's): the card shows its own copy, translated even before Apex's is.\n"
+    "const BY_NAME = Object.freeze({\n"
+    + "".join(f'  {PREFIX}{key}: {js},\n' for js, (key, *_rest) in zip(js_names, js_entries))
+    + "});\n\n"
+    "/** A Time Drive label by its API name (Time_Drive_Legend_Emails), else the fallback. */\n"
+    "export function labelNamed(name, fallback) {\n"
+    "  return (name && BY_NAME[name]) || fallback;\n"
+    "}\n\n"
     "/** Fills a label's {0}, {1} ... with the values given: format(LABELS.itemsMany, 12). */\n"
     "export function format(text, ...values) {\n"
     "  return String(text).replace(/\\{(\\d+)\\}/g, (match, i) => (values[i] === undefined ? match : String(values[i])));\n"

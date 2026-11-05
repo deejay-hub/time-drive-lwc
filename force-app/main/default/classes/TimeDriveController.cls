@@ -119,6 +119,7 @@ public with sharing class TimeDriveController {
       if (type == null) {
         type = new TypeCount(t.type, 0);
         type.label = t.typeLabel;
+        type.labelName = t.typeLabelName;
         type.icon = t.icon;
         type.iconColour = t.iconColour;
         typeCounts.put(t.type, type);
@@ -152,6 +153,7 @@ public with sharing class TimeDriveController {
       }
       TypeCount none = new TypeCount(s.Event_Type__c, 0);
       none.label = TimeDriveConfig.legendLabel(s);
+      none.labelName = TimeDriveConfig.legendLabelName(s);
       none.icon = String.isBlank(s.Icon__c) ? null : s.Icon__c;
       none.iconColour = String.isBlank(s.Icon_Colour__c) ? null : s.Icon_Colour__c;
       typeCounts.put(s.Event_Type__c, none);
@@ -752,6 +754,8 @@ public with sharing class TimeDriveController {
     @AuraEnabled
     public String label;
     @AuraEnabled
+    public String labelName;
+    @AuraEnabled
     public String icon;
     // Every source's date is a date (no time to show).
     @AuraEnabled
@@ -825,6 +829,7 @@ public with sharing class TimeDriveController {
           g.icon = e.icon;
           g.iconColour = e.iconColour;
           g.typeLabel = e.typeLabel;
+          g.typeLabelName = e.typeLabelName;
           groups.put(e.type, g);
           lone.put(e.type, e);
         } else {
@@ -1031,7 +1036,9 @@ public with sharing class TimeDriveController {
   public static List<ViewOption> getViews() {
     List<ViewOption> out = new List<ViewOption>();
     for (Time_Drive_View__mdt v : TimeDriveConfig.activeViews()) {
-      out.add(new ViewOption(v.DeveloperName, TimeDriveConfig.viewLabel(v), v.Label));
+      ViewOption option = new ViewOption(v.DeveloperName, TimeDriveConfig.viewLabel(v), v.Label);
+      option.labelName = TimeDriveConfig.viewLabelName(v);
+      out.add(option);
     }
     return out;
   }
@@ -1133,6 +1140,10 @@ public with sharing class TimeDriveController {
     // The view's own name (Marketing), beside the picker's (also Marketing now).
     @AuraEnabled
     public String name;
+    // The custom label its Menu Label names (Time_Drive_View_Sales), or null
+    // for plain text: the card shows its own copy of a label it knows.
+    @AuraEnabled
+    public String labelName;
     /**
      * Builds a view option.
      * @param value the view's key
@@ -1642,6 +1653,7 @@ public with sharing class TimeDriveController {
       if (!mine.isEmpty()) {
         Time_Drive_Source__mdt first = sources[mine[0]];
         out.label = TimeDriveConfig.legendLabel(first);
+        out.labelName = TimeDriveConfig.legendLabelName(first);
         out.icon = first.Icon__c;
         out.dateOnly = true;
         for (Integer i : mine) {
@@ -2020,6 +2032,7 @@ public with sharing class TimeDriveController {
     String type;
     String category;
     String typeLabel;
+    String typeLabelName;
     String icon;
     String iconColour;
     Integer count;
@@ -2033,6 +2046,7 @@ public with sharing class TimeDriveController {
       type = s.Event_Type__c;
       category = TimeDriveConfig.lensKey(s);
       typeLabel = TimeDriveConfig.legendLabel(s);
+      typeLabelName = TimeDriveConfig.legendLabelName(s);
       icon = String.isBlank(s.Icon__c) ? null : s.Icon__c;
       iconColour = String.isBlank(s.Icon_Colour__c) ? null : s.Icon_Colour__c;
     }
@@ -2045,6 +2059,7 @@ public with sharing class TimeDriveController {
       type = same.type;
       category = same.category;
       typeLabel = same.typeLabel;
+      typeLabelName = same.typeLabelName;
       icon = same.icon;
       iconColour = same.iconColour;
       source = same.source;
@@ -2057,6 +2072,7 @@ public with sharing class TimeDriveController {
       type = e.type;
       category = e.category;
       typeLabel = e.typeLabel;
+      typeLabelName = e.typeLabelName;
       icon = e.icon;
       iconColour = e.iconColour;
     }
@@ -2271,9 +2287,12 @@ public with sharing class TimeDriveController {
     public String type;
     @AuraEnabled
     public Integer count;
-    // From the source's configuration, when it sets them.
+    // From the source's configuration, when it sets them; labelName is the
+    // custom label its label comes from, if any (the card shows its own copy).
     @AuraEnabled
     public String label;
+    @AuraEnabled
+    public String labelName;
     @AuraEnabled
     public String icon;
     @AuraEnabled
@@ -2427,9 +2446,12 @@ public with sharing class TimeDriveController {
     public String icon;
     @AuraEnabled
     public String iconColour;
-    // The type's plural label from configuration ("Case updates").
+    // The type's plural label from configuration ("Case updates"), and the
+    // custom label it comes from, if any (the card shows its own copy).
     @AuraEnabled
     public String typeLabel;
+    @AuraEnabled
+    public String typeLabelName;
     @AuraEnabled
     public List<Detail> details = new List<Detail>();
     // Email Messages only (see TimeDriveEmails): opened, unopened or
@@ -2439,6 +2461,13 @@ public with sharing class TimeDriveController {
     public Boolean allDay = false;
     @AuraEnabled
     public String emailState;
+    // Email Messages: who it went to (the first To recipient, by name where
+    // Salesforce knows it) and how many others: the card says "Sent to: ..."
+    // in its own words; subtitle has the same in Apex's.
+    @AuraEnabled
+    public String sentTo;
+    @AuraEnabled
+    public Integer sentToOthers;
     // The record's object, in the user's language ("Event"), for the delete
     // question; set with the rights (see markRights).
     @AuraEnabled

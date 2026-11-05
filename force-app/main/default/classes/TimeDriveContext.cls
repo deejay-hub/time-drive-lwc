@@ -582,6 +582,7 @@ public with sharing class TimeDriveContext {
       String legend = TimeDriveConfig.legendLabel(source);
       if (String.isNotBlank(legend)) {
         e.typeLabel = legend;
+        e.typeLabelName = TimeDriveConfig.legendLabelName(source);
       }
     }
     return e;

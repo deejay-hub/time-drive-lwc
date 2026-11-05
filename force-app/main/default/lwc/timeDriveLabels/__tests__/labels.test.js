@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { LABELS, format } from "../timeDriveLabels";
+import { LABELS, format, labelNamed } from "../timeDriveLabels";
 
 const MAIN = path.resolve(__dirname, "../../..");
 const read = (file) => fs.readFileSync(path.join(MAIN, file), "utf8");
@@ -60,13 +60,27 @@ describe("the timeline's custom labels", () => {
   it("reaches the components through the shared module", () => {
     const source = read("lwc/timeDriveLabels/timeDriveLabels.js");
     const imported = [...source.matchAll(/c\.(Time_Drive_\w+)"/g)].map((m) => m[1]);
-    // (Server_* labels are Apex's, Label.Time_Drive_Server_...; the rest are
-    // named by sources and lenses as $Label.Time_Drive_...)
-    const mine = names.filter((n) => !/^Time_Drive_(View_\w+|Server_\w+|Legend_\w+)$/.test(n));
+    // (Server_* labels are Apex's, Label.Time_Drive_Server_..., but for the
+    // "Sent to" ones the card words too; the lenses' are the model's own.
+    // Sources' Legend_* labels are here: the card shows its own copy of them.)
+    const clientToo = [
+      "Time_Drive_Server_Sent_To",
+      "Time_Drive_Server_Sent_To_One_Other",
+      "Time_Drive_Server_Sent_To_Others"
+    ];
+    const mine = names.filter((n) => !/^Time_Drive_(View_\w+|Server_\w+)$/.test(n) || clientToo.includes(n));
     expect(imported.sort()).toEqual(mine.sort());
     // And each reads as its English text in the tests.
     expect(LABELS.buttonToday).toBe("Today");
     expect(LABELS.itemsMany).toBe("{0} items");
+  });
+
+  it("finds a label by its API name, for a name the server sends", () => {
+    expect(labelNamed("Time_Drive_Legend_Emails", "SERVER")).toBe("Emails");
+    expect(labelNamed("Time_Drive_Server_Sent_To", "SERVER")).toBe("Sent to: {0}");
+    // One the card doesn't have, or none: the server's text.
+    expect(labelNamed("My_Own_Label", "Mine")).toBe("Mine");
+    expect(labelNamed(null, "Mine")).toBe("Mine");
   });
 });
 

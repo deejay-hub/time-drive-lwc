@@ -55,6 +55,17 @@ export const VIEWS = [
   { value: "Sales", label: VIEW_SALES, categories: ["Sales"] }
 ];
 
+// The built-in lenses' custom labels by name: a lens whose Menu Label names
+// one shows the card's own copy (translated even before Apex's is).
+export const VIEW_LABELS = Object.freeze({
+  Time_Drive_View_All: VIEW_ALL,
+  Time_Drive_View_Marketing: VIEW_MARKETING,
+  Time_Drive_View_Commerce: VIEW_COMMERCE,
+  Time_Drive_View_Digital: VIEW_DIGITAL,
+  Time_Drive_View_Service: VIEW_SERVICE,
+  Time_Drive_View_Sales: VIEW_SALES
+});
+
 export function viewFor(value) {
   return VIEWS.find((v) => v.value === value) ?? VIEWS[0];
 }

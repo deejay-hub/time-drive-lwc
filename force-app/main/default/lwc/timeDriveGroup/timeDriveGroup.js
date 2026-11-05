@@ -15,8 +15,8 @@ import LANG from "@salesforce/i18n/lang";
 import SHORT_TIME_FORMAT from "@salesforce/i18n/dateTime.shortTimeFormat";
 import ZONE from "@salesforce/i18n/timeZone";
 import { describeError, describeProblems } from "c/timeDriveErrors";
-import { LABELS, format } from "c/timeDriveLabels";
-import { detailText } from "c/timeDriveFormat";
+import { LABELS, format, labelNamed } from "c/timeDriveLabels";
+import { detailText, ownWords } from "c/timeDriveFormat";
 
 const PAGE_SIZE = 50;
 // The page fits the window, at least this tall (px), Lightning's margin below.
@@ -132,12 +132,12 @@ export default class TimeDriveGroup extends NavigationMixin(LightningElement) {
       });
       if (ticket !== this.ticket) return;
       if (!this.cursor) {
-        this.label = page.label;
+        this.label = labelNamed(page.labelName, page.label);
         this.icon = page.icon;
         this.dateOnly = page.dateOnly;
         this.recordName = page.recordName;
       }
-      this.items = [...this.items, ...(page.items ?? [])];
+      this.items = [...this.items, ...(page.items ?? []).map(ownWords)];
       this.headerReady = true;
       this.cursor = page.cursor;
       this.more = page.more === true;

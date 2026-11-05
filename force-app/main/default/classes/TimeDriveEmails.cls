@@ -56,6 +56,9 @@ public with sharing class TimeDriveEmails {
         }
         e.emailState = stateOf(m);
         e.emailOpenedAt = m.LastOpenedDate;
+        List<Object> recipients = recipients(m, names);
+        e.sentTo = recipients == null ? null : (String) recipients[0];
+        e.sentToOthers = recipients == null ? null : (Integer) recipients[1];
         e.subtitle = sentTo(m, names);
       }
     } catch (Exception e) {
@@ -82,6 +85,24 @@ public with sharing class TimeDriveEmails {
   // to, To and CC.
   @TestVisible
   private static String sentTo(EmailMessage m, Map<String, String> names) {
+    List<Object> recipients = recipients(m, names);
+    if (recipients == null) {
+      return null;
+    }
+    String who = (String) recipients[0];
+    Integer others = (Integer) recipients[1];
+    if (others == 0) {
+      return String.format(Label.Time_Drive_Server_Sent_To, new List<String>{ who });
+    }
+    return others == 1
+      ? String.format(Label.Time_Drive_Server_Sent_To_One_Other, new List<String>{ who })
+      : String.format(Label.Time_Drive_Server_Sent_To_Others, new List<String>{ who, String.valueOf(others) });
+  }
+
+  // The first To recipient (by name, else address) and how many others (To
+  // and CC): [who, others]; null when it went to no one.
+  @TestVisible
+  private static List<Object> recipients(EmailMessage m, Map<String, String> names) {
     List<String> to = addresses(m.ToAddress);
     if (to.isEmpty()) {
       return null;
@@ -94,13 +115,7 @@ public with sharing class TimeDriveEmails {
         break;
       }
     }
-    String who = String.isBlank(primary) ? to[0] : primary;
-    if (others == 0) {
-      return String.format(Label.Time_Drive_Server_Sent_To, new List<String>{ who });
-    }
-    return others == 1
-      ? String.format(Label.Time_Drive_Server_Sent_To_One_Other, new List<String>{ who })
-      : String.format(Label.Time_Drive_Server_Sent_To_Others, new List<String>{ who, String.valueOf(others) });
+    return new List<Object>{ String.isBlank(primary) ? to[0] : primary, others };
   }
 
   private static List<String> addresses(String field) {
