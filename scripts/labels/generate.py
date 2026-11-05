@@ -4,7 +4,7 @@ Writes, from catalogue.py:
   - force-app/main/default/labels/CustomLabels.labels-meta.xml (the catalogue's
     labels; any others already in the file are kept as they are)
   - force-app/main/default/translations/<lang>.translation-meta.xml: es and ar from
-    the catalogue; fr, de, ja, ko, yi, zh_CN and zh_TW from their own files (fr.py ...)
+    the catalogue; da, de, fi, fr, ja, ko, sv, yi, zh_CN and zh_TW from their own files (fr.py ...)
   - force-app/main/default/lwc/timeDriveLabels/timeDriveLabels.js (one import
     per label, and format() to fill in {0}, {1} ...)
 
@@ -114,7 +114,7 @@ translations("ar", 4)
 # catalogue key, with the same {0}, {1} ... as its English.
 import importlib  # noqa: E402
 
-MORE_LANGUAGES = ["fr", "de", "ja", "ko", "yi", "zh_CN", "zh_TW"]
+MORE_LANGUAGES = ["da", "de", "fi", "fr", "ja", "ko", "sv", "yi", "zh_CN", "zh_TW"]
 english = {k: en for k, _what, en, *_ in entries}
 for lang in MORE_LANGUAGES:
     module = importlib.import_module(lang)
