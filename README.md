@@ -43,7 +43,7 @@ A Lightning web component for **Contact**, **Account**, person account and **Lea
 - **Built to scale.** The summary counts each source instead of reading it, rows load only for the days on screen, and busy days fold into one grouped row with View all.
 - **Vertical and horizontal layouts.** A scrub tab or seek bar over the whole history, up to ten years each way, and a phone layout in the Salesforce mobile app.
 - **Guided setup.** Time Drive Setup adds sources step by step, fits the timeline to your org, and has lenses, detail fields and diagnostics.
-- **Multi language support.** Every string is a custom label (English, Spanish and Arabic); dates, numbers and money follow the user's locale and time zone; right-to-left languages mirror the card.
+- **Multi language support.** Every string is a custom label (English, Spanish, Arabic, French, German, Japanese, and Chinese Simplified and Traditional); dates, numbers and money follow the user's locale and time zone; right-to-left languages mirror the card.
 - **Console ready.** Records open in a workspace tab in Console apps.
 
 ## Installation Instructions

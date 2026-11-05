@@ -25,7 +25,7 @@
         <name>Time_Drive_Action_New_Task</name>
     </customLabels>
     <customLabels>
-        <label>Todo el día</label>
+        <label>Día ent.</label>
         <name>Time_Drive_All_Day</name>
     </customLabels>
     <customLabels>
@@ -73,7 +73,7 @@
         <name>Time_Drive_Button_Today</name>
     </customLabels>
     <customLabels>
-        <label>Intentar de nuevo</label>
+        <label>Reintentar</label>
         <name>Time_Drive_Button_Try_Again</name>
     </customLabels>
     <customLabels>
@@ -133,7 +133,7 @@
         <name>Time_Drive_Empty_Customer</name>
     </customLabels>
     <customLabels>
-        <label>No se encontraron datos</label>
+        <label>Sin datos</label>
         <name>Time_Drive_Empty_No_Match</name>
     </customLabels>
     <customLabels>
@@ -141,7 +141,7 @@
         <name>Time_Drive_Empty_Nothing</name>
     </customLabels>
     <customLabels>
-        <label>Aún no está configurado</label>
+        <label>Sin configurar</label>
         <name>Time_Drive_Empty_Setup_Heading</name>
     </customLabels>
     <customLabels>
@@ -161,7 +161,7 @@
         <name>Time_Drive_Err_Not_Found</name>
     </customLabels>
     <customLabels>
-        <label>No se puede conectar con Salesforce.</label>
+        <label>Sin conexión con Salesforce.</label>
         <name>Time_Drive_Err_Offline</name>
     </customLabels>
     <customLabels>
@@ -301,7 +301,7 @@
         <name>Time_Drive_Group_View_All</name>
     </customLabels>
     <customLabels>
-        <label>Haz clic para desplazar la cronología</label>
+        <label>Clic para desplazar</label>
         <name>Time_Drive_Hint_Scroll</name>
     </customLabels>
     <customLabels>
@@ -317,7 +317,7 @@
         <name>Time_Drive_Legend_Calls</name>
     </customLabels>
     <customLabels>
-        <label>Correos electrónicos</label>
+        <label>Correos</label>
         <name>Time_Drive_Legend_Emails</name>
     </customLabels>
     <customLabels>
@@ -413,15 +413,15 @@
         <name>Time_Drive_Prob_Message</name>
     </customLabels>
     <customLabels>
-        <label>Hacia adelante</label>
+        <label>Adelante</label>
         <name>Time_Drive_Range_Ahead</name>
     </customLabels>
     <customLabels>
-        <label>Hacia atrás</label>
+        <label>Atrás</label>
         <name>Time_Drive_Range_Back</name>
     </customLabels>
     <customLabels>
-        <label>Intervalo de fechas</label>
+        <label>Fechas</label>
         <name>Time_Drive_Range_Heading</name>
     </customLabels>
     <customLabels>
@@ -449,7 +449,7 @@
         <name>Time_Drive_Region_Items</name>
     </customLabels>
     <customLabels>
-        <label>Acciones del elemento</label>
+        <label>Acciones</label>
         <name>Time_Drive_Row_Actions</name>
     </customLabels>
     <customLabels>

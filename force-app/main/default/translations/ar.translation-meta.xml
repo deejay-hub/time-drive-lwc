@@ -25,7 +25,7 @@
         <name>Time_Drive_Action_New_Task</name>
     </customLabels>
     <customLabels>
-        <label>طوال اليوم</label>
+        <label>كل اليوم</label>
         <name>Time_Drive_All_Day</name>
     </customLabels>
     <customLabels>
@@ -193,7 +193,7 @@
         <name>Time_Drive_Filter_None</name>
     </customLabels>
     <customLabels>
-        <label>عوامل التصفية</label>
+        <label>التصفية</label>
         <name>Time_Drive_Filters</name>
     </customLabels>
     <customLabels>
@@ -301,7 +301,7 @@
         <name>Time_Drive_Group_View_All</name>
     </customLabels>
     <customLabels>
-        <label>انقر لتمرير الجدول الزمني</label>
+        <label>انقر للتمرير</label>
         <name>Time_Drive_Hint_Scroll</name>
     </customLabels>
     <customLabels>
@@ -317,7 +317,7 @@
         <name>Time_Drive_Legend_Calls</name>
     </customLabels>
     <customLabels>
-        <label>رسائل البريد الإلكتروني</label>
+        <label>رسائل البريد</label>
         <name>Time_Drive_Legend_Emails</name>
     </customLabels>
     <customLabels>

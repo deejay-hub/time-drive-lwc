@@ -462,7 +462,7 @@
         <language>en_US</language>
         <protected>false</protected>
         <shortDescription>Timeline · hint shown when the wheel first passes over the list</shortDescription>
-        <value>Click to scroll the timeline</value>
+        <value>Click to scroll</value>
     </labels>
     <labels>
         <fullName>Time_Drive_Pill_Grouped</fullName>

@@ -3,7 +3,8 @@
 Writes, from catalogue.py:
   - force-app/main/default/labels/CustomLabels.labels-meta.xml (the catalogue's
     labels; any others already in the file are kept as they are)
-  - force-app/main/default/translations/es.translation-meta.xml and ar.translation-meta.xml
+  - force-app/main/default/translations/<lang>.translation-meta.xml: es and ar from
+    the catalogue; fr, de, ja, zh_CN and zh_TW from their own files (fr.py ...)
   - force-app/main/default/lwc/timeDriveLabels/timeDriveLabels.js (one import
     per label, and format() to fill in {0}, {1} ...)
 
@@ -105,6 +106,37 @@ def translations(lang, column):
 translations("es", 3)
 translations("ar", 4)
 
+# ---- the languages kept in their own files (fr.py, zh_CN.py ...): every
+# catalogue key, with the same {0}, {1} ... as its English.
+import importlib  # noqa: E402
+
+MORE_LANGUAGES = ["fr", "de", "ja", "zh_CN", "zh_TW"]
+english = {k: en for k, _what, en, *_ in entries}
+for lang in MORE_LANGUAGES:
+    module = importlib.import_module(lang)
+    missing = set(english) - set(module.LABELS)
+    extra = set(module.LABELS) - set(english)
+    assert not missing and not extra, f"{lang}: missing {sorted(missing)}, not in the catalogue {sorted(extra)}"
+    for key, text in module.LABELS.items():
+        want = sorted(re.findall(r"\{\d+\}", english[key]))
+        got = sorted(re.findall(r"\{\d+\}", text))
+        assert want == got, f"{lang} {key}: placeholders {got}, English has {want}"
+        if key.startswith("Server_"):
+            assert "'" not in text, f"{lang} {key}: a straight apostrophe (String.format reads it as a quote)"
+    values = dict(module.EXISTING)
+    values.update({PREFIX + k: v for k, v in module.LABELS.items()})
+    body = "".join(
+        f"    <customLabels>\n        <label>{escape(label)}</label>\n"
+        f"        <name>{name}</name>\n    </customLabels>\n"
+        for name, label in sorted(values.items())
+    )
+    write(
+        os.path.join(MAIN, "translations", f"{lang}.translation-meta.xml"),
+        '<?xml version="1.0" encoding="UTF-8"?>\n<Translations xmlns="http://soap.sforce.com/2006/04/metadata">\n'
+        + body
+        + "</Translations>\n",
+    )
+
 # ---- the shared module
 imports = "".join(
     f'import {js} from "@salesforce/label/c.{PREFIX}{key}";\n' for js, (key, *_rest) in zip(js_names, js_entries)
@@ -133,4 +165,4 @@ write(
     "    <description>The timeline components' custom labels, in one place (generated from scripts/labels).</description>\n"
     "</LightningComponentBundle>\n",
 )
-print(f"{len(entries)} labels, {len(kept)} kept, es + ar written")
+print(f"{len(entries)} labels, {len(kept)} kept, es + ar + " + " + ".join(MORE_LANGUAGES) + " written")
