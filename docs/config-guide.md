@@ -1,16 +1,71 @@
 # Config Guide
 
-How to put Time Drive on a record page, choose what it plots, and keep it fast. Time Drive Setup does most of this for you; this guide explains what it does and what you can change.
+Everything an admin needs to put Time Drive on a record page and choose what it shows: what Time Drive is, how it works, and a walk through the setup wizard for each kind of source.
+
+- [What Time Drive is](#what-time-drive-is)
+- [What it does](#what-it-does)
+- [How it works](#how-it-works)
+- [Before you start](#before-you-start)
+- [Time Drive Setup](#time-drive-setup)
+- [Add a source](#add-a-source)
+  - [A standard object](#a-standard-object)
+  - [A junction object](#a-junction-object)
+  - [A custom object](#a-custom-object)
+  - [An Apex class](#an-apex-class)
+- [Add the timeline to a page](#add-the-timeline-to-a-page)
+- [Reference](#fit-to-your-org): Fit to your org, lenses, source fields, Data 360, Apex, scale, diagnostics, translations
+
+## What Time Drive is
+
+Time Drive is a timeline for Contact, Account and Lead record pages, person accounts included. It puts everything that happened with a customer in one place, in the order it happened: tasks, calls, emails, events, cases, opportunities, files, any standard or custom object, data from other systems through Apex, and Data 360 engagement.
+
+![A Contact record page with Time Drive across the main column and down the sidebar](images/config-guide/timeline-record-page.png)
+
+An admin chooses what each record page's timeline shows in **Time Drive Setup**, by answering a few plain questions. No code is needed, except for data Salesforce can't reach with a query.
+
+## What it does
+
+**Two layouts, one timeline.** In a wide region the timeline runs across the page: a column per day (or per week or month for long histories), with a seek bar to jump anywhere in the history. In a narrow region, such as the sidebar, it's a list, newest first, with a scrub tab on its edge.
+
+![The timeline across the page: a column for each week, each with its items](images/config-guide/timeline-horizontal.png)
+
+![The timeline in the sidebar: a list grouped by day](images/config-guide/timeline-vertical.png)
+
+Along the top:
+
+- **The lens**, the timeline's heading (All items, Sales, Service ...): a lens narrows the timeline to one area. People pick one from the heading, and Time Drive remembers their choice.
+- **The summary line**: the date range, the types shown and how many items there are.
+- **Activity actions**: the record's Log a Call, Email, New Task and New Event, as the page layout offers them. As many as fit show as buttons; the rest go in a menu.
+- **Today** brings today into view. **Filters** chooses event types and narrows the date range. The other buttons switch to titles only, expand every item, and refresh.
+
+Each item shows its title, subtitle and time. Open one to see the fields the admin chose. Click its title to open its record. Its menu offers Edit and Delete, when the person may.
+
+**Busy days stay readable.** A day with more than 50 items of a type shows one grouped row per type, with its count. For Salesforce sources its title opens **View all**, a list of every item behind it, loading as you scroll.
+
+**Everyone sees only what they may.** Every query runs as the person looking, with their sharing and field access.
+
+**Every language and locale.** Dates, times and numbers follow each person's locale and time zone. The timeline's text comes in 13 languages, and right-to-left languages mirror the card. See [Translations](#translations).
+
+## How it works
+
+A timeline is made of **sources**. A source answers four questions: which records (an object and how it links to the page's record), which date places each one, what each item says (its title, subtitle, icon and colour), and which lenses it's in. Sources are saved as **Time Drive Source** custom metadata records, so they move between orgs like any other metadata.
+
+When a record page opens, Time Drive works in two steps, so even a record with years of history opens quickly:
+
+1. **A summary first.** Each source is counted, not read: an aggregate query per object gives how many items fall on each day of the window (or each week or month, for long windows). The summary draws the day list, the overview bars and the totals.
+2. **Then the days on screen.** Only the items for the days in view are read, a page at a time as people scroll. A busy day isn't read at all: it comes back as grouped counts.
+
+So a timeline costs about the same whether the record has a hundred items or a million.
+
+Three kinds of source supply the rows:
+
+- **Salesforce**: any standard or custom object linked to the page's record by a lookup or through a junction object. Set up in the wizard, no code.
+- **Data 360**: an engagement data model object, matched to the person through identity resolution. See [Data 360 sources](#data-360-sources).
+- **Apex**: a class that returns rows, for records further away or data from another system. See [Apex sources](#apex-sources).
 
 ## Before you start
 
 You need the **Customize Application** permission to add and change sources.
-
-- Two permission sets come with the timeline.
-- Data 360 is _optional_. Without it, the timeline plots your Salesforce records.
-- Time Drive works on **Contact**, **Account** and **Lead** record pages, person accounts included.
-
-## Assign the permission sets
 
 1. In Setup, open **Permission Sets**.
 2. Assign `Time Drive` to people who see the timeline.
@@ -19,9 +74,159 @@ You need the **Customize Application** permission to add and change sources.
 > [!NOTE]
 > What each person sees still depends on the objects and fields they can read. Every query runs as the person looking.
 
+Data 360 is _optional_. Without it, the timeline plots your Salesforce records.
+
+## Time Drive Setup
+
+Open the **Time Drive Setup** tab. Its pages, along the top:
+
+- **Setup**: the guided setup, start to finish.
+- **Customize**: the sources for each record page, and the wizard that adds them.
+- **Lenses**: which lenses each source is in.
+- **Diagnostics**: draws a record's timeline and shows what it did and how long it took.
+- **Docs**: this guide.
+
+### Guided setup
+
+**Setup** lists everything Time Drive needs, in order: check your org, watch the how-to video, assign the permission sets, review the lenses, and add the timeline to a page. Each step says what to do and takes you there, and the panel on the right explains what the step did and why it matters.
+
+![Guided setup, with each step done](images/config-guide/setup-guided.png)
+
+**Check your org** looks at how your org works (Shared Activities, contacts to multiple accounts, person accounts, Enhanced Email, Data 360, Einstein Activity Capture) and switches on the shipped sources that suit it. See [Fit to your org](#fit-to-your-org).
+
+### Customize
+
+**Customize** lists the record pages Time Drive can be on, each with how many sources it has and how many are active.
+
+![Customize: the record pages, each with its sources](images/config-guide/setup-customize.png)
+
+Choose one to see its sources. Each row says what the source plots (its object, how it links to the record and the date it uses) and which lenses it's in. Its switch makes it active or inactive. Filter by kind, or by active and inactive. **Add a source** opens the wizard.
+
+![The Contact timeline's sources](images/config-guide/setup-sources.png)
+
+## Add a source
+
+On a record page's sources, choose **Add a source**. The wizard asks one question at a time. **So far**, on the right, collects your answers, and each one is a click away if you want to change it. **Save source** on the last step saves it. Saving takes a few seconds, because sources are custom metadata: see the [FAQs](faqs.md#why-does-saving-take-a-few-seconds).
+
+The first question is where the records come from.
+
+![Step 1: where the records come from](images/config-guide/wizard-1-source.png)
+
+- **A standard object**: objects Salesforce comes with, like Cases, Opportunities or Tasks.
+- **A custom object**: objects your org added.
+- **Data 360 DMO**: engagement from a Data 360 data model object, like email opens or website visits.
+- **An Apex class**: your code returns the items to plot.
+
+### A standard object
+
+This walk-through adds the Contact's cases.
+
+**Step 2, Records.** Search for the object. Only objects that link to the page's record are listed, each with how it links. Choose **Case**, then how cases link to the Contact. Here, **Cases whose Contact (ContactId) is this Contact** is a lookup on the case. You can also show only some records: **Only some** builds conditions, such as Status is Closed.
+
+![Step 2: the object and how it links to the Contact](images/config-guide/standard-2-records.png)
+
+**Step 3, Date.** Choose the date or date/time that places each record on the timeline. Suggested fields come first. A lookup (›) leads to a related record's dates, such as the Account's.
+
+![Step 3: the date that places each item](images/config-guide/standard-3-date.png)
+
+**Step 4, Lenses.** Choose the lenses the items are in. **All items** is where the timeline opens. Leave it out to show these items only in the lenses you choose.
+
+![Step 4: the lenses](images/config-guide/standard-4-lenses.png)
+
+**Step 5, Name.** Choose what the legend and filters call these items:
+
+- **The object's name** ("Cases"), in each person's language.
+- **A related object's name**, for a junction.
+- **A custom label**, your own words translated into each language.
+- **A name you type**, the same for everyone.
+
+On the right, put the source in its place in the legend: drag it, or use the arrows.
+
+![Step 5: the name, and the source's place in the legend](images/config-guide/standard-5-name.png)
+
+**Step 6, Words and style.** Choose the field each item's title and subtitle show (here Subject and Status), and its icon and colour. The preview at the top shows how an item will look.
+
+![Step 6: title, subtitle, icon and colour](images/config-guide/standard-6-words.png)
+
+**Step 7, Interactions.** Choose the fields an opened item shows, in order, and how each is formatted. Then choose what clicking its title opens: **Its own record**, or **A related record** (a member's Campaign, say). The preview uses sample values from your data. A **highlight** marks an item with a small icon when a checkbox is checked, such as High priority.
+
+![Step 7: what an opened item shows and what its title opens](images/config-guide/standard-7-interactions.png)
+
+Choose **Save source**. The source is active straight away unless you turn **Active when saved** off.
+
+### A junction object
+
+A junction links records through an object in between: a Contact's cases through **Case Contact Role**, opportunities through **Opportunity Contact Role**, campaigns through **Campaign Member**. Use one when the record you want isn't linked to the page's record directly, or when it can be linked to several.
+
+The steps are the same as for a standard object. The difference is on **step 2**: after choosing the object, choose the option that goes **through** the junction, here **Cases this Contact is on, through Case Contact Role**.
+
+![Step 2 with a junction: cases this Contact is on, through Case Contact Role](images/config-guide/junction-2-records.png)
+
+On **step 3** the dates are the case's own: search them, or pick from the list. On **step 5**, **A related object's name** names the items after another object the record links to. On **step 7**, choose whether a click opens the case or a related record.
+
+![Step 3 with a junction: the case's date fields](images/config-guide/junction-3-date.png)
+
+### A custom object
+
+On **step 1** choose **A custom object**. Step 2 lists the custom objects that link to the page's record, each with how it links (a lookup, or through another object).
+
+![Step 2: custom objects that link to the Contact](images/config-guide/custom-2-objects.png)
+
+Choose one, then the link. The wizard explains it: here each Appointment has a Contact field that points to one Contact, and it can be blank. **Every one** shows all of them; **Only some** adds conditions.
+
+![Step 2: an Appointment's lookup to the Contact](images/config-guide/custom-2-records.png)
+
+The rest of the steps (date, lenses, name, words and style, interactions) work as for a standard object.
+
+![Step 3: the date that places each Appointment](images/config-guide/custom-3-date.png)
+
+### An Apex class
+
+Use an Apex source for data Setup can't reach with a query: records two or more steps away (an Account's products on all its opportunities), or data from another system. The class extends `TimeDriveApexSource`. See [Apex sources](#apex-sources) for how to write one; Time Drive ships `TimeDriveOpportunityProducts` as an example.
+
+On **step 1** choose **An Apex class**. An Apex source has six steps: the class says how its rows are dated and titled, so the wizard doesn't ask.
+
+![Step 1: an Apex class](images/config-guide/apex-1-source.png)
+
+**Step 2, Class.** Choose the class. Only classes that extend `TimeDriveApexSource` are listed.
+
+![Step 2: the Apex class](images/config-guide/apex-2-class.png)
+
+**Step 3, Lenses**, as for any source.
+
+![Step 3: the lenses](images/config-guide/apex-3-lenses.png)
+
+**Step 4, Name.** A custom label, or a name you type. The class's name is filled in to start with.
+
+![Step 4: the name in the legend](images/config-guide/apex-4-name.png)
+
+**Step 5, Style.** The icon and colour.
+
+![Step 5: icon and colour](images/config-guide/apex-5-style.png)
+
+**Step 6, Interactions.** The fields an opened item shows: a field path for record rows (`Product2.Name`), or a map key for rows from elsewhere. Saving asks you to confirm you've thought about how the class scales, because it runs every time a timeline with the source loads.
+
+![Step 6: what an opened item shows](images/config-guide/apex-6-interactions.png)
+
+### A Data 360 DMO
+
+On **step 1** choose **Data 360 DMO**, then on step 2 the data space and the engagement DMO, and which of its fields holds the individual. Data 360 finds the Contact's unified profile, then reads the engagement of every individual in it. See [Data 360 sources](#data-360-sources) for what to check before going live. Screenshots of this path are still to come.
+
+## Lenses
+
+A lens narrows the timeline to one area, such as Sales or Service. People switch lenses from the timeline's heading, and Time Drive remembers their choice in the org.
+
+**Time Drive Setup > Lenses** shows every source of a record page against every lens: tick the lenses each source is in. A switch over a lens turns it on or off for everyone.
+
+![Lenses: each source against each lens](images/config-guide/setup-lenses.png)
+
+- **All items** is a lens like any other. It's where the timeline opens unless the page says otherwise.
+- A source can be in several lenses. Leave a source out of All items to show it only in the lenses you choose.
+- The ⓘ next to a source shows the filter it applies, so you can see what each one plots.
+
 ## Add the timeline to a page
 
-Open a Contact, Account or Lead record, choose **Edit Page**, and drag **Time Drive** onto the page (it's under custom components). These properties can be set in Lightning App Builder:
+Open a Contact, Account or Lead record, choose **Edit Page**, and drag **Time Drive** onto the page (it's under custom components). Time Drive Setup's last guided step takes you there. These properties can be set in Lightning App Builder:
 
 - **Title** (default Time Drive): the timeline's name for screen readers. The lens's name is the visible heading.
 - **Layout** (default Auto): Auto is vertical in narrow regions and horizontal from 640px wide. Vertical or Horizontal pins one.
@@ -35,17 +240,9 @@ Open a Contact, Account or Lead record, choose **Edit Page**, and drag **Time Dr
 - **Vertical Mode Height (px)** (default 560, 320 to 1600): the list's greatest height. Past it, items scroll inside.
 - **Horizontal Mode Height (px)** (default 260, 240 to 1000): the day columns' height. Busier days scroll inside their column.
 
-## Add a source
+## Reference
 
-Open **Customize**, choose the record page, then **Add a source**. The wizard asks what to show, how it links to the page, its date, title and subtitle, which records (a filter of conditions, matching all or any of them), and the fields an opened item shows, with a preview of real records as you go. See the [FAQs](faqs.md#why-does-saving-take-a-few-seconds) for why saving takes a moment.
-
-Every source returns rows, and the timeline plots them the same way. Only where the rows come from differs:
-
-- **Salesforce**: any standard or custom object linked to the page by a lookup or a junction, queried in user mode.
-- **Data 360**: one engagement DMO, for the person's Individuals (see [Data 360 sources](#data-360-sources)).
-- **Apex**: your class, for records further away or data from another system (see [Apex sources](#apex-sources)).
-
-Sources are saved as **Time Drive Source** custom metadata records. Shipped records cover Tasks, Calls and Emails, plus the `Fit_*` sources that Fit to your org switches on: Cases, Events, Email Messages, Opportunities and Files for Contacts, Accounts and person accounts, Campaign Members for Contacts, and Tasks, Calls, Emails, Events, Files and Campaign Members for Leads.
+The sections below explain what Setup does for you, and what you can change by hand.
 
 ## Fit to your org
 
@@ -58,14 +255,6 @@ An account's activities come from `Task.AccountId` and `Event.AccountId`, the fi
 So with Shared Activities in use, Fit to your org switches each of Tasks, Calls, Emails and Events to its `_Every` variant (`Fit_Account_Tasks_Every` and so on). That's one query through `TaskRelation.AccountId` or `EventRelation.AccountId`, returning the account's own activities and the shared ones together. Without Shared Activities the main sources stay.
 
 Cases with no contact aren't part of the standard rollup either. A custom object joins an Account page through the field that holds the account (the wizard asks "Which field holds the account?").
-
-## Lenses
-
-A lens narrows the timeline to one area, such as Sales or Service. People switch lenses from the timeline's heading, and their choice is kept for them in the org.
-
-- **All** is a lens like any other. It's where the timeline opens unless the page says otherwise.
-- A source can be in several lenses. Leave a source out of All to show it only in the lenses you choose.
-- The Lenses page shows the filter each source applies, so you can see what each one plots.
 
 ## Source fields
 
@@ -330,6 +519,8 @@ The summary counts each source rather than reading it: an aggregate query per Sa
 
 **Time Drive Setup > Diagnostics** runs a Contact, Account or Lead's timeline and shows what it did. Enter the Id, choose the layout and the History and Future years, and the actual timeline draws, as it does on a record page. It has three tabs:
 
+![Diagnostics: run a record's timeline, then see its config, performance and output](images/config-guide/setup-diagnostics.png)
+
 - **Config**: the sources for the page and what became of each (used, or ignored and why: inactive, a variant Fit to your org didn't pick, a setting this org lacks), with the user's rights on each source's object and any configured field they can't read. It also shows the page (record, the sources it uses, layout, History and Future) and the user's permissions (access to the record, Modify All Data, View All Data, and the org features sources need).
 - **Performance**: **Load time (total)** is the wait from the card connecting to the page until its days are painted. It's the sum of **Server time (Apex)**, the server's own run; **Network time (approx.)**, the answer getting there and back less the server's run; and **Browser time**, waiting to send the request and drawing the answer. A bar and a sentence say where the wait went. Under them: every query with its SOQL as run, binds, rows, when it started and how long it took (slow ones marked); the time each source took; what was left out or done differently; and everything the card logged.
 - **Output**: the timeline itself. It's on the page whichever tab is showing, so its load is timed as it really is.
@@ -338,13 +529,16 @@ The card logs a line for each request and draw (also to the console, as `[Time D
 
 ## Translations
 
-Every string of the timeline (the card, its filters, the View all page, record details and error messages) is a custom label (`Time_Drive_*`), in English with Spanish and Arabic translations. Setup's own text is English for now.
+The timeline's text (the card, its filters, the View all page, record details and error messages) is custom labels (`Time_Drive_*`), in English with translations into Spanish, Arabic, Danish, Finnish, French, German, Japanese, Korean, Swedish, Yiddish, and Chinese Simplified and Traditional. Setup's own text is English for now.
 
-- To review or add translations, open Setup > Custom Labels (you need the Manage Translation permission).
-- To see a language, turn on Translation Workbench and add the language, or set a user's language to Spanish or Arabic.
+> [!IMPORTANT]
+> Make each language **Active** in Setup > **Translation Language Settings** (turn on Translation Workbench first). The card's own labels show their translation either way, but Salesforce only translates the labels Apex reads once the language is Active: until then, warnings, Yes and No, and your own `$Label` names stay in English. Salesforce's own field and picklist names need it too.
+
+- To review or change a translation, open Setup > **Custom Labels** (you need the Manage Translation permission).
+- To see a language, set a user's language to it.
 - The translations are drafts: have a native speaker review them. Arabic has singular, dual and plural forms; each count here uses one plural form.
 
-For developers: `scripts/labels/catalogue.py` is the list of strings (a key, the English, the Spanish and the Arabic). Add or change a string there, then run `python3 -I scripts/labels/generate.py`. It writes `CustomLabels`, the translation files and the shared `c/timeDriveLabels` module. Fill in `{0}`, `{1}` ... with `format(LABELS.itemsMany, 12)`. In Jest the labels read as their English text.
+For developers: `scripts/labels/catalogue.py` is the list of strings (a key, the English, the Spanish and the Arabic); each other language has its own file, by key (`scripts/labels/fr.py` and so on). Add or change a string there, then run `python3 -I scripts/labels/generate.py`. It writes `CustomLabels`, the translation files and the shared `c/timeDriveLabels` module, and stops if a language misses a string or its `{0}`, `{1}` ... differ from the English. Fill in `{0}`, `{1}` ... with `format(LABELS.itemsMany, 12)`. In Jest the labels read as their English text.
 
 ## Sample data
 
