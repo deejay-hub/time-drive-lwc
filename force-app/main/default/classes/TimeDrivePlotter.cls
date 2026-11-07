@@ -44,11 +44,11 @@ public with sharing class TimeDrivePlotter {
     Time_Drive_Source__mdt s = context.source;
     List<Time_Drive_Detail_Field__mdt> detailFields = context.detailFields();
     List<TimeDriveController.EngagementEvent> events = new List<TimeDriveController.EngagementEvent>();
-    Integer skipped = 0;
     for (TimeDriveRow row : rows == null ? new List<TimeDriveRow>() : rows) {
       Datetime occurredAt = instant(row.get(context.dateField()));
+      // Items with no date are left out quietly, so a few gaps in the data
+      // don't put a warning over the rest.
       if (occurredAt == null) {
-        skipped++;
         continue;
       }
       Object key = row.get(context.idField());
@@ -71,15 +71,6 @@ public with sharing class TimeDrivePlotter {
       e.flags = TimeDriveHighlights.flagsFor(context.highlightRules(), row);
       context.styled(e);
       events.add(e);
-    }
-    // Items with no date are left out quietly, so a few gaps in the data don't
-    // put a warning over the rest; Diagnostics says how many.
-    if (skipped > 0) {
-      TimeDriveDiagnostics.note(
-        s.DeveloperName,
-        'Rows without a date',
-        skipped + ' had no ' + context.dateField() + ' and were left out.'
-      );
     }
     // Enhanced Email's messages say who they went to and whether they were opened.
     if (s.Object_Name__c == 'EmailMessage') {

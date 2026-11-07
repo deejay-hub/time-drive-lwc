@@ -114,7 +114,7 @@ That source is read rather than counted, and it reached its Max Records (1,000 b
 
 ### Why is a timeline slow?
 
-Open **Time Drive Setup > Diagnostics**, enter the record's Id, and look at the **Performance** tab. It splits the wait into server, network and browser time, and lists every query with how long it took. See [Diagnostics](config-guide.md#diagnostics).
+Look first at sources that are read rather than counted: an Apex source without `counts`, or a Data 360 source whose filter only SOQL understands. Each is read over the whole window on every load. A long History or Future, or many sources on one page, add up too. Narrowing the date range (Filters > Back and Ahead) makes a busy record faster. See [Scale](config-guide.md#scale).
 
 ## Data 360
 

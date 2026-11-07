@@ -109,20 +109,11 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
       q.allRows();
 
     List<SObject> rows;
-    Long startedAt = TimeDriveDiagnostics.clock();
     try {
       rows = Database.queryWithBinds(soql, q.binds, AccessLevel.USER_MODE);
-      TimeDriveDiagnostics.query(
-        s.DeveloperName,
-        paging ? 'rows (page)' : 'rows',
-        soql,
-        q.binds,
-        rows.size(),
-        startedAt,
-        null
-      );
+      TimeDriveQueries.record(s.DeveloperName, paging ? 'rows (page)' : 'rows', soql);
     } catch (Exception e) {
-      TimeDriveDiagnostics.query(s.DeveloperName, 'rows', soql, q.binds, 0, startedAt, e.getMessage());
+      TimeDriveQueries.record(s.DeveloperName, 'rows', soql);
       context.fail(s.Label, e);
       return events;
     }
@@ -258,9 +249,8 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
       }
       if (Limits.getQueryRows() + most > Limits.getLimitQueryRows()) {
         String checkSoql = 'SELECT COUNT() FROM ' + q.objectName + ' WHERE ' + conditions + q.allRows;
-        Long checkStart = TimeDriveDiagnostics.clock();
         Integer total = Database.countQueryWithBinds(checkSoql, q.binds, AccessLevel.USER_MODE);
-        TimeDriveDiagnostics.query(q.sourceName, 'count check', checkSoql, q.binds, 1, checkStart, null);
+        TimeDriveQueries.record(q.sourceName, 'count check', checkSoql);
         most = Math.min(most, total);
         if (Limits.getQueryRows() + most > Limits.getLimitQueryRows()) {
           throw new CountException('Counting ' + q.label + ' would pass the query row limit.');
@@ -276,15 +266,14 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
         ' GROUP BY ' +
         String.join(groups, ', ') +
         q.allRows;
-      Long groupStart = TimeDriveDiagnostics.clock();
       List<SObject> grouped;
       try {
         grouped = Database.queryWithBinds(groupSoql, q.binds, AccessLevel.USER_MODE);
       } catch (Exception e) {
-        TimeDriveDiagnostics.query(q.sourceName, 'count', groupSoql, q.binds, 0, groupStart, e.getMessage());
+        TimeDriveQueries.record(q.sourceName, 'count', groupSoql);
         throw e;
       }
-      TimeDriveDiagnostics.query(q.sourceName, 'count', groupSoql, q.binds, grouped.size(), groupStart, null);
+      TimeDriveQueries.record(q.sourceName, 'count', groupSoql);
       for (SObject row : grouped) {
         if (rollUp != null) {
           String key = TimeDriveContext.periodKey(firstDay(row, grain), rollUp);
@@ -349,14 +338,13 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
       ' WHERE Id = null GROUP BY CALENDAR_YEAR(' +
       dateField +
       ')';
-    Long probeStart = TimeDriveDiagnostics.clock();
     try {
       // The shape the count uses, matching no row: only the function is tried.
       Database.query(probe, AccessLevel.USER_MODE);
-      TimeDriveDiagnostics.query(objectName, 'probe', probe, null, 0, probeStart, null);
+      TimeDriveQueries.record(objectName, 'probe', probe);
       accepts = true;
     } catch (Exception e) {
-      TimeDriveDiagnostics.query(objectName, 'probe', probe, null, 0, probeStart, e.getMessage());
+      TimeDriveQueries.record(objectName, 'probe', probe);
       // Not accepted, or not readable: the day-by-day count as before.
       accepts = false;
     }

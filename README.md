@@ -42,7 +42,7 @@ A Lightning web component for **Contact**, **Account**, person account and **Lea
 - **Apex sources.** Bring in records further away or data from another system with a small class that counts and returns rows.
 - **Built to scale.** The summary counts each source instead of reading it, rows load only for the days on screen, and busy days fold into one grouped row with View all.
 - **Vertical and horizontal layouts.** A scrub tab or seek bar over the whole history, up to ten years each way, and a phone layout in the Salesforce mobile app.
-- **Guided setup.** Time Drive Setup adds sources step by step, fits the timeline to your org, and has lenses, detail fields and diagnostics.
+- **Guided setup.** Time Drive Setup adds sources step by step, fits the timeline to your org, and has lenses and detail fields.
 - **Multi language support.** Every string is a custom label (English, Spanish, Arabic, Danish, Finnish, French, German, Japanese, Korean, Swedish, Yiddish, and Chinese Simplified and Traditional); dates, numbers and money follow the user's locale and time zone; right-to-left languages mirror the card.
 - **Console ready.** Records open in a workspace tab in Console apps.
 
@@ -114,7 +114,7 @@ npm install
 
 11. Open a Contact record, select **Edit Page** in Setup, and drag the **Time Drive** component onto the page (found under custom components). Account pages work the same way.
 
-12. Open the **Time Drive Setup** tab to add sources, fit the timeline to your org and run diagnostics.
+12. Open the **Time Drive Setup** tab to add sources and fit the timeline to your org.
 
 ## How it Works
 
@@ -122,7 +122,7 @@ Time Drive plots whatever its **sources** say. Each source returns rows (Salesfo
 
 It's built for long, busy histories. The summary counts each source rather than reading it, rows load only for the days on screen, and a busy day folds into one grouped row.
 
-The [Config Guide](docs/config-guide.md) covers it all. It's also the guide Time Drive Setup shows in the app.
+The [Config Guide](docs/config-guide.md) covers it all. Time Drive Setup's Docs page links to it here.
 
 - [Add the timeline to a page](docs/config-guide.md#add-the-timeline-to-a-page): the App Builder properties
 - [Add a source](docs/config-guide.md#add-a-source), [Fit to your org](docs/config-guide.md#fit-to-your-org) and [Lenses](docs/config-guide.md#lenses)
@@ -130,7 +130,7 @@ The [Config Guide](docs/config-guide.md) covers it all. It's also the guide Time
 - [Data 360 sources](docs/config-guide.md#data-360-sources)
 - [Apex sources](docs/config-guide.md#apex-sources): records further away, or data from another system
 - [How people use the timeline](docs/config-guide.md#how-people-use-the-timeline): layouts, long histories, language and direction
-- [Scale](docs/config-guide.md#scale), [Diagnostics](docs/config-guide.md#diagnostics), [Translations](docs/config-guide.md#translations) and [Sample data](docs/config-guide.md#sample-data)
+- [Scale](docs/config-guide.md#scale), [Translations](docs/config-guide.md#translations) and [Sample data](docs/config-guide.md#sample-data)
 
 ## FAQs
 

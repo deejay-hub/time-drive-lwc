@@ -31,8 +31,6 @@ import { describeError, fitIllustrations, illustrationName } from "c/timeDriveEr
 import { lookupLabel } from "c/timeDriveFieldPicker";
 import { ICON_SETS } from "./iconCatalog";
 import { PALETTE } from "./colourPalette";
-import { parseMarkdown, present, sectionize } from "./markdown";
-import { BUNDLED_DOCS } from "./bundledDocs";
 
 /**
  * The Time Drive Setup app, as a small help-desk style site: a home page (what
@@ -256,11 +254,9 @@ const SHIPPED_SOURCES = new Set(["Tasks", "Calls", "Emails"]);
 // The shipped sources for each org setting (see Fit the timeline) are named Fit_.
 const isShipped = (src) => SHIPPED_SOURCES.has(src.developerName) || src.developerName?.startsWith("Fit_");
 
-// The Docs are markdown in a public GitHub repo, read straight from
-// raw.githubusercontent.com: no key, and it allows any origin. The GitHub
-// Raw trusted URL lets Lightning fetch from it. Change the repo here.
+// The Docs live in the GitHub repo: the Docs page links to them there (a new
+// tab), so nothing is fetched into the org. Change the repo here.
 const DOCS_SOURCE = { owner: "deejay-hub", repo: "time-shift-lwc", ref: "main", path: "docs" };
-const DOCS_RAW = `https://raw.githubusercontent.com/${DOCS_SOURCE.owner}/${DOCS_SOURCE.repo}/${DOCS_SOURCE.ref}/${DOCS_SOURCE.path}/`;
 const DOCS_WEB = `https://github.com/${DOCS_SOURCE.owner}/${DOCS_SOURCE.repo}/blob/${DOCS_SOURCE.ref}/${DOCS_SOURCE.path}/`;
 const DOCS = [
   {
@@ -1229,36 +1225,22 @@ export default class TimeDriveSetup extends LightningElement {
     return this.view === "docs";
   }
 
-  get isDiagnostics() {
-    return this.view === "diagnostics";
-  }
-
-  get isDocPage() {
-    return this.view === "doc" && Boolean(this.doc);
-  }
-
   // ---- the site's menu ------------------------------------------------------
 
   // Setup (the guided steps), Customize (the record pages, their sources, and
-  // the wizard that adds them), Lenses, Diagnostics (a record's timeline run
-  // with its queries and timings) and Docs (the Config Guide and FAQs). None
-  // shows until the org has been checked.
+  // the wizard that adds them), Lenses and Docs (links to the Config Guide and
+  // FAQs on GitHub). None shows until the org has been checked.
   get hasNav() {
     return this.orgChecked;
   }
 
   get navItems() {
-    const section = ["pages", "parent", "source", "wizard"].includes(this.view)
-      ? "pages"
-      : this.view === "doc"
-        ? "docs"
-        : this.view;
+    const section = ["pages", "parent", "source", "wizard"].includes(this.view) ? "pages" : this.view;
     if (!this.orgChecked) return [];
     return [
       { key: "setup", label: "Setup" },
       { key: "pages", label: "Customize" },
       { key: "lenses", label: "Lenses" },
-      { key: "diagnostics", label: "Diagnostics" },
       { key: "docs", label: "Docs" }
     ].map((item) => ({
       ...item,
@@ -1297,7 +1279,7 @@ export default class TimeDriveSetup extends LightningElement {
 
   // The menu's own pages need no breadcrumb.
   get showCrumbs() {
-    return !["welcome", "dashboard", "setup", "pages", "lenses", "diagnostics", "docs"].includes(this.view);
+    return !["welcome", "dashboard", "setup", "pages", "lenses", "docs"].includes(this.view);
   }
 
   // A new page starts at the top, with focus on its heading.
@@ -1315,18 +1297,11 @@ export default class TimeDriveSetup extends LightningElement {
 
   // Where you are, from Setup down; every crumb but the last goes there.
   get crumbs() {
-    const trail = this.view === "doc" ? this.docTrail : this.customizeTrail;
+    const trail = this.customizeTrail;
     return trail.map((c, i) => {
       const current = i === trail.length - 1;
       return { ...c, key: c.to, current, ariaCurrent: current ? "page" : null };
     });
-  }
-
-  get docTrail() {
-    return [
-      { to: "docs", label: "Docs" },
-      { to: "doc", label: this.doc?.title ?? "" }
-    ];
   }
 
   get customizeTrail() {
@@ -1346,10 +1321,6 @@ export default class TimeDriveSetup extends LightningElement {
   async handleCrumb(event) {
     const to = event.currentTarget.dataset.to;
     if (this.view === "wizard" && !(await this.okToLeave())) return;
-    if (to === "docs") {
-      this.show("docs");
-      return;
-    }
     if (to === "pages") {
       this.viewing = undefined;
       this.show(to);
@@ -1564,175 +1535,9 @@ export default class TimeDriveSetup extends LightningElement {
 
   // ---- Docs ------------------------------------------------------------------
 
-  docKey;
-  // Each doc as read: { status: "loading" | "ready" | "error", sections }.
-  docStore = {};
-
+  // The Config Guide and FAQs, each a link to its page on GitHub.
   get docs() {
-    return DOCS.map((doc) => ({ ...doc, meta: BUNDLED_DOCS ? "Sample content" : "From GitHub" }));
-  }
-
-  get doc() {
-    return DOCS.find((doc) => doc.key === this.docKey);
-  }
-
-  get isGuideDoc() {
-    return this.docKey === "guide";
-  }
-
-  get docState() {
-    return this.docStore[this.docKey] ?? { status: "loading" };
-  }
-
-  get docLoading() {
-    return this.docState.status === "loading";
-  }
-
-  get docFailed() {
-    return this.docState.status === "error";
-  }
-
-  get docWebUrl() {
-    return this.doc ? DOCS_WEB + this.doc.file : DOCS_WEB;
-  }
-
-  // The guide in numbered sections; the intro (before the first ##) unnumbered.
-  get docSections() {
-    let n = 0;
-    return (this.docState.sections ?? []).map((section) => ({
-      ...section,
-      key: section.id,
-      heading: section.title ? `${++n}. ${section.title}` : "",
-      hasHeading: Boolean(section.title)
-    }));
-  }
-
-  get docToc() {
-    return this.docSections.filter((section) => section.hasHeading);
-  }
-
-  // The FAQs: each ## is a question, what follows its answer. A search
-  // narrows them by the question's words and the answer's.
-  faqQuery = "";
-
-  get allQuestions() {
-    return this.docSections.filter((section) => section.hasHeading);
-  }
-
-  get docQuestions() {
-    const words = this.faqQuery.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    const searching = words.length > 0;
-    return this.allQuestions
-      .filter((q) => {
-        if (!searching) return true;
-        const text = [
-          q.title,
-          ...q.blocks.flatMap((b) => [b.text ?? "", ...(b.items ?? []).flatMap((i) => i.parts.map((p) => p.text))])
-        ]
-          .join(" ")
-          .toLowerCase();
-        return words.every((w) => text.includes(w));
-      })
-      .map((q) => ({ ...q, open: searching }));
-  }
-
-  get faqCountText() {
-    const all = this.allQuestions.length;
-    const shown = this.docQuestions.length;
-    if (!this.faqQuery.trim()) return `${all} ${all === 1 ? "question" : "questions"}`;
-    return shown ? `${shown} of ${all} questions` : "";
-  }
-
-  get faqNone() {
-    return Boolean(this.faqQuery.trim()) && this.docQuestions.length === 0;
-  }
-
-  handleFaqQuery(event) {
-    this.faqQuery = event.target.value ?? "";
-  }
-
-  handleFaqClear() {
-    this.faqQuery = "";
-    const input = this.template.querySelector(".faq-search input");
-    if (input) input.value = "";
-  }
-
-  async loadDoc(key, { force = false } = {}) {
-    const doc = DOCS.find((d) => d.key === key);
-    if (!doc || (!force && this.docStore[key]?.status === "ready")) return;
-    this.docStore = { ...this.docStore, [key]: { status: "loading" } };
-    try {
-      const markdown = BUNDLED_DOCS?.[doc.file] ?? (await this.fetchDoc(doc.file));
-      const base = DOCS_RAW + doc.file;
-      const sections = sectionize(parseMarkdown(markdown)).map((section) => ({
-        ...section,
-        blocks: present(section.blocks, {
-          prefix: section.id,
-          resolve: (href) => this.resolveDocLink(href, base),
-          image: (src) => new URL(src, base).href
-        })
-      }));
-      this.docStore = { ...this.docStore, [key]: { status: "ready", sections } };
-    } catch (e) {
-      console.warn("Time Drive Setup: can't load a doc from GitHub", e);
-      this.docStore = { ...this.docStore, [key]: { status: "error" } };
-    }
-  }
-
-  async fetchDoc(file) {
-    const response = await fetch(DOCS_RAW + file, { cache: "no-cache" });
-    if (!response.ok) throw new Error(`GitHub answered ${response.status}`);
-    return response.text();
-  }
-
-  // A link in a doc: #section stays on the page, another doc opens in Setup,
-  // anything else opens in a new tab (repo files on GitHub, not raw).
-  resolveDocLink(href, base) {
-    if (href.startsWith("#")) return { href, anchor: href.slice(1) };
-    if (/^[a-z][a-z0-9+.-]*:/i.test(href)) {
-      // Only web and mail links; javascript:, data: and the like are dropped.
-      return /^(https?|mailto):/i.test(href) ? { href, external: true } : { href: undefined };
-    }
-    const [path, anchor] = href.split("#");
-    const target = new URL(path, base).href;
-    const doc = DOCS.find((d) => DOCS_RAW + d.file === target);
-    if (doc) return { href: DOCS_WEB + doc.file, doc: doc.key, anchor };
-    return { href: target.replace(DOCS_RAW, DOCS_WEB), external: true };
-  }
-
-  async openDoc(key, anchor) {
-    this.docKey = key;
-    this.show("doc");
-    await this.loadDoc(key);
-    if (anchor) {
-      // eslint-disable-next-line @lwc/lwc/no-async-operation
-      requestAnimationFrame(() => this.scrollToSection(anchor));
-    }
-  }
-
-  handleOpenDoc(event) {
-    this.openDoc(event.currentTarget.dataset.doc);
-  }
-
-  handleDocRetry() {
-    this.loadDoc(this.docKey, { force: true });
-  }
-
-  handleDocLink(event) {
-    const { doc, anchor } = event.detail;
-    if (doc && doc !== this.docKey) this.openDoc(doc, anchor);
-    else if (anchor) this.scrollToSection(anchor);
-  }
-
-  // "On this page": scrolls the guide to a section, below the pinned menu.
-  handleDocSection(event) {
-    this.scrollToSection(event.currentTarget.dataset.section);
-  }
-
-  scrollToSection(id) {
-    const section = this.template.querySelector(`[data-section="${id}"]:not(button)`);
-    if (section?.tagName === "DETAILS") section.open = true;
-    section?.scrollIntoView?.({ block: "start", behavior: "smooth" });
+    return DOCS.map((doc) => ({ ...doc, href: DOCS_WEB + doc.file }));
   }
 
   // ---- the Setup page: guided steps ---------------------------------------

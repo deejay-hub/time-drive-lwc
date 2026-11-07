@@ -10,7 +10,6 @@ import { IsConsoleNavigation, openTab } from "lightning/platformWorkspaceApi";
 import { LABELS, format, labelNamed } from "c/timeDriveLabels";
 import { localDetails, ownWords } from "c/timeDriveFormat";
 import getTimeline from "@salesforce/apex/TimeDriveController.getTimeline";
-import getTimelineDiagnosed from "@salesforce/apex/TimeDriveController.getTimelineDiagnosed";
 import getDays from "@salesforce/apex/TimeDriveController.getPageDays";
 import getRights from "@salesforce/apex/TimeDriveController.getRights";
 import getViews from "@salesforce/apex/TimeDriveController.getViews";
@@ -28,7 +27,6 @@ import FORM_FACTOR from "@salesforce/client/formFactor";
 import DIR from "@salesforce/i18n/dir";
 import LOCALE from "@salesforce/i18n/locale";
 import LANG from "@salesforce/i18n/lang";
-import { note, setServerReport } from "c/timeDriveTraceLog";
 import {
   describeError,
   describeProblems,
@@ -109,23 +107,6 @@ const DENSITY_HOOKS = [
   ["--slds-g-spacing-var-4", "--slds-g-spacing-4"],
   ["--lwc-varSpacingMedium", "--lwc-spacingMedium"]
 ];
-// What the card asks for and when, in the console ("[Time Drive]"): the
-// requests and how long each took, the window it draws, scrolling.
-function trace(...what) {
-  // Objects as text, so what is pasted from the console reads in full.
-  const text = what.map((part) => {
-    if (part === null || typeof part !== "object") return part;
-    try {
-      return JSON.stringify(part);
-    } catch {
-      return String(part);
-    }
-  });
-  const at = Math.round(performance.now());
-  console.info("[Time Drive]", at, ...text);
-  // For the Diagnostics page in Setup, which reads the same lines.
-  note(at, text.join(" "));
-}
 // "Order placed, Order delivered and Order canceled", in the user's language.
 const LIST_FORMAT = new Intl.ListFormat(LANG, { style: "long", type: "conjunction" });
 // Fetched days kept in memory at most (the drawn window is far smaller).
@@ -246,9 +227,6 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     this.requestTimeline();
   }
   _recordId;
-  // The Diagnostics page asks the card to have its opening request report what
-  // it ran (getTimelineDiagnosed); the report goes to c/timeDriveTraceLog.
-  @api diagnose = false;
   // The words on the page, in the viewer's language.
   labels = LABELS;
   // App Builder properties.
@@ -597,8 +575,6 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   viewMenuOpen = false;
 
   connectedCallback() {
-    this._connectedAt = performance.now();
-    trace("connected");
     // Open on the chosen lens; one that isn't a lens opens on All.
     const lens = viewFor(this.defaultLens).value;
     if (lens !== "All" && lens === this.defaultLens) this.view = lens;
@@ -729,7 +705,6 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     if (wideNow !== this.isWide) this.isWide = wideNow;
     this.noteWidth(widthNow);
     this._observer = new ResizeObserver((entries) => {
-      trace("card resized", Math.round(entries[0].contentRect.width));
       this._geometry = null;
       const wide = entries[0].contentRect.width >= WIDE_FROM;
       if (wide !== this.isWide) this.isWide = wide;
@@ -825,7 +800,6 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
         const rem = rems(name);
         if (!(rem > 0)) continue;
         const base = rems(fixed) > 0 ? rems(fixed) : 1;
-        trace("density from css", name, rem, "against", base);
         return rem < base * 0.99 ? "compact" : "comfy";
       }
     } catch {
@@ -863,14 +837,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     this._timelineKey = key;
     const seq = ++this._timelineSeq;
     const centred = this.horizontal;
-    const sentAt = performance.now();
-    trace("getTimeline request", {
-      centred,
-      count: this._keepStale ? 0 : centred ? this.openingColumns : DAY_PAGE,
-      cardWidth: this.cardWidth
-    });
-    const ask = this.diagnose ? getTimelineDiagnosed : getTimeline;
-    return ask({
+    return getTimeline({
       contactId: this._recordId,
       categories: this.queryCategories,
       hiddenTypes: this.queryHidden,
@@ -883,19 +850,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       count: this._keepStale ? 0 : centred ? this.openingColumns : DAY_PAGE
     })
       .then((load) => {
-        trace(
-          "getTimeline returned",
-          Math.round(performance.now() - sentAt),
-          "ms after it was sent",
-          // What Apex itself took, so the rest of the wait can be told apart.
-          load?.serverMs === undefined || load?.serverMs === null
-            ? ""
-            : `(server ${load.serverMs} ms, ${load.queryCount} queries)`
-        );
-        if (seq === this._timelineSeq) {
-          if (this.diagnose && load?.queries) this.reportToDiagnostics(load);
-          this.receiveTimeline(load);
-        }
+        if (seq === this._timelineSeq) this.receiveTimeline(load);
       })
       .catch((error) => {
         if (seq !== this._timelineSeq) return;
@@ -905,28 +860,6 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
         this.loaded = true;
         this.firstLoad = false;
       });
-  }
-
-  // What the server did for this very request, for the Diagnostics page.
-  reportToDiagnostics(load) {
-    const events = load.events ?? [];
-    setServerReport({
-      serverMs: load.serverMs,
-      cpuMs: load.cpuMs,
-      queryCount: load.queryCount,
-      queryRows: load.queryRows,
-      payloadKb: Math.round(JSON.stringify(load).length / 1024),
-      events: events.length,
-      groupedRows: events.filter((e) => e.grouped).length,
-      days: load.summary?.days?.length ?? 0,
-      unit: load.summary?.unit,
-      warnings: load.summary?.warnings ?? [],
-      problems: (load.summary?.problems ?? []).map((p) => `${p.source}: ${p.kind}`),
-      counted: load.summary?.counted ?? [],
-      queries: load.queries,
-      phases: load.phases ?? [],
-      notes: load.notes ?? []
-    });
   }
 
   receiveTimeline(load) {
@@ -950,23 +883,13 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     // first draw, so nothing is asked for twice.
     this.ingestDays(load.keys ?? [], load.events ?? []);
     this.presetWindow();
-    trace("getTimeline answer", {
-      days: data.days?.length,
-      keys: load.keys ?? [],
-      events: (load.events ?? []).length,
-      window: [this.renderFrom, this.renderTo],
-      focus: this.horizontal ? this.focusIndex() : null,
-      budgetSpent: !(load.keys ?? []).length
-    });
     this.loaded = true;
     this.firstLoad = false;
     if (!this._painted) {
       this._painted = true;
       /* eslint-disable @lwc/lwc/no-async-operation */
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          trace("first paint of the days", Math.round(performance.now() - this._connectedAt), "ms after connecting");
-        });
+        requestAnimationFrame(() => {});
       });
       /* eslint-enable @lwc/lwc/no-async-operation */
     }
@@ -1090,7 +1013,6 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     const keys = unreadDays.slice(0, Math.max(PREFETCH_MAX, inWindow)).map((d) => d.key);
     const wanted = reach;
     if (!keys.length) return;
-    trace("getPageDays request", { keys, window: [this.renderFrom, this.renderTo] });
     keys.forEach((key) => this._loadingDays.add(key));
     // The days the summary already found busy: only they are counted, the
     // rest read as rows straight away (no count query for a quiet page).
@@ -1098,7 +1020,6 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     const counts = new Map(wanted.map((d) => [d.key, d.count]));
     const busyKeys = over == null ? null : keys.filter((key) => (counts.get(key) ?? 0) > over);
     const version = this._queryVersion;
-    const askedAt = performance.now();
     getDays({
       contactId: this.recordId,
       categories: this.queryCategories,
@@ -1111,15 +1032,6 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       ...this.summaryHints(wanted, keys, busyKeys)
     })
       .then((events) => {
-        trace(
-          "getPageDays returned",
-          Math.round(performance.now() - askedAt),
-          "ms,",
-          events?.length,
-          "events for",
-          keys.length,
-          "days"
-        );
         if (version !== this._queryVersion) return;
         this.ingestDays(keys, events);
       })
@@ -2996,12 +2908,6 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     if (first > this.renderFrom && last < this.renderTo) return;
     const from = Math.max(0, first - WINDOW_BUFFER);
     const to = last + WINDOW_BUFFER;
-    trace("window moves", {
-      view: [first, last],
-      from: [this.renderFrom, this.renderTo],
-      to: [from, to],
-      scrollLeft: track.scrollLeft
-    });
     if (from !== this.renderFrom || to !== this.renderTo) {
       this.renderFrom = from;
       this.renderTo = to;
@@ -3302,7 +3208,6 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       // Not laid out yet: try again after the next render.
       if (!this.columnGeometry()) return;
       this._focusPending = false;
-      trace("focus scroll", { index, geometry: this.columnGeometry(), window: [this.renderFrom, this.renderTo] });
       this.scrollToDay(index, "auto");
       return;
     }

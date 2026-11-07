@@ -3,8 +3,6 @@ import TIME_ZONE from "@salesforce/i18n/timeZone";
 import { setup as setupAccessibility } from "@sa11y/jest";
 import TimeDrive from "c/timeDrive";
 import getTimeline from "@salesforce/apex/TimeDriveController.getTimeline";
-import getTimelineDiagnosed from "@salesforce/apex/TimeDriveController.getTimelineDiagnosed";
-import { currentServerReport, clear as clearTraceLog } from "c/timeDriveTraceLog";
 import getDays from "@salesforce/apex/TimeDriveController.getPageDays";
 import getRights from "@salesforce/apex/TimeDriveController.getRights";
 import getPreference from "@salesforce/apex/TimeDriveController.getPreference";
@@ -65,9 +63,6 @@ jest.mock(
     virtual: true
   }
 );
-jest.mock("@salesforce/apex/TimeDriveController.getTimelineDiagnosed", () => ({ default: jest.fn() }), {
-  virtual: true
-});
 jest.mock("@salesforce/apex/TimeDriveController.getPageDays", () => ({ default: jest.fn() }), {
   virtual: true
 });
@@ -2413,52 +2408,6 @@ describe("c-time-drive drawing less", () => {
         else delete owner[name];
       }
     }
-  });
-
-  it("asks for its opening request to report what it ran when told to diagnose, and says so to the log", async () => {
-    getTimeline.mockClear();
-    clearTraceLog();
-    getTimelineDiagnosed.mockReset();
-    getTimelineDiagnosed.mockResolvedValue({
-      summary: {
-        days: [],
-        unit: "day",
-        warnings: ["w"],
-        problems: [{ source: "Events", kind: "denied" }],
-        counted: ["Tasks"]
-      },
-      keys: [],
-      events: [{ id: "a", grouped: true }, { id: "b" }],
-      serverMs: 1800,
-      cpuMs: 300,
-      queryCount: 9,
-      queryRows: 700,
-      queries: [{ seq: 1, source: "Tasks", kind: "count", soql: "SELECT", ms: 90, rows: 3 }],
-      phases: [],
-      notes: [{ source: "Calls", what: "Not queried", reason: "empty" }]
-    });
-    const element = createTimeline();
-    element.recordId = "003000000000001AAA";
-    element.layout = "Horizontal";
-    element.diagnose = true;
-    document.body.appendChild(element);
-    await flush();
-    // The diagnosed request, not the ordinary one.
-    expect(getTimelineDiagnosed).toHaveBeenCalledTimes(1);
-    expect(getTimeline).not.toHaveBeenCalled();
-    const report = currentServerReport();
-    expect(report).toMatchObject({
-      serverMs: 1800,
-      cpuMs: 300,
-      queryCount: 9,
-      queryRows: 700,
-      events: 2,
-      groupedRows: 1
-    });
-    expect(report.queries).toHaveLength(1);
-    expect(report.problems).toEqual(["Events: denied"]);
-    expect(report.notes[0].what).toBe("Not queried");
-    clearTraceLog();
   });
 
   it("waits for the card's width to ask for the days, so an Auto layout opens the way it runs", async () => {

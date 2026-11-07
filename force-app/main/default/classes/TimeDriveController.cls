@@ -182,25 +182,6 @@ public with sharing class TimeDriveController {
     public List<String> keys = new List<String>();
     @AuraEnabled
     public List<EngagementEvent> events = new List<EngagementEvent>();
-    // How long Apex took for this request, and the SOQL queries it ran: so the
-    // card can tell the server's share of a wait from the network's and its own.
-    @AuraEnabled
-    public Integer serverMs;
-    @AuraEnabled
-    public Integer queryCount;
-    @AuraEnabled
-    public Integer cpuMs;
-    @AuraEnabled
-    public Integer queryRows;
-    // What this very request ran, only when it was asked for with
-    // getTimelineDiagnosed (the Diagnostics page): each query, how long each
-    // source took, and what was left out and why.
-    @AuraEnabled
-    public List<TimeDriveDiagnostics.Query> queries;
-    @AuraEnabled
-    public List<TimeDriveDiagnostics.Phase> phases;
-    @AuraEnabled
-    public List<TimeDriveDiagnostics.Note> notes;
   }
 
   /**
@@ -235,74 +216,7 @@ public with sharing class TimeDriveController {
     Boolean centred,
     Integer count
   ) {
-    Long startedAt = System.currentTimeMillis();
-    Integer queriesBefore = Limits.getQueries();
-    Integer rowsBefore = Limits.getQueryRows();
-    Integer cpuBefore = Limits.getCpuTime();
-    TimelineLoad out = loadTimeline(
-      contactId,
-      categories,
-      hiddenTypes,
-      historyYears,
-      futureYears,
-      focus,
-      newestFirst,
-      centred,
-      count
-    );
-    out.serverMs = Integer.valueOf(System.currentTimeMillis() - startedAt);
-    out.queryCount = Limits.getQueries() - queriesBefore;
-    out.queryRows = Limits.getQueryRows() - rowsBefore;
-    out.cpuMs = Limits.getCpuTime() - cpuBefore;
-    return out;
-  }
-
-  /**
-   * getTimeline, recording what it ran: for the Diagnostics page, so the
-   * queries and times it shows are those of the request the card really made.
-   * @param contactId the Id of the Contact or Account the timeline is on
-   * @param categories the categories to show, or null for all
-   * @param hiddenTypes the event types to leave out
-   * @param historyYears how many years back to look
-   * @param futureYears how many years ahead to look, or blank for up to today
-   * @param focus where the card opens (today, earliest or latest)
-   * @param newestFirst true when the list runs newest first
-   * @param centred true to centre the focus among the periods (horizontal layout)
-   * @param count how many periods to open with, 0 for none
-   * @return the summary and opening events, with the queries and timings recorded
-   */
-  @AuraEnabled
-  public static TimelineLoad getTimelineDiagnosed(
-    Id contactId,
-    List<String> categories,
-    List<String> hiddenTypes,
-    String historyYears,
-    String futureYears,
-    String focus,
-    Boolean newestFirst,
-    Boolean centred,
-    Integer count
-  ) {
-    TimeDriveDiagnostics.begin();
-    try {
-      TimelineLoad out = getTimeline(
-        contactId,
-        categories,
-        hiddenTypes,
-        historyYears,
-        futureYears,
-        focus,
-        newestFirst,
-        centred,
-        count
-      );
-      out.queries = TimeDriveDiagnostics.queries;
-      out.phases = TimeDriveDiagnostics.phases;
-      out.notes = TimeDriveDiagnostics.notes;
-      return out;
-    } finally {
-      TimeDriveDiagnostics.finish();
-    }
+    return loadTimeline(contactId, categories, hiddenTypes, historyYears, futureYears, focus, newestFirst, centred, count);
   }
 
   private static TimelineLoad loadTimeline(
@@ -1185,9 +1099,8 @@ public with sharing class TimeDriveController {
     try {
       String lookup = 'SELECT IsPersonAccount, PersonContactId FROM Account WHERE Id = :recordId';
       Map<String, Object> lookupBinds = new Map<String, Object>{ 'recordId' => recordId };
-      Long startedAt = TimeDriveDiagnostics.clock();
       List<SObject> rows = Database.queryWithBinds(lookup, lookupBinds, AccessLevel.USER_MODE);
-      TimeDriveDiagnostics.query('(page)', 'lookup', lookup, lookupBinds, rows.size(), startedAt, null);
+      TimeDriveQueries.record('(page)', 'lookup', lookup);
       if (!rows.isEmpty() && rows[0].get('IsPersonAccount') == true) {
         return (Id) rows[0].get('PersonContactId');
       }
@@ -1468,11 +1381,6 @@ public with sharing class TimeDriveController {
           }
           // The summary found nothing of this source in these periods.
           if (emptySources != null && emptySources.contains(sources[i].DeveloperName)) {
-            TimeDriveDiagnostics.note(
-              sources[i].DeveloperName,
-              'Not queried',
-              'The summary found nothing in it for these days.'
-            );
             continue;
           }
           TimeDriveContext context = context(i);
@@ -1486,13 +1394,6 @@ public with sharing class TimeDriveController {
           List<TimeDriveContext.DayCount> found = busyCounts == null || busyHint == null
             ? count(i, context, grain)
             : knownCounts(sources[i].DeveloperName, busyHint, busyCounts);
-          if (busyCounts != null && busyHint != null) {
-            TimeDriveDiagnostics.note(
-              sources[i].DeveloperName,
-              'Busy days not counted again',
-              'Taken from the summary: ' + String.valueOf(found.size()) + ' busy period(s).'
-            );
-          }
           if (found != null) {
             contexts.put(i, context);
             counted.put(i, groupByPeriod(found, wanted, totals));
@@ -1909,7 +1810,6 @@ public with sharing class TimeDriveController {
     // A source's counts, or null when they can't be had: it's read as rows
     // instead (which says what's wrong, if that fails too).
     List<TimeDriveContext.DayCount> count(Integer i, TimeDriveContext context, String grain) {
-      Long startedAt = TimeDriveDiagnostics.clock();
       try {
         List<TimeDriveContext.DayCount> found = ((TimeDriveCountProvider) providers[i]).countDays(context, grain);
         if (found == null) {
@@ -1917,14 +1817,8 @@ public with sharing class TimeDriveController {
           uncounted.add(i);
           return null;
         }
-        TimeDriveDiagnostics.phase(sources[i].DeveloperName, 'count by ' + grain, startedAt, found.size());
         return found;
       } catch (Exception e) {
-        TimeDriveDiagnostics.note(
-          sources[i].DeveloperName,
-          'Counting failed',
-          'Read as rows instead. ' + e.getTypeName() + ': ' + e.getMessage()
-        );
         System.debug(
           LoggingLevel.WARN,
           'Time Drive: ' +
@@ -1983,13 +1877,11 @@ public with sharing class TimeDriveController {
       if (providers[i] == null) {
         return events;
       }
-      Long startedAt = TimeDriveDiagnostics.clock();
       try {
         events = window.within(TimeDrivePlotter.run(providers[i], context));
       } catch (Exception e) {
         context.fail(sources[i].Label, e);
       }
-      TimeDriveDiagnostics.phase(sources[i].DeveloperName, 'read rows and plot', startedAt, events.size());
       for (EngagementEvent e : events) {
         e.dayKey = e.occurredAt.format('yyyy-MM-dd');
       }

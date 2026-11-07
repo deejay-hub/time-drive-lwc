@@ -371,12 +371,6 @@
         </div>
       </template>
 
-      <!-- The record pages to choose from -->
-      <!-- Docs: the Config Guide and the FAQs -->
-      <template lwc:elseif={isDiagnostics}>
-        <c-time-drive-diagnostics></c-time-drive-diagnostics>
-      </template>
-
       <!-- Lenses: each one's label, and the sources in it -->
       <template lwc:elseif={isLensesPage}>
         <header class="page-head">
@@ -492,149 +486,34 @@
         <header class="page-head">
           <div class="page-head-text">
             <h1 class="page-title" tabindex="-1">Docs</h1>
-            <p class="page-lede">How to set up Time Drive, and answers to the common questions.</p>
+            <p class="page-lede">How to set up Time Drive, and answers to the common questions. They open on GitHub.</p>
           </div>
         </header>
         <ul class="docs-list">
           <template for:each={docs} for:item="d">
             <li key={d.key}>
-              <button class="docs-card" type="button" data-doc={d.key} onclick={handleOpenDoc}>
+              <a class="docs-card" href={d.href} target="_blank" rel="noopener">
                 <span class="docs-card-icon" aria-hidden="true">
                   <lightning-icon icon-name={d.icon} size="small"></lightning-icon>
                 </span>
                 <span class="docs-card-text">
                   <span class="docs-card-title">{d.title}</span>
                   <span class="docs-card-body">{d.summary}</span>
-                  <span class="docs-card-meta">{d.meta}</span>
+                  <span class="docs-card-meta">Opens on GitHub</span>
                 </span>
                 <lightning-icon
                   class="docs-card-go"
-                  icon-name="utility:chevronright"
+                  icon-name="utility:new_window"
                   size="x-small"
-                  aria-hidden="true"
+                  alternative-text="Opens in a new tab"
                 ></lightning-icon>
-              </button>
+              </a>
             </li>
           </template>
         </ul>
       </template>
 
-      <!-- One doc, with the breadcrumb back to Docs -->
-      <template lwc:elseif={isDocPage}>
-        <header class="page-head">
-          <div class="page-head-text">
-            <h1 class="page-title" tabindex="-1">{doc.title}</h1>
-            <p class="page-lede">{doc.summary}</p>
-          </div>
-        </header>
-        <template lwc:if={docLoading}>
-          <div class="doc-loading" role="status">
-            <span class="doc-loading-line"></span>
-            <span class="doc-loading-line"></span>
-            <span class="doc-loading-line doc-loading-line_short"></span>
-            <span class="slds-assistive-text">Loading {doc.title} from GitHub</span>
-          </div>
-        </template>
-        <template lwc:elseif={docFailed}>
-          <div class="doc-failed" role="alert">
-            <lightning-icon icon-name="utility:offline" size="small" aria-hidden="true"></lightning-icon>
-            <div class="doc-failed-text">
-              <p class="doc-failed-title">{doc.title} didn't load from GitHub</p>
-              <p class="quiet">Your network may block GitHub. You can read it on GitHub instead.</p>
-              <div class="doc-failed-actions">
-                <button class="ghost" type="button" onclick={handleDocRetry}>Try again</button>
-                <a class="text-link" href={docWebUrl} target="_blank" rel="noopener">Open on GitHub</a>
-              </div>
-            </div>
-          </div>
-        </template>
-        <template lwc:elseif={isGuideDoc}>
-          <div class="doc" ondoclink={handleDocLink}>
-            <article class="doc-body">
-              <template for:each={docSections} for:item="s">
-                <section key={s.key} class="doc-section" data-section={s.id}>
-                  <h2 lwc:if={s.hasHeading} class="doc-h2">{s.heading}</h2>
-                  <c-time-drive-doc-blocks blocks={s.blocks}></c-time-drive-doc-blocks>
-                </section>
-              </template>
-            </article>
-            <nav class="doc-toc" aria-label="On this page">
-              <p class="doc-toc-title">On this page</p>
-              <ol class="doc-toc-list">
-                <template for:each={docToc} for:item="s">
-                  <li key={s.key}>
-                    <button class="doc-toc-link" type="button" data-section={s.id} onclick={handleDocSection}>
-                      {s.title}
-                    </button>
-                  </li>
-                </template>
-              </ol>
-              <a class="text-link doc-source" href={docWebUrl} target="_blank" rel="noopener">View on GitHub</a>
-            </nav>
-          </div>
-        </template>
-        <template lwc:else>
-          <div class="doc" ondoclink={handleDocLink}>
-            <div class="doc-faq-wrap">
-              <div class="look-search faq-search">
-                <lightning-icon
-                  class="picker-glass"
-                  icon-name="utility:search"
-                  size="x-small"
-                  aria-hidden="true"
-                ></lightning-icon>
-                <input
-                  class="look-input"
-                  type="search"
-                  aria-label="Search the FAQs"
-                  placeholder="Search the questions and answers"
-                  autocomplete="off"
-                  value={faqQuery}
-                  oninput={handleFaqQuery}
-                />
-              </div>
-              <p class="quiet faq-count" aria-live="polite">{faqCountText}</p>
-              <template lwc:if={faqNone}>
-                <div class="empty-state empty-state_filter">
-                  <p class="problem-title">No questions match</p>
-                  <p class="problem-cause">Try other words, or read the Config Guide.</p>
-                  <button class="ghost" type="button" onclick={handleFaqClear}>Clear search</button>
-                </div>
-              </template>
-              <div class="kh-faq-list doc-faq">
-                <template for:each={docQuestions} for:item="q">
-                  <details key={q.key} class="kh-faq-item doc-anchor" data-section={q.id} open={q.open}>
-                    <summary class="kh-faq-question">
-                      <span>{q.title}</span>
-                      <lightning-icon
-                        class="kh-faq-chevron"
-                        icon-name="utility:chevrondown"
-                        size="x-small"
-                        aria-hidden="true"
-                      ></lightning-icon>
-                    </summary>
-                    <c-time-drive-doc-blocks class="kh-faq-answer" blocks={q.blocks}></c-time-drive-doc-blocks>
-                  </details>
-                </template>
-              </div>
-            </div>
-            <nav class="doc-toc" aria-label="On this page">
-              <p class="doc-toc-title">On this page</p>
-              <ol class="doc-toc-list">
-                <template for:each={docQuestions} for:item="s">
-                  <li key={s.key}>
-                    <button class="doc-toc-link" type="button" data-section={s.id} onclick={handleDocSection}>
-                      {s.title}
-                    </button>
-                  </li>
-                </template>
-              </ol>
-              <a class="text-link doc-source" href={docWebUrl} target="_blank" rel="noopener">View on GitHub</a>
-            </nav>
-          </div>
-        </template>
-      </template>
-
+      <!-- The record pages to choose from -->
       <template lwc:elseif={isPagesPage}>
         <header class="page-head">
           <h1 class="page-title" tabindex="-1">Customize: which record page?</h1>

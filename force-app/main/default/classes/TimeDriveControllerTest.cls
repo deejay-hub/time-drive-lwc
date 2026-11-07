@@ -433,11 +433,10 @@ private class TimeDriveControllerTest {
       source('Tasks', 'Task', 'ActivityDate', 'WhoId'),
       source('Cases', 'Case', 'CreatedDate', 'ContactId')
     };
-    TimeDriveDiagnostics.begin();
+    TimeDriveQueries.ran.clear();
     TimeDriveController.getTimeline(customer, null, null, null, null, null, null, null, null);
-    TimeDriveDiagnostics.finish();
     Boolean sawTask = false;
-    for (TimeDriveDiagnostics.Query q : TimeDriveDiagnostics.queries) {
+    for (TimeDriveQueries.Ran q : TimeDriveQueries.ran) {
       if (q.soql.contains('FROM Task ')) {
         sawTask = true;
         Assert.isTrue(q.soql.contains('ActivityDate != null'), 'a nillable date must have a value: ' + q.soql);
@@ -470,7 +469,7 @@ private class TimeDriveControllerTest {
     List<String> run = new List<String>{ keys[4], keys[3], keys[2], keys[1], keys[0] };
     String together = String.join(run, ',');
 
-    TimeDriveDiagnostics.begin();
+    TimeDriveQueries.ran.clear();
     List<TimeDriveController.EngagementEvent> page = TimeDriveController.getPageDays(
       customer,
       null,
@@ -483,13 +482,12 @@ private class TimeDriveControllerTest {
       null,
       new List<String>{ together }
     );
-    TimeDriveDiagnostics.finish();
     Assert.areEqual(5, page.size());
-    Integer rangesAsRun = TimeDriveDiagnostics.queries[0].soql.split('CreatedDate >= ').size() - 1;
+    Integer rangesAsRun = TimeDriveQueries.ran[0].soql.split('CreatedDate >= ').size() - 1;
     Assert.areEqual(1, rangesAsRun, 'one range for the run');
 
     // Without the runs: a range for each day, the same rows.
-    TimeDriveDiagnostics.begin();
+    TimeDriveQueries.ran.clear();
     List<TimeDriveController.EngagementEvent> apart = TimeDriveController.getPageDays(
       customer,
       null,
@@ -502,9 +500,8 @@ private class TimeDriveControllerTest {
       null,
       null
     );
-    TimeDriveDiagnostics.finish();
     Assert.areEqual(5, apart.size());
-    Assert.areEqual(5, TimeDriveDiagnostics.queries[0].soql.split('CreatedDate >= ').size() - 1, 'a range for each');
+    Assert.areEqual(5, TimeDriveQueries.ran[0].soql.split('CreatedDate >= ').size() - 1, 'a range for each');
     Set<Id> ids = new Set<Id>();
     for (TimeDriveController.EngagementEvent e : page) {
       ids.add(e.recordId);
@@ -664,7 +661,7 @@ private class TimeDriveControllerTest {
   static void identityLinksAreKeptBetweenRequests() {
     TimeDriveCache.testStore = new Map<String, Object>();
     Id customer = contactId();
-    String key = TimeDriveCache.key(new List<String>{ 'ids', customer, null });
+    String key = TimeDriveCache.key(new List<String>{ 'ids', UserInfo.getUserId(), customer, null });
     TimeDriveCache.put(key, new Set<String>{ 'UNIFIED-1', 'WEB-9' });
     List<String> warnings = new List<String>();
     TimeDriveContext context = new TimeDriveContext(customer, 'Contact', Datetime.now(), null, null, warnings);
@@ -685,6 +682,36 @@ private class TimeDriveControllerTest {
     TimeDriveCache.testStore = null;
     TimeDriveCache.put('x', 'y');
     Assert.isNull(TimeDriveCache.get('nothingKept'));
+  }
+
+  @IsTest
+  static void identityLinksKeptForOneUserAreNotAnothersAnswer() {
+    // Another user's lookup, kept for them: this user doesn't get it, and
+    // looks the links up as themselves instead.
+    TimeDriveCache.testStore = new Map<String, Object>();
+    Id customer = contactId();
+    String someoneElse = TimeDriveCache.key(new List<String>{ 'ids', '005000000000001AAA', customer, null });
+    TimeDriveCache.put(someoneElse, new Set<String>{ 'THEIR-UNIFIED-1' });
+    TimeDriveContext context = new TimeDriveContext(customer, 'Contact', Datetime.now(), null, null, new List<String>());
+    Set<String> ids = TimeDriveData360Provider.individualIdsFor(
+      customer,
+      new Map<String, Schema.SObjectType>(),
+      context
+    );
+    Assert.isFalse(ids.contains('THEIR-UNIFIED-1'), String.valueOf(ids));
+    Assert.isTrue(ids.contains(String.valueOf(customer)), 'the Contact is still its own individual');
+  }
+
+  @IsTest
+  static void data360CountsOnlyWhatTheUserCanRead() {
+    // The same check a DMO gets, on an object every test org has.
+    Schema.DescribeSObjectResult account = Account.SObjectType.getDescribe();
+    Map<String, Schema.SObjectField> fields = TimeDriveConfig.fieldMap('Account');
+    Assert.isTrue(
+      TimeDriveData360Provider.readable(account, fields, new List<String>{ 'Name', 'CreatedDate' }, 'Industry = \'Name\' AND Rating != null'),
+      'readable fields, words that aren\'t fields skipped, quoted text not taken for a field'
+    );
+    Assert.isTrue(TimeDriveData360Provider.readable(account, fields, new List<String>{ 'Name' }, null));
   }
 
   @IsTest
@@ -2693,7 +2720,7 @@ private class TimeDriveControllerTest {
     source.Filter__c = 'Status = \'Completed\'';
     TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ source };
 
-    TimeDriveDiagnostics.begin();
+    TimeDriveQueries.ran.clear();
     Datetime since = Datetime.now().addYears(-1);
     TimeDriveContext context = new TimeDriveContext(c.Id, null, since, source, null, null);
     TimeDriveSoqlProvider provider = new TimeDriveSoqlProvider();
@@ -2704,7 +2731,7 @@ private class TimeDriveControllerTest {
     }
     Assert.areEqual(1, total, 'the completed order, counted from the relation');
     String counted;
-    for (TimeDriveDiagnostics.Query q : TimeDriveDiagnostics.queries) {
+    for (TimeDriveQueries.Ran q : TimeDriveQueries.ran) {
       if (q.kind == 'count') {
         counted = q.soql;
       }
@@ -2716,9 +2743,9 @@ private class TimeDriveControllerTest {
 
     // A filter that can't be rewritten is counted the usual way, with the same answer.
     source.Filter__c = 'Id IN (SELECT TaskId FROM TaskRelation WHERE IsWhat = false)';
-    TimeDriveDiagnostics.begin();
+    TimeDriveQueries.ran.clear();
     counts = provider.countDays(new TimeDriveContext(c.Id, null, since, source, null, null), TimeDriveContext.UNIT_DAY);
-    for (TimeDriveDiagnostics.Query q : TimeDriveDiagnostics.queries) {
+    for (TimeDriveQueries.Ran q : TimeDriveQueries.ran) {
       if (q.kind == 'count') {
         counted = q.soql;
       }

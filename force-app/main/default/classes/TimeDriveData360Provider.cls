@@ -123,15 +123,14 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
       dateField +
       ' DESC LIMIT ' +
       Math.min(context.maxRecords(), MAX_DMO_ROWS);
-    Long startedAt = TimeDriveDiagnostics.clock();
     try {
       List<SObject> found = Database.queryWithBinds(soql, binds, AccessLevel.USER_MODE);
-      TimeDriveDiagnostics.query(s.DeveloperName, 'rows', soql, binds, found.size(), startedAt, null);
+      TimeDriveQueries.record(s.DeveloperName, 'rows', soql);
       for (SObject row : found) {
         rows.add(new TimeDriveRow(row));
       }
     } catch (Exception e) {
-      TimeDriveDiagnostics.query(s.DeveloperName, 'rows', soql, binds, 0, startedAt, e.getMessage());
+      TimeDriveQueries.record(s.DeveloperName, 'rows', soql);
       context.fail(s.Label, e);
     }
     return rows;
@@ -164,7 +163,6 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
     // A filter only SOQL reads (TODAY, LAST_N_DAYS:90, INCLUDES ...) would
     // fail in Data 360 SQL on every request: read as rows straight away.
     if (soqlOnly(s.Filter__c)) {
-      TimeDriveDiagnostics.note(s.DeveloperName, 'Not counted', 'Its filter uses SOQL that Data 360 SQL doesn\'t read.');
       return null;
     }
     if (objectIn(objects, 'ssot__Individual__dlm') == null || String.isBlank(s.Object_Name__c)) {
@@ -184,6 +182,13 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
       if (!PLAIN_NAME.matcher(name).matches()) {
         throw new CountException('Not a plain name: ' + name);
       }
+    }
+    // Data 360's query API applies its own data space and permissions, not
+    // the object and field access the row reads enforce in user mode: count
+    // only what this user may read, else read as rows (in user mode, which
+    // says what they can't see).
+    if (!readable(describe, dmoFields, new List<String>{ individualField, dateField }, s.Filter__c)) {
+      throw new CountException('Not readable by this user.');
     }
     Boolean byDay = isDate(dmoFields, dateField);
 
@@ -229,6 +234,39 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
       );
     }
     return counts;
+  }
+
+  // Whether this user may read the DMO and the fields a count uses: the
+  // individual and date fields, and every field of the DMO its filter names
+  // (quoted text left out, so values aren't taken for fields).
+  @TestVisible
+  private static Boolean readable(
+    Schema.DescribeSObjectResult describe,
+    Map<String, Schema.SObjectField> dmoFields,
+    List<String> fields,
+    String filter
+  ) {
+    if (!describe.isAccessible()) {
+      return false;
+    }
+    Set<String> named = new Set<String>();
+    for (String f : fields) {
+      named.add(f.toLowerCase());
+    }
+    if (String.isNotBlank(filter)) {
+      Matcher m = Pattern.compile('[A-Za-z][A-Za-z0-9_]*').matcher(filter.replaceAll('\'(?:[^\'\\\\]|\\\\.)*\'', '\'\''));
+      while (m.find()) {
+        named.add(m.group().toLowerCase());
+      }
+    }
+    for (String f : named) {
+      Schema.SObjectField field = dmoFields.get(f);
+      // Words that aren't fields (AND, IN, NULL ...) are skipped.
+      if (field != null && !field.getDescribe().isAccessible()) {
+        return false;
+      }
+    }
+    return true;
   }
 
   // SOQL date literals (TODAY, LAST_N_DAYS:90, THIS_FISCAL_QUARTER ...),
@@ -534,7 +572,9 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
       return ids;
     }
     // Looked up in the last 15 minutes: identity resolution rarely changes.
-    String cacheKey = TimeDriveCache.key(new List<String>{ 'ids', contactId, dataSpace });
+    // Kept for this user only: the lookup ran as them (user mode), so someone
+    // who can't read the identity links never gets another person's answer.
+    String cacheKey = TimeDriveCache.key(new List<String>{ 'ids', UserInfo.getUserId(), contactId, dataSpace });
     Set<String> kept = keptIds(TimeDriveCache.get(cacheKey));
     if (kept != null) {
       ids.addAll(kept);

@@ -26,9 +26,6 @@ jest.mock(
     virtual: true
   }
 );
-jest.mock("@salesforce/apex/TimeDriveController.getTimelineDiagnosed", () => ({ default: jest.fn() }), {
-  virtual: true
-});
 jest.mock("@salesforce/apex/TimeDriveController.getPageDays", () => ({ default: jest.fn(() => Promise.resolve([])) }), {
   virtual: true
 });

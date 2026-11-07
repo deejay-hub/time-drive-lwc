@@ -13,7 +13,7 @@ Everything an admin needs to put Time Drive on a record page and choose what it 
   - [A custom object](#a-custom-object)
   - [An Apex class](#an-apex-class)
 - [Add the timeline to a page](#add-the-timeline-to-a-page)
-- [Reference](#fit-to-your-org): Fit to your org, lenses, source fields, Data 360, Apex, scale, diagnostics, translations
+- [Reference](#fit-to-your-org): Fit to your org, source fields, Data 360, Apex, scale, translations
 
 ## What Time Drive is
 
@@ -83,8 +83,7 @@ Open the **Time Drive Setup** tab. Its pages, along the top:
 - **Setup**: the guided setup, start to finish.
 - **Customize**: the sources for each record page, and the wizard that adds them.
 - **Lenses**: which lenses each source is in.
-- **Diagnostics**: draws a record's timeline and shows what it did and how long it took.
-- **Docs**: this guide.
+- **Docs**: links to this guide and the FAQs, which open here on GitHub.
 
 ### Guided setup
 
@@ -514,18 +513,6 @@ The summary counts each source rather than reading it: an aggregate query per Sa
 - When History and Future make the window too long to count every source by day within 30,000 query rows, it counts by week (from 1 January: the 1st-7th, 8th-14th ...) or by month, and the list shows weeks or months.
 - Rows are read only for the days (or weeks) on screen.
 - A busy day (over 50 items) isn't read at all; it comes back as grouped counts.
-
-## Diagnostics
-
-**Time Drive Setup > Diagnostics** runs a Contact, Account or Lead's timeline and shows what it did. Enter the Id, choose the layout and the History and Future years, and the actual timeline draws, as it does on a record page. It has three tabs:
-
-![Diagnostics: run a record's timeline, then see its config, performance and output](images/config-guide/setup-diagnostics.png)
-
-- **Config**: the sources for the page and what became of each (used, or ignored and why: inactive, a variant Fit to your org didn't pick, a setting this org lacks), with the user's rights on each source's object and any configured field they can't read. It also shows the page (record, the sources it uses, layout, History and Future) and the user's permissions (access to the record, Modify All Data, View All Data, and the org features sources need).
-- **Performance**: **Load time (total)** is the wait from the card connecting to the page until its days are painted. It's the sum of **Server time (Apex)**, the server's own run; **Network time (approx.)**, the answer getting there and back less the server's run; and **Browser time**, waiting to send the request and drawing the answer. A bar and a sentence say where the wait went. Under them: every query with its SOQL as run, binds, rows, when it started and how long it took (slow ones marked); the time each source took; what was left out or done differently; and everything the card logged.
-- **Output**: the timeline itself. It's on the page whichever tab is showing, so its load is timed as it really is.
-
-The card logs a line for each request and draw (also to the console, as `[Time Drive]`). Recording of queries is off for every other request, so a timeline pays nothing for it.
 
 ## Translations
 

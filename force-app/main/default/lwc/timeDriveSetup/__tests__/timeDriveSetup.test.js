@@ -20,15 +20,6 @@ import getOrgFit from "@salesforce/apex/TimeDriveSetupController.getOrgFit";
 import applyOrgFit from "@salesforce/apex/TimeDriveSetupController.applyOrgFit";
 import TimeDriveOrgCheck from "c/timeDriveOrgCheck";
 
-// The Diagnostics page has its own tests; here it is a stand-in.
-jest.mock(
-  "c/timeDriveDiagnostics",
-  () => {
-    const { LightningElement } = require("lwc");
-    return { __esModule: true, default: class Diagnostics extends LightningElement {} };
-  },
-  { virtual: true }
-);
 jest.mock("@salesforce/apex/TimeDriveSetupController.getProgress", () => ({ default: jest.fn() }), { virtual: true });
 jest.mock("@salesforce/apex/TimeDriveSetupController.saveProgress", () => ({ default: jest.fn() }), {
   virtual: true
@@ -167,9 +158,6 @@ async function toPages(root) {
   await flush();
 }
 
-// The GitHub tests read through fetch, not the bundled mock docs.
-jest.mock("../bundledDocs", () => ({ BUNDLED_DOCS: null }));
-
 function mount() {
   const element = createElement("c-time-drive-setup", { is: TimeDriveSetup });
   document.body.appendChild(element);
@@ -248,7 +236,6 @@ describe("c-time-drive-setup", () => {
       "Setup",
       "Customize",
       "Lenses",
-      "Diagnostics",
       "Docs"
     ]);
     // Step 1 is the check, done, and says briefly what was found and added.
@@ -342,13 +329,12 @@ describe("c-time-drive-setup", () => {
     const element = mount();
     await splash();
     const root = element.shadowRoot;
-    // The menu: Setup, Customize, Lenses, Diagnostics and Docs.
+    // The menu: Setup, Customize, Lenses and Docs.
     expect(root.querySelector(".crumbs")).toBeNull();
     expect([...root.querySelectorAll(".site-link")].map((l) => l.textContent.trim())).toEqual([
       "Setup",
       "Customize",
       "Lenses",
-      "Diagnostics",
       "Docs"
     ]);
     expect(root.querySelector('.site-link[data-to="setup"]').getAttribute("aria-current")).toBe("page");
@@ -1064,104 +1050,24 @@ describe("c-time-drive-setup", () => {
     });
   });
 
-  it("lists the docs, reads one from GitHub with a breadcrumb back, and follows a link to the other", async () => {
-    const files = {
-      "config-guide.md":
-        "# Config Guide\n\nIntro.\n\n## Before you start\n\nYou need **Customize Application**.\n\n- One\n- Two\n\n## Add a source\n\nSee the [FAQs](faqs.md#saving).",
-      "faqs.md": "# FAQs\n\n## Saving\n\nIt deploys.\n\n## Access\n\nAs the user."
-    };
-    global.fetch = jest.fn((url) => {
-      const file = url.split("/").pop();
-      return Promise.resolve(
-        files[file]
-          ? { ok: true, status: 200, text: () => Promise.resolve(files[file]) }
-          : { ok: false, status: 404, text: () => Promise.resolve("") }
-      );
-    });
+  it("links each doc to its page on GitHub, in a new tab, and reads nothing into the org", async () => {
+    global.fetch = jest.fn();
     const element = mount();
     await splash();
     const root = element.shadowRoot;
     root.querySelector('.site-link[data-to="docs"]').click();
     await flush();
-    expect(root.querySelector(".page-title").textContent).toBe("Docs");
-    expect(crumbs(root)).toEqual([]);
-    expect([...root.querySelectorAll(".docs-card-title")].map((t) => t.textContent)).toEqual(["Config Guide", "FAQs"]);
-
-    root.querySelector('.docs-card[data-doc="guide"]').click();
-    await flush();
-    await flush();
-    expect(global.fetch).toHaveBeenCalledWith(
-      "https://raw.githubusercontent.com/deejay-hub/time-shift-lwc/main/docs/config-guide.md",
-      expect.anything()
-    );
-    expect(root.querySelector(".page-title").textContent).toBe("Config Guide");
-    expect(crumbs(root)).toEqual(["Docs", "Config Guide"]);
-    expect(root.querySelector('.site-link[data-to="docs"]').getAttribute("aria-current")).toBe("page");
-    expect([...root.querySelectorAll(".doc-h2")].map((h) => h.textContent)).toEqual([
-      "1. Before you start",
-      "2. Add a source"
-    ]);
-    expect([...root.querySelectorAll(".doc-toc-link")].map((l) => l.textContent.trim())).toEqual([
-      "Before you start",
-      "Add a source"
-    ]);
-    const blocks = root.querySelector(
-      '.doc-section[data-section="before-you-start"] c-time-drive-doc-blocks'
-    ).shadowRoot;
-    expect(blocks.querySelectorAll(".doc-list li")).toHaveLength(2);
-
-    // A link to the other doc opens it in Setup.
-    const link = root
-      .querySelector('.doc-section[data-section="add-a-source"] c-time-drive-doc-blocks')
-      .shadowRoot.querySelector("c-time-drive-doc-text")
-      .shadowRoot.querySelector(".doc-link");
-    expect(link.dataset.doc).toBe("faqs");
-    link.click();
-    await flush();
-    await flush();
-    expect(crumbs(root)).toEqual(["Docs", "FAQs"]);
-    expect([...root.querySelectorAll(".doc-faq .kh-faq-question span")].map((q) => q.textContent)).toEqual([
-      "Saving",
-      "Access"
-    ]);
-    // A search over questions and answers: "user" is only in Access's answer.
-    const search = root.querySelector(".faq-search input");
-    search.value = "user";
-    search.dispatchEvent(new CustomEvent("input"));
-    await flush();
-    expect([...root.querySelectorAll(".doc-faq .kh-faq-question span")].map((q) => q.textContent)).toEqual(["Access"]);
-    expect(root.querySelector(".doc-faq details").open).toBe(true);
-    expect(root.querySelector(".faq-count").textContent).toBe("1 of 2 questions");
-    search.value = "nothing at all";
-    search.dispatchEvent(new CustomEvent("input"));
-    await flush();
-    expect(root.querySelector(".doc-faq-wrap .problem-title").textContent).toBe("No questions match");
-    root.querySelector(".doc-faq-wrap .empty-state button").click();
-    await flush();
-    expect(root.querySelectorAll(".doc-faq details")).toHaveLength(2);
-    // The FAQs have their own "On this page", one entry per question.
-    expect([...root.querySelectorAll(".doc-toc-link")].map((l) => l.textContent.trim())).toEqual(["Saving", "Access"]);
-
-    root.querySelector('.crumb-link[data-to="docs"]').click();
-    await flush();
-    expect(root.querySelector(".page-title").textContent).toBe("Docs");
-    delete global.fetch;
-  });
-
-  it("offers GitHub itself when a doc can't be read", async () => {
-    global.fetch = jest.fn(() => Promise.reject(new TypeError("Failed to fetch")));
-    const element = mount();
-    await splash();
-    const root = element.shadowRoot;
-    root.querySelector('.site-link[data-to="docs"]').click();
-    await flush();
-    root.querySelector('.docs-card[data-doc="faqs"]').click();
-    await flush();
-    await flush();
-    expect(root.querySelector(".doc-failed-title").textContent).toBe("FAQs didn't load from GitHub");
-    expect(root.querySelector(".doc-failed a").getAttribute("href")).toBe(
+    const cards = [...root.querySelectorAll("a.docs-card")];
+    expect(cards.map((c) => c.querySelector(".docs-card-title").textContent)).toEqual(["Config Guide", "FAQs"]);
+    expect(cards.map((c) => c.getAttribute("href"))).toEqual([
+      "https://github.com/deejay-hub/time-shift-lwc/blob/main/docs/config-guide.md",
       "https://github.com/deejay-hub/time-shift-lwc/blob/main/docs/faqs.md"
-    );
+    ]);
+    for (const card of cards) {
+      expect(card.getAttribute("target")).toBe("_blank");
+      expect(card.getAttribute("rel")).toBe("noopener");
+    }
+    expect(global.fetch).not.toHaveBeenCalled();
     delete global.fetch;
   });
 
