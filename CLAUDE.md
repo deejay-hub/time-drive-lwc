@@ -15,8 +15,9 @@ sets `Time_Drive` and `Time_Drive_Setup`, the `Time_Drive_Setup` tab, static
 resources `timeDriveAssets` and `timeDriveSetupFonts`, cache partition
 `TimeDrive`, CSS properties `--time-drive-*`, error codes `timedrive:<kind>`.
 The old `TimeShift*` / `Time_Shift_*` components were deleted from the test org
-and data360. The GitHub repo and the org aliases (`time-shift-lwc`,
-`time-shift-data360`) keep their old names.
+and data360. The GitHub repo was renamed to `deejay-hub/time-drive-lwc` on
+2026-11-09 (GitHub redirects the old name); the org aliases (`time-shift-lwc`,
+`time-shift-data360`) and this local folder keep their old names.
 
 ## Where it came from
 
@@ -51,8 +52,8 @@ and data360. The GitHub repo and the org aliases (`time-shift-lwc`,
   `time-shift-scratch`; they don't exist yet (the original used
   `pronto-person` / `pronto-scratch`). Map one with
   `sf alias set time-shift-person=<username>`.
-- The setup page's docs link points at GitHub `deejay-hub/time-shift-lwc`
-  (not created yet).
+- The setup page's Docs links point at GitHub `deejay-hub/time-drive-lwc`
+  (private for now, so the links need a GitHub login until it's public).
 
 ## Orgs and deploying (carried over)
 

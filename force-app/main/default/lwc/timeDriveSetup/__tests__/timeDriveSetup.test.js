@@ -1060,8 +1060,8 @@ describe("c-time-drive-setup", () => {
     const cards = [...root.querySelectorAll("a.docs-card")];
     expect(cards.map((c) => c.querySelector(".docs-card-title").textContent)).toEqual(["Config Guide", "FAQs"]);
     expect(cards.map((c) => c.getAttribute("href"))).toEqual([
-      "https://github.com/deejay-hub/time-shift-lwc/blob/main/docs/config-guide.md",
-      "https://github.com/deejay-hub/time-shift-lwc/blob/main/docs/faqs.md"
+      "https://github.com/deejay-hub/time-drive-lwc/blob/main/docs/config-guide.md",
+      "https://github.com/deejay-hub/time-drive-lwc/blob/main/docs/faqs.md"
     ]);
     for (const card of cards) {
       expect(card.getAttribute("target")).toBe("_blank");

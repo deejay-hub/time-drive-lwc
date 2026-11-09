@@ -256,7 +256,7 @@ const isShipped = (src) => SHIPPED_SOURCES.has(src.developerName) || src.develop
 
 // The Docs live in the GitHub repo: the Docs page links to them there (a new
 // tab), so nothing is fetched into the org. Change the repo here.
-const DOCS_SOURCE = { owner: "deejay-hub", repo: "time-shift-lwc", ref: "main", path: "docs" };
+const DOCS_SOURCE = { owner: "deejay-hub", repo: "time-drive-lwc", ref: "main", path: "docs" };
 const DOCS_WEB = `https://github.com/${DOCS_SOURCE.owner}/${DOCS_SOURCE.repo}/blob/${DOCS_SOURCE.ref}/${DOCS_SOURCE.path}/`;
 const DOCS = [
   {

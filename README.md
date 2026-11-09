@@ -15,21 +15,21 @@
 
 <h3 align="center">
 	A customer's engagement in time order, on any Contact, Account or Lead page<br><br>
-	<a href="https://github.com/deejay-hub/time-shift-lwc/network/members">
+	<a href="https://github.com/deejay-hub/time-drive-lwc/network/members">
     		<img alt="forks on github"
-		src="https://img.shields.io/github/forks/deejay-hub/time-shift-lwc?style=flat-square&logoColor=blue">
+		src="https://img.shields.io/github/forks/deejay-hub/time-drive-lwc?style=flat-square&logoColor=blue">
   	</a>
-  	<a href="https://github.com/deejay-hub/time-shift-lwc/stargazers">
+  	<a href="https://github.com/deejay-hub/time-drive-lwc/stargazers">
     		<img alt="stars on github"
-		src="https://img.shields.io/github/stars/deejay-hub/time-shift-lwc?style=flat-square">
+		src="https://img.shields.io/github/stars/deejay-hub/time-drive-lwc?style=flat-square">
   	</a>
-  	<a href="https://github.com/deejay-hub/time-shift-lwc/watchers">
+  	<a href="https://github.com/deejay-hub/time-drive-lwc/watchers">
     		<img alt="watchers"
-		src="https://img.shields.io/github/watchers/deejay-hub/time-shift-lwc?style=flat-square">
+		src="https://img.shields.io/github/watchers/deejay-hub/time-drive-lwc?style=flat-square">
   	</a>
-  	<a href="https://github.com/deejay-hub/time-shift-lwc/issues">
+  	<a href="https://github.com/deejay-hub/time-drive-lwc/issues">
     		<img alt="issues"
-		src="https://img.shields.io/github/issues-raw/deejay-hub/time-shift-lwc?style=flat-square">
+		src="https://img.shields.io/github/issues-raw/deejay-hub/time-drive-lwc?style=flat-square">
   	</a>
 </h3>
 
@@ -63,11 +63,11 @@ Install the component from source control into a scratch org using the instructi
 sf org login web -d -a myhuborg
 ```
 
-3. Clone the time-shift-lwc repository:
+3. Clone the time-drive-lwc repository:
 
 ```
-gh repo clone https://github.com/deejay-hub/time-shift-lwc
-cd time-shift-lwc
+gh repo clone https://github.com/deejay-hub/time-drive-lwc
+cd time-drive-lwc
 ```
 
 4. Create a scratch org and provide it with an alias (**time-drive** in the command below). Use `config/person-accounts-scratch-def.json` instead to try person accounts:
