@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
-    <deploymentStatus>Deployed</deploymentStatus>
-    <description>The result of saving a timeline source from the Time Trail Setup page (the save is an asynchronous metadata deployment).</description>
-    <eventType>HighVolume</eventType>
-    <label>Time Trail Setup Result</label>
-    <pluralLabel>Time Trail Setup Results</pluralLabel>
-    <publishBehavior>PublishImmediately</publishBehavior>
-</CustomObject>

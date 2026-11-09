@@ -1,0 +1,82 @@
+<template>
+  <!-- The date range and event types panel, under the toolbar's end;
+       nothing applies until Apply. -->
+  <template lwc:if={isOpen}>
+    <div
+      class={panelClass}
+      role="dialog"
+      aria-label={labels.filters}
+      onkeydown={handleKey}
+      onpointerdown={handlePanelPress}
+    >
+      <!-- The title, with a close icon at the end, until a type is ticked or
+           cleared; then Cancel (start) and Apply (end) in their place: nothing
+           to apply or cancel before that. -->
+      <div class="filter-head">
+        <template lwc:if={changed}>
+          <lightning-button label={labels.filtersCancel} onclick={cancel}></lightning-button>
+          <lightning-button variant="brand" label={labels.filtersApply} onclick={apply}></lightning-button>
+        </template>
+        <template lwc:else>
+          <h3 class="filter-title">{labels.filters}</h3>
+          <lightning-button-icon
+            class="filter-close"
+            icon-name="utility:close"
+            variant="bare"
+            size="small"
+            alternative-text={labels.filtersClose}
+            title={labels.filtersClose}
+            onclick={cancel}
+          ></lightning-button-icon>
+        </template>
+      </div>
+      <div class="filter-body">
+        <!-- How far back and ahead, within the page's own range. -->
+        <template lwc:if={hasRanges}>
+          <fieldset class="range-choices">
+            <legend class="filter-heading">{labels.rangeHeading}</legend>
+            <div class="range-sides">
+              <label class="range-side">
+                <span class="range-label">{labels.rangeBack}</span>
+                <select class="slds-select range-back" onchange={handleBack}>
+                  <template for:each={backChoices} for:item="o">
+                    <option key={o.value} value={o.value} selected={o.selected}>{o.label}</option>
+                  </template>
+                </select>
+              </label>
+              <label class="range-side">
+                <span class="range-label">{labels.rangeAhead}</span>
+                <select class="slds-select range-ahead" onchange={handleAhead}>
+                  <template for:each={aheadChoices} for:item="o">
+                    <option key={o.value} value={o.value} selected={o.selected}>{o.label}</option>
+                  </template>
+                </select>
+              </label>
+            </div>
+          </fieldset>
+        </template>
+        <template lwc:if={hasChoices}>
+          <p class="filter-heading">{labels.filtersEventTypes}</p>
+          <lightning-input
+            class="all-types"
+            type="checkbox"
+            label={labels.typesAll}
+            checked={allChecked}
+            onchange={toggleAll}
+          ></lightning-input>
+          <lightning-checkbox-group
+            name="filter-types"
+            label={labels.filtersEventTypes}
+            variant="label-hidden"
+            options={choices}
+            value={draft}
+            onchange={handleChange}
+          ></lightning-checkbox-group>
+        </template>
+        <template lwc:else>
+          <p class="filter-none">{noneText}</p>
+        </template>
+      </div>
+    </div>
+  </template>
+</template>

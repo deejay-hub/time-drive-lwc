@@ -1,5 +1,5 @@
 {
-  "orgName": "Time Trail Person Accounts",
+  "orgName": "Time Drive Person Accounts",
   "edition": "Developer",
   "features": ["EnableSetPasswordInApi", "PersonAccounts"],
   "settings": {

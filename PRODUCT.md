@@ -9,17 +9,17 @@ web
 ## Users
 
 Salesforce admins in a customer's org. They decide what each record page's
-Time Trail shows (which objects, linked how, dated by which field),
+Time Drive shows (which objects, linked how, dated by which field),
 occasionally and without writing code. The people who read the timeline are
 the org's users on record pages (Contact today): service, sales and marketing
 staff looking at a customer's history.
 
 ## Product Purpose
 
-Time Trail plots everything that happened to a record,
+Time Drive plots everything that happened to a record,
 CRM records (orders, cases, opportunities, any standard or custom object) and
 Data 360 digital engagement (email, web, app, cart), as one timeline on the
-record page. Time Trail Setup is where an admin chooses those sources.
+record page. Time Drive Setup is where an admin chooses those sources.
 
 Success for setup: a first-time admin adds a source in about a minute
 (pick the record page, answer a few plain questions, check the summary,
@@ -34,9 +34,9 @@ details only for what's on screen) and respects each user's access.
 ## Operating Context
 
 Runs inside Lightning Experience: the timeline is a Lightning Web Component
-on record pages; Time Trail Setup is a Lightning tab (`Timeline_Setup`) for
-admins. Configuration is stored as custom metadata (Time Trail Source,
-Time Trail Detail Field), deployed by the wizard through the Metadata
+on record pages; Time Drive Setup is a Lightning tab (`Timeline_Setup`) for
+admins. Configuration is stored as custom metadata (Time Drive Source,
+Time Drive Detail Field), deployed by the wizard through the Metadata
 API. Scratch org `time-shift-scratch` is the test org; `data-ai` is production.
 
 ## Capabilities and Constraints
@@ -54,11 +54,11 @@ API. Scratch org `time-shift-scratch` is the test org; `data-ai` is production.
 
 ## Brand Commitments
 
-Time Trail Setup follows the Kindred Support template (design-library
+Time Drive Setup follows the Kindred Support template (design-library
 51-kindred-support), pinned by the user: warm paper, white panels, one
-spruce green for actions and healthy status, light only. Headings in
-Orbitron, text in Lato (user-pinned, self-hosted). It runs inside the
-Lightning shell and fills its tab edge to edge. Time Trail's own colour belongs
+spruce green for actions and healthy status, light only. Titles in
+Bitcount Prop Double, text in Figtree (user-pinned, self-hosted). It runs inside the
+Lightning shell and fills its tab edge to edge. Time Drive's own colour belongs
 to the timeline's stripe and heatmap, not to setup.
 
 ## Product Principles

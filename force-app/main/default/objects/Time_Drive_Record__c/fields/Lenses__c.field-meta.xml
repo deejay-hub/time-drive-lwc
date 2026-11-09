@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Lenses__c</fullName>
+    <inlineHelpText>The keys of the lenses it is in, separated by semicolons (Sales;Service). Set on the Lenses page.</inlineHelpText>
+    <label>Lenses</label>
+    <length>255</length>
+    <required>false</required>
+    <type>Text</type>
+</CustomField>

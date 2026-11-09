@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>67.0</apiVersion>
+    <isExposed>true</isExposed>
+    <masterLabel>Time Drive Setup</masterLabel>
+    <description
+  >Lists Time Drive's sources and adds, edits or switches them off with a guided wizard and a live preview. For admins (Customize Application).</description>
+    <targets>
+        <target>lightning__AppPage</target>
+        <target>lightning__Tab</target>
+    </targets>
+</LightningComponentBundle>

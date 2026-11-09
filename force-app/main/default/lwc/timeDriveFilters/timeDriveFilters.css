@@ -1,0 +1,124 @@
+/* The Filters panel, floating over the page by the Filters button (placed
+   from script: see place()), so the card's clipped corners don't cut it
+   short; on the dropdown layer, as SLDS menus are. Its colours and spacing
+   come from the timeline's custom properties, which reach in through the
+   shadow boundary. */
+:host {
+  display: contents;
+}
+
+.filter-panel {
+  position: fixed;
+  z-index: 7000;
+  box-sizing: border-box;
+  /* The head keeps its height; the list takes what's left, and scrolls. */
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.75 * var(--time-drive-space));
+  width: min(18rem, 100%);
+  padding: calc(0.75 * var(--time-drive-space)) calc(1 * var(--time-drive-space));
+  border-radius: 0.75rem;
+  background: var(--surface);
+  box-shadow:
+    0 0 0 1px var(--time-drive-rule),
+    0 12px 28px -12px color-mix(in srgb, var(--shade) 35%, transparent);
+}
+
+.filter-heading {
+  margin-bottom: calc(-0.5 * var(--time-drive-space));
+  color: var(--slds-g-color-on-surface-2, #444);
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+}
+
+/* "All types" sits apart from the individual types below it. */
+.all-types {
+  padding-bottom: calc(0.375 * var(--time-drive-space));
+  border-bottom: 1px solid var(--time-drive-rule);
+}
+
+/* The date range sits apart from the event types below it: Back and Ahead
+   side by side. */
+.range-choices {
+  display: grid;
+  gap: calc(0.5 * var(--time-drive-space));
+  min-width: 0;
+  margin: 0;
+  padding: 0 0 calc(0.75 * var(--time-drive-space));
+  border: 0;
+  border-bottom: 1px solid var(--time-drive-rule);
+}
+
+.range-choices .filter-heading {
+  margin-bottom: 0;
+  padding: 0;
+}
+
+.range-sides {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: calc(0.5 * var(--time-drive-space));
+}
+
+.range-side {
+  display: grid;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.range-label {
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+}
+
+/* Cancel and Apply at the top, always in reach; the options scroll below. */
+.filter-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  /* The same height with the title as with the buttons, so nothing moves when
+     they swap. */
+  min-height: 2.25rem;
+  gap: calc(0.5 * var(--time-drive-space));
+  padding-bottom: calc(0.625 * var(--time-drive-space));
+  border-bottom: 1px solid var(--time-drive-rule);
+}
+
+/* The close icon sits at the end, a little in from the edge. */
+.filter-close {
+  flex: none;
+  margin-inline-start: auto;
+}
+
+.filter-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.25rem;
+}
+
+.filter-body {
+  flex: 0 1 auto;
+  min-height: 0;
+  display: grid;
+  gap: calc(0.75 * var(--time-drive-space));
+  max-height: 20rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* A scrolling box clips what spills past its edges, and a checkbox's focus
+     ring does (the left of "All types"): room for the ring, taken back with
+     the negative margin so nothing moves. */
+  padding: 0.25rem;
+  margin: -0.25rem;
+}
+
+.filter-none {
+  margin: 0;
+  color: var(--time-drive-muted);
+  font-size: 0.8125rem;
+}
+
+/* SLDS 1's corners. */
+.filter-panel_slds1 {
+  border-radius: 0.25rem;
+}

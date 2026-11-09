@@ -1,0 +1,591 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Translations xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customLabels>
+        <label>Löschen</label>
+        <name>Time_Drive_Action_Delete</name>
+    </customLabels>
+    <customLabels>
+        <label>Bearbeiten</label>
+        <name>Time_Drive_Action_Edit</name>
+    </customLabels>
+    <customLabels>
+        <label>E-Mail</label>
+        <name>Time_Drive_Action_Email</name>
+    </customLabels>
+    <customLabels>
+        <label>Anruf protokollieren</label>
+        <name>Time_Drive_Action_Log_Call</name>
+    </customLabels>
+    <customLabels>
+        <label>Neues Ereignis</label>
+        <name>Time_Drive_Action_New_Event</name>
+    </customLabels>
+    <customLabels>
+        <label>Neue Aufgabe</label>
+        <name>Time_Drive_Action_New_Task</name>
+    </customLabels>
+    <customLabels>
+        <label>Ganzt.</label>
+        <name>Time_Drive_All_Day</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} hinzugefügt</label>
+        <name>Time_Drive_Announce_Added</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} bis {1} hinzugefügt</label>
+        <name>Time_Drive_Announce_Added_Range</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} wird angezeigt</label>
+        <name>Time_Drive_Announce_Showing</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} bis {1} werden angezeigt</label>
+        <name>Time_Drive_Announce_Showing_Range</name>
+    </customLabels>
+    <customLabels>
+        <label>Heute wird angezeigt</label>
+        <name>Time_Drive_Announce_Today</name>
+    </customLabels>
+    <customLabels>
+        <label>Nichts zwischen {0} und {1}</label>
+        <name>Time_Drive_Between</name>
+    </customLabels>
+    <customLabels>
+        <label>Uhrzeiten und Daten anzeigen</label>
+        <name>Time_Drive_Button_Lite_Off</name>
+    </customLabels>
+    <customLabels>
+        <label>Nur Titel</label>
+        <name>Time_Drive_Button_Lite_On</name>
+    </customLabels>
+    <customLabels>
+        <label>Aktualisieren</label>
+        <name>Time_Drive_Button_Refresh</name>
+    </customLabels>
+    <customLabels>
+        <label>Alles anzeigen</label>
+        <name>Time_Drive_Button_Show_Everything</name>
+    </customLabels>
+    <customLabels>
+        <label>Heute</label>
+        <name>Time_Drive_Button_Today</name>
+    </customLabels>
+    <customLabels>
+        <label>Erneut versuchen</label>
+        <name>Time_Drive_Button_Try_Again</name>
+    </customLabels>
+    <customLabels>
+        <label>Alle reduzieren</label>
+        <name>Time_Drive_Collapse_All</name>
+    </customLabels>
+    <customLabels>
+        <label>Möchten Sie dieses Element ({0}) wirklich löschen?</label>
+        <name>Time_Drive_Delete_Confirm</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} „{1}“ wurde gelöscht.</label>
+        <name>Time_Drive_Delete_Done_Named</name>
+    </customLabels>
+    <customLabels>
+        <label>Löschen nicht möglich</label>
+        <name>Time_Drive_Delete_Failed</name>
+    </customLabels>
+    <customLabels>
+        <label>Element</label>
+        <name>Time_Drive_Delete_Item</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} löschen</label>
+        <name>Time_Drive_Delete_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>Wird gelöscht…</label>
+        <name>Time_Drive_Deleting</name>
+    </customLabels>
+    <customLabels>
+        <label>Details ausblenden</label>
+        <name>Time_Drive_Details_Hide</name>
+    </customLabels>
+    <customLabels>
+        <label>Details anzeigen</label>
+        <name>Time_Drive_Details_Show</name>
+    </customLabels>
+    <customLabels>
+        <label>Details: {0}</label>
+        <name>Time_Drive_Details_Toggle</name>
+    </customLabels>
+    <customLabels>
+        <label>Unzustellbar</label>
+        <name>Time_Drive_Email_Bounced</name>
+    </customLabels>
+    <customLabels>
+        <label>Geöffnet</label>
+        <name>Time_Drive_Email_Opened</name>
+    </customLabels>
+    <customLabels>
+        <label>Ungeöffnet</label>
+        <name>Time_Drive_Email_Unopened</name>
+    </customLabels>
+    <customLabels>
+        <label>Für diesen Kunden gibt es noch keine Interaktionen.</label>
+        <name>Time_Drive_Empty_Customer</name>
+    </customLabels>
+    <customLabels>
+        <label>Keine Daten</label>
+        <name>Time_Drive_Empty_No_Match</name>
+    </customLabels>
+    <customLabels>
+        <label>Mit diesen Filtern wurden keine Daten gefunden.</label>
+        <name>Time_Drive_Empty_Nothing</name>
+    </customLabels>
+    <customLabels>
+        <label>Nicht eingerichtet</label>
+        <name>Time_Drive_Empty_Setup_Heading</name>
+    </customLabels>
+    <customLabels>
+        <label>Zwischen {0} und {1} wurden keine Daten gefunden. Prüfen Sie Ihre Filter und versuchen Sie es erneut.</label>
+        <name>Time_Drive_Empty_Window</name>
+    </customLabels>
+    <customLabels>
+        <label>Sie haben keinen Zugriff auf einige der benötigten Daten.</label>
+        <name>Time_Drive_Err_Access</name>
+    </customLabels>
+    <customLabels>
+        <label>Das Laden hat zu lange gedauert.</label>
+        <name>Time_Drive_Err_Busy</name>
+    </customLabels>
+    <customLabels>
+        <label>Datensatz nicht verfügbar.</label>
+        <name>Time_Drive_Err_Not_Found</name>
+    </customLabels>
+    <customLabels>
+        <label>Salesforce ist nicht erreichbar.</label>
+        <name>Time_Drive_Err_Offline</name>
+    </customLabels>
+    <customLabels>
+        <label>Etwas Benötigtes fehlt in dieser Organisation.</label>
+        <name>Time_Drive_Err_Setup</name>
+    </customLabels>
+    <customLabels>
+        <label>Es ist ein Fehler aufgetreten.</label>
+        <name>Time_Drive_Err_Unknown</name>
+    </customLabels>
+    <customLabels>
+        <label>Zeitachse nicht geladen</label>
+        <name>Time_Drive_Error_Load_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>Einige Elemente fehlen</label>
+        <name>Time_Drive_Error_Partial_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>Zeitachse nicht lesbar</label>
+        <name>Time_Drive_Error_Read_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>Alle erweitern</label>
+        <name>Time_Drive_Expand_All</name>
+    </customLabels>
+    <customLabels>
+        <label>In dieser Ansicht gibt es nichts zu filtern.</label>
+        <name>Time_Drive_Filter_None</name>
+    </customLabels>
+    <customLabels>
+        <label>Filter</label>
+        <name>Time_Drive_Filters</name>
+    </customLabels>
+    <customLabels>
+        <label>Filter, {0} aktiv</label>
+        <name>Time_Drive_Filters_Active</name>
+    </customLabels>
+    <customLabels>
+        <label>Anwenden</label>
+        <name>Time_Drive_Filters_Apply</name>
+    </customLabels>
+    <customLabels>
+        <label>Abbrechen</label>
+        <name>Time_Drive_Filters_Cancel</name>
+    </customLabels>
+    <customLabels>
+        <label>Schließen</label>
+        <name>Time_Drive_Filters_Close</name>
+    </customLabels>
+    <customLabels>
+        <label>Ereignistypen</label>
+        <name>Time_Drive_Filters_Event_Types</name>
+    </customLabels>
+    <customLabels>
+        <label>Zurück zu {0}</label>
+        <name>Time_Drive_Group_Back</name>
+    </customLabels>
+    <customLabels>
+        <label>Zurück zum Datensatz</label>
+        <name>Time_Drive_Group_Back_Record</name>
+    </customLabels>
+    <customLabels>
+        <label>Datum</label>
+        <name>Time_Drive_Group_Col_Date</name>
+    </customLabels>
+    <customLabels>
+        <label>Datum/Uhrzeit</label>
+        <name>Time_Drive_Group_Col_Date_Time</name>
+    </customLabels>
+    <customLabels>
+        <label>Name</label>
+        <name>Time_Drive_Group_Col_Name</name>
+    </customLabels>
+    <customLabels>
+        <label>Übersicht</label>
+        <name>Time_Drive_Group_Col_Summary</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}+ Elemente</label>
+        <name>Time_Drive_Group_Count_More</name>
+    </customLabels>
+    <customLabels>
+        <label>Von</label>
+        <name>Time_Drive_Group_From</name>
+    </customLabels>
+    <customLabels>
+        <label>Elemente</label>
+        <name>Time_Drive_Group_Heading</name>
+    </customLabels>
+    <customLabels>
+        <label>Wird geladen</label>
+        <name>Time_Drive_Group_Loading</name>
+    </customLabels>
+    <customLabels>
+        <label>Weitere Elemente werden geladen</label>
+        <name>Time_Drive_Group_Loading_More</name>
+    </customLabels>
+    <customLabels>
+        <label>Nichts anzuzeigen</label>
+        <name>Time_Drive_Group_Nothing</name>
+    </customLabels>
+    <customLabels>
+        <label>Diese Elemente haben sich möglicherweise geändert, seit die Zeitachse angezeigt wurde. Aktualisieren Sie oder kehren Sie zur Zeitachse zurück.</label>
+        <name>Time_Drive_Group_Nothing_Body</name>
+    </customLabels>
+    <customLabels>
+        <label>Sie listet die Elemente hinter einer der gruppierten Zeilen einer Zeitachse auf.</label>
+        <name>Time_Drive_Group_Open_Body</name>
+    </customLabels>
+    <customLabels>
+        <label>Diese Seite über eine Zeitachse öffnen</label>
+        <name>Time_Drive_Group_Open_From</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} Elemente angezeigt</label>
+        <name>Time_Drive_Group_Shown</name>
+    </customLabels>
+    <customLabels>
+        <label>Nach Datum sortiert</label>
+        <name>Time_Drive_Group_Sorted</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} Datensätze gruppiert</label>
+        <name>Time_Drive_Group_Summary_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>1 Datensatz gruppiert</label>
+        <name>Time_Drive_Group_Summary_One</name>
+    </customLabels>
+    <customLabels>
+        <label>Bis</label>
+        <name>Time_Drive_Group_To</name>
+    </customLabels>
+    <customLabels>
+        <label>Alle {0} {1} anzeigen</label>
+        <name>Time_Drive_Group_View_All</name>
+    </customLabels>
+    <customLabels>
+        <label>Klicken zum Scrollen</label>
+        <name>Time_Drive_Hint_Scroll</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} Elemente</label>
+        <name>Time_Drive_Items_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>1 Element</label>
+        <name>Time_Drive_Items_One</name>
+    </customLabels>
+    <customLabels>
+        <label>Anrufe</label>
+        <name>Time_Drive_Legend_Calls</name>
+    </customLabels>
+    <customLabels>
+        <label>E-Mails</label>
+        <name>Time_Drive_Legend_Emails</name>
+    </customLabels>
+    <customLabels>
+        <label>Dateien &amp; Notizen</label>
+        <name>Time_Drive_Legend_Files</name>
+    </customLabels>
+    <customLabels>
+        <label>Elemente</label>
+        <name>Time_Drive_Many_Other</name>
+    </customLabels>
+    <customLabels>
+        <label>Neue Aktivität</label>
+        <name>Time_Drive_Menu_New_Activity</name>
+    </customLabels>
+    <customLabels>
+        <label>Ansichten</label>
+        <name>Time_Drive_Menu_Views</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} weitere Elemente: nach unten scrollen</label>
+        <name>Time_Drive_More_Aria_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} weitere Elemente am {1}: nach unten scrollen</label>
+        <name>Time_Drive_More_Aria_Many_On</name>
+    </customLabels>
+    <customLabels>
+        <label>1 weiteres Element: nach unten scrollen</label>
+        <name>Time_Drive_More_Aria_One</name>
+    </customLabels>
+    <customLabels>
+        <label>1 weiteres Element am {0}: nach unten scrollen</label>
+        <name>Time_Drive_More_Aria_One_On</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} weitere</label>
+        <name>Time_Drive_More_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>1 weitere</label>
+        <name>Time_Drive_More_One</name>
+    </customLabels>
+    <customLabels>
+        <label>jetzt</label>
+        <name>Time_Drive_Near_Now</name>
+    </customLabels>
+    <customLabels>
+        <label>diesem Monat</label>
+        <name>Time_Drive_Near_This_Month</name>
+    </customLabels>
+    <customLabels>
+        <label>dieser Woche</label>
+        <name>Time_Drive_Near_This_Week</name>
+    </customLabels>
+    <customLabels>
+        <label>heute</label>
+        <name>Time_Drive_Near_Today</name>
+    </customLabels>
+    <customLabels>
+        <label>Dieses Objekt wurde von Ihrem Administrator noch nicht eingerichtet.</label>
+        <name>Time_Drive_No_Sources</name>
+    </customLabels>
+    <customLabels>
+        <label>(Kein Titel)</label>
+        <name>Time_Drive_No_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>Diesen Monat nichts</label>
+        <name>Time_Drive_Nothing_Month</name>
+    </customLabels>
+    <customLabels>
+        <label>Heute nichts</label>
+        <name>Time_Drive_Nothing_Today</name>
+    </customLabels>
+    <customLabels>
+        <label>Diese Woche nichts</label>
+        <name>Time_Drive_Nothing_Week</name>
+    </customLabels>
+    <customLabels>
+        <label>Zeitachsenübersicht: Tag auswählen</label>
+        <name>Time_Drive_Overview_Pick_Day</name>
+    </customLabels>
+    <customLabels>
+        <label>Gruppiert</label>
+        <name>Time_Drive_Pill_Grouped</name>
+    </customLabels>
+    <customLabels>
+        <label>Filter entfernen: {0}</label>
+        <name>Time_Drive_Pill_Remove</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: nicht lesbar.</label>
+        <name>Time_Drive_Prob_Message</name>
+    </customLabels>
+    <customLabels>
+        <label>Voraus</label>
+        <name>Time_Drive_Range_Ahead</name>
+    </customLabels>
+    <customLabels>
+        <label>Zurück</label>
+        <name>Time_Drive_Range_Back</name>
+    </customLabels>
+    <customLabels>
+        <label>Zeitraum</label>
+        <name>Time_Drive_Range_Heading</name>
+    </customLabels>
+    <customLabels>
+        <label>1 Monat</label>
+        <name>Time_Drive_Range_Month</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} Monate</label>
+        <name>Time_Drive_Range_Months</name>
+    </customLabels>
+    <customLabels>
+        <label>Keine</label>
+        <name>Time_Drive_Range_None</name>
+    </customLabels>
+    <customLabels>
+        <label>1 Jahr</label>
+        <name>Time_Drive_Range_Year</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} Jahre</label>
+        <name>Time_Drive_Range_Years</name>
+    </customLabels>
+    <customLabels>
+        <label>Interaktionselemente</label>
+        <name>Time_Drive_Region_Items</name>
+    </customLabels>
+    <customLabels>
+        <label>Aktionen</label>
+        <name>Time_Drive_Row_Actions</name>
+    </customLabels>
+    <customLabels>
+        <label>Es wird geprüft, was Sie tun können…</label>
+        <name>Time_Drive_Row_Checking</name>
+    </customLabels>
+    <customLabels>
+        <label>Bearbeiten und Löschen nicht möglich.</label>
+        <name>Time_Drive_Row_No_Actions</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: Eine Apex-Quelle benötigt eine Anbieterklasse.</label>
+        <name>Time_Drive_Server_Apex_Needs_Class</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: {1} erweitert TimeDriveApexSource nicht.</label>
+        <name>Time_Drive_Server_Bad_Provider</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} „{1}“ ist keiner der Werte 0,25, 0,5, 1, 2, 3 ... 10 Jahre und wird daher nicht verwendet.</label>
+        <name>Time_Drive_Server_Bad_Years</name>
+    </customLabels>
+    <customLabels>
+        <label>Data 360 ist in dieser Organisation nicht verfügbar, daher werden die zugehörigen Quellen übersprungen.</label>
+        <name>Time_Drive_Server_Data360_Missing</name>
+    </customLabels>
+    <customLabels>
+        <label>Die Interaktion {0} ist nicht im Datenmodell dieser Organisation enthalten ({1}).</label>
+        <name>Time_Drive_Server_Dmo_Missing</name>
+    </customLabels>
+    <customLabels>
+        <label>Identitätsverknüpfungen</label>
+        <name>Time_Drive_Server_Identity_Links</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: Es werden nur {1} Elemente angezeigt (die maximale Anzahl an Datensätzen), daher fehlen möglicherweise einige.</label>
+        <name>Time_Drive_Server_Max_Records</name>
+    </customLabels>
+    <customLabels>
+        <label>Nein</label>
+        <name>Time_Drive_Server_No</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: {1} hat kein Feld {2}.</label>
+        <name>Time_Drive_Server_No_Field</name>
+    </customLabels>
+    <customLabels>
+        <label>Kein Identitätsverknüpfungsobjekt ({0}): Es wird nur die Interaktion der eigenen Einzelperson des Kontakts angezeigt.</label>
+        <name>Time_Drive_Server_No_Identity_Link</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: Legen Sie ein übergeordnetes Feld oder ein Verbindungsobjekt fest, um die Datensätze mit der Seite zu verknüpfen.</label>
+        <name>Time_Drive_Server_No_Link</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: Es gibt kein Objekt namens {1}.</label>
+        <name>Time_Drive_Server_No_Object</name>
+    </customLabels>
+    <customLabels>
+        <label>An: {0}</label>
+        <name>Time_Drive_Server_Sent_To</name>
+    </customLabels>
+    <customLabels>
+        <label>An: {0} und 1 weitere</label>
+        <name>Time_Drive_Server_Sent_To_One_Other</name>
+    </customLabels>
+    <customLabels>
+        <label>An: {0} und {1} weitere</label>
+        <name>Time_Drive_Server_Sent_To_Others</name>
+    </customLabels>
+    <customLabels>
+        <label>Ja</label>
+        <name>Time_Drive_Server_Yes</name>
+    </customLabels>
+    <customLabels>
+        <label>Zeitachse wird geladen…</label>
+        <name>Time_Drive_Status_Loading</name>
+    </customLabels>
+    <customLabels>
+        <label>Dieser Tag wird geladen</label>
+        <name>Time_Drive_Status_Loading_Day</name>
+    </customLabels>
+    <customLabels>
+        <label>Anzahlen werden aktualisiert</label>
+        <name>Time_Drive_Status_Updating_Counts</name>
+    </customLabels>
+    <customLabels>
+        <label>die Woche vom {0}</label>
+        <name>Time_Drive_The_Week_Of</name>
+    </customLabels>
+    <customLabels>
+        <label>Sonstiges</label>
+        <name>Time_Drive_Type_Other</name>
+    </customLabels>
+    <customLabels>
+        <label>Alle Typen</label>
+        <name>Time_Drive_Types_All</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} von {1} Typen</label>
+        <name>Time_Drive_Types_Some</name>
+    </customLabels>
+    <customLabels>
+        <label>Wird aktualisiert…</label>
+        <name>Time_Drive_Updating</name>
+    </customLabels>
+    <customLabels>
+        <label>Alle Elemente</label>
+        <name>Time_Drive_View_All</name>
+    </customLabels>
+    <customLabels>
+        <label>Commerce</label>
+        <name>Time_Drive_View_Commerce</name>
+    </customLabels>
+    <customLabels>
+        <label>Digital</label>
+        <name>Time_Drive_View_Digital</name>
+    </customLabels>
+    <customLabels>
+        <label>Marketing</label>
+        <name>Time_Drive_View_Marketing</name>
+    </customLabels>
+    <customLabels>
+        <label>Vertrieb</label>
+        <name>Time_Drive_View_Sales</name>
+    </customLabels>
+    <customLabels>
+        <label>Service</label>
+        <name>Time_Drive_View_Service</name>
+    </customLabels>
+    <customLabels>
+        <label>Woche vom {0}</label>
+        <name>Time_Drive_Week_Of</name>
+    </customLabels>
+    <customLabels>
+        <label>Woche vom</label>
+        <name>Time_Drive_Week_Of_Word</name>
+    </customLabels>
+</Translations>

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>67.0</apiVersion>
+    <isExposed>true</isExposed>
+    <masterLabel>Time Drive</masterLabel>
+    <description
+  >A record's engagement in time order (Contacts, Accounts and person accounts): the sources set up in Time Drive Setup, Data 360 ones included. Vertical in narrow regions, horizontal in wide ones.</description>
+    <targets>
+        <target>lightning__RecordPage</target>
+    </targets>
+    <targetConfigs>
+        <targetConfig targets="lightning__RecordPage">
+            <supportedFormFactors>
+                <supportedFormFactor type="Large" />
+                <supportedFormFactor type="Small" />
+            </supportedFormFactors>
+            <property
+        name="cardTitle"
+        label="Title"
+        description="The timeline's name for screen readers (the view's name is the visible heading)."
+        type="String"
+        default="Time Drive"
+      />
+            <property
+        name="layout"
+        label="Layout"
+        description="Auto is vertical in narrow regions and horizontal from 640px wide."
+        type="String"
+        datasource="Auto,Vertical,Horizontal"
+        default="Auto"
+        required="true"
+      />
+            <property
+        name="defaultLens"
+        label="Default Lens"
+        description="The lens the timeline opens on. People can still pick another from the heading. A lens the org doesn't offer opens on All items."
+        type="String"
+        datasource="apex://TimeDriveLensPicklist"
+        default="All"
+      />
+            <property
+        name="openAt"
+        label="Open At"
+        description="Where the timeline opens: Today (today's slot, with a placeholder when it has nothing), its earliest item or its latest. Vertical lists the newest at the top; horizontal runs earliest to latest."
+        type="String"
+        datasource="Today,Earliest item,Latest item"
+        default="Today"
+        required="true"
+      />
+            <property
+        name="activityActionsMode"
+        label="Activity Actions"
+        description="The record's activity actions (New Task, New Event, Log a Call, Email), as the page layout's Activity composer offers them. None shows nothing; One button folds them into a + menu; Inline shows a button each among the filter buttons; Full shows a button each with its name, on a line above the header (beside the buttons in a wide horizontal card)."
+        type="String"
+        datasource="None,One button,Inline,Full"
+        default="Full"
+        required="true"
+      />
+            <property
+        name="density"
+        label="Display Density"
+        description="Auto follows each user's Comfy or Compact setting. Comfy or Compact overrides it for this component."
+        type="String"
+        datasource="Auto,Comfy,Compact"
+        default="Auto"
+      />
+            <property
+        name="historyYears"
+        label="History (years)"
+        description="How far back the timeline plots: 0.25 (3 months) to 10 years."
+        type="String"
+        datasource="0.25,0.5,1,2,3,4,5,6,7,8,9,10"
+        default="1"
+        required="true"
+      />
+            <property
+        name="futureYears"
+        label="Future (years)"
+        description="How far ahead the timeline plots future-dated records (scheduled orders, close dates): None (up to today), or 0.25 to 10 years."
+        type="String"
+        datasource="None,0.25,0.5,1,2,3,4,5,6,7,8,9,10"
+        default="0.5"
+        required="true"
+      />
+            <property
+        name="allowDateRange"
+        label="Let People Narrow the Date Range"
+        description="Filters offers Back and Ahead, each up to History and Future (1 month, 3 months, 1 year ...), and remembers each person's choice. Off: everyone sees History to Future."
+        type="Boolean"
+        default="true"
+      />
+            <property
+        name="horizontalHeight"
+        label="Horizontal Mode Height (px)"
+        description="Horizontal layout only: the height of the day columns. Days with more events scroll inside their column, so the card keeps one height."
+        type="Integer"
+        default="260"
+        min="240"
+        max="1000"
+      />
+            <property
+        name="verticalHeight"
+        label="Vertical Mode Height (px)"
+        description="Vertical layout only: the list's greatest height. With a few days the list is as tall as they are; past this, items scroll inside it."
+        type="Integer"
+        default="560"
+        min="320"
+        max="1600"
+      />
+            <objects>
+                <object>Contact</object>
+                <!-- Business and person accounts. -->
+                <object>Account</object>
+                <object>Lead</object>
+            </objects>
+        </targetConfig>
+    </targetConfigs>
+</LightningComponentBundle>

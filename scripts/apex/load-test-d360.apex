@@ -8,7 +8,7 @@ String personField = 'country__c';
 String dateField = 'reservation_status_date__c'; // a Date: compared as days
 Date since = Date.newInstance(2022, 10, 1);
 Date until = Date.today().addYears(1);
-TimeShiftData360SqlRunner sql = new TimeShiftData360SqlRunner();
+TimeDriveData360SqlRunner sql = new TimeDriveData360SqlRunner();
 
 String personSql = person == 'ALL' ? 'TRUE' : personField + ' IN (\'' + person + '\')';
 String personSoql = person == 'ALL' ? personField + ' != null' : personField + ' IN :ids';

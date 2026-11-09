@@ -1,4 +1,4 @@
-// Sample Cases and Opportunities for Time Trail.
+// Sample Cases and Opportunities for Time Drive.
 // Every record is tagged '[Timeline sample]' in Description for cleanup.
 final String TAG = '[Timeline sample] ';
 List<AggregateResult> top = [

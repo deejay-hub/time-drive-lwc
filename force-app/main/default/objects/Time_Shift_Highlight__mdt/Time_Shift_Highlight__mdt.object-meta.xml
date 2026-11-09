@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
-    <description>A small icon on a Time Trail item when a field has one of the chosen values (high priority, a record type, a checkbox). Up to two per source.</description>
-    <label>Time Trail Highlight</label>
-    <pluralLabel>Time Trail Highlights</pluralLabel>
-    <visibility>Public</visibility>
-</CustomObject>

@@ -10,24 +10,24 @@ Integer cpu0 = Limits.getCpuTime();
 String outcome;
 try {
   if (mode == 'summary') {
-    TimeShiftController.TimelineSummary s = TimeShiftController.getSummary(
+    TimeDriveController.TimelineSummary s = TimeDriveController.getSummary(
       contactId, null, null, '2', '1'
     );
     Integer busiest = 0;
-    for (TimeShiftController.DaySummary d : s.days) {
+    for (TimeDriveController.DaySummary d : s.days) {
       busiest = Math.max(busiest, d.count);
     }
     outcome = 'total=' + s.total + ' days=' + s.days.size() + ' unit=' + s.unit + ' busiest=' + busiest + ' warnings=' + s.warnings;
     // The pages the next runs ask for: newest, busiest and quietest 7 days.
     List<String> newest = new List<String>();
     String today = Datetime.now().format('yyyy-MM-dd');
-    for (TimeShiftController.DaySummary d : s.days) {
+    for (TimeDriveController.DaySummary d : s.days) {
       if (newest.size() < 7 && d.key <= today) newest.add(d.key);
     }
     System.debug('KEYS_NEWEST ' + String.join(newest, ','));
     // Busiest and quietest days: counts as zero-padded text, sorted.
     List<String> ranked = new List<String>();
-    for (TimeShiftController.DaySummary d : s.days) {
+    for (TimeDriveController.DaySummary d : s.days) {
       ranked.add(String.valueOf(1000000 + d.count) + '|' + d.key);
     }
     ranked.sort();
@@ -40,12 +40,12 @@ try {
     System.debug('KEYS_BUSY ' + String.join(busy, ','));
     System.debug('KEYS_QUIET ' + String.join(quiet, ','));
   } else {
-    List<TimeShiftController.EngagementEvent> page = TimeShiftController.getDays(
+    List<TimeDriveController.EngagementEvent> page = TimeDriveController.getDays(
       contactId, null, null, '2', '1', keys, null
     );
     Integer grouped = 0;
     Integer represented = 0;
-    for (TimeShiftController.EngagementEvent e : page) {
+    for (TimeDriveController.EngagementEvent e : page) {
       if (e.grouped == true) {
         grouped++;
         represented += e.groupCount == null ? 0 : e.groupCount;

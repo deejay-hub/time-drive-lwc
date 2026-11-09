@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>Campaign Members</label>
+    <protected>false</protected>
+    <values>
+        <field>Active__c</field>
+        <value xsi:type="xsd:boolean">true</value>
+    </values>
+    <values>
+        <field>Org_Fit__c</field>
+        <value xsi:type="xsd:boolean">true</value>
+    </values>
+    <values>
+        <field>Sequence__c</field>
+        <value xsi:type="xsd:double">60</value>
+    </values>
+    <values>
+        <field>Parent_Object__c</field>
+        <value xsi:type="xsd:string">Lead</value>
+    </values>
+    <values>
+        <field>Source_Mode__c</field>
+        <value xsi:type="xsd:string">Always</value>
+    </values>
+    <values>
+        <field>Kind__c</field>
+        <value xsi:type="xsd:string">Salesforce</value>
+    </values>
+    <values>
+        <field>Object_Name__c</field>
+        <value xsi:type="xsd:string">CampaignMember</value>
+    </values>
+    <values>
+        <field>Parent_Field__c</field>
+        <value xsi:type="xsd:string">LeadId</value>
+    </values>
+    <values>
+        <field>Date_Field__c</field>
+        <value xsi:type="xsd:string">CreatedDate</value>
+    </values>
+    <values>
+        <field>Title__c</field>
+        <value xsi:type="xsd:string">{Campaign.Name}</value>
+    </values>
+    <values>
+        <field>Subtitle__c</field>
+        <value xsi:type="xsd:string">{Status}</value>
+    </values>
+    <values>
+        <field>Record_Id_Field__c</field>
+        <value xsi:type="xsd:string">CampaignId</value>
+    </values>
+    <values>
+        <field>Event_Type__c</field>
+        <value xsi:type="xsd:string">campaign_member</value>
+    </values>
+    <values>
+        <field>Category__c</field>
+        <value xsi:type="xsd:string">Marketing</value>
+    </values>
+    <values>
+        <field>Icon__c</field>
+        <value xsi:type="xsd:string">standard:campaign_members</value>
+    </values>
+    <values>
+        <field>Icon_Colour__c</field>
+        <value xsi:type="xsd:string">#FF5D2D</value>
+    </values>
+    <values>
+        <field>Max_Records__c</field>
+        <value xsi:type="xsd:double">1000</value>
+    </values>
+</CustomMetadata>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customSettingsType>Hierarchy</customSettingsType>
+    <description>What a person last chose on the timeline: the lens and whether labels are hidden. One row for each user, written by the timeline; filters and anything else are not kept.</description>
+    <enableFeeds>false</enableFeeds>
+    <label>Time Drive Preference</label>
+    <visibility>Public</visibility>
+</CustomObject>

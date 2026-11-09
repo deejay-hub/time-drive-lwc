@@ -16,7 +16,7 @@
 //
 // Run: sf apex run --file scripts/apex/seed-test-contacts.apex --target-org <org>
 final String TAG = '[Test data]';
-final String EMAIL_DOMAIN = '@timeshift-test.example.com';
+final String EMAIL_DOMAIN = '@timedrive-test.example.com';
 Boolean cleanOnly = false;
 
 List<String> lastNames = new List<String>{ 'Empty', 'OneYear', 'TwoYears', 'FiveYears' };
