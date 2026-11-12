@@ -64,7 +64,7 @@ A lens narrows the timeline to one area, such as Sales or Service. Each source i
 
 ### Can I move sources from a sandbox to production?
 
-Yes. Sources, their detail fields and lenses are custom metadata records (`Time_Drive_Source__mdt`, `Time_Drive_Detail_Field__mdt`, `Time_Drive_View__mdt`), so they deploy with change sets, the Salesforce CLI or your pipeline like any other metadata.
+Yes, but as data, not metadata. What you set up in Time Drive Setup is kept in records: each page's Time Drive (`Time_Drive__c`), its sources with their detail fields and lenses (`Time_Drive_Record__c`), and which lenses the picker offers (`Time_Drive_Setup__c`). Move them with Data Loader or the Salesforce CLI's data commands (`sf data export tree` and `sf data import tree`), Time Drives before their sources. The templates and lenses Time Drive ships with come with the package, so they're already in every org.
 
 ## Using the timeline
 

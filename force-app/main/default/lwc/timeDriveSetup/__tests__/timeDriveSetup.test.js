@@ -13,7 +13,7 @@ import setActive from "@salesforce/apex/TimeDriveSetupController.setActive";
 import setLenses from "@salesforce/apex/TimeDriveSetupController.setLenses";
 import save from "@salesforce/apex/TimeDriveSetupController.save";
 import TimeDriveConfirm from "c/timeDriveConfirm";
-import { subscribe } from "lightning/empApi";
+import saveViews from "@salesforce/apex/TimeDriveSetupController.saveViews";
 import { getObjectInfo } from "lightning/uiObjectInfoApi";
 import getLabelText from "@salesforce/apex/TimeDriveSetupController.getLabelText";
 import getOrgFit from "@salesforce/apex/TimeDriveSetupController.getOrgFit";
@@ -94,7 +94,7 @@ jest.mock(
 );
 jest.mock(
   "@salesforce/apex/TimeDriveSetupController.saveViews",
-  () => ({ default: jest.fn(() => Promise.resolve({ jobId: null, developerName: "Views" })) }),
+  () => ({ default: jest.fn(() => Promise.resolve({ developerName: "Views" })) }),
   { virtual: true }
 );
 jest.mock("@salesforce/apex/TimeDriveSetupController.remove", () => ({ default: jest.fn() }), { virtual: true });
@@ -115,12 +115,6 @@ jest.mock("@salesforce/apex/TimeDriveSetupController.runOrgCheck", () => ({ defa
 jest.mock("@salesforce/apex/TimeDriveSetupController.setActive", () => ({ default: jest.fn() }), {
   virtual: true
 });
-jest.mock(
-  "lightning/empApi",
-  () => ({ subscribe: jest.fn(() => Promise.resolve({})), unsubscribe: jest.fn(), onError: jest.fn() }),
-  { virtual: true }
-);
-
 const SOURCES = [
   {
     developerName: "Order_Placed",
@@ -193,7 +187,7 @@ describe("c-time-drive-setup", () => {
         }
       ]
     });
-    applyOrgFit.mockResolvedValue({ jobId: null, developerName: "Org_Fit" });
+    applyOrgFit.mockResolvedValue({ developerName: "Org_Fit" });
   });
   afterEach(() => {
     while (document.body.firstChild) document.body.removeChild(document.body.firstChild);
@@ -937,7 +931,7 @@ describe("c-time-drive-setup", () => {
     getLinks.mockResolvedValue([
       { key: "Customer__c", parentField: "Customer__c", label: "Orders whose Customer is this Contact" }
     ]);
-    save.mockResolvedValue({ developerName: "Order_Placed", jobId: "0Af000000000001" });
+    save.mockResolvedValue({ developerName: "Order_Placed" });
     const element = mount();
     const toasts = [];
     element.addEventListener("lightning__showtoast", (e) => toasts.push(e.detail));
@@ -1173,21 +1167,36 @@ describe("c-time-drive-setup", () => {
 
     async function openLenses() {
       getSources.mockResolvedValue(SOURCES_IN_LENSES);
-      let deliver;
-      subscribe.mockImplementation((channel, replay, handler) => {
-        deliver = handler;
-        return Promise.resolve({});
-      });
       const element = mount();
       await splash();
       const root = element.shadowRoot;
       root.querySelector('.site-link[data-to="lenses"]').click();
       await flush();
       await flush();
-      return { root, deliver: (payload) => deliver({ data: { payload } }) };
+      return { root };
     }
     const cell = (root, source, lens) =>
       root.querySelector(`.lens-cell lightning-input[data-source="${source}"][data-lens="${lens}"]`);
+
+    it("saves a lens switched off at once, and says so", async () => {
+      const { root } = await openLenses();
+      const toasts = [];
+      root.host.addEventListener("lightning__showtoast", (e) => toasts.push(e.detail));
+      const marketing = root.querySelector('lightning-input.lens-active[data-key="Marketing"]');
+      marketing.checked = false;
+      marketing.dispatchEvent(new CustomEvent("change"));
+      await flush();
+      await flush();
+      expect(saveViews).toHaveBeenLastCalledWith({
+        viewsJson: JSON.stringify([
+          { developerName: "All", active: true },
+          { developerName: "Commerce", active: true },
+          { developerName: "Marketing", active: false }
+        ])
+      });
+      expect(toasts.map((t) => t.title)).toContain("Views saved");
+      expect(root.querySelector('lightning-input.lens-active[data-key="Marketing"]').checked).toBe(false);
+    });
 
     it("is in the menu, and the guided step opens it", async () => {
       // The steps after the org check open once it has been done.
@@ -1252,7 +1261,7 @@ describe("c-time-drive-setup", () => {
     });
 
     it("puts a source in a lens as its cell is ticked, in addition to the ones it is in, and saves at once", async () => {
-      setLenses.mockResolvedValue({ jobId: null, developerName: "Order_Placed" });
+      setLenses.mockResolvedValue({ developerName: "Order_Placed" });
       const { root } = await openLenses();
       const marketing = cell(root, "Order_Placed", "Marketing");
       marketing.checked = true;
@@ -1264,7 +1273,7 @@ describe("c-time-drive-setup", () => {
     });
 
     it("takes a source out of one lens and leaves the others", async () => {
-      setLenses.mockResolvedValue({ jobId: null, developerName: "Tasks" });
+      setLenses.mockResolvedValue({ developerName: "Tasks" });
       getSources.mockResolvedValue([
         {
           ...SOURCES_IN_LENSES[1],
@@ -1301,12 +1310,12 @@ describe("c-time-drive-setup", () => {
   });
 
   it("switches a source off in place and waits for the save", async () => {
-    setActive.mockResolvedValue({ jobId: "0Af000000000001AAA", developerName: "Order_Placed" });
-    let deliver;
-    subscribe.mockImplementation((channel, replay, handler) => {
-      deliver = handler;
-      return Promise.resolve({});
-    });
+    let finish;
+    setActive.mockReturnValue(
+      new Promise((resolve) => {
+        finish = () => resolve({ developerName: "Order_Placed" });
+      })
+    );
     const element = mount();
     await splash();
     await toPages(element.shadowRoot);
@@ -1322,7 +1331,7 @@ describe("c-time-drive-setup", () => {
     // The save lands while the list is still being read again: the row shows
     // the new state at once, not the old one for a moment.
     getSources.mockReturnValue(new Promise(() => {}));
-    deliver({ data: { payload: { Job_Id__c: "0Af000000000001AAA", Status__c: "Succeeded" } } });
+    finish();
     await flush();
     expect(element.shadowRoot.querySelector(".pending")).toBeNull();
     expect(element.shadowRoot.querySelector('lightning-input[data-name="Order_Placed"]').checked).toBe(false);

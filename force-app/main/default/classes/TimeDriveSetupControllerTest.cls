@@ -167,7 +167,6 @@ private class TimeDriveSetupControllerTest {
         DeveloperName = 'Service',
         Label = 'Service',
         Menu_Label__c = '$Label.Time_Drive_View_Service',
-        Active__c = true,
         Sequence__c = 40
       ),
       new Time_Drive_View__mdt(
@@ -176,9 +175,11 @@ private class TimeDriveSetupControllerTest {
         Menu_Label__c = '$Label.Time_Drive_View_All',
         Sequence__c = 99
       ),
-      new Time_Drive_View__mdt(DeveloperName = 'Sales', Label = 'Sales', Active__c = true, Sequence__c = 10),
-      new Time_Drive_View__mdt(DeveloperName = 'Digital', Label = 'Digital', Active__c = false, Sequence__c = 30)
+      new Time_Drive_View__mdt(DeveloperName = 'Sales', Label = 'Sales', Sequence__c = 10),
+      new Time_Drive_View__mdt(DeveloperName = 'Digital', Label = 'Digital', Sequence__c = 30)
     };
+    // Switched off in Setup before (Gone is a view that's since been deleted).
+    insert new Time_Drive_Setup__c(Name = 'Org', Hidden_Views__c = 'Digital,Gone');
     // All first, then by sequence; names come from custom labels (a blank
     // one reads as the view's label); an inactive view isn't offered.
     List<TimeDriveController.ViewOption> views = TimeDriveController.getViews();
@@ -196,22 +197,26 @@ private class TimeDriveSetupControllerTest {
     Assert.isTrue(drafts[0].active, 'All is always offered');
     Assert.isFalse(drafts[2].active, drafts[2].developerName);
 
-    // Making a view inactive saves just its record, as it was but for Active.
+    // Switching views off and on is kept on the org's Setup record at once;
+    // views not sent keep their state, and deleted ones drop out.
     Assert.areEqual(
-      'test-job',
+      'Views',
       TimeDriveSetupController.saveViews(
           '[{"developerName":"Service","active":false},{"developerName":"Sales","active":true}]'
         )
-        .jobId
+        .developerName
     );
-    Metadata.CustomMetadata m = TimeDriveSetupController.viewMetadata(TimeDriveConfig.testViews[0], false);
-    Assert.areEqual('Time_Drive_View.Service', m.fullName);
-    Assert.areEqual('Service', m.label);
-    Assert.areEqual(3, m.values.size());
-    Assert.isNull(
-      TimeDriveSetupController.saveViews('[{"developerName":"Sales","active":true}]').jobId,
-      'nothing changed, nothing deployed'
+    Assert.areEqual('Digital,Service', [SELECT Hidden_Views__c FROM Time_Drive_Setup__c].Hidden_Views__c);
+    Assert.areEqual(1, [SELECT COUNT() FROM Time_Drive_Setup__c], 'one record for the org');
+    views = TimeDriveController.getViews();
+    Assert.areEqual(2, views.size(), 'All and Sales');
+    Assert.areEqual('Sales', views[1].value);
+
+    TimeDriveSetupController.saveViews(
+      '[{"developerName":"Service","active":true},{"developerName":"Digital","active":true}]'
     );
+    Assert.isNull([SELECT Hidden_Views__c FROM Time_Drive_Setup__c].Hidden_Views__c, 'every view offered');
+    Assert.areEqual(4, TimeDriveController.getViews().size());
     for (String bad : new List<String>{ '[{"developerName":"Nope"}]', '[{"developerName":"All","active":false}]' }) {
       try {
         TimeDriveSetupController.saveViews(bad);
@@ -668,7 +673,6 @@ private class TimeDriveSetupControllerTest {
     d.details.add(detail);
     d.active = true;
     TimeDriveSetupController.SaveTicket ticket = TimeDriveSetupController.save(JSON.serialize(d));
-    Assert.isNull(ticket.jobId, 'A record is written at once: no deployment to wait for');
     Assert.areEqual('Orders_from_setup', ticket.developerName);
 
     Time_Drive_Record__c r = [
@@ -796,11 +800,11 @@ private class TimeDriveSetupControllerTest {
   @IsTest
   static void aSourceIsSwitchedOnAndOffAndRemovedStraightAway() {
     String key = saved('Switched');
-    Assert.isNull(TimeDriveSetupController.setActive(key, false).jobId, 'A record is written at once');
+    Assert.areEqual(key, TimeDriveSetupController.setActive(key, false).developerName);
     Assert.isFalse([SELECT Active__c FROM Time_Drive_Record__c WHERE Key__c = :key].Active__c);
     TimeDriveSetupController.setActive(key, true);
     Assert.isTrue([SELECT Active__c FROM Time_Drive_Record__c WHERE Key__c = :key].Active__c);
-    Assert.isNull(TimeDriveSetupController.remove(key).jobId);
+    Assert.areEqual(key, TimeDriveSetupController.remove(key).developerName);
     Assert.areEqual(0, [SELECT COUNT() FROM Time_Drive_Record__c WHERE Key__c = :key], 'Removing deletes it');
     // A source that isn't there says so, whichever way it is changed.
     for (Integer i = 0; i < 2; i++) {
@@ -882,7 +886,7 @@ private class TimeDriveSetupControllerTest {
     Assert.isFalse(offered.isEmpty(), 'The shipped templates are offered');
     TimeDriveSetupController.TemplateOption first = offered[0];
     Assert.isFalse(first.added);
-    Assert.isNull(TimeDriveSetupController.useTemplate(first.key).jobId);
+    Assert.isNotNull(TimeDriveSetupController.useTemplate(first.key).developerName);
     Time_Drive_Record__c copy = [
       SELECT Template_Key__c, Active__c
       FROM Time_Drive_Record__c
@@ -1157,17 +1161,6 @@ private class TimeDriveSetupControllerTest {
       names.add(o.value);
     }
     Assert.isFalse(names.contains('TimeDriveSoqlProvider'), 'Built-in providers need no class');
-  }
-
-  @IsTest
-  static void publishesTheDeploymentResult() {
-    Metadata.DeployResult result = new Metadata.DeployResult();
-    result.id = String.valueOf(fakeId('0Af', 1)).left(15);
-    result.status = Metadata.DeployStatus.Succeeded;
-    Test.startTest();
-    new TimeDriveSetupController.SaveResult('Order_Placed').handleResult(result, null);
-    Assert.areEqual(1, Limits.getPublishImmediateDml(), 'The result is published');
-    Test.stopTest();
   }
 
   @IsTest

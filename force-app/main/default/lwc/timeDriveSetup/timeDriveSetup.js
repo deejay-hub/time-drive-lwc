@@ -3,7 +3,6 @@ import { getObjectInfo } from "lightning/uiObjectInfoApi";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
 import TimeDriveConfirm from "c/timeDriveConfirm";
 import TimeDriveOrgCheck from "c/timeDriveOrgCheck";
-import { subscribe, unsubscribe, onError } from "lightning/empApi";
 import { loadStyle } from "lightning/platformResourceLoader";
 import FONTS from "@salesforce/resourceUrl/timeDriveSetupFonts";
 import ASSETS from "@salesforce/resourceUrl/timeDriveAssets";
@@ -80,13 +79,8 @@ const SAMPLE_NAMES = {
 };
 // WCAG 2.2 non-text contrast (1.4.11): the white icon on its colour.
 const MIN_CONTRAST = 3;
-const RESULT_CHANNEL = "/event/Time_Drive_Setup_Result__e";
-// How long to wait for a save's result before saying it's taking a while.
-const SAVE_PATIENCE = 90000;
 // How long reading an object (its fields and links) may take before the step says so.
 const SCHEMA_PATIENCE = 20000;
-// The job id of a save that needed no deployment.
-const DONE = "done";
 // Results a search list renders at once; typing narrows the rest.
 const RESULTS_SHOWN = 50;
 
@@ -715,7 +709,6 @@ export default class TimeDriveSetup extends LightningElement {
   saving;
   saved = false;
   saveError;
-  subscription;
 
   connectedCallback() {
     this.dataSpacesReady = this.loadDataSpaces();
@@ -732,7 +725,6 @@ export default class TimeDriveSetup extends LightningElement {
     window.addEventListener("scroll", this._onScroll, { passive: true });
     this.progressLoaded = this.loadProgress();
     this.loadSources();
-    this.listen();
   }
 
   renderedCallback() {
@@ -802,76 +794,30 @@ export default class TimeDriveSetup extends LightningElement {
   disconnectedCallback() {
     window.removeEventListener("resize", this._onResize);
     window.removeEventListener("scroll", this._onScroll);
-    clearTimeout(this.saving?.timer);
-    if (this.subscription) unsubscribe(this.subscription, () => {});
   }
 
   // ---- saving results ------------------------------------------------------
 
-  async listen() {
-    onError((error) => console.warn("Time Drive Setup: streaming error", JSON.stringify(error)));
-    try {
-      this.subscription = await subscribe(RESULT_CHANNEL, -1, (message) => this.handleResult(message));
-    } catch (e) {
-      console.warn("Time Drive Setup: can't listen for save results", e);
-    }
+  // A source's row while its change is saved: "Making active…", "Removing…".
+  pend(name, change) {
+    this.pending = { ...this.pending, [name]: change };
   }
 
-  // A save written straight to records has no deployment to wait for (its
-  // ticket has no job): it is done as soon as it returns.
-  settleIfDone(ticket) {
-    if (!ticket.jobId) this.handleResult({ data: { payload: { Job_Id__c: DONE, Status__c: "Succeeded" } } });
-  }
-
-  handleResult(message) {
-    const payload = message?.data?.payload ?? {};
-    const job = (payload.Job_Id__c ?? "").slice(0, 15);
-    const succeeded = payload.Status__c === "Succeeded";
-    if (this.viewSaving && this.viewSaving.jobId.slice(0, 15) === job) {
-      clearTimeout(this.viewSaving.timer);
-      this.viewSaving = undefined;
-      if (succeeded) {
-        this.viewEdits = {};
-        this.guidedMark("views");
-        this.toast("success", "Views saved", "The timeline's picker offers the views you chose.");
-        this.loadViews();
-      } else {
-        this.toast("error", "The views couldn't be saved", payload.Message__c || "Try again in a moment.");
-      }
-      return;
-    }
-    if (this.saving && this.saving.jobId.slice(0, 15) === job) {
-      clearTimeout(this.saving.timer);
-      this.saving = undefined;
-      if (succeeded) {
-        this.finishSave();
-      } else {
-        this.saveError = {
-          message: "Salesforce couldn't save the source.",
-          cause: payload.Message__c || "The deployment didn't succeed. Try again in a moment."
-        };
-      }
-      return;
-    }
-    const name = Object.keys(this.pending).find((n) => this.pending[n].jobId.slice(0, 15) === job);
-    if (!name) return;
-    const { label, active, removing } = this.pending[name];
-    clearTimeout(this.pending[name].timer);
+  unpend(name) {
     const pending = { ...this.pending };
     delete pending[name];
     this.pending = pending;
-    // Show the outcome now, so the row doesn't fall back to its old state
-    // while the list is read again.
-    if (succeeded && removing) this.sources = this.sources.filter((s) => s.developerName !== name);
-    else if (succeeded) this.sources = this.sources.map((s) => (s.developerName === name ? { ...s, active } : s));
-    if (succeeded && removing) {
+  }
+
+  // A source switched on or off, or removed: shown at once, then the list is
+  // read again.
+  sourceChanged(name, label, { active, removing }) {
+    if (removing) {
+      this.sources = this.sources.filter((s) => s.developerName !== name);
       this.toast("success", `${label} removed`, "It's off the timeline.");
-    } else if (succeeded) {
-      this.toast("success", active ? `${label} is active` : `${label} is inactive`, "");
-    } else if (removing) {
-      this.toast("error", `${label} couldn't be removed`, payload.Message__c || "");
     } else {
-      this.toast("error", `${label} couldn't be made ${active ? "active" : "inactive"}`, payload.Message__c || "");
+      this.sources = this.sources.map((s) => (s.developerName === name ? { ...s, active } : s));
+      this.toast("success", active ? `${label} is active` : `${label} is inactive`, "");
     }
     this.loadSources();
   }
@@ -1142,25 +1088,26 @@ export default class TimeDriveSetup extends LightningElement {
     });
   }
 
+  // One save at a time: a switch flipped while one saves goes in the next.
   async saveViewChoices() {
+    const sent = { ...this.viewEdits };
     const views = this.viewRows.map((r) => ({ developerName: r.key, active: r.active }));
+    this.viewSaving = true;
     try {
-      const ticket = await saveViews({ viewsJson: JSON.stringify(views) });
-      if (!ticket.jobId) {
-        this.viewEdits = {};
-        this.guidedMark("views");
-        this.toast("success", "Views kept", "The picker offers the same views.");
-        return;
-      }
-      // eslint-disable-next-line @lwc/lwc/no-async-operation
-      const timer = setTimeout(() => {
-        this.viewSaving = undefined;
-        this.toast("info", "Still saving", "Salesforce is taking a while. Check back in a moment.");
-      }, SAVE_PATIENCE);
-      this.viewSaving = { jobId: ticket.jobId, timer };
+      await saveViews({ viewsJson: JSON.stringify(views) });
+      this.viewDrafts = this.viewDrafts.map((d) => {
+        return d.developerName in sent ? { ...d, active: sent[d.developerName] } : d;
+      });
+      this.viewEdits = Object.fromEntries(Object.entries(this.viewEdits).filter(([key, on]) => sent[key] !== on));
+      this.guidedMark("views");
+      this.toast("success", "Views saved", "The timeline's picker offers the views you chose.");
     } catch (e) {
+      this.viewEdits = {};
       this.toast("error", "The views couldn't be saved", plainError(e).message);
+    } finally {
+      this.viewSaving = false;
     }
+    if (Object.keys(this.viewEdits).length) this.saveViewChoices();
   }
 
   guidedMark(key) {
@@ -1898,8 +1845,7 @@ export default class TimeDriveSetup extends LightningElement {
     const ok = await TimeDriveConfirm.open({
       size: "small",
       title: `Remove ${source.label}?`,
-      message:
-        "It comes off the timeline and out of this list. (To delete it for good, use Custom Metadata Types in Setup.)",
+      message: "It comes off the timeline and out of this list, for good.",
       confirmLabel: "Remove"
     });
     if (!ok) return;
@@ -1907,16 +1853,13 @@ export default class TimeDriveSetup extends LightningElement {
       this.viewing = undefined;
       this.show("parent");
     }
+    this.pend(name, { active: false, removing: true });
     try {
-      const ticket = await removeSource({ developerName: name });
-      // eslint-disable-next-line @lwc/lwc/no-async-operation
-      const timer = setTimeout(() => this.slowToggle(name), SAVE_PATIENCE);
-      this.pending = {
-        ...this.pending,
-        [name]: { jobId: ticket.jobId || DONE, active: false, removing: true, label: source.label, timer }
-      };
-      this.settleIfDone(ticket);
+      await removeSource({ developerName: name });
+      this.unpend(name);
+      this.sourceChanged(name, source.label, { removing: true });
     } catch (e) {
+      this.unpend(name);
       this.toast("error", `${source.label} couldn't be removed`, plainError(e).message);
     }
   }
@@ -2050,28 +1993,18 @@ export default class TimeDriveSetup extends LightningElement {
     const name = event.target.dataset.name;
     const active = event.target.checked;
     const source = this.sources.find((s) => s.developerName === name);
+    const toggle = event.target;
+    this.pend(name, { active });
     try {
-      const ticket = await setSourceActive({ developerName: name, active });
-      // eslint-disable-next-line @lwc/lwc/no-async-operation
-      const timer = setTimeout(() => this.slowToggle(name), SAVE_PATIENCE);
-      this.pending = {
-        ...this.pending,
-        [name]: { jobId: ticket.jobId || DONE, active, label: source.label, timer }
-      };
-      this.settleIfDone(ticket);
+      await setSourceActive({ developerName: name, active });
+      this.unpend(name);
+      this.sourceChanged(name, source.label, { active });
     } catch (e) {
-      event.target.checked = !active;
+      this.unpend(name);
+      toggle.checked = !active;
       const error = plainError(e);
       this.toast("error", `${source.label} couldn't be made ${active ? "active" : "inactive"}`, error.message);
     }
-  }
-
-  slowToggle(name) {
-    const pending = { ...this.pending };
-    delete pending[name];
-    this.pending = pending;
-    this.toast("info", "Still saving", "Salesforce is taking a while. Refresh in a minute to see the change.");
-    this.loadSources();
   }
 
   handleRetryLoad() {
@@ -4930,14 +4863,14 @@ export default class TimeDriveSetup extends LightningElement {
     if (this.saveDisabled || this.stopForContrast()) return;
     if (this.isApex && !(await this.confirmApexScale())) return;
     this.saveError = undefined;
+    this.saving = true;
     try {
       const ticket = await saveDraft({ draftJson: this.draftJson() });
       this.draft = { ...this.draft, developerName: ticket.developerName };
-      // eslint-disable-next-line @lwc/lwc/no-async-operation
-      const timer = setTimeout(() => this.slowSave(), SAVE_PATIENCE);
-      this.saving = { jobId: ticket.jobId || DONE, timer };
-      this.settleIfDone(ticket);
+      this.saving = false;
+      this.finishSave();
     } catch (e) {
+      this.saving = false;
       this.saveError = plainError(e);
     }
   }
@@ -4959,14 +4892,6 @@ export default class TimeDriveSetup extends LightningElement {
         "I've thought about how this class scales and performs with our data, and I take responsibility for it.",
       confirmLabel: "Save"
     });
-  }
-
-  slowSave() {
-    this.saving = undefined;
-    this.dirty = false;
-    this.toast("info", "Still saving", "Salesforce is taking a while. Check the list again in a minute.");
-    this.show("parent");
-    this.loadSources();
   }
 
   draftJson() {

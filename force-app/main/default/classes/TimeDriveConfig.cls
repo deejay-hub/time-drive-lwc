@@ -181,7 +181,41 @@ public with sharing class TimeDriveConfig {
    * @return true when the view is offered
    */
   public static Boolean isActive(Time_Drive_View__mdt v) {
-    return v.DeveloperName == ALL_VIEW || v.getPopulatedFieldsAsMap().get('Active__c') != false;
+    return v.DeveloperName == ALL_VIEW || !hiddenViews().contains(v.DeveloperName);
+  }
+
+  private static Set<String> hiddenViews;
+
+  /**
+   * The views Setup has switched off, kept on the org's Time_Drive_Setup__c
+   * record (read once a transaction).
+   *
+   * @return the developer names of the views the picker doesn't offer
+   */
+  public static Set<String> hiddenViews() {
+    if (hiddenViews == null) {
+      hiddenViews = new Set<String>();
+      // The org's own Setup record: read for everyone who opens a timeline.
+      List<Time_Drive_Setup__c> rows = [
+        SELECT Hidden_Views__c
+        FROM Time_Drive_Setup__c
+        WITH SYSTEM_MODE
+        ORDER BY CreatedDate
+        LIMIT 1
+      ];
+      String raw = rows.isEmpty() ? null : rows[0].Hidden_Views__c;
+      for (String name : String.isBlank(raw) ? new List<String>() : raw.split(',')) {
+        if (String.isNotBlank(name)) {
+          hiddenViews.add(name.trim());
+        }
+      }
+    }
+    return hiddenViews;
+  }
+
+  /** Reads the switched-off views again on next use (after Setup saves them). */
+  public static void forgetHiddenViews() {
+    hiddenViews = null;
   }
 
   /**
@@ -301,6 +335,8 @@ public with sharing class TimeDriveConfig {
 
   /**
    * A custom label in the viewer's language, or null when there's none by that name.
+   * Time Drive's own labels come first (null is the package's namespace once it's
+   * packaged), then the org's own ('' is the org's namespace). Unpackaged, they're one.
    *
    * @param name the custom label's name
    * @return the label text, or null when there is no such label
@@ -309,11 +345,16 @@ public with sharing class TimeDriveConfig {
     if (String.isBlank(name)) {
       return null;
     }
-    try {
-      return System.Label.get('', name.trim());
-    } catch (Exception e) {
-      return null;
+    String key = name.trim();
+    for (String namespace : new List<String>{ null, '' }) {
+      try {
+        return System.Label.get(namespace, key);
+      } catch (Exception e) {
+        // Not a label in that namespace: try the next.
+        System.debug(LoggingLevel.FINEST, 'Time Drive: no label ' + key + '. ' + e.getMessage());
+      }
     }
+    return null;
   }
 
   private static String objectPlural(String objectName) {

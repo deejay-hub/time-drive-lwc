@@ -3,8 +3,8 @@
  * words, answers the setup wizard's questions from the org's own schema
  * (objects, how they link to the page's record, their fields), previews a
  * draft source against a real record, and saves sources (new, changed or
- * switched off) through the Metadata API. Saving is asynchronous: the
- * deployment's result arrives as a Time_Drive_Setup_Result__e event.
+ * switched off) as Time_Drive_Record__c records. Every save is done when
+ * its call returns.
  */
 // The branching follows the platform's cases and the plot's rules; splitting it up would only scatter them.
 // Size, parameter lists and field counts follow the platform's entry points, its cases and the data the components exchange;
@@ -302,7 +302,7 @@ public with sharing class TimeDriveSetupController {
     }
     Time_Drive_Record__c row = copyOf(t);
     write(new List<Time_Drive_Record__c>{ row });
-    return new SaveTicket(null, row.Key__c);
+    return new SaveTicket(row.Key__c);
   }
 
   /**
@@ -1332,11 +1332,9 @@ public with sharing class TimeDriveSetupController {
   // ---- saving --------------------------------------------------------------
 
   /**
-   * Saves a source (new or changed) and its detail fields. Returns the
-   * deployment's id and the source's name; the result arrives as a
-   * Time_Drive_Setup_Result__e.
+   * Saves a source (new or changed) and its detail fields.
    * @param draftJson The source draft, as JSON.
-   * @return A ticket with the deployment's id and the source's name.
+   * @return A ticket with the source's name.
    */
   @AuraEnabled
   public static SaveTicket save(String draftJson) {
@@ -1365,7 +1363,7 @@ public with sharing class TimeDriveSetupController {
     }
     rows.put(d.developerName, driveRecord(d));
     write(rows.values());
-    return new SaveTicket(null, d.developerName);
+    return new SaveTicket(d.developerName);
   }
 
   /**
@@ -1426,58 +1424,49 @@ public with sharing class TimeDriveSetupController {
   }
 
   /**
-   * Saves which views the picker offers, in one deployment. All is always
-   * offered. Names come from custom labels, so a view is renamed by
-   * changing its label's translation, not here.
+   * Saves which views the picker offers: the ones switched off are kept on
+   * the org's Time_Drive_Setup__c record. All is always offered. Names come
+   * from custom labels, so a view is renamed by changing its label's
+   * translation, not here.
    * @param viewsJson The views as JSON, each with the Active flag to save.
-   * @return A ticket for the deployment; it has no job when nothing changed.
+   * @return A ticket naming what was saved (Views).
    */
   @AuraEnabled
   public static SaveTicket saveViews(String viewsJson) {
     requireSetupAccess();
     List<ViewDraft> drafts = (List<ViewDraft>) JSON.deserialize(viewsJson, List<ViewDraft>.class);
-    Map<String, Time_Drive_View__mdt> existing = new Map<String, Time_Drive_View__mdt>();
+    Set<String> known = new Set<String>();
     for (Time_Drive_View__mdt v : TimeDriveConfig.views()) {
-      existing.put(v.DeveloperName, v);
+      known.add(v.DeveloperName);
     }
-    Metadata.DeployContainer container = new Metadata.DeployContainer();
-    Integer changed = 0;
+    Set<String> hidden = new Set<String>(TimeDriveConfig.hiddenViews());
     for (ViewDraft d : drafts) {
-      Time_Drive_View__mdt v = existing.get(d.developerName);
-      if (v == null) {
+      if (!known.contains(d.developerName)) {
         throw failure('There is no view called ' + d.developerName + '.');
       }
       Boolean active = d.active != false;
-      if (v.DeveloperName == TimeDriveConfig.ALL_VIEW && !active) {
+      if (d.developerName == TimeDriveConfig.ALL_VIEW && !active) {
         throw failure('All items is always offered.');
       }
-      if (active == TimeDriveConfig.isActive(v)) {
-        continue;
+      if (active) {
+        hidden.remove(d.developerName);
+      } else {
+        hidden.add(d.developerName);
       }
-      container.addMetadata(viewMetadata(v, active));
-      changed++;
     }
-    return changed == 0 ? new SaveTicket(null, 'Views') : new SaveTicket(deploy(container, 'Views'), 'Views');
-  }
-
-  // A view's record as it is, but for Active (a deploy replaces it whole).
-  @TestVisible
-  private static Metadata.CustomMetadata viewMetadata(Time_Drive_View__mdt v, Boolean active) {
-    Metadata.CustomMetadata m = new Metadata.CustomMetadata();
-    m.fullName = 'Time_Drive_View.' + v.DeveloperName;
-    m.label = v.Label;
-    Map<String, Object> values = new Map<String, Object>{
-      'Active__c' => active,
-      'Menu_Label__c' => v.Menu_Label__c,
-      'Sequence__c' => v.Sequence__c
-    };
-    for (String field : values.keySet()) {
-      Metadata.CustomMetadataValue value = new Metadata.CustomMetadataValue();
-      value.field = field;
-      value.value = values.get(field);
-      m.values.add(value);
+    // Views that no longer exist drop out of the list.
+    hidden.retainAll(known);
+    Time_Drive_Setup__c row = progressRow();
+    if (row == null) {
+      row = new Time_Drive_Setup__c(Name = 'Org');
     }
-    return m;
+    List<String> names = new List<String>(hidden);
+    names.sort();
+    row.Hidden_Views__c = names.isEmpty() ? null : String.join(names, ',');
+    // Setup access was checked above; the record is the org's, not each admin's.
+    Database.upsert(row, AccessLevel.SYSTEM_MODE);
+    TimeDriveConfig.forgetHiddenViews();
+    return new SaveTicket('Views');
   }
 
   /** A timeline view as Setup lists and saves it. */
@@ -1583,7 +1572,7 @@ public with sharing class TimeDriveSetupController {
 
   private static Time_Drive_Setup__c progressRow() {
     List<Time_Drive_Setup__c> rows = [
-      SELECT Id, Steps_Done__c, Org_Check_Report__c
+      SELECT Id, Steps_Done__c, Org_Check_Report__c, Hidden_Views__c
       FROM Time_Drive_Setup__c
       WITH SYSTEM_MODE
       ORDER BY CreatedDate
@@ -1903,7 +1892,7 @@ public with sharing class TimeDriveSetupController {
     write(
       new List<Time_Drive_Record__c>{ new Time_Drive_Record__c(Key__c = developerName, Active__c = active == true) }
     );
-    return new SaveTicket(null, developerName);
+    return new SaveTicket(developerName);
   }
 
   /**
@@ -1937,7 +1926,7 @@ public with sharing class TimeDriveSetupController {
     // Its single Category is superseded by the lenses.
     row.Category__c = null;
     write(new List<Time_Drive_Record__c>{ row });
-    return new SaveTicket(null, developerName);
+    return new SaveTicket(developerName);
   }
 
   /**
@@ -1955,7 +1944,7 @@ public with sharing class TimeDriveSetupController {
       throw failure('The source couldn\'t be removed. ' + e.getDmlMessage(0));
     }
     TimeDriveConfig.reset();
-    return new SaveTicket(null, developerName);
+    return new SaveTicket(developerName);
   }
 
   private static void requireSource(String developerName) {
@@ -1993,19 +1982,6 @@ public with sharing class TimeDriveSetupController {
     Time_Drive__c made = new Time_Drive__c(Name = page + ' Time Drive', Parent_Object__c = page, Active__c = true);
     insert as user made;
     return made.Id;
-  }
-
-  @TestVisible
-  private static String deploy(Metadata.DeployContainer container, String developerName) {
-    if (Test.isRunningTest()) {
-      return 'test-job';
-    }
-    try {
-      return Metadata.Operations.enqueueDeployment(container, new SaveResult(developerName));
-    } catch (Exception e) {
-      System.debug(LoggingLevel.ERROR, 'Time Drive Setup: save failed. ' + e.getMessage());
-      throw failure('The source couldn\'t be saved. You need permission to customise the application.');
-    }
   }
 
   private static void validate(SourceDraft d) {
@@ -2168,60 +2144,18 @@ public with sharing class TimeDriveSetupController {
     return e;
   }
 
-  // ---- the deployment's result --------------------------------------------
-
-  /** Publishes the deployment's outcome for the page to show. */
-  public class SaveResult implements Metadata.DeployCallback {
-    private String developerName;
-
-    /**
-     * Remembers the source the deployment saves.
-     * @param developerName The source's developer name.
-     */
-    public SaveResult(String developerName) {
-      this.developerName = developerName;
-    }
-
-    /**
-     * Publishes a Time_Drive_Setup_Result__e with the deployment's status and any failure messages.
-     * @param result The deployment's result.
-     * @param context The callback context.
-     */
-    public void handleResult(Metadata.DeployResult result, Metadata.DeployCallbackContext context) {
-      String message = '';
-      if (result.status != Metadata.DeployStatus.Succeeded && result.details != null) {
-        for (Metadata.DeployMessage m : result.details.componentFailures) {
-          message += m.fullName + ': ' + m.problem + ' ';
-        }
-        System.debug(LoggingLevel.ERROR, 'Time Drive Setup: ' + developerName + ' failed. ' + message);
-      }
-      EventBus.publish(
-        new Time_Drive_Setup_Result__e(
-          Job_Id__c = result.id,
-          Source__c = developerName,
-          Status__c = String.valueOf(result.status),
-          Message__c = message.left(255)
-        )
-      );
-    }
-  }
-
   // ---- shapes the page reads and sends ------------------------------------
 
-  /** A save under way: the deployment to wait for, and the source it saves. */
+  /** A save that's done: the source (or Views) it saved. */
   public class SaveTicket {
-    @AuraEnabled
-    public String jobId;
     @AuraEnabled
     public String developerName;
 
     /**
      * Builds the ticket.
-     * @param jobId The deployment's id, or null when nothing was deployed.
      * @param developerName The source's developer name.
      */
-    public SaveTicket(String jobId, String developerName) {
-      this.jobId = jobId;
+    public SaveTicket(String developerName) {
       this.developerName = developerName;
     }
   }
