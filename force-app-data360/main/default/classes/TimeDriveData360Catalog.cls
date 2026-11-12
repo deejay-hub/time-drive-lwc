@@ -5,6 +5,8 @@
  * Data 360 which there are. Only orgs with Data 360 can compile it, so it's
  * in force-app-data360 and Setup finds it by name.
  */
+// Namespace accessible: the core package makes one by name (Type.forName) and asks it through Catalog.
+@NamespaceAccessible
 public with sharing class TimeDriveData360Catalog implements TimeDriveData360Provider.Catalog {
   // An item's own name (fields end __c, so only the object's ends __dlm).
   private static final Pattern DMO_NAME = Pattern.compile('\\bname=([A-Za-z0-9_]+__dlm)\\b');
@@ -13,12 +15,20 @@ public with sharing class TimeDriveData360Catalog implements TimeDriveData360Pro
   // The metadata per data space, asked for once a request.
   private static Map<String, List<Object>> metadataBySpace = new Map<String, List<Object>>();
 
+  /** Makes the catalog; the core package does, by name. */
+  @NamespaceAccessible
+  public TimeDriveData360Catalog() {
+    // Nothing to set up.
+    return;
+  }
+
   /**
    * A data space's DMOs (blank: the default one).
    *
    * @param dataSpace the data space, blank for the default one
    * @return the DMO API names
    */
+  @NamespaceAccessible
   public List<String> dmoNames(String dataSpace) {
     return namesIn(metadata(dataSpace));
   }
@@ -30,6 +40,7 @@ public with sharing class TimeDriveData360Catalog implements TimeDriveData360Pro
    * @param dataSpace the data space, blank for the default one
    * @return the API names of its Profile DMOs
    */
+  @NamespaceAccessible
   public Set<String> profileDmoNames(String dataSpace) {
     return profileNamesIn(metadata(dataSpace));
   }

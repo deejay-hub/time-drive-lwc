@@ -515,8 +515,8 @@ public with sharing class TimeDriveSetupController {
      * @return A negative number when a comes first, zero when they tie, a positive number when b comes first.
      */
     public Integer compare(SObject a, SObject b) {
-      Decimal sa = (Decimal) a.get('Sequence__c');
-      Decimal sb = (Decimal) b.get('Sequence__c');
+      Decimal sa = (Decimal) a.get(TimeDriveConfig.field('Sequence__c'));
+      Decimal sb = (Decimal) b.get(TimeDriveConfig.field('Sequence__c'));
       return sa == sb ? 0 : (sa == null ? 1 : (sb == null ? -1 : (sa < sb ? -1 : 1)));
     }
   }
@@ -666,9 +666,9 @@ public with sharing class TimeDriveSetupController {
     requireSetupAccess();
     List<Option> out = new List<Option>();
     for (ApexClass c : [
-      SELECT Name
+      SELECT Name, NamespacePrefix
       FROM ApexClass
-      WHERE NamespacePrefix = NULL AND Status = 'Active'
+      WHERE (NamespacePrefix = NULL OR NamespacePrefix = :TimeDriveConfig.NAMESPACE) AND Status = 'Active'
       ORDER BY Name
       LIMIT 2000
     ]) {
@@ -677,9 +677,11 @@ public with sharing class TimeDriveSetupController {
       }
       // A class that no longer compiles (or can't be made) is skipped, so one
       // broken class never empties the list.
+      // The org's own classes by name; Time Drive's own, once packaged, with its namespace.
+      String value = c.NamespacePrefix == null ? c.Name : c.NamespacePrefix + '.' + c.Name;
       Object instance;
       try {
-        Type t = Type.forName(c.Name);
+        Type t = TimeDriveConfig.apexType(value);
         if (t == null) {
           continue;
         }
@@ -688,7 +690,7 @@ public with sharing class TimeDriveSetupController {
         continue;
       }
       if (instance instanceof TimeDriveApexSource) {
-        out.add(new Option(c.Name, c.Name, null));
+        out.add(new Option(value, c.Name, null));
       }
     }
     return out;
@@ -1827,7 +1829,7 @@ public with sharing class TimeDriveSetupController {
   private static List<Time_Drive_Source__mdt> fittedSources() {
     List<SourceOrder> ordered = new List<SourceOrder>();
     for (Time_Drive_Source__mdt s : TimeDriveConfig.templates().values()) {
-      if (s.getPopulatedFieldsAsMap().get('Org_Fit__c') == true && s.Removed__c != true) {
+      if (s.isSet(Time_Drive_Source__mdt.Org_Fit__c) && s.Org_Fit__c == true && s.Removed__c != true) {
         ordered.add(new SourceOrder(s));
       }
     }
@@ -1841,8 +1843,8 @@ public with sharing class TimeDriveSetupController {
 
   private static List<String> needs(Time_Drive_Source__mdt s) {
     List<String> out = new List<String>();
-    Object raw = s.getPopulatedFieldsAsMap().get('Requires__c');
-    for (String part : raw == null ? new List<String>() : String.valueOf(raw).split(';')) {
+    String raw = s.isSet(Time_Drive_Source__mdt.Requires__c) ? s.Requires__c : null;
+    for (String part : String.isBlank(raw) ? new List<String>() : raw.split(';')) {
       if (String.isNotBlank(part)) {
         out.add(part.trim());
       }
@@ -2078,16 +2080,22 @@ public with sharing class TimeDriveSetupController {
     for (DetailDraft detail : d.details == null ? new List<DetailDraft>() : d.details) {
       if (String.isNotBlank(detail.field) && n < MAX_DETAILS) {
         n++;
-        r.put('Detail_' + n + '_Field__c', detail.field);
-        r.put('Detail_' + n + '_Label__c', String.isBlank(detail.label) ? null : detail.label.left(80));
-        r.put('Detail_' + n + '_Format__c', String.isBlank(detail.format) ? 'Text' : detail.format);
+        r.put(TimeDriveConfig.field('Detail_' + n + '_Field__c'), detail.field);
+        r.put(
+          TimeDriveConfig.field('Detail_' + n + '_Label__c'),
+          String.isBlank(detail.label) ? null : detail.label.left(80)
+        );
+        r.put(
+          TimeDriveConfig.field('Detail_' + n + '_Format__c'),
+          String.isBlank(detail.format) ? 'Text' : detail.format
+        );
       }
     }
     // The record is upserted: a detail or highlight taken out must be cleared, or its old field stays.
     for (Integer i = n + 1; i <= MAX_DETAILS; i++) {
-      r.put('Detail_' + i + '_Field__c', null);
-      r.put('Detail_' + i + '_Label__c', null);
-      r.put('Detail_' + i + '_Format__c', null);
+      r.put(TimeDriveConfig.field('Detail_' + i + '_Field__c'), null);
+      r.put(TimeDriveConfig.field('Detail_' + i + '_Label__c'), null);
+      r.put(TimeDriveConfig.field('Detail_' + i + '_Format__c'), null);
     }
     r.Highlight_Field__c = null;
     r.Highlight_Values__c = null;
@@ -2634,10 +2642,10 @@ public with sharing class TimeDriveSetupController {
       icon = s.Icon__c;
       iconColour = s.Icon_Colour__c;
       recordIdField = s.Record_Id_Field__c;
-      Map<String, Object> populated = s.getPopulatedFieldsAsMap();
-      orgFit = populated.get('Org_Fit__c') == true;
-      requires = (String) populated.get('Requires__c');
-      variantGroup = (String) populated.get('Variant_Group__c');
+      // Read only when set: a source queried without these fields has none.
+      orgFit = s.isSet(Time_Drive_Source__mdt.Org_Fit__c) && s.Org_Fit__c == true;
+      requires = s.isSet(Time_Drive_Source__mdt.Requires__c) ? s.Requires__c : null;
+      variantGroup = s.isSet(Time_Drive_Source__mdt.Variant_Group__c) ? s.Variant_Group__c : null;
       providerClass = s.Provider_Class__c;
       sequence = s.Sequence__c;
     }

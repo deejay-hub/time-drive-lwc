@@ -54,6 +54,46 @@ public with sharing class TimeDriveConfig {
   private static Map<String, List<Time_Drive_Detail_Field__mdt>> driveDetails;
   private static Map<String, List<Time_Drive_Highlight__mdt>> driveHighlights;
 
+  // The package's namespace prefix on Time Drive's own fields (ns__), or ''
+  // unpackaged: read off an object of the package, so it's never typed in.
+  private static final String FIELD_PREFIX = String.valueOf(Time_Drive_Record__c.SObjectType)
+    .removeEnd('Time_Drive_Record__c');
+
+  /**
+   * One of Time Drive's own fields by its full name, for get and put by name:
+   * Kind__c reads ns__Kind__c once packaged. Field maps and populated-field
+   * maps key packaged fields by their full names.
+   *
+   * @param name the field's name without a namespace, such as Kind__c
+   * @return the name with the package's prefix, if it has one
+   */
+  public static String field(String name) {
+    return FIELD_PREFIX + name;
+  }
+
+  /** The package's namespace, or null unpackaged. */
+  public static final String NAMESPACE = String.isBlank(FIELD_PREFIX) ? null : FIELD_PREFIX.removeEnd('__');
+
+  /**
+   * An Apex source's class by the name Setup keeps: the org's own class
+   * first (it has no namespace), else Time Drive's (TimeDriveOpportunityProducts).
+   * A name with a namespace (acme.LoyaltySource) is found as given.
+   *
+   * @param name the class name
+   * @return the class's type, or null when there's none by that name
+   */
+  public static Type apexType(String name) {
+    if (String.isBlank(name)) {
+      return null;
+    }
+    String trimmed = name.trim();
+    if (trimmed.contains('.')) {
+      return Type.forName(trimmed);
+    }
+    Type own = Type.forName('', trimmed);
+    return own != null ? own : Type.forName(trimmed);
+  }
+
   private static final List<String> SOURCE_COPIED = new List<String>{
     'Kind__c',
     'Object_Name__c',
@@ -129,7 +169,7 @@ public with sharing class TimeDriveConfig {
       }
       return new TimeDriveSoqlProvider();
     }
-    Type providerType = Type.forName(source.Provider_Class__c);
+    Type providerType = apexType(source.Provider_Class__c);
     Object instance = providerType == null ? null : providerType.newInstance();
     if (instance instanceof TimeDriveApexSource) {
       return (TimeDriveApexSource) instance;
@@ -288,7 +328,7 @@ public with sharing class TimeDriveConfig {
     if (s == null) {
       return null;
     }
-    String raw = s.getPopulatedFieldsAsMap().containsKey('Event_Label__c') ? s.Event_Label__c?.trim() : null;
+    String raw = s.isSet(Time_Drive_Source__mdt.Event_Label__c) ? s.Event_Label__c?.trim() : null;
     if (String.isNotBlank(raw)) {
       return raw.startsWith(LABEL_PREFIX) ? raw.substring(LABEL_PREFIX.length()).trim() : null;
     }
@@ -305,7 +345,7 @@ public with sharing class TimeDriveConfig {
     if (s == null) {
       return null;
     }
-    String raw = s.getPopulatedFieldsAsMap().containsKey('Event_Label__c') ? s.Event_Label__c?.trim() : null;
+    String raw = s.isSet(Time_Drive_Source__mdt.Event_Label__c) ? s.Event_Label__c?.trim() : null;
     String key = s.DeveloperName + '|' + raw + '|' + s.Object_Name__c;
     if (legendLabels.containsKey(key)) {
       return legendLabels.get(key);
@@ -728,20 +768,21 @@ public with sharing class TimeDriveConfig {
       Parent_Object__c = r.Time_Drive__r.Parent_Object__c,
       Source_Mode__c = 'Always'
     );
-    for (String field : SOURCE_COPIED) {
-      if (r.get(field) != null) {
-        s.put(field, r.get(field));
+    for (String name : SOURCE_COPIED) {
+      Object value = r.get(field(name));
+      if (value != null) {
+        s.put(field(name), value);
       }
     }
     driveSources.put(key, s);
     List<Time_Drive_Detail_Field__mdt> details = new List<Time_Drive_Detail_Field__mdt>();
     for (Integer n = 1; n <= 4; n++) {
-      String field = (String) r.get('Detail_' + n + '_Field__c');
+      String field = (String) r.get(field('Detail_' + n + '_Field__c'));
       if (String.isBlank(field)) {
         continue;
       }
-      String label = (String) r.get('Detail_' + n + '_Label__c');
-      String format = (String) r.get('Detail_' + n + '_Format__c');
+      String label = (String) r.get(field('Detail_' + n + '_Label__c'));
+      String format = (String) r.get(field('Detail_' + n + '_Format__c'));
       details.add(
         new Time_Drive_Detail_Field__mdt(
           DeveloperName = key.left(34) + '_D' + n,
@@ -782,7 +823,7 @@ public with sharing class TimeDriveConfig {
     if (s == null) {
       return out;
     }
-    String raw = (String) s.getPopulatedFieldsAsMap().get('Lenses__c');
+    String raw = s.isSet(Time_Drive_Source__mdt.Lenses__c) ? s.Lenses__c : null;
     if (String.isBlank(raw)) {
       raw = s.Category__c;
     }

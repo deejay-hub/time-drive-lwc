@@ -7,7 +7,9 @@
 // Size, parameter lists and field counts follow the platform's entry points, its cases and the data the components exchange;
 // splitting them up would only scatter what belongs together.
 @SuppressWarnings('PMD.CyclomaticComplexity, PMD.CognitiveComplexity, PMD.AvoidBooleanMethodParameters, PMD.ExcessiveParameterList, PMD.ExcessivePublicCount, PMD.NcssCount, PMD.TooManyFields')
-public with sharing class TimeDriveController {
+// Global only for TimeWindow, which an Apex source's context.spans() returns; its
+// methods stay the package's own.
+global with sharing class TimeDriveController {
 
   // How far back and forward the timeline reaches, in years: the App Builder's
   // History and Future. Only these values; anything else falls back to the
@@ -2210,9 +2212,9 @@ public with sharing class TimeDriveController {
    * ago to the end of the day Future years ahead (today, with no Future), in
    * the user's time zone.
    */
-  public class TimeWindow {
-    public Datetime since;
-    public Datetime until;
+  global class TimeWindow {
+    global Datetime since;
+    global Datetime until;
 
     /** Builds the default window: the default history up to today. */
     public TimeWindow() {

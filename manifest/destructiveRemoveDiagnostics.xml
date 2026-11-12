@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>TimeDriveDiagnosticController</members>
+        <members>TimeDriveDiagnosticControllerTest</members>
+        <members>TimeDriveDiagnostics</members>
+        <name>ApexClass</name>
+    </types>
+    <types>
+        <members>GitHub_Raw</members>
+        <name>CspTrustedSite</name>
+    </types>
+    <types>
+        <members>timeDriveDiagnostics</members>
+        <members>timeDriveDocBlocks</members>
+        <members>timeDriveDocText</members>
+        <name>LightningComponentBundle</name>
+    </types>
+    <version>67.0</version>
+</Package>

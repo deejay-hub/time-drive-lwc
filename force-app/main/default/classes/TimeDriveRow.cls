@@ -6,7 +6,8 @@
  */
 // The branching follows the platform's cases and the plot's rules; splitting it up would only scatter them.
 @SuppressWarnings('PMD.CyclomaticComplexity, PMD.CognitiveComplexity')
-public with sharing class TimeDriveRow {
+// Global: customers' own Apex sources return these.
+global with sharing class TimeDriveRow {
   private SObject record;
   // An object's fields by lower-case name, and the labels worked out for its
   // paths, kept for the request: describing an object builds its whole field
@@ -31,7 +32,7 @@ public with sharing class TimeDriveRow {
    *
    * @param record the record
    */
-  public TimeDriveRow(SObject record) {
+  global TimeDriveRow(SObject record) {
     this.record = record;
   }
 
@@ -40,7 +41,7 @@ public with sharing class TimeDriveRow {
    *
    * @param values the values by name
    */
-  public TimeDriveRow(Map<String, Object> values) {
+  global TimeDriveRow(Map<String, Object> values) {
     if (values != null) {
       for (String key : values.keySet()) {
         put(key, values.get(key));

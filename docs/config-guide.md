@@ -478,7 +478,7 @@ The timeline shows every date, time and number in the viewer's own time zone, la
 
 ### Test and add it
 
-1. Test the class to at least 85%. Give it test data or an `HttpCalloutMock`, call `rows` and `counts` with a `TimeDriveContext`, and check what they return or the events `TimeDrivePlotter.run` makes of them.
+1. Test the class to at least 85%. Give it test data or an `HttpCalloutMock`, call `rows` and `counts` with a context for the record and window you want (`new TimeDriveContext(recordId, since, until)`), and check what they return.
 2. In Time Drive Setup, add a source of kind **Apex** on the record page and choose the class. Pick its look and lenses, then type the fields an opened item shows: a field path, or a map key.
 3. Saving asks you to confirm you've thought about how the class scales, because it runs every time a timeline with the source loads.
 

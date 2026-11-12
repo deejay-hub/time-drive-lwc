@@ -10,7 +10,9 @@
 @SuppressWarnings(
   'PMD.CyclomaticComplexity, PMD.CognitiveComplexity, PMD.ExcessiveParameterList, PMD.ExcessivePublicCount, PMD.TooManyFields'
 )
-public with sharing class TimeDriveContext {
+// Global: customers' own Apex sources (TimeDriveApexSource) are handed one. Only what the
+// Config Guide documents for them is global; everything else stays the package's own.
+global with sharing class TimeDriveContext {
   public static final Integer DEFAULT_MAX_RECORDS = 1000;
   public static final String KIND_SALESFORCE = 'Salesforce';
   public static final String KIND_DATA_360 = 'Data 360';
@@ -24,12 +26,12 @@ public with sharing class TimeDriveContext {
   // A field a source names, as a field path and nothing else.
   private static final Pattern FIELD_PATH = Pattern.compile('[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)*');
 
-  public Id recordId;
+  global Id recordId;
   public String parentObject;
-  public Datetime since;
+  global Datetime since;
   // The end of the timeline's window, or null for up to now. Events after it
   // are dropped anyway; queries can skip them.
-  public Datetime until;
+  global Datetime until;
   // Just these spans of the window, when set: the days on screen.
   public List<TimeDriveController.TimeWindow> ranges;
   public Time_Drive_Source__mdt source;
@@ -119,10 +121,12 @@ public with sharing class TimeDriveContext {
     this.parentObject = parentObject;
     // A source can look back less far than the timeline does (read only
     // when set: a source queried without the field has none).
-    Object months = source?.getPopulatedFieldsAsMap().get('History_Months__c');
+    Decimal months = source != null && source.isSet(Time_Drive_Source__mdt.History_Months__c)
+      ? source.History_Months__c
+      : null;
     Datetime own = months == null
       ? null
-      : Datetime.newInstance(Date.today().addMonths(-((Decimal) months).intValue()), Time.newInstance(0, 0, 0, 0));
+      : Datetime.newInstance(Date.today().addMonths(-months.intValue()), Time.newInstance(0, 0, 0, 0));
     this.since = since != null && own != null && own > since ? own : since;
     this.source = source;
     this.priorEvents = priorEvents == null ? new List<TimeDriveController.EngagementEvent>() : priorEvents;
@@ -132,10 +136,30 @@ public with sharing class TimeDriveContext {
   }
 
   /**
+   * A context for testing an Apex source: the record, and the window the
+   * timeline asks for. It has no source record, so the source's caps and
+   * fields are the defaults.
+   * @param recordId the record the timeline is on
+   * @param since the start of the window, or null
+   * @param until the end of the window, or null for up to now
+   */
+  global TimeDriveContext(Id recordId, Datetime since, Datetime until) {
+    this(
+      recordId,
+      recordId == null ? null : String.valueOf(recordId.getSObjectType()),
+      since,
+      new Time_Drive_Source__mdt(Kind__c = KIND_APEX),
+      null,
+      null
+    );
+    this.until = until;
+  }
+
+  /**
    * The windows a provider should read: its ranges, or the whole window.
    * @return the time windows to read
    */
-  public List<TimeDriveController.TimeWindow> spans() {
+  global List<TimeDriveController.TimeWindow> spans() {
     if (ranges != null) {
       // Clipped to the source's own history, when it has one.
       List<TimeDriveController.TimeWindow> out = new List<TimeDriveController.TimeWindow>();
@@ -170,7 +194,7 @@ public with sharing class TimeDriveContext {
    * The source's record cap, newest first.
    * @return the most records to read
    */
-  public Integer maxRecords() {
+  global Integer maxRecords() {
     return source?.Max_Records__c == null ? DEFAULT_MAX_RECORDS : source.Max_Records__c.intValue();
   }
 
@@ -234,7 +258,7 @@ public with sharing class TimeDriveContext {
    * @param dateKey the key holding each item's Date or Datetime
    * @return the plot, to add its title, subtitle and click to
    */
-  public Plot plotBy(String dateKey) {
+  global Plot plotBy(String dateKey) {
     source = source == null ? new Time_Drive_Source__mdt() : source.clone(true);
     if (String.isBlank(source.Date_Field__c)) {
       source.Date_Field__c = dateKey;
@@ -243,7 +267,7 @@ public with sharing class TimeDriveContext {
   }
 
   /** The rest of how an Apex source's rows are plotted (see plotBy). */
-  public class Plot {
+  global class Plot {
     private TimeDriveContext context;
 
     private Plot(TimeDriveContext context) {
@@ -255,7 +279,7 @@ public with sharing class TimeDriveContext {
      * @param template the title
      * @return this plot
      */
-    public Plot title(String template) {
+    global Plot title(String template) {
       if (String.isBlank(context.source.Title__c)) {
         context.source.Title__c = template;
       }
@@ -267,7 +291,7 @@ public with sharing class TimeDriveContext {
      * @param template the subtitle
      * @return this plot
      */
-    public Plot subtitle(String template) {
+    global Plot subtitle(String template) {
       if (String.isBlank(context.source.Subtitle__c)) {
         context.source.Subtitle__c = template;
       }
@@ -280,7 +304,7 @@ public with sharing class TimeDriveContext {
      * @param recordIdKey the key holding a Salesforce Id
      * @return this plot
      */
-    public Plot opens(String recordIdKey) {
+    global Plot opens(String recordIdKey) {
       if (String.isBlank(context.source.Record_Id_Field__c)) {
         context.source.Record_Id_Field__c = recordIdKey;
       }
@@ -298,7 +322,7 @@ public with sharing class TimeDriveContext {
    * @param binds the query's binds, which the bounds are added to
    * @return the condition to append after WHERE ..., or blank
    */
-  public String dateCondition(Schema.SObjectType objectType, String field, Map<String, Object> binds) {
+  global String dateCondition(Schema.SObjectType objectType, String field, Map<String, Object> binds) {
     Schema.DescribeFieldResult d = TimeDriveConfig.fieldDescribe(String.valueOf(objectType), field);
     Boolean byDay = d?.getType() == Schema.DisplayType.DATE;
     List<String> out = new List<String>();
@@ -335,7 +359,7 @@ public with sharing class TimeDriveContext {
    * @param unit the period asked for (counts' unit)
    * @return the counts
    */
-  public List<DayCount> countBy(
+  global List<DayCount> countBy(
     Schema.SObjectType objectType,
     String field,
     String condition,
@@ -398,12 +422,12 @@ public with sharing class TimeDriveContext {
    * @param unit the period asked for (counts' unit)
    * @return an empty counter
    */
-  public Counter counter(String unit) {
+  global Counter counter(String unit) {
     return new Counter(this, unit);
   }
 
   /** Items added up by day (and hour, when counted by hour), in the user's time zone. */
-  public class Counter {
+  global class Counter {
     private TimeDriveContext context;
     private String unit;
     private Map<String, DayCount> byDay = new Map<String, DayCount>();
@@ -418,7 +442,7 @@ public with sharing class TimeDriveContext {
      * @param at the item's date and time
      * @return this counter
      */
-    public Counter add(Datetime at) {
+    global Counter add(Datetime at) {
       if (context.wants(at)) {
         tally(at.date(), unit == UNIT_HOUR ? at.hour() : null, 1);
       }
@@ -431,7 +455,7 @@ public with sharing class TimeDriveContext {
      * @param count how many items it has
      * @return this counter
      */
-    public Counter add(Date day, Integer count) {
+    global Counter add(Date day, Integer count) {
       if (count != null && count > 0 && context.wants(day)) {
         tally(day, null, count);
       }
@@ -442,7 +466,7 @@ public with sharing class TimeDriveContext {
      * The counts so far.
      * @return a count for each day (or hour) with items
      */
-    public List<DayCount> counts() {
+    global List<DayCount> counts() {
       return byDay.values();
     }
 
@@ -464,7 +488,7 @@ public with sharing class TimeDriveContext {
    * @param at the item's date and time
    * @return true when it falls in a span asked for
    */
-  public Boolean wants(Datetime at) {
+  global Boolean wants(Datetime at) {
     if (at == null) {
       return false;
     }
@@ -481,7 +505,7 @@ public with sharing class TimeDriveContext {
    * @param day the item's day
    * @return true when the day overlaps a span asked for
    */
-  public Boolean wants(Date day) {
+  global Boolean wants(Date day) {
     if (day == null) {
       return false;
     }
@@ -502,7 +526,7 @@ public with sharing class TimeDriveContext {
    * @param always the fields every row needs (its Id, the date)
    * @return the fields to SELECT
    */
-  public List<String> fieldsToQuery(List<String> always) {
+  global List<String> fieldsToQuery(List<String> always) {
     List<String> wanted = new List<String>(always);
     wanted.addAll(TimeDrivePlotter.tokens(source?.Title__c));
     wanted.addAll(TimeDrivePlotter.tokens(source?.Subtitle__c));
@@ -560,7 +584,7 @@ public with sharing class TimeDriveContext {
    * Adds a warning, once, however many sources run into it.
    * @param message the warning text
    */
-  public void warn(String message) {
+  global void warn(String message) {
     if (!warnings.contains(message)) {
       warnings.add(message);
     }
@@ -598,7 +622,7 @@ public with sharing class TimeDriveContext {
   }
 
   /** A count provider's items on one day (and hour, when asked by hour). */
-  public class DayCount {
+  global class DayCount {
     public String dayKey;
     // 0-23 in the user's time zone; null for date-only fields, or by day.
     public Integer hour;
