@@ -92,7 +92,7 @@ Yes. Files linked to the record (ContentDocumentLink) can be a source, and a cli
 
 ### Which languages does it come in?
 
-English, Spanish, Arabic, Danish, Finnish, French, German, Japanese, Korean, Swedish, Yiddish, and Chinese Simplified and Traditional. Dates, times and numbers follow each person's locale and time zone, and right-to-left languages mirror the card. Setup's own text is English for now. The translations are drafts: have a native speaker review them. See [Translations](config-guide.md#translations).
+English, Spanish, Arabic, Danish, Finnish, French, German, Japanese, Korean, Swedish, and Chinese Simplified and Traditional. Dates, times and numbers follow each person's locale and time zone, and right-to-left languages mirror the card. Setup's own text is English for now. The translations are drafts: have a native speaker review them. See [Translations](config-guide.md#translations).
 
 ### Why are some names still in English?
 

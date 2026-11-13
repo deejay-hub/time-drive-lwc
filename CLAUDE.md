@@ -95,7 +95,7 @@ and data360. The GitHub repo was renamed to `deejay-hub/time-drive-lwc` on
 
 ## Labels and translations
 
-- The timeline components' text is custom labels (`Time_Drive_*`) in en/es/ar/da/de/fi/fr/ja/ko/sv/yi/zh_CN/zh_TW, generated from
+- The timeline components' text is custom labels (`Time_Drive_*`) in en/es/ar/da/de/fi/fr/ja/ko/sv/zh_CN/zh_TW, generated from
   `scripts/labels/catalogue.py` (en/es/ar) and `scripts/labels/<lang>.py` (the rest) by
   `scripts/labels/generate.py` (also the `c/timeDriveLabels`
   module). Setup's own text is still English; it is the next pass.

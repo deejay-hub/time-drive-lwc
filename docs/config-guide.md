@@ -516,7 +516,7 @@ The summary counts each source rather than reading it: an aggregate query per Sa
 
 ## Translations
 
-The timeline's text (the card, its filters, the View all page, record details and error messages) is custom labels (`Time_Drive_*`), in English with translations into Spanish, Arabic, Danish, Finnish, French, German, Japanese, Korean, Swedish, Yiddish, and Chinese Simplified and Traditional. Setup's own text is English for now.
+The timeline's text (the card, its filters, the View all page, record details and error messages) is custom labels (`Time_Drive_*`), in English with translations into Spanish, Arabic, Danish, Finnish, French, German, Japanese, Korean, Swedish, and Chinese Simplified and Traditional. Setup's own text is English for now.
 
 > [!IMPORTANT]
 > Make each language **Active** in Setup > **Translation Language Settings** (turn on Translation Workbench first). The card's own labels show their translation either way, but Salesforce only translates the labels Apex reads once the language is Active: until then, warnings, Yes and No, and your own `$Label` names stay in English. Salesforce's own field and picklist names need it too.
