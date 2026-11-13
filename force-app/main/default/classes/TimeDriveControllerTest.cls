@@ -692,7 +692,14 @@ private class TimeDriveControllerTest {
     Id customer = contactId();
     String someoneElse = TimeDriveCache.key(new List<String>{ 'ids', '005000000000001AAA', customer, null });
     TimeDriveCache.put(someoneElse, new Set<String>{ 'THEIR-UNIFIED-1' });
-    TimeDriveContext context = new TimeDriveContext(customer, 'Contact', Datetime.now(), null, null, new List<String>());
+    TimeDriveContext context = new TimeDriveContext(
+      customer,
+      'Contact',
+      Datetime.now(),
+      null,
+      null,
+      new List<String>()
+    );
     Set<String> ids = TimeDriveData360Provider.individualIdsFor(
       customer,
       new Map<String, Schema.SObjectType>(),
@@ -708,7 +715,12 @@ private class TimeDriveControllerTest {
     Schema.DescribeSObjectResult account = Account.SObjectType.getDescribe();
     Map<String, Schema.SObjectField> fields = TimeDriveConfig.fieldMap('Account');
     Assert.isTrue(
-      TimeDriveData360Provider.readable(account, fields, new List<String>{ 'Name', 'CreatedDate' }, 'Industry = \'Name\' AND Rating != null'),
+      TimeDriveData360Provider.readable(
+        account,
+        fields,
+        new List<String>{ 'Name', 'CreatedDate' },
+        'Industry = \'Name\' AND Rating != null'
+      ),
       'readable fields, words that aren\'t fields skipped, quoted text not taken for a field'
     );
     Assert.isTrue(TimeDriveData360Provider.readable(account, fields, new List<String>{ 'Name' }, null));
@@ -2767,5 +2779,23 @@ private class TimeDriveControllerTest {
       Category__c = 'Service',
       Title__c = 'Case'
     );
+  }
+
+  @IsTest
+  static void aDateStaysOnItsDayWestOfGreenwich() {
+    // Los Angeles, where midnight GMT is the afternoon before.
+    System.runAs(TimeDriveTestData.setupAdmin()) {
+      Date day = Date.newInstance(2026, 11, 12);
+      Datetime plotted = TimeDrivePlotter.instant(day);
+      Assert.areEqual(day, plotted.date(), 'a Date plots on its own day');
+      Assert.areEqual(12, plotted.hour(), 'at midday, so no time zone moves it');
+      Datetime moment = Datetime.newInstanceGmt(2026, 11, 12, 0, 0, 0);
+      Assert.areEqual(moment, TimeDrivePlotter.instant(moment), 'a Datetime is its own moment');
+      Assert.areEqual(
+        day.format(),
+        TimeDrivePlotter.format(day, null, null, null),
+        'a Date detail reads as the date alone'
+      );
+    }
   }
 }

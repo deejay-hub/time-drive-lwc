@@ -159,11 +159,12 @@ public with sharing class TimeDrivePlotter {
     if (value == null) {
       return '';
     }
-    if (value instanceof Datetime) {
-      return format == 'Date' ? ((Datetime) value).date().format() : ((Datetime) value).format();
-    }
+    // A Date first: Apex counts a Date as a Datetime too (but not the reverse).
     if (value instanceof Date) {
       return ((Date) value).format();
+    }
+    if (value instanceof Datetime) {
+      return format == 'Date' ? ((Datetime) value).date().format() : ((Datetime) value).format();
     }
     if (value instanceof Boolean) {
       return (Boolean) value ? Label.Time_Drive_Server_Yes : Label.Time_Drive_Server_No;
@@ -281,12 +282,15 @@ public with sharing class TimeDrivePlotter {
   }
 
   // Dates plot at midday, so they land on their own day in any time zone.
+  // A Date first: Apex counts a Date as a Datetime too (but not the reverse),
+  // and as one it would be midnight GMT, the day before west of Greenwich.
+  @TestVisible
   private static Datetime instant(Object value) {
-    if (value instanceof Datetime) {
-      return (Datetime) value;
-    }
     if (value instanceof Date) {
       return Datetime.newInstance((Date) value, Time.newInstance(12, 0, 0, 0));
+    }
+    if (value instanceof Datetime) {
+      return (Datetime) value;
     }
     return null;
   }
