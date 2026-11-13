@@ -461,4 +461,53 @@ public class TimeDriveTestData {
     }
     out.get(source).add(field);
   }
+
+  private static User setupAdmin;
+
+  /**
+   * A Time Drive admin, as Setup expects one: the running user's profile (so
+   * no profile name is assumed) and the Time Drive Setup permission set. Setup
+   * reads and writes its records as the user, and a fresh org (a package
+   * build, a customer's) gives no one those fields until the permission set
+   * does, so tests that use Setup run as this user. One a transaction.
+   *
+   * @return the admin
+   */
+  public static User setupAdmin() {
+    if (setupAdmin != null) {
+      return setupAdmin;
+    }
+    String name = 'tdadmin' + System.currentTimeMillis();
+    // As the running user can: Campaigns need Marketing User.
+    Boolean marketing = [SELECT UserPermissionsMarketingUser FROM User WHERE Id = :UserInfo.getUserId()]
+    .UserPermissionsMarketingUser;
+    User u = new User(
+      UserPermissionsMarketingUser = marketing,
+      Alias = 'tdadmin',
+      Email = name + '@example.com',
+      EmailEncodingKey = 'UTF-8',
+      LastName = 'Time Drive Admin',
+      LanguageLocaleKey = 'en_US',
+      LocaleSidKey = 'en_US',
+      ProfileId = UserInfo.getProfileId(),
+      TimeZoneSidKey = 'America/Los_Angeles',
+      Username = name + '@example.com'
+    );
+    // Setup objects apart from the test's own records (no mixed DML).
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      insert u;
+      insert new PermissionSetAssignment(
+        AssigneeId = u.Id,
+        PermissionSetId = [
+          SELECT Id
+          FROM PermissionSet
+          WHERE Name = 'Time_Drive_Setup' AND NamespacePrefix = :TimeDriveConfig.NAMESPACE
+          LIMIT 1
+        ]
+        .Id
+      );
+    }
+    setupAdmin = u;
+    return u;
+  }
 }

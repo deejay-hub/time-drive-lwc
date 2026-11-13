@@ -261,7 +261,8 @@ private class TimeDriveOpportunityProductsTest {
   static void isOfferedInSetupAsAnApexSource() {
     Boolean offered = false;
     for (TimeDriveSetupController.Option o : TimeDriveSetupController.getApexProviders()) {
-      offered = offered || o.value == 'TimeDriveOpportunityProducts';
+      // Listed by its name; once packaged, its value carries the namespace (ns.TimeDriveOpportunityProducts).
+      offered = offered || o.label == 'TimeDriveOpportunityProducts';
     }
     Assert.isTrue(offered, 'Setup lists it among the Apex sources');
   }
