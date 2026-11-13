@@ -1350,4 +1350,17 @@ private class TimeDriveSetupControllerTest {
       );
     }
   }
+
+  @IsTest
+  static void recordsTheUserMayNotMakeAreSkippedNotFailed() {
+    User admin = TimeDriveTestData.setupAdmin();
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      update new User(Id = admin.Id, UserPermissionsMarketingUser = false);
+    }
+    System.runAs(admin) {
+      // Campaigns need Marketing User: the test that wants one goes without, it doesn't fail.
+      Assert.isFalse(TimeDriveTestData.tryInsert(new List<SObject>{ new Campaign(Name = 'Not theirs') }));
+      Assert.areEqual(0, [SELECT COUNT() FROM Campaign WHERE Name = 'Not theirs'], 'nothing is kept');
+    }
+  }
 }

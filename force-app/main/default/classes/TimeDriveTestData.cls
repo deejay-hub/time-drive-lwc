@@ -10,9 +10,10 @@
 @IsTest
 public class TimeDriveTestData {
   /**
-   * Inserts a test's records, unless the org's own automation won't take
-   * them (a flow, process or validation rule an org adds, such as one that
-   * needs a setting tests can't see). Then nothing is kept and the answer is
+   * Inserts a test's records, unless the org won't take them: its own
+   * automation (a flow, process or validation rule an org adds, such as one
+   * that needs a setting tests can't see), or a user who may not make them
+   * (Campaigns need Marketing User). Then nothing is kept and the answer is
    * false: a test that needs those records has nothing of ours to test there.
    *
    * @param records the records to insert
@@ -24,10 +25,17 @@ public class TimeDriveTestData {
       insert records;
       return true;
     } catch (DmlException e) {
-      Database.rollback(before);
-      System.debug(LoggingLevel.WARN, 'Time Drive test: this org won\'t take the records. ' + e.getMessage());
-      return false;
+      return refused(before, e);
+    } catch (TypeException e) {
+      // DML operation INSERT not allowed on Campaign: the user isn't a Marketing User.
+      return refused(before, e);
     }
+  }
+
+  private static Boolean refused(Savepoint before, Exception e) {
+    Database.rollback(before);
+    System.debug(LoggingLevel.WARN, 'Time Drive test: this org won\'t take the records. ' + e.getMessage());
+    return false;
   }
 
   /**
