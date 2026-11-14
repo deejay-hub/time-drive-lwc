@@ -45,7 +45,8 @@ public with sharing class TimeDrivePlotter {
     List<Time_Drive_Detail_Field__mdt> detailFields = context.detailFields();
     List<TimeDriveController.EngagementEvent> events = new List<TimeDriveController.EngagementEvent>();
     for (TimeDriveRow row : rows == null ? new List<TimeDriveRow>() : rows) {
-      Datetime occurredAt = instant(row.get(context.dateField()));
+      Object dated = row.get(context.dateField());
+      Datetime occurredAt = instant(dated);
       // Items with no date are left out quietly, so a few gaps in the data
       // don't put a warning over the rest.
       if (occurredAt == null) {
@@ -68,6 +69,8 @@ public with sharing class TimeDrivePlotter {
       if (TimeDriveConfig.dateOwner(s) == 'Event' && row.get(TimeDriveConfig.datePrefix(s) + 'IsAllDayEvent') == true) {
         e.allDay = true;
       }
+      // A Date (checked as one: Apex counts a Date as a Datetime too) has no time.
+      e.dateOnly = dated instanceof Date;
       e.flags = TimeDriveHighlights.flagsFor(context.highlightRules(), row);
       context.styled(e);
       events.add(e);

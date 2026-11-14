@@ -2796,6 +2796,20 @@ private class TimeDriveControllerTest {
         TimeDrivePlotter.format(day, null, null, null),
         'a Date detail reads as the date alone'
       );
+
+      // Plotted, a Date says it has no time; a Datetime doesn't.
+      TimeDriveContext context = new TimeDriveContext(null, null, null);
+      context.plotBy('When').title('{Name}');
+      List<TimeDriveController.EngagementEvent> events = TimeDrivePlotter.plot(
+        context,
+        new List<TimeDriveRow>{
+          new TimeDriveRow(new Map<String, Object>{ 'Id' => 'd', 'Name' => 'A call', 'When' => day }),
+          new TimeDriveRow(new Map<String, Object>{ 'Id' => 't', 'Name' => 'A meeting', 'When' => moment })
+        }
+      );
+      Assert.areEqual(2, events.size());
+      Assert.isTrue(events[0].dateOnly, 'a Date has no time');
+      Assert.isFalse(events[1].dateOnly, 'a Datetime has its time');
     }
   }
 }

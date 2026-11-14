@@ -2353,6 +2353,10 @@ global with sharing class TimeDriveController {
     // An all-day event: the timeline says All-Day instead of a time.
     @AuraEnabled
     public Boolean allDay = false;
+    // Dated by a Date field (a Task's Activity Date): it has a day but no time,
+    // so the timeline shows none and puts it first in its day.
+    @AuraEnabled
+    public Boolean dateOnly = false;
     @AuraEnabled
     public String emailState;
     // Email Messages: who it went to (the first To recipient, by name where

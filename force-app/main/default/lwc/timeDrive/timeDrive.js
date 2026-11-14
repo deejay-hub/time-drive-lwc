@@ -40,6 +40,8 @@ import {
   VIEWS,
   VIEW_LABELS,
   FORMATS,
+  itemOrder,
+  isoDate,
   filePreviewRef,
   isFileId,
   recordHref,
@@ -180,6 +182,17 @@ const MINIMAP_MIN_DAYS = 2;
 const TIME_FORMAT = FORMATS.time;
 const DAY_SHORT_FORMAT = FORMATS.dayShort;
 const DAY_SHORT_TIME_FORMAT = FORMATS.dayShortTime;
+// The time a row shows. An all-day event says so; an item dated by a Date
+// field (a Task's Activity Date) has no time, so "--". In a week or month,
+// both show just their day ("Tue 13").
+const NO_TIME = "--";
+function timeTextOf(e, at, grouped, timeFormat) {
+  if (e.allDay || e.dateOnly) {
+    if (grouped) return DAY_SHORT_FORMAT.format(at);
+    return e.allDay ? LABELS.allDay : NO_TIME;
+  }
+  return timeFormat.format(at);
+}
 const DATE_TIME_FORMAT = FORMATS.dateTime;
 const WEEKDAY_SHORT = FORMATS.weekday;
 const MONTH_SHORT = FORMATS.month;
@@ -1125,14 +1138,9 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       // Its type's name and an email's subtitle in the card's own words.
       const e = ownWords(raw);
       const at = new Date(e.occurredAt);
-      // An all-day event has no time to show.
-      byDay.get(e.dayKey)?.push({
-        ...e,
-        at: at.getTime(),
-        timeText: e.allDay ? (grouped ? DAY_SHORT_FORMAT.format(at) : LABELS.allDay) : timeFormat.format(at)
-      });
+      byDay.get(e.dayKey)?.push({ ...e, at: at.getTime(), timeText: timeTextOf(e, at, grouped, timeFormat) });
     }
-    byDay.forEach((list) => list.sort((a, b) => b.at - a.at));
+    byDay.forEach((list) => list.sort(itemOrder));
     byDay.forEach((list, key) => this._dayCache.set(key, list));
     this.trimDayCache();
     this.daysLoaded++;
@@ -1559,9 +1567,10 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       typeLabel: event.typeLabel || info.label,
       nodeStyle: this.nodeStyleFor(event),
       itemStyle: this.itemStyleFor(event),
-      // Time only: the day's sticky header carries the date.
+      // Time only: the day's sticky header carries the date. A Date-only
+      // item has none, so its datetime is just its date.
       timeText: event.timeText,
-      isoTime: event.occurredAt,
+      isoTime: event.dateOnly ? isoDate(new Date(event.occurredAt)) : event.occurredAt,
       // How long ago, when the source asks for it.
       open,
       ariaExpanded: String(open),

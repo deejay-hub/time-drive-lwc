@@ -1,4 +1,5 @@
 import { createElement } from "lwc";
+import { itemOrder, isoDate } from "../timeDriveModel";
 import TIME_ZONE from "@salesforce/i18n/timeZone";
 import { setup as setupAccessibility } from "@sa11y/jest";
 import TimeDrive from "c/timeDrive";
@@ -1880,6 +1881,52 @@ describe("c-time-drive drawing less", () => {
     ]);
     expect(times.find(([title]) => title === "Offsite")[1]).toBe("All-Day");
     expect(times.find(([title]) => title === "Standup")[1]).not.toBe("All-Day");
+  });
+
+  it("shows -- for an item dated by a Date field, and puts it first in its day", async () => {
+    const day = new Date(Date.now() - 2 * 3600000).toISOString();
+    const earlier = new Date(Date.parse(day) - 60000).toISOString();
+    const root = (
+      await mount("Vertical", [
+        { id: "a", type: "event", category: "Sales", title: "Standup", occurredAt: day, details: [] },
+        {
+          id: "b",
+          type: "call",
+          category: "Sales",
+          title: "Rang Bob",
+          occurredAt: earlier,
+          dateOnly: true,
+          details: []
+        }
+      ])
+    ).shadowRoot;
+    const rows = [...root.querySelectorAll(".event")].map((e) => [
+      e.querySelector(".event-title").textContent,
+      e.querySelector(".event-time").textContent
+    ]);
+    // No time to show, and first in the day though plotted earlier.
+    expect(rows.map(([title]) => title)).toEqual(["Rang Bob", "Standup"]);
+    expect(rows[0][1]).toBe("--");
+    expect(rows[1][1]).not.toBe("--");
+  });
+
+  it("orders a day's untimed items first, then by time, and keeps days apart", () => {
+    const when = (iso) => Date.parse(iso);
+    const items = [
+      { id: "earlier", at: when("2026-11-12T11:40:00Z") },
+      { id: "dateOnly", at: when("2026-11-12T12:00:00Z"), dateOnly: true },
+      { id: "later", at: when("2026-11-12T12:20:00Z") },
+      { id: "allDay", at: when("2026-11-12T12:10:00Z"), allDay: true },
+      { id: "dayBefore", at: when("2026-11-11T12:00:00Z"), dateOnly: true }
+    ];
+    expect([...items].sort(itemOrder).map((i) => i.id)).toEqual([
+      "allDay",
+      "dateOnly",
+      "later",
+      "earlier",
+      "dayBefore"
+    ]);
+    expect(isoDate(new Date("2026-11-12T12:00:00Z"))).toBe("2026-11-12");
   });
 
   it("marks an email opened, unopened or bounced with an icon after its title", async () => {
