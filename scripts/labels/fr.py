@@ -6,11 +6,6 @@
 # the Server_* labels go through String.format, which treats ' as a quote.
 LABELS = {
     "Menu_Views": "Vues",
-    "Menu_New_Activity": "Nouvelle activité",
-    "Action_New_Task": "Nouvelle tâche",
-    "Action_New_Event": "Nouvel événement",
-    "Action_Log_Call": "Consigner un appel",
-    "Action_Email": "E-mail",
     "Row_Actions": "Actions",
     "Row_Checking": "Vérification de ce que vous pouvez faire…",
     "Row_No_Actions": "Modification et suppression impossibles.",

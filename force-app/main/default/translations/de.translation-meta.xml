@@ -9,22 +9,6 @@
         <name>Time_Drive_Action_Edit</name>
     </customLabels>
     <customLabels>
-        <label>E-Mail</label>
-        <name>Time_Drive_Action_Email</name>
-    </customLabels>
-    <customLabels>
-        <label>Anruf protokollieren</label>
-        <name>Time_Drive_Action_Log_Call</name>
-    </customLabels>
-    <customLabels>
-        <label>Neues Ereignis</label>
-        <name>Time_Drive_Action_New_Event</name>
-    </customLabels>
-    <customLabels>
-        <label>Neue Aufgabe</label>
-        <name>Time_Drive_Action_New_Task</name>
-    </customLabels>
-    <customLabels>
         <label>Ganzt.</label>
         <name>Time_Drive_All_Day</name>
     </customLabels>
@@ -327,10 +311,6 @@
     <customLabels>
         <label>Elemente</label>
         <name>Time_Drive_Many_Other</name>
-    </customLabels>
-    <customLabels>
-        <label>Neue Aktivität</label>
-        <name>Time_Drive_Menu_New_Activity</name>
     </customLabels>
     <customLabels>
         <label>Ansichten</label>

@@ -18,7 +18,7 @@ Admins with the **Customize Application** permission and the `Time Drive Setup` 
 
 ### How do I put the timeline on a record page?
 
-Open a record, choose **Edit Page**, and drag **Time Drive** (under custom components) onto the page. Its properties in Lightning App Builder set the layout, the lens it opens on, how far back and ahead it looks, and the activity actions it shows. See [Add the timeline to a page](config-guide.md#add-the-timeline-to-a-page).
+Open a record, choose **Edit Page**, and drag **Time Drive** (under custom components) onto the page. Its properties in Lightning App Builder set the layout, the lens it opens on, and how far back and ahead it looks. Log a Call, New Task and the record's other activity actions stay on the page's own action bar, and Time Drive refreshes when one is saved. See [Add the timeline to a page](config-guide.md#add-the-timeline-to-a-page).
 
 ### Can I put more than one timeline on a page?
 

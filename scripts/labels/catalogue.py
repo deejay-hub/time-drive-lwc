@@ -8,11 +8,6 @@
 LABELS = [
     # ---- the timeline: header, menus, buttons
     ("Menu_Views", "Timeline header · lens menu's name, read by screen readers only", "Views", "Vistas", "طرق العرض"),
-    ("Menu_New_Activity", "Timeline header · the + button (Activity Actions: One button): name, tooltip", "New activity", "Nueva actividad", "نشاط جديد"),
-    ("Action_New_Task", "Timeline header · activity action button: New Task", "New Task", "Nueva tarea", "مهمة جديدة"),
-    ("Action_New_Event", "Timeline header · activity action button: New Event", "New Event", "Nuevo evento", "حدث جديد"),
-    ("Action_Log_Call", "Timeline header · activity action button: Log a Call", "Log a Call", "Registrar una llamada", "تسجيل مكالمة"),
-    ("Action_Email", "Timeline header · activity action button: Email", "Email", "Correo electrónico", "بريد إلكتروني"),
     ("Row_Actions", "Item menu · the button that opens Edit and Delete on an item", "Item actions", "Acciones", "إجراءات العنصر"),
     ("Row_Checking", "Item menu · spinner while it checks what the user may do (screen readers)", "Checking what you can do…", "Comprobando lo que puedes hacer…", "جارٍ التحقق مما يمكنك فعله…"),
     ("Row_No_Actions", "Item menu · shown when the user can neither edit nor delete the item", "You can't edit or delete this item.", "No puedes editar ni eliminar este elemento.", "لا يمكنك تعديل هذا العنصر أو حذفه."),

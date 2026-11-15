@@ -9,22 +9,6 @@
         <name>Time_Drive_Action_Edit</name>
     </customLabels>
     <customLabels>
-        <label>電子郵件</label>
-        <name>Time_Drive_Action_Email</name>
-    </customLabels>
-    <customLabels>
-        <label>記錄通話</label>
-        <name>Time_Drive_Action_Log_Call</name>
-    </customLabels>
-    <customLabels>
-        <label>新增事件</label>
-        <name>Time_Drive_Action_New_Event</name>
-    </customLabels>
-    <customLabels>
-        <label>新增任務</label>
-        <name>Time_Drive_Action_New_Task</name>
-    </customLabels>
-    <customLabels>
         <label>全天</label>
         <name>Time_Drive_All_Day</name>
     </customLabels>
@@ -327,10 +311,6 @@
     <customLabels>
         <label>項目</label>
         <name>Time_Drive_Many_Other</name>
-    </customLabels>
-    <customLabels>
-        <label>新增活動</label>
-        <name>Time_Drive_Menu_New_Activity</name>
     </customLabels>
     <customLabels>
         <label>檢視</label>

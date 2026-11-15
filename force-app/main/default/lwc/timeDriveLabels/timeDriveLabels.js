@@ -2,11 +2,6 @@
 // Every end-user string of the timeline components, as a custom label (in
 // the viewer's language, where it is translated).
 import menuViews from "@salesforce/label/c.Time_Drive_Menu_Views";
-import menuNewActivity from "@salesforce/label/c.Time_Drive_Menu_New_Activity";
-import actionNewTask from "@salesforce/label/c.Time_Drive_Action_New_Task";
-import actionNewEvent from "@salesforce/label/c.Time_Drive_Action_New_Event";
-import actionLogCall from "@salesforce/label/c.Time_Drive_Action_Log_Call";
-import actionEmail from "@salesforce/label/c.Time_Drive_Action_Email";
 import rowActions from "@salesforce/label/c.Time_Drive_Row_Actions";
 import rowChecking from "@salesforce/label/c.Time_Drive_Row_Checking";
 import rowNoActions from "@salesforce/label/c.Time_Drive_Row_No_Actions";
@@ -132,11 +127,6 @@ import groupShown from "@salesforce/label/c.Time_Drive_Group_Shown";
 
 export const LABELS = Object.freeze({
   menuViews,
-  menuNewActivity,
-  actionNewTask,
-  actionNewEvent,
-  actionLogCall,
-  actionEmail,
   rowActions,
   rowChecking,
   rowNoActions,
@@ -265,11 +255,6 @@ export const LABELS = Object.freeze({
 // source's): the card shows its own copy, translated even before Apex's is.
 const BY_NAME = Object.freeze({
   Time_Drive_Menu_Views: menuViews,
-  Time_Drive_Menu_New_Activity: menuNewActivity,
-  Time_Drive_Action_New_Task: actionNewTask,
-  Time_Drive_Action_New_Event: actionNewEvent,
-  Time_Drive_Action_Log_Call: actionLogCall,
-  Time_Drive_Action_Email: actionEmail,
   Time_Drive_Row_Actions: rowActions,
   Time_Drive_Row_Checking: rowChecking,
   Time_Drive_Row_No_Actions: rowNoActions,

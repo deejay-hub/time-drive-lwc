@@ -6,11 +6,6 @@
 # native speaker review it.
 LABELS = {
     "Menu_Views": "Ansichten",
-    "Menu_New_Activity": "Neue Aktivität",
-    "Action_New_Task": "Neue Aufgabe",
-    "Action_New_Event": "Neues Ereignis",
-    "Action_Log_Call": "Anruf protokollieren",
-    "Action_Email": "E-Mail",
     "Row_Actions": "Aktionen",
     "Row_Checking": "Es wird geprüft, was Sie tun können…",
     "Row_No_Actions": "Bearbeiten und Löschen nicht möglich.",

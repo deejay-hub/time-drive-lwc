@@ -6,11 +6,6 @@
 # 조직, 권한 집합): have a native speaker review it.
 LABELS = {
     "Menu_Views": "보기",
-    "Menu_New_Activity": "새 활동",
-    "Action_New_Task": "새 작업",
-    "Action_New_Event": "새 이벤트",
-    "Action_Log_Call": "전화 기록",
-    "Action_Email": "이메일",
     "Row_Actions": "항목 메뉴",
     "Row_Checking": "가능한 작업 확인 중…",
     "Row_No_Actions": "이 항목을 편집하거나 삭제할 수 없습니다.",

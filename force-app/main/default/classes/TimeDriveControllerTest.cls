@@ -1278,26 +1278,6 @@ private class TimeDriveControllerTest {
   }
 
   @IsTest
-  static void offersTheRecordsActivityActions() {
-    List<TimeDriveController.ActivityAction> actions = TimeDriveController.getActivityActions(contactId());
-    // Whatever the layout offers, each opens by API name and has an icon.
-    for (TimeDriveController.ActivityAction a : actions) {
-      Assert.isNotNull(a.apiName);
-      Assert.isTrue(a.icon.contains(':'), a.icon);
-    }
-    Assert.isTrue(TimeDriveController.getActivityActions(null).isEmpty());
-    Assert.areEqual(
-      'action:new_task',
-      TimeDriveController.iconName('https://x.my.salesforce.com/img/icon/t4v35/action/new_task_120.png')
-    );
-    Assert.areEqual(
-      'action:log_a_call',
-      TimeDriveController.iconName('https://x.my.salesforce.com/img/icon/t4v35/action/log_a_call')
-    );
-    Assert.areEqual('utility:add', TimeDriveController.iconName(null));
-  }
-
-  @IsTest
   static void templatesFillTokensAndDropBlankParts() {
     // Built in memory, with its account as a query would bring it.
     Opportunity o = (Opportunity) JSON.deserialize(

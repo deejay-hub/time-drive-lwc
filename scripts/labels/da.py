@@ -6,11 +6,6 @@
 # felt, tilladelsessæt): have a native speaker review it.
 LABELS = {
     "Menu_Views": "Visninger",
-    "Menu_New_Activity": "Ny aktivitet",
-    "Action_New_Task": "Ny opgave",
-    "Action_New_Event": "Ny begivenhed",
-    "Action_Log_Call": "Log et opkald",
-    "Action_Email": "E-mail",
     "Row_Actions": "Handlinger",
     "Row_Checking": "Tjekker, hvad du kan gøre…",
     "Row_No_Actions": "Du kan ikke redigere eller slette elementet.",

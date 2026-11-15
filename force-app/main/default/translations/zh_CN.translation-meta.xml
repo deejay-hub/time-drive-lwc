@@ -9,22 +9,6 @@
         <name>Time_Drive_Action_Edit</name>
     </customLabels>
     <customLabels>
-        <label>电子邮件</label>
-        <name>Time_Drive_Action_Email</name>
-    </customLabels>
-    <customLabels>
-        <label>记录电话</label>
-        <name>Time_Drive_Action_Log_Call</name>
-    </customLabels>
-    <customLabels>
-        <label>新建事件</label>
-        <name>Time_Drive_Action_New_Event</name>
-    </customLabels>
-    <customLabels>
-        <label>新建任务</label>
-        <name>Time_Drive_Action_New_Task</name>
-    </customLabels>
-    <customLabels>
         <label>全天</label>
         <name>Time_Drive_All_Day</name>
     </customLabels>
@@ -327,10 +311,6 @@
     <customLabels>
         <label>项目</label>
         <name>Time_Drive_Many_Other</name>
-    </customLabels>
-    <customLabels>
-        <label>新建活动</label>
-        <name>Time_Drive_Menu_New_Activity</name>
     </customLabels>
     <customLabels>
         <label>视图</label>

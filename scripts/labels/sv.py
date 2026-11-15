@@ -6,11 +6,6 @@
 # fält, behörighetsuppsättning): have a native speaker review it.
 LABELS = {
     "Menu_Views": "Vyer",
-    "Menu_New_Activity": "Ny aktivitet",
-    "Action_New_Task": "Ny uppgift",
-    "Action_New_Event": "Ny händelse",
-    "Action_Log_Call": "Logga ett samtal",
-    "Action_Email": "E-post",
     "Row_Actions": "Åtgärder",
     "Row_Checking": "Kontrollerar vad du kan göra…",
     "Row_No_Actions": "Du kan inte redigera eller ta bort objektet.",

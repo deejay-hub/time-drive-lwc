@@ -9,22 +9,6 @@
         <name>Time_Drive_Action_Edit</name>
     </customLabels>
     <customLabels>
-        <label>E-mail</label>
-        <name>Time_Drive_Action_Email</name>
-    </customLabels>
-    <customLabels>
-        <label>Log et opkald</label>
-        <name>Time_Drive_Action_Log_Call</name>
-    </customLabels>
-    <customLabels>
-        <label>Ny begivenhed</label>
-        <name>Time_Drive_Action_New_Event</name>
-    </customLabels>
-    <customLabels>
-        <label>Ny opgave</label>
-        <name>Time_Drive_Action_New_Task</name>
-    </customLabels>
-    <customLabels>
         <label>Heldags</label>
         <name>Time_Drive_All_Day</name>
     </customLabels>
@@ -327,10 +311,6 @@
     <customLabels>
         <label>Elementer</label>
         <name>Time_Drive_Many_Other</name>
-    </customLabels>
-    <customLabels>
-        <label>Ny aktivitet</label>
-        <name>Time_Drive_Menu_New_Activity</name>
     </customLabels>
     <customLabels>
         <label>Visninger</label>

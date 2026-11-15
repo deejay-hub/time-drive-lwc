@@ -6,11 +6,6 @@
 # speaker review it.
 LABELS = {
     "Menu_Views": "檢視",
-    "Menu_New_Activity": "新增活動",
-    "Action_New_Task": "新增任務",
-    "Action_New_Event": "新增事件",
-    "Action_Log_Call": "記錄通話",
-    "Action_Email": "電子郵件",
     "Row_Actions": "項目動作",
     "Row_Checking": "正在檢查您可以執行的動作…",
     "Row_No_Actions": "您無法編輯或刪除此項目。",

@@ -12,7 +12,7 @@
 - Added the Opportunity Products example Apex source (Account › Opportunity › Opportunity Product)
 - Added Time Drive Setup: a guided wizard, Fit to your org, lenses, detail fields, a filter builder, an org check and diagnostics
 - Added lenses, with All as a lens and the filter each source applies shown on the Lenses page
-- Added activity actions (New Task, New Event, Log a Call, Email) and Edit and Delete from each item's menu
+- Added Edit and Delete from each item's menu
 - Added View all for a busy day's grouped Salesforce items, paged as you scroll
 - Added support for opening records in a new workspace tab in Console apps
 - Added translatable custom labels for every timeline string, with Spanish and Arabic translations

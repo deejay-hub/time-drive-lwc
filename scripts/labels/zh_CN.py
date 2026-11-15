@@ -5,11 +5,6 @@
 # A draft: have a native speaker review it.
 LABELS = {
     "Menu_Views": "视图",
-    "Menu_New_Activity": "新建活动",
-    "Action_New_Task": "新建任务",
-    "Action_New_Event": "新建事件",
-    "Action_Log_Call": "记录电话",
-    "Action_Email": "电子邮件",
     "Row_Actions": "项目操作",
     "Row_Checking": "正在检查您可以执行的操作…",
     "Row_No_Actions": "您无法编辑或删除此项目。",

@@ -9,22 +9,6 @@
         <name>Time_Drive_Action_Edit</name>
     </customLabels>
     <customLabels>
-        <label>Sähköposti</label>
-        <name>Time_Drive_Action_Email</name>
-    </customLabels>
-    <customLabels>
-        <label>Kirjaa puhelu</label>
-        <name>Time_Drive_Action_Log_Call</name>
-    </customLabels>
-    <customLabels>
-        <label>Uusi tapahtuma</label>
-        <name>Time_Drive_Action_New_Event</name>
-    </customLabels>
-    <customLabels>
-        <label>Uusi tehtävä</label>
-        <name>Time_Drive_Action_New_Task</name>
-    </customLabels>
-    <customLabels>
         <label>Koko pv</label>
         <name>Time_Drive_All_Day</name>
     </customLabels>
@@ -327,10 +311,6 @@
     <customLabels>
         <label>Kohteet</label>
         <name>Time_Drive_Many_Other</name>
-    </customLabels>
-    <customLabels>
-        <label>Uusi aktiviteetti</label>
-        <name>Time_Drive_Menu_New_Activity</name>
     </customLabels>
     <customLabels>
         <label>Näkymät</label>

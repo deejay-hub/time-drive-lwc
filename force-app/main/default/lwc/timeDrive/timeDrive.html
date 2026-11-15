@@ -1,7 +1,7 @@
 <template>
   <article class={cardClass} dir={textDir} aria-label={cardTitle}>
     <header class="header">
-      <div class={titleRowClass}>
+      <div class="title-row">
         <!-- The view names the card, as a list view's name does: a heading
              holding the button that switches it. A native button and menu, so
              the label can be styled. -->
@@ -59,77 +59,6 @@
           </div>
         </template>
 
-        <!-- Full: the actions share the view's line, at its end; the tools
-             drop to the line below. -->
-        <template lwc:if={fullActionsSkeleton}>
-          <div class="actions-group actions-group_skeleton" aria-hidden="true">
-            <span class="skeleton skeleton_pill_wide"></span><span class="skeleton skeleton_pill_wide"></span>
-          </div>
-        </template>
-        <template lwc:elseif={fullActionsOwnRow}>
-          <div class="actions-group">
-            <lightning-button-group>
-              <template for:each={shownActions} for:item="a">
-                <lightning-button
-                  key={a.key}
-                  label={a.label}
-                  title={a.label}
-                  data-action={a.apiName}
-                  onclick={handleActivityAction}
-                ></lightning-button>
-              </template>
-              <template lwc:if={hasOverflowActions}>
-                <lightning-button-menu
-                  alternative-text={labels.menuNewActivity}
-                  title={labels.menuNewActivity}
-                  menu-alignment="right"
-                  onselect={handleActivityAction}
-                >
-                  <template for:each={overflowActions} for:item="a">
-                    <lightning-menu-item key={a.key} value={a.apiName} label={a.label}></lightning-menu-item>
-                  </template>
-                </lightning-button-menu>
-              </template>
-            </lightning-button-group>
-          </div>
-        </template>
-
-        <!-- Full: the filter summary shares the tools' line, on the left. -->
-        <template lwc:if={actionsOnTitleRow}>
-          <span class="row-break" aria-hidden="true"></span>
-          <!-- The same summary as under the header, pills and all. -->
-          <p class={summaryToolsClass} aria-live="polite">
-            <template lwc:if={activeRange}
-              ><span class="slds-pill summary-pill range-pill"
-                ><span class="slds-pill__label">{summaryWhen}</span
-                ><button
-                  type="button"
-                  class="slds-button slds-button_icon slds-pill__remove pill-remove"
-                  title={rangeRemoveLabel}
-                  aria-label={rangeRemoveLabel}
-                  onclick={handleRangeRemove}
-                >
-                  <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon></button></span></template
-            ><template lwc:else>{summaryWhen}</template
-            ><template lwc:if={summaryPending}
-              >{whenSeparator}<span class="skeleton skeleton_summary" aria-hidden="true"></span
-              ><span class="assistive-text">{labels.statusUpdatingCounts}</span></template
-            ><template lwc:elseif={typesHidden}
-              >{whenSeparator}<span class="slds-pill summary-pill types-pill"
-                ><span class="slds-pill__label">{typesText}</span
-                ><button
-                  type="button"
-                  class="slds-button slds-button_icon slds-pill__remove pill-remove"
-                  title={typesRemoveLabel}
-                  aria-label={typesRemoveLabel}
-                  onclick={handleTypesRemove}
-                >
-                  <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon></button></span
-              >{countText}</template
-            ><template lwc:else>{summaryRestShown}</template>
-          </p>
-        </template>
-
         <div class="toolbar">
           <template lwc:if={firstLoad}>
             <div class="tools tools_skeleton" aria-hidden="true">
@@ -139,52 +68,7 @@
             </div>
           </template>
           <template lwc:else>
-            <!-- The record's activity actions, from its layout, as the standard
-                 Activity component offers them. Narrow: one New menu. -->
-            <template lwc:if={showInlineActions}>
-              <template lwc:if={actionsAsMenu}>
-                <lightning-button-menu
-                  class="actions-menu"
-                  icon-name="utility:add"
-                  alternative-text={labels.menuNewActivity}
-                  title={labels.menuNewActivity}
-                  menu-alignment="right"
-                  onselect={handleActivityAction}
-                >
-                  <template for:each={activityActions} for:item="a">
-                    <lightning-menu-item
-                      key={a.key}
-                      value={a.apiName}
-                      label={a.label}
-                      prefix-icon-name={a.icon}
-                    ></lightning-menu-item>
-                  </template>
-                </lightning-button-menu>
-              </template>
-              <template lwc:else>
-                <!-- Each action its own bordered button, holding the action's
-                     coloured circle, as on the standard Activity composer. -->
-                <div class="actions" role="group" aria-label={labels.menuNewActivity}>
-                  <template for:each={activityActions} for:item="a">
-                    <button
-                      key={a.key}
-                      type="button"
-                      class="action-circle"
-                      style={a.style}
-                      title={a.label}
-                      aria-label={a.label}
-                      data-action={a.apiName}
-                      onclick={handleActivityAction}
-                    >
-                      <span class="action-circle-disc" aria-hidden="true">
-                        <lightning-icon icon-name={a.buttonIcon} size="xx-small"></lightning-icon>
-                      </span>
-                    </button>
-                  </template>
-                </div>
-              </template>
-            </template>
-            <!-- Separate buttons, a little apart, as the activity actions. -->
+            <!-- Separate buttons, a little apart. -->
             <div class="tools">
               <!-- Back to today's slot (today's items, or "Nothing today"). -->
               <template lwc:if={hasEvents}>
@@ -292,38 +176,36 @@
       <div class="summary-row">
         <!-- A narrowed date range, or hidden types: their text becomes a pill,
              whose x puts back the page's range, or every type. -->
-        <template lwc:if={summaryAfterTools}>
-          <p class={summaryClass} aria-live="polite">
-            <template lwc:if={activeRange}
-              ><span class="slds-pill summary-pill range-pill"
-                ><span class="slds-pill__label">{summaryWhen}</span
-                ><button
-                  type="button"
-                  class="slds-button slds-button_icon slds-pill__remove pill-remove"
-                  title={rangeRemoveLabel}
-                  aria-label={rangeRemoveLabel}
-                  onclick={handleRangeRemove}
-                >
-                  <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon></button></span></template
-            ><template lwc:else>{summaryWhen}</template
-            ><template lwc:if={summaryPending}
-              >{whenSeparator}<span class="skeleton skeleton_summary" aria-hidden="true"></span
-              ><span class="assistive-text">{labels.statusUpdatingCounts}</span></template
-            ><template lwc:elseif={typesHidden}
-              >{whenSeparator}<span class="slds-pill summary-pill types-pill"
-                ><span class="slds-pill__label">{typesText}</span
-                ><button
-                  type="button"
-                  class="slds-button slds-button_icon slds-pill__remove pill-remove"
-                  title={typesRemoveLabel}
-                  aria-label={typesRemoveLabel}
-                  onclick={handleTypesRemove}
-                >
-                  <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon></button></span
-              >{countText}</template
-            ><template lwc:else>{summaryRestShown}</template>
-          </p>
-        </template>
+        <p class={summaryClass} aria-live="polite">
+          <template lwc:if={activeRange}
+            ><span class="slds-pill summary-pill range-pill"
+              ><span class="slds-pill__label">{summaryWhen}</span
+              ><button
+                type="button"
+                class="slds-button slds-button_icon slds-pill__remove pill-remove"
+                title={rangeRemoveLabel}
+                aria-label={rangeRemoveLabel}
+                onclick={handleRangeRemove}
+              >
+                <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon></button></span></template
+          ><template lwc:else>{summaryWhen}</template
+          ><template lwc:if={summaryPending}
+            >{whenSeparator}<span class="skeleton skeleton_summary" aria-hidden="true"></span
+            ><span class="assistive-text">{labels.statusUpdatingCounts}</span></template
+          ><template lwc:elseif={typesHidden}
+            >{whenSeparator}<span class="slds-pill summary-pill types-pill"
+              ><span class="slds-pill__label">{typesText}</span
+              ><button
+                type="button"
+                class="slds-button slds-button_icon slds-pill__remove pill-remove"
+                title={typesRemoveLabel}
+                aria-label={typesRemoveLabel}
+                onclick={handleTypesRemove}
+              >
+                <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon></button></span
+            >{countText}</template
+          ><template lwc:else>{summaryRestShown}</template>
+        </p>
         <!-- Says where the timeline moved to after a jump or as days load. -->
         <p class="assistive-text announcer" aria-live="polite" lwc:dom="manual"></p>
       </div>

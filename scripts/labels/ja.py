@@ -6,11 +6,6 @@
 # a native speaker review it.
 LABELS = {
     "Menu_Views": "ビュー",
-    "Menu_New_Activity": "新規活動",
-    "Action_New_Task": "新規 ToDo",
-    "Action_New_Event": "新規行動",
-    "Action_Log_Call": "活動の記録",
-    "Action_Email": "メール",
     "Row_Actions": "項目のアクション",
     "Row_Checking": "実行できる操作を確認しています…",
     "Row_No_Actions": "編集・削除はできません。",

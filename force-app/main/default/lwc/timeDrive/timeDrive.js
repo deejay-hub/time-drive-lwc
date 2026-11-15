@@ -17,7 +17,6 @@ import getPreference from "@salesforce/apex/TimeDriveController.getPreference";
 import savePreference from "@salesforce/apex/TimeDriveController.savePreference";
 import saveDateRange from "@salesforce/apex/TimeDriveController.saveDateRange";
 import USER_ID from "@salesforce/user/Id";
-import getActivityActions from "@salesforce/apex/TimeDriveController.getActivityActions";
 import TimeDriveConfirm from "c/timeDriveConfirm";
 import LightningConfirm from "lightning/confirm";
 import { deleteRecord } from "lightning/uiRecordApi";
@@ -132,42 +131,6 @@ const FIT_MIN_REM = 15;
 
 // The Salesforce mobile app on a phone: one column, lighter rows, bigger targets.
 const isPhone = () => FORM_FACTOR === "Small";
-// App Builder Activity Actions.
-// Full actions shown before the rest go in a menu: in a narrow card, and in a wide one.
-const NARROW_ACTIONS = 1;
-// The actions that stay on show first (the icons' names).
-const ACTION_PRIORITY = ["log_a_call", "email", "new_event", "new_task"];
-const WIDE_ACTIONS = 4;
-const ACTION_MODES = ["none", "one button", "inline", "full"];
-
-// A button icon takes a utility icon: an action's own (action:new_task) as
-// its utility match (utility:task).
-const UTILITY_FOR_ACTION = {
-  new_task: "utility:task",
-  new_event: "utility:event",
-  log_a_call: "utility:call",
-  email: "utility:email",
-  new_note: "utility:note",
-  new_case: "utility:case"
-};
-// The four standard activity actions are named by our own labels (so they
-// follow the translations here); any other action keeps Salesforce's.
-const ACTION_LABEL = {
-  new_task: LABELS.actionNewTask,
-  new_event: LABELS.actionNewEvent,
-  log_a_call: LABELS.actionLogCall,
-  email: LABELS.actionEmail
-};
-function actionLabelFor(action) {
-  return ACTION_LABEL[action.icon?.split(":")[1]] ?? action.label;
-}
-function utilityIconFor(icon) {
-  if (!icon) return "utility:add";
-  const [set, name] = icon.split(":");
-  if (set === "utility") return icon;
-  return UTILITY_FOR_ACTION[name] ?? (name?.startsWith("new_") ? `utility:${name.slice(4)}` : "utility:add");
-}
-
 // The icon after an Email Message's title, by what tracking says.
 const EMAIL_STATES = {
   opened: { icon: "utility:preview", label: LABELS.emailOpened },
@@ -418,131 +381,10 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     this.chooseRange(pageMonths(this._historyYears, "back"), pageMonths(this._futureYears, "ahead"));
   }
 
-  // App Builder "Activity Actions": the record's New Task, Log a Call,
-  // Email, New Event ... as on the standard Activity component. None; One
-  // button (a + menu); Inline (a button each, among the tools); Full (a
-  // button each with its name, on a line of its own, or among the tools in
-  // a wide horizontal card). Defaults to Full.
-  @api
-  get activityActionsMode() {
-    return this._actionsMode;
-  }
-  set activityActionsMode(value) {
-    const mode = String(value ?? "").toLowerCase();
-    this._actionsMode = ACTION_MODES.includes(mode) ? mode : "full";
-  }
-  _actionsMode = "full";
-
-  // The actions, from the record's layout (see getActivityActions); none
-  // asked for when the option is None.
-  @wire(getActivityActions, { recordId: "$actionsRecordId" })
-  wiredActions({ data }) {
-    this.actions = data ?? [];
-  }
-  actions = [];
-  get actionsRecordId() {
-    // None on a phone, which has no activity buttons: nothing to ask for.
-    return this._actionsMode === "none" || isPhone() ? undefined : this.recordId;
-  }
-  get activityActions() {
-    return this.actions.map((a) => ({
-      ...a,
-      key: a.apiName,
-      label: actionLabelFor(a),
-      buttonIcon: utilityIconFor(a.icon),
-      // The action's own colour for its circle (grey if it has none).
-      style: `--action: ${a.colour || "#747474"}`
-    }));
-  }
-  // One in a narrow card, up to four in a wide one (as many as fit: their
-  // labels can be twice as long translated); the rest go in a menu beside them.
-  get actionsShownMax() {
-    return this.actionsNarrow ? NARROW_ACTIONS : Math.min(WIDE_ACTIONS, this.actionsFit);
-  }
   // The lens menu at most the card's width, less its side padding (cardWidth
   // is rounded to 40px, so a little more), as the card clips what overflows.
   get viewMenuStyle() {
     return this.cardWidth > 0 ? `--view-menu-max: ${Math.max(160, this.cardWidth - 48)}px` : "";
-  }
-  // How many Full actions fit on the title row, measured after each render
-  // (fitActions); back to all four when the card's width changes.
-  actionsFit = WIDE_ACTIONS;
-  fitActions() {
-    if (!this.fullActionsOwnRow || this.actionsNarrow || this.actionsFit <= 1) return;
-    const group = this.template.querySelector(".actions-group:not(.actions-group_skeleton)");
-    const row = group?.parentElement;
-    if (!group || !row) return;
-    const room = row.clientWidth;
-    // Wider than its row: one more action goes in the menu (and this runs
-    // again after that render, until the rest fit).
-    if (room > 0 && group.getBoundingClientRect().width > room) {
-      this.actionsFit = Math.min(this.actionsFit, this.shownActions.length) - 1;
-    }
-  }
-  // Which fit when there are too many: Log a Call and Email first, then
-  // New Event, New Task and any others; each group keeps the layout's order.
-  get keptActionKeys() {
-    const rank = (a) => {
-      const at = ACTION_PRIORITY.indexOf(a.icon?.split(":")[1]);
-      return at === -1 ? ACTION_PRIORITY.length : at;
-    };
-    const ranked = [...this.activityActions].sort((x, y) => rank(x) - rank(y));
-    return new Set(ranked.slice(0, this.actionsShownMax).map((a) => a.key));
-  }
-  get shownActions() {
-    const keep = this.keptActionKeys;
-    return this.activityActions.filter((a) => keep.has(a.key));
-  }
-  get overflowActions() {
-    const keep = this.keptActionKeys;
-    return this.activityActions.filter((a) => !keep.has(a.key));
-  }
-  get hasOverflowActions() {
-    return this.overflowActions.length > 0;
-  }
-  get actionsNarrow() {
-    return this.narrow;
-  }
-  // The title row holds the Full actions (see fullActionsOwnRow).
-  get actionsOnTitleRow() {
-    return this.fullActionsOwnRow || this.fullActionsSkeleton;
-  }
-  // With them there, the filter summary moves down beside the tools.
-  get summaryAfterTools() {
-    return !this.actionsOnTitleRow;
-  }
-  get titleRowClass() {
-    return this.actionsOnTitleRow ? "title-row title-row_actions" : "title-row";
-  }
-  get hasActivityActions() {
-    return this._actionsMode !== "none" && this.actions.length > 0;
-  }
-  // One button always folds them into the + menu; Inline does when the card
-  // is narrow.
-  get actionsAsMenu() {
-    return this._actionsMode === "one button" || (this.cardWidth > 0 && this.cardWidth < 480);
-  }
-  get showInlineActions() {
-    return this.hasActivityActions && this._actionsMode !== "full" && !isPhone();
-  }
-  // Full: on the view's line, at its end, whatever the card's width.
-  get fullActionsOwnRow() {
-    return this.hasActivityActions && this._actionsMode === "full" && !isPhone();
-  }
-  get fullActionsSkeleton() {
-    return this._actionsMode === "full" && this.firstLoad && !isPhone();
-  }
-
-  // Opens the action as Salesforce does (its own window or email composer);
-  // when it saves, the page refreshes and so does the timeline.
-  handleActivityAction(event) {
-    const apiName = event.currentTarget?.dataset?.action ?? event.detail?.value;
-    if (!apiName) return;
-    this[NavigationMixin.Navigate]({
-      type: "standard__quickAction",
-      attributes: { apiName },
-      state: { recordId: this.recordId }
-    });
   }
 
   // The whole history as per-day counts (getSummary), and the full events of
@@ -675,7 +517,6 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     }
     fitIllustrations(this.template);
     this.measureBeforeFirstRequest();
-    this.fitActions();
     this.loadNeededDays();
     this.focusViewMenu();
     this.listenToWheel();
@@ -733,8 +574,6 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     const rounded = Math.round(width / 40) * 40;
     if (rounded && rounded !== this.cardWidth) {
       this.cardWidth = rounded;
-      // Measured again for the new width (see fitActions).
-      this.actionsFit = WIDE_ACTIONS;
     }
   }
 
@@ -2485,10 +2324,6 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   // With a pill in it, the summary lines its text up with the pill.
   get summaryClass() {
     return this.activeRange || this.typesHidden ? "summary summary_pills" : "summary";
-  }
-  // Full: the same summary on the tools' line.
-  get summaryToolsClass() {
-    return `${this.summaryClass} summary_tools`;
   }
   showMore() {
     const from = this.windowFrom + this.visibleDays;

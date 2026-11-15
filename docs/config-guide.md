@@ -35,7 +35,6 @@ Along the top:
 
 - **The lens**, the timeline's heading (All items, Sales, Service ...): a lens narrows the timeline to one area. People pick one from the heading, and Time Drive remembers their choice.
 - **The summary line**: the date range, the types shown and how many items there are.
-- **Activity actions**: the record's Log a Call, Email, New Task and New Event, as the page layout offers them. As many as fit show as buttons; the rest go in a menu.
 - **Today** brings today into view. **Filters** chooses event types and narrows the date range. The other buttons switch to titles only, expand every item, and refresh.
 
 Each item shows its title, subtitle and time. Open one to see the fields the admin chose. Click its title to open its record. Its menu offers Edit and Delete, when the person may.
@@ -231,7 +230,6 @@ Open a Contact, Account or Lead record, choose **Edit Page**, and drag **Time Dr
 - **Layout** (default Auto): Auto is vertical in narrow regions and horizontal from 640px wide. Vertical or Horizontal pins one.
 - **Default Lens** (default All): the lens the timeline opens on. People can still pick another from the heading; a lens the org doesn't offer opens on All.
 - **Open At** (default Today): today's slot (with a placeholder when it has nothing), the earliest item, or the latest.
-- **Activity Actions** (default Full): the record's New Task, New Event, Log a Call and Email, as the page layout's Activity composer offers them. None, One button (a + menu), Inline (a button each among the header buttons) or Full (a button each with its name).
 - **Display Density** (default Auto): Auto follows each user's Comfy or Compact setting; Comfy or Compact overrides it.
 - **History (years)** (default 1): how far back it plots, from 0.25 to 10 years.
 - **Future (years)** (default 0.5): how far ahead it plots future-dated records (scheduled orders, close dates). None is up to today; otherwise 0.25 to 10 years.

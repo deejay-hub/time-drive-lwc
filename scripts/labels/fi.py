@@ -7,11 +7,6 @@
 # Finnish words run long, so shorter forms are used where the card is tight.
 LABELS = {
     "Menu_Views": "Näkymät",
-    "Menu_New_Activity": "Uusi aktiviteetti",
-    "Action_New_Task": "Uusi tehtävä",
-    "Action_New_Event": "Uusi tapahtuma",
-    "Action_Log_Call": "Kirjaa puhelu",
-    "Action_Email": "Sähköposti",
     "Row_Actions": "Toiminnot",
     "Row_Checking": "Tarkistetaan oikeuksia…",
     "Row_No_Actions": "Et voi muokata tai poistaa tätä kohdetta.",

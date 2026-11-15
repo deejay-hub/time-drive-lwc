@@ -29,14 +29,6 @@ jest.mock(
   }
 );
 jest.mock("@salesforce/apex/TimeDriveController.getPageDays", () => ({ default: jest.fn() }), { virtual: true });
-jest.mock(
-  "@salesforce/apex/TimeDriveController.getActivityActions",
-  () => {
-    const { createApexTestWireAdapter } = require("@salesforce/sfdx-lwc-jest");
-    return { default: createApexTestWireAdapter(jest.fn()) };
-  },
-  { virtual: true }
-);
 
 const today = new Intl.DateTimeFormat("en-CA", {
   timeZone: TIME_ZONE,
@@ -103,14 +95,12 @@ describe("c-time-drive on a phone", () => {
     expect(root.querySelectorAll(".event-time")).toHaveLength(0);
   });
 
-  it("has a one-line header: Today and Filters, with the rest behind a menu, and no activity buttons", async () => {
-    const element = await mount({ activityActionsMode: "Full" });
+  it("has a one-line header: Today and Filters, with the rest behind a menu", async () => {
+    const element = await mount();
     const root = element.shadowRoot;
     expect(root.querySelector(".lite-button")).toBeNull();
     expect(root.querySelector(".expand-button")).toBeNull();
     expect(root.querySelector('lightning-button-icon[title="Refresh"]')).toBeNull();
-    expect(root.querySelector(".actions-group")).toBeNull();
-    expect(root.querySelector(".actions-menu")).toBeNull();
     root.querySelector(".header-menu-button").click();
     await settle();
     const items = [...root.querySelectorAll(".row-popover-item")];

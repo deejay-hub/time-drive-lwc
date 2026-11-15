@@ -57,46 +57,6 @@
         <value>Views</value>
     </labels>
     <labels>
-        <fullName>Time_Drive_Menu_New_Activity</fullName>
-        <categories>Time Drive</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Timeline header · the + button (Activity Actions: One button): name, tooltip</shortDescription>
-        <value>New activity</value>
-    </labels>
-    <labels>
-        <fullName>Time_Drive_Action_New_Task</fullName>
-        <categories>Time Drive</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Timeline header · activity action button: New Task</shortDescription>
-        <value>New Task</value>
-    </labels>
-    <labels>
-        <fullName>Time_Drive_Action_New_Event</fullName>
-        <categories>Time Drive</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Timeline header · activity action button: New Event</shortDescription>
-        <value>New Event</value>
-    </labels>
-    <labels>
-        <fullName>Time_Drive_Action_Log_Call</fullName>
-        <categories>Time Drive</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Timeline header · activity action button: Log a Call</shortDescription>
-        <value>Log a Call</value>
-    </labels>
-    <labels>
-        <fullName>Time_Drive_Action_Email</fullName>
-        <categories>Time Drive</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Timeline header · activity action button: Email</shortDescription>
-        <value>Email</value>
-    </labels>
-    <labels>
         <fullName>Time_Drive_Row_Actions</fullName>
         <categories>Time Drive</categories>
         <language>en_US</language>

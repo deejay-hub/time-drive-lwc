@@ -774,45 +774,6 @@ global with sharing class TimeDriveController {
     return e.grouped && e.groupCount != null ? e.groupCount : 1;
   }
 
-  // Every configured source's events (Time Drive Source records, in
-  // sequence), newest first, each with its day key in the user's time zone.
-  @TestVisible
-  /**
-   * The record's activity actions (New Task, Log a Call, Email, New Event ...),
-   * as the standard Activity component shows them: the quick actions in its
-   * layout's Activity composer that this user can use, in order, each with
-   * its SLDS icon and colour. The timeline opens them as Salesforce does.
-   * @param recordId the Id of the record the timeline is on
-   * @return the quick actions the user can use, in order
-   */
-  // PlatformAction lists what the running user's page layout offers; it has no object permission to check.
-  @SuppressWarnings('PMD.ApexCRUDViolation')
-  @AuraEnabled(cacheable=true)
-  public static List<ActivityAction> getActivityActions(Id recordId) {
-    List<ActivityAction> out = new List<ActivityAction>();
-    if (recordId == null) {
-      return out;
-    }
-    try {
-      for (PlatformAction a : [
-        SELECT ApiName, Label, IconUrl, PrimaryColor
-        FROM PlatformAction
-        WHERE
-          ActionListContext = 'Record'
-          AND SourceEntity = :recordId
-          AND DeviceFormat = 'Desktop'
-          AND Section = 'ActivityComposer'
-          AND Type = 'QuickAction'
-      ]) {
-        out.add(new ActivityAction(a.ApiName, a.Label, iconName(a.IconUrl), a.PrimaryColor));
-      }
-    } catch (Exception e) {
-      // No actions to offer: the timeline shows none.
-      System.debug(LoggingLevel.FINE, 'Time Drive: no activity actions. ' + e.getMessage());
-    }
-    return out;
-  }
-
   /**
    * Says on each item that is a Salesforce record what the user's permissions
    * on its object allow, for the menu at the end of its row (none without
@@ -889,13 +850,6 @@ global with sharing class TimeDriveController {
     return out;
   }
 
-  // ".../img/icon/t4v35/action/new_task_120.png" -> "action:new_task".
-  @TestVisible
-  private static String iconName(String url) {
-    Matcher m = Pattern.compile('/icon/t4v35/(action|standard|custom|utility)/([a-z0-9_]+?)(?:_\\d+)?(?:\\.\\w+)?$').matcher(url ?? '');
-    return m.find() ? m.group(1) + ':' + m.group(2) : 'utility:add';
-  }
-
   /** A highlight on an item: an icon (or a dot), its colour and what it says. */
   public class Flag {
     @AuraEnabled
@@ -915,32 +869,6 @@ global with sharing class TimeDriveController {
       this.icon = icon;
       this.colour = colour;
       this.text = text;
-    }
-  }
-
-  /** A quick action offered on the record page, with its icon and colour. */
-  public class ActivityAction {
-    @AuraEnabled
-    public String apiName;
-    @AuraEnabled
-    public String label;
-    @AuraEnabled
-    public String icon;
-    @AuraEnabled
-    public String colour;
-
-    /**
-     * Builds an action, giving the colour a leading #.
-     * @param apiName the quick action's API name
-     * @param label the action's label
-     * @param icon the SLDS icon name
-     * @param colour the colour, with or without a leading #
-     */
-    public ActivityAction(String apiName, String label, String icon, String colour) {
-      this.apiName = apiName;
-      this.label = label;
-      this.icon = icon;
-      this.colour = String.isBlank(colour) ? null : '#' + colour.removeStart('#');
     }
   }
 
