@@ -125,6 +125,8 @@ This walk-through adds the Contact's cases.
 
 **Step 3, Date.** Choose the date or date/time that places each record on the timeline. Suggested fields come first. A lookup (›) leads to a related record's dates, such as the Account's.
 
+Tasks and Events dated by their usual fields are placed the way Salesforce shows them. A task dated by its **Due Date** (`ActivityDate`) is on its due date while it's open, and at the moment it was completed (`CompletedDateTime`) once it's done. An event dated by its **Start** (`StartDateTime`) is at its start, unless it's all day: then it's on its date, in every time zone. Counts and View all follow the same rules, so a day's count always matches its items. A date (with no time) shows `--` in place of a time and comes first in its day.
+
 ![Step 3: the date that places each item](images/config-guide/standard-3-date.png)
 
 **Step 4, Lenses.** Choose the lenses the items are in. **All items** is where the timeline opens. Leave it out to show these items only in the lenses you choose.
@@ -468,7 +470,7 @@ How you count is yours to choose: a totals endpoint, as here; a cached copy; or 
 
 The timeline shows every date, time and number in the viewer's own time zone, language and locale. Your rows get the same treatment as Setup's sources, as long as you hand over real values rather than text:
 
-- **Dates and times.** Give a `Datetime` for a moment and a `Date` for a whole day (a day plots at midday, so it stays on its day in every time zone). When a service sends times as text, parse them with their zone (`2026-10-31T09:00:00Z` or `+11:00`), so they land at the right moment.
+- **Dates and times.** Give a `Datetime` for a moment and a `Date` for a whole day (a day plots at midday, so it stays on its day in every time zone). Text works too, as a service's JSON gives it: `2026-10-31` is a day, and `2026-10-31T09:00:00Z` or `2026-10-31T20:00:00+11:00` is that moment (text with no zone is read as the user's own time). An item whose date can't be read is left out, and the timeline says how many.
 - **Numbers and money.** Give numbers as numbers (`Decimal`, `Integer`, `Double`), not formatted strings. They show grouped as the viewer's locale does (1,200.5 or 1.200,5). A detail field with the Currency format shows in the viewer's currency, or in a row's own when it has a `CurrencyIsoCode` key (records have it in multi-currency orgs; add it to the fields you query).
 - **Picklists** on records show their labels in the viewer's language.
 - **Words you write.** Text in `title` and `subtitle` is shown as you wrote it. For translated text, pass a custom label: `.title(System.Label.Points_Earned)`, whose text can hold tokens such as `{Points}`. A detail field's label can be `$Label.Points` too.

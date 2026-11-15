@@ -39,6 +39,7 @@ LABELS = {
     "Server_No_Identity_Link": "Intet identitetslinkobjekt ({0}): viser kun engagement for kontaktens egen person.",
     "Server_No_Object": "{0}: der findes intet objekt med navnet {1}.",
     "Server_No_Field": "{0}: {1} har intet felt {2}.",
+    "Server_Unreadable_Dates": "{0}: {1} elementer har en dato, Time Drive ikke kan læse, så de vises ikke.",
     "Server_No_Link": "{0}: angiv et overordnet felt eller et forbindelsesobjekt for at knytte poster til siden.",
     "Server_Sent_To": "Til: {0}",
     "Server_Sent_To_One_Other": "Til: {0} og 1 anden",

@@ -44,12 +44,25 @@ public with sharing class TimeDrivePlotter {
     Time_Drive_Source__mdt s = context.source;
     List<Time_Drive_Detail_Field__mdt> detailFields = context.detailFields();
     List<TimeDriveController.EngagementEvent> events = new List<TimeDriveController.EngagementEvent>();
+    Integer unreadable = 0;
     for (TimeDriveRow row : rows == null ? new List<TimeDriveRow>() : rows) {
-      Object dated = row.get(context.dateField());
+      // The date the source's provider chose for the row (a Task's due date
+      // or completion), else its date field.
+      Object dated = row.get(String.isNotBlank(context.plotDateKey) ? context.plotDateKey : context.dateField());
+      // Text, as a service's JSON gives dates: read as a Date or a moment.
+      if (dated instanceof String) {
+        Object read = parsed((String) dated);
+        if (read == null) {
+          unreadable++;
+          continue;
+        }
+        dated = read;
+      }
       Datetime occurredAt = instant(dated);
       // Items with no date are left out quietly, so a few gaps in the data
-      // don't put a warning over the rest.
+      // don't put a warning over the rest; a date that isn't one is counted.
       if (occurredAt == null) {
+        unreadable += dated == null ? 0 : 1;
         continue;
       }
       Object key = row.get(context.idField());
@@ -74,6 +87,15 @@ public with sharing class TimeDrivePlotter {
       e.flags = TimeDriveHighlights.flagsFor(context.highlightRules(), row);
       context.styled(e);
       events.add(e);
+    }
+    // Items whose date isn't one (text that isn't ISO, a number): said, not hidden.
+    if (unreadable > 0) {
+      context.warn(
+        String.format(
+          Label.Time_Drive_Server_Unreadable_Dates,
+          new List<String>{ s.Label ?? '', String.valueOf(unreadable) }
+        )
+      );
     }
     // Enhanced Email's messages say who they went to and whether they were opened.
     if (s.Object_Name__c == 'EmailMessage') {
@@ -284,11 +306,49 @@ public with sharing class TimeDrivePlotter {
     return text.length() - at == 2 ? text + '0' : text;
   }
 
+  /**
+   * Text as a date: 2026-11-12 is a day (a Date); 2026-11-12T09:00:00Z or with
+   * an offset (+11:00) is that moment; without a zone, the user's own time.
+   * Null when it's neither, so the item is counted as unreadable.
+   *
+   * @param text the text
+   * @return a Date, a Datetime, or null
+   */
+  @TestVisible
+  private static Object parsed(String text) {
+    String t = text == null ? '' : text.trim();
+    try {
+      if (Pattern.matches('\\d{4}-\\d{2}-\\d{2}', t)) {
+        return Date.valueOf(t);
+      }
+      Matcher m = Pattern.compile(
+          '(\\d{4}-\\d{2}-\\d{2})[T ](\\d{2}:\\d{2})(:\\d{2})?(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})?'
+        )
+        .matcher(t);
+      if (!m.matches()) {
+        return null;
+      }
+      String seconds = m.group(3) == null ? ':00' : m.group(3);
+      if (m.group(5) == null) {
+        // No zone: the user's wall clock.
+        return Datetime.valueOf(m.group(1) + ' ' + m.group(2) + seconds);
+      }
+      Datetime gmt = Datetime.valueOfGmt(m.group(1) + ' ' + m.group(2) + seconds);
+      if (m.group(5) == 'Z') {
+        return gmt;
+      }
+      String zone = m.group(5).remove(':');
+      Integer minutes = Integer.valueOf(zone.substring(1, 3)) * 60 + Integer.valueOf(zone.substring(3, 5));
+      return gmt.addMinutes(zone.startsWith('+') ? -minutes : minutes);
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
   // Dates plot at midday, so they land on their own day in any time zone.
   // A Date first: Apex counts a Date as a Datetime too (but not the reverse),
   // and as one it would be midnight GMT, the day before west of Greenwich.
-  @TestVisible
-  private static Datetime instant(Object value) {
+  public static Datetime instant(Object value) {
     if (value instanceof Date) {
       return Datetime.newInstance((Date) value, Time.newInstance(12, 0, 0, 0));
     }

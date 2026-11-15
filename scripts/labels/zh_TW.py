@@ -39,6 +39,7 @@ LABELS = {
     "Server_No_Identity_Link": "沒有身分連結物件（{0}）：僅顯示連絡人本身個人的互動。",
     "Server_No_Object": "{0}：沒有名為 {1} 的物件。",
     "Server_No_Field": "{0}：{1} 沒有欄位 {2}。",
+    "Server_Unreadable_Dates": "{0}：{1} 個項目的日期 Time Drive 無法讀取，因此未顯示。",
     "Server_No_Link": "{0}：請設定父欄位或連接物件，以將記錄連結到頁面。",
     "Server_Sent_To": "傳送給：{0}",
     "Server_Sent_To_One_Other": "傳送給：{0} 和另外 1 人",

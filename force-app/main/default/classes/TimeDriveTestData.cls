@@ -482,10 +482,21 @@ public class TimeDriveTestData {
    * @return the admin
    */
   public static User setupAdmin() {
-    if (setupAdmin != null) {
-      return setupAdmin;
+    if (setupAdmin == null) {
+      setupAdmin = adminIn('America/Los_Angeles');
     }
-    String name = 'tdadmin' + System.currentTimeMillis();
+    return setupAdmin;
+  }
+
+  /**
+   * A Time Drive admin (as setupAdmin) in a time zone, for what depends on the
+   * user's day: Pacific/Tongatapu is UTC+13, America/Los_Angeles UTC-8.
+   *
+   * @param timeZone the user's time zone
+   * @return the admin, a new one each call
+   */
+  public static User adminIn(String timeZone) {
+    String name = 'tdadmin' + System.currentTimeMillis() + Math.abs(Crypto.getRandomInteger());
     // As the running user can: Campaigns need Marketing User.
     Boolean marketing = [SELECT UserPermissionsMarketingUser FROM User WHERE Id = :UserInfo.getUserId()]
     .UserPermissionsMarketingUser;
@@ -498,7 +509,7 @@ public class TimeDriveTestData {
       LanguageLocaleKey = 'en_US',
       LocaleSidKey = 'en_US',
       ProfileId = UserInfo.getProfileId(),
-      TimeZoneSidKey = 'America/Los_Angeles',
+      TimeZoneSidKey = timeZone,
       Username = name + '@example.com'
     );
     // Setup objects apart from the test's own records (no mixed DML).
@@ -515,7 +526,6 @@ public class TimeDriveTestData {
         .Id
       );
     }
-    setupAdmin = u;
     return u;
   }
 }

@@ -501,6 +501,10 @@
         <name>Time_Drive_Server_Sent_To_Others</name>
     </customLabels>
     <customLabels>
+        <label>{0}：{1} 个项目的日期 Time Drive 无法读取，因此未显示。</label>
+        <name>Time_Drive_Server_Unreadable_Dates</name>
+    </customLabels>
+    <customLabels>
         <label>是</label>
         <name>Time_Drive_Server_Yes</name>
     </customLabels>

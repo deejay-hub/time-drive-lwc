@@ -501,6 +501,10 @@
         <name>Time_Drive_Server_Sent_To_Others</name>
     </customLabels>
     <customLabels>
+        <label>{0}: {1} poster har ett datum som Time Drive inte kan läsa, så de visas inte.</label>
+        <name>Time_Drive_Server_Unreadable_Dates</name>
+    </customLabels>
+    <customLabels>
         <label>Ja</label>
         <name>Time_Drive_Server_Yes</name>
     </customLabels>

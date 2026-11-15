@@ -196,7 +196,8 @@ private class TimeDriveControllerTest {
     Assert.areEqual('On a day', events[0].title);
     Assert.areEqual(Date.today(), events[0].occurredAt.date(), 'on its day');
     Assert.areEqual(record, events[0].recordId, 'an Id given as text');
-    Assert.isTrue(warnings.isEmpty(), 'rows without a date are left out quietly');
+    // A row with no date is left out quietly; one whose date isn't one ('soon') is said.
+    Assert.areEqual(1, warnings.size(), 'an unreadable date is said: ' + warnings);
   }
 
   @IsTest
@@ -439,7 +440,11 @@ private class TimeDriveControllerTest {
     for (TimeDriveQueries.Ran q : TimeDriveQueries.ran) {
       if (q.soql.contains('FROM Task ')) {
         sawTask = true;
-        Assert.isTrue(q.soql.contains('ActivityDate != null'), 'a nillable date must have a value: ' + q.soql);
+        // Each query checks its own date: ActivityDate, or a completed task's CompletedDateTime.
+        Assert.isTrue(
+          q.soql.contains('ActivityDate != null') || q.soql.contains('CompletedDateTime != null'),
+          'a nillable date must have a value: ' + q.soql
+        );
       } else if (q.soql.contains('FROM Case ')) {
         Assert.isFalse(q.soql.contains('CreatedDate != null'), 'a date that is always set needs no check');
       }
@@ -795,6 +800,7 @@ private class TimeDriveControllerTest {
 
   @IsTest
   static void quietDaysAreReadOnTheirOwnNotWithEverythingBetween() {
+    // Open tasks, which are on their due date (a completed one is on its completion day).
     // Two quiet days far apart with plenty between them, and Max Records 5:
     // read as one span, the 5 newest (all from between) would crowd out the
     // older day; read as their own spans, both come back in full.
@@ -803,11 +809,11 @@ private class TimeDriveControllerTest {
     Date between = Date.today().addDays(-50);
     Date newer = Date.today().addDays(-10);
     List<Task> tasks = new List<Task>{
-      new Task(WhoId = customer, Subject = 'Older', ActivityDate = older, Status = 'Completed'),
-      new Task(WhoId = customer, Subject = 'Newer', ActivityDate = newer, Status = 'Completed')
+      new Task(WhoId = customer, Subject = 'Older', ActivityDate = older, Status = 'Not Started'),
+      new Task(WhoId = customer, Subject = 'Newer', ActivityDate = newer, Status = 'Not Started')
     };
     for (Integer i = 0; i < 20; i++) {
-      tasks.add(new Task(WhoId = customer, Subject = 'Between ' + i, ActivityDate = between, Status = 'Completed'));
+      tasks.add(new Task(WhoId = customer, Subject = 'Between ' + i, ActivityDate = between, Status = 'Not Started'));
     }
     insert tasks;
     Time_Drive_Source__mdt source = source('Tasks', 'Task', 'ActivityDate', 'WhoId');
@@ -837,14 +843,15 @@ private class TimeDriveControllerTest {
 
   @IsTest
   static void tasksAreReadWithAllRowsButNotDeletedOnes() {
+    // Open tasks, which are on their due date (a completed one is on its completion day).
     // ALL ROWS brings back archived Tasks and Events (a test can't archive
     // one); deleted ones, in the Recycle Bin, must still stay out.
     Contact fresh = new Contact(LastName = 'All Rows');
     insert fresh;
     Id customer = fresh.Id;
     Date day = Date.today().addDays(-3);
-    Task kept = new Task(WhoId = customer, Subject = 'Kept', ActivityDate = day, Status = 'Completed');
-    Task gone = new Task(WhoId = customer, Subject = 'Gone', ActivityDate = day, Status = 'Completed');
+    Task kept = new Task(WhoId = customer, Subject = 'Kept', ActivityDate = day, Status = 'Not Started');
+    Task gone = new Task(WhoId = customer, Subject = 'Gone', ActivityDate = day, Status = 'Not Started');
     insert new List<Task>{ kept, gone };
     delete gone;
     Time_Drive_Source__mdt source = source('Tasks', 'Task', 'ActivityDate', 'WhoId');
@@ -933,6 +940,7 @@ private class TimeDriveControllerTest {
 
   @IsTest
   static void taskActivityDatesCountByWeekToo() {
+    // Open tasks, which are on their due date (a completed one is on its completion day).
     // ActivityDate takes no date functions (CALENDAR_YEAR, WEEK_IN_YEAR), so
     // by week it's counted by day and rolled up, never read as rows.
     Id customer = contactId();
@@ -940,9 +948,9 @@ private class TimeDriveControllerTest {
     // The setup's tasks may share today's week, depending on the date: leave only these.
     delete [SELECT Id FROM Task];
     insert new List<Task>{
-      new Task(WhoId = customer, Subject = 'A', ActivityDate = today, Status = 'Completed'),
-      new Task(WhoId = customer, Subject = 'B', ActivityDate = today, Status = 'Completed'),
-      new Task(WhoId = customer, Subject = 'C', ActivityDate = today.addDays(-400), Status = 'Completed')
+      new Task(WhoId = customer, Subject = 'A', ActivityDate = today, Status = 'Not Started'),
+      new Task(WhoId = customer, Subject = 'B', ActivityDate = today, Status = 'Not Started'),
+      new Task(WhoId = customer, Subject = 'C', ActivityDate = today.addDays(-400), Status = 'Not Started')
     };
     List<Time_Drive_Source__mdt> many = new List<Time_Drive_Source__mdt>();
     for (Integer i = 0; i < 5; i++) {
@@ -2017,12 +2025,13 @@ private class TimeDriveControllerTest {
 
   @IsTest
   static void aNarrowedRangeStartsTodayOrSpansAMonth() {
+    // Open tasks, which are on their due date (a completed one is on its completion day).
     Id customer = contactId();
     Date today = Date.today();
     delete [SELECT Id FROM Task];
     insert new List<Task>{
-      new Task(WhoId = customer, Subject = 'Last week', ActivityDate = today.addDays(-7), Status = 'Completed'),
-      new Task(WhoId = customer, Subject = 'Today', ActivityDate = today, Status = 'Completed'),
+      new Task(WhoId = customer, Subject = 'Last week', ActivityDate = today.addDays(-7), Status = 'Not Started'),
+      new Task(WhoId = customer, Subject = 'Today', ActivityDate = today, Status = 'Not Started'),
       new Task(WhoId = customer, Subject = 'In a fortnight', ActivityDate = today.addDays(14)),
       new Task(WhoId = customer, Subject = 'In two months', ActivityDate = today.addMonths(2))
     };
@@ -2042,14 +2051,15 @@ private class TimeDriveControllerTest {
 
   @IsTest
   static void theTimelineComesWithTheDaysItOpensOn() {
+    // Open tasks, which are on their due date (a completed one is on its completion day).
     Id customer = contactId();
     Date today = Date.today();
     // The setup's tasks would share days with these: leave only these.
     delete [SELECT Id FROM Task];
     insert new List<Task>{
-      new Task(WhoId = customer, Subject = 'Now', ActivityDate = today, Status = 'Completed'),
-      new Task(WhoId = customer, Subject = 'Recent', ActivityDate = today.addDays(-3), Status = 'Completed'),
-      new Task(WhoId = customer, Subject = 'Older', ActivityDate = today.addDays(-40), Status = 'Completed')
+      new Task(WhoId = customer, Subject = 'Now', ActivityDate = today, Status = 'Not Started'),
+      new Task(WhoId = customer, Subject = 'Recent', ActivityDate = today.addDays(-3), Status = 'Not Started'),
+      new Task(WhoId = customer, Subject = 'Older', ActivityDate = today.addDays(-40), Status = 'Not Started')
     };
     TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ source('Tasks', 'Task', 'ActivityDate', 'WhoId') };
     String todayKey = String.valueOf(today);

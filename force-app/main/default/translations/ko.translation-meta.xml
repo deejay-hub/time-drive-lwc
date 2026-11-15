@@ -501,6 +501,10 @@
         <name>Time_Drive_Server_Sent_To_Others</name>
     </customLabels>
     <customLabels>
+        <label>{0}: {1}개 항목의 날짜를 Time Drive에서 읽을 수 없어 표시되지 않습니다.</label>
+        <name>Time_Drive_Server_Unreadable_Dates</name>
+    </customLabels>
+    <customLabels>
         <label>예</label>
         <name>Time_Drive_Server_Yes</name>
     </customLabels>

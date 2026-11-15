@@ -679,7 +679,8 @@ private class TimeDriveSetupControllerTest {
       Id customer = [SELECT Id FROM Contact LIMIT 1].Id;
       TimeDriveSetupController.SourceDraft d = orderDraft();
       d.historyMonths = 0;
-      Assert.areEqual(0, TimeDriveSetupController.preview(JSON.serialize(d), customer).total);
+      // Order 1001 was completed today (its completion is its day), so even no history shows it.
+      Assert.areEqual(1, TimeDriveSetupController.preview(JSON.serialize(d), customer).total);
       d.historyMonths = 1;
       Assert.areEqual(2, TimeDriveSetupController.preview(JSON.serialize(d), customer).total);
     }

@@ -39,6 +39,7 @@ LABELS = {
     "Server_No_Identity_Link": "ID リンクオブジェクトがありません ({0}): 取引先責任者自身の個人のエンゲージメントのみを表示します。",
     "Server_No_Object": "{0}: {1} という名前のオブジェクトはありません。",
     "Server_No_Field": "{0}: {1} に項目 {2} はありません。",
+    "Server_Unreadable_Dates": "{0}: {1} 件の項目は Time Drive が読み取れない日付のため表示されません。",
     "Server_No_Link": "{0}: レコードをページにリンクするには、親項目または連結オブジェクトを設定してください。",
     "Server_Sent_To": "送信先: {0}",
     "Server_Sent_To_One_Other": "送信先: {0} 他 1 名",

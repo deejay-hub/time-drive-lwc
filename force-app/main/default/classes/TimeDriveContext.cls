@@ -39,6 +39,9 @@ global with sharing class TimeDriveContext {
   // newest first, after pageAt (and, at that same moment, before pageId).
   public Integer pageSize;
   public Datetime pageAt;
+  // The key each row's date is under when the provider chose it (a Task's due
+  // date or completion, an all-day event's date); blank for the date field.
+  public String plotDateKey;
   public Id pageId;
   /** The earlier sources' events, loaded on the first read. */
   public List<TimeDriveController.EngagementEvent> priorEvents {

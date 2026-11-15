@@ -321,6 +321,14 @@
         <value>{0}: {1} has no field {2}.</value>
     </labels>
     <labels>
+        <fullName>Time_Drive_Server_Unreadable_Dates</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timeline warning · some of a source's items have dates that can't be read</shortDescription>
+        <value>{0}: {1} items have a date Time Drive can’t read, so they aren’t shown.</value>
+    </labels>
+    <labels>
         <fullName>Time_Drive_Server_No_Link</fullName>
         <categories>Time Drive</categories>
         <language>en_US</language>

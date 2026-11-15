@@ -40,6 +40,7 @@ LABELS = {
     "Server_No_Identity_Link": "Ei identiteettilinkkiobjektia ({0}): näytetään vain yhteyshenkilön oman henkilön osallistuminen.",
     "Server_No_Object": "{0}: objektia nimeltä {1} ei ole.",
     "Server_No_Field": "{0}: objektilla {1} ei ole kenttää {2}.",
+    "Server_Unreadable_Dates": "{0}: {1} kohteen päivämäärää Time Drive ei voi lukea, joten niitä ei näytetä.",
     "Server_No_Link": "{0}: määritä pääkenttä tai liitosobjekti, jotta tietueet liitetään sivuun.",
     "Server_Sent_To": "Kenelle: {0}",
     "Server_Sent_To_One_Other": "Kenelle: {0} + 1 muu",

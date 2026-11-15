@@ -501,6 +501,10 @@
         <name>Time_Drive_Server_Sent_To_Others</name>
     </customLabels>
     <customLabels>
+        <label>{0}: {1} elementos tienen una fecha que Time Drive no puede leer, así que no se muestran.</label>
+        <name>Time_Drive_Server_Unreadable_Dates</name>
+    </customLabels>
+    <customLabels>
         <label>Sí</label>
         <name>Time_Drive_Server_Yes</name>
     </customLabels>

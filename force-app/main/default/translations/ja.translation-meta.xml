@@ -501,6 +501,10 @@
         <name>Time_Drive_Server_Sent_To_Others</name>
     </customLabels>
     <customLabels>
+        <label>{0}: {1} 件の項目は Time Drive が読み取れない日付のため表示されません。</label>
+        <name>Time_Drive_Server_Unreadable_Dates</name>
+    </customLabels>
+    <customLabels>
         <label>はい</label>
         <name>Time_Drive_Server_Yes</name>
     </customLabels>

@@ -501,6 +501,10 @@
         <name>Time_Drive_Server_Sent_To_Others</name>
     </customLabels>
     <customLabels>
+        <label>{0}: {1} kohteen päivämäärää Time Drive ei voi lukea, joten niitä ei näytetä.</label>
+        <name>Time_Drive_Server_Unreadable_Dates</name>
+    </customLabels>
+    <customLabels>
         <label>Kyllä</label>
         <name>Time_Drive_Server_Yes</name>
     </customLabels>
