@@ -52,7 +52,7 @@ On the wizard's **Interactions** step: add the fields, in order, and how each is
 
 ### What does Check your org (Fit to your org) do?
 
-It checks how your org works (Shared Activities, contacts to multiple accounts, person accounts, Enhanced Email, Data 360) and switches on the shipped sources that suit it. Alternatives share a group, and only one in a group is ever active, so running it again never plots the same record twice. See [Fit to your org](config-guide.md#fit-to-your-org).
+It checks how your org works (Shared Activities, contacts to multiple accounts, person accounts, Enhanced Email) and switches on the shipped sources that suit it. Alternatives share a group, and only one in a group is ever active, so running it again never plots the same record twice. See [Fit to your org](config-guide.md#fit-to-your-org).
 
 ### Why don't an account's shared activities show?
 

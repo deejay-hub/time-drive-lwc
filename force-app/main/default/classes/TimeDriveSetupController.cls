@@ -175,7 +175,6 @@ public with sharing class TimeDriveSetupController {
     'ContactsToMultipleAccounts',
     'PersonAccounts',
     'EnhancedEmail',
-    'Data360',
     'ActivityCapture'
   };
 
@@ -184,7 +183,6 @@ public with sharing class TimeDriveSetupController {
     'ContactsToMultipleAccounts' => 'Contacts to Multiple Accounts',
     'PersonAccounts' => 'Person Accounts',
     'EnhancedEmail' => 'Enhanced Email',
-    'Data360' => 'Data 360',
     'ActivityCapture' => 'Einstein Activity Capture'
   };
 
@@ -206,10 +204,6 @@ public with sharing class TimeDriveSetupController {
     'EnhancedEmail' => new List<String>{
       'Enhanced Email (emails saved as Email Messages with their activity)',
       'Setup › Enhanced Email'
-    },
-    'Data360' => new List<String>{
-      'Data 360 connected, with the Time Drive Data 360 add-on installed',
-      'Setup › Data 360 Setup, and the add-on package'
     },
     'ActivityCapture' => new List<String>{
       'Einstein Activity Capture licences assigned to users',
@@ -1634,8 +1628,6 @@ public with sharing class TimeDriveSetupController {
           }
         }
         check.adds.sort();
-      } else if (key == 'Data360') {
-        check.present = getData360Status().ready == true;
       } else {
         check.present = activityCapture().inUse == true;
       }
@@ -1653,9 +1645,6 @@ public with sharing class TimeDriveSetupController {
     }
     if (key == 'ActivityCapture') {
       return check.present ? 'In use' : 'Not in use';
-    }
-    if (key == 'Data360') {
-      return check.present ? 'Connected' : 'Not available';
     }
     return check.present ? 'On' : 'Off';
   }
@@ -1684,11 +1673,6 @@ public with sharing class TimeDriveSetupController {
       return has
         ? 'Emails are saved as Email Messages, so the timeline reads Email Messages instead of email tasks.'
         : 'Emails are logged as tasks, so the timeline reads email tasks.';
-    }
-    if (key == 'Data360') {
-      return has
-        ? 'Data 360 is connected, so you can plot engagement from it alongside your Salesforce records.'
-        : 'Data 360 isn\'t set up here, so only Salesforce records are plotted.';
     }
     return has
       ? 'Einstein Activity Capture is in use. Its emails reach the timeline only when Sync Email as Salesforce Activity is on: please check that setting.'

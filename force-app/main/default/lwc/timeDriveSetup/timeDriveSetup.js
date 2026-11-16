@@ -178,7 +178,7 @@ const GUIDED_STEPS = [
     auto: true,
     title: "Check your org",
     text: "Time Drive looks at how your org works, tells you what it found and adds the sources that suit.",
-    what: "Runs a few quick checks: Shared Activities, Contacts to Multiple Accounts, Person Accounts, Enhanced Email, Data 360 and Einstein Activity Capture. It explains what each means for the timeline, then adds the recommended sources.",
+    what: "Runs a few quick checks: Shared Activities, Contacts to Multiple Accounts, Person Accounts, Enhanced Email and Einstein Activity Capture. It explains what each means for the timeline, then adds the recommended sources.",
     why: "The right sources depend on how your org works. With Shared Activities on, a task belongs to every contact on it, so the timeline needs the sources that follow that. The other pages open once this is done."
   },
   {

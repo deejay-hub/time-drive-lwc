@@ -382,8 +382,12 @@ private class TimeDriveSetupControllerTest {
   static void theOrgIsCheckedOneThingAtATimeAndEachSaysWhatItMeans() {
     System.runAs(TimeDriveTestData.setupAdmin()) {
       List<TimeDriveSetupController.OrgCheck> steps = TimeDriveSetupController.getOrgCheckSteps();
-      Assert.areEqual(6, steps.size());
+      Assert.areEqual(5, steps.size());
       Assert.areEqual('SharedActivities', steps[0].key);
+      // Data 360 isn't asked about: the Data 360 package brings its own sources.
+      for (TimeDriveSetupController.OrgCheck step : steps) {
+        Assert.areNotEqual('Data360', step.key);
+      }
 
       // An org with Shared Activities, and a source that comes with it.
       TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{

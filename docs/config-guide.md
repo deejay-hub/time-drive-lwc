@@ -90,7 +90,7 @@ Open the **Time Drive Setup** tab. Its pages, along the top:
 
 ![Guided setup, with each step done](images/config-guide/setup-guided.png)
 
-**Check your org** looks at how your org works (Shared Activities, contacts to multiple accounts, person accounts, Enhanced Email, Data 360, Einstein Activity Capture) and switches on the shipped sources that suit it. See [Fit to your org](#fit-to-your-org).
+**Check your org** looks at how your org works (Shared Activities, contacts to multiple accounts, person accounts, Enhanced Email, Einstein Activity Capture) and switches on the shipped sources that suit it. See [Fit to your org](#fit-to-your-org).
 
 ### Customize
 
