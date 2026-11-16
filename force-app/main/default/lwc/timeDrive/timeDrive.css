@@ -336,6 +336,46 @@
   border-radius: 0.25rem;
 }
 
+/* The Overdue lens has items: a bar across the top of any other lens, as a
+   button (it opens the lens). SLDS's error colours, with an icon and words,
+   not colour alone. */
+.overdue-banner {
+  display: flex;
+  align-items: center;
+  gap: calc(0.5 * var(--time-drive-space));
+  width: 100%;
+  margin: 0 0 calc(0.5 * var(--time-drive-space));
+  padding: calc(0.375 * var(--time-drive-space)) calc(0.75 * var(--time-drive-space));
+  border: 1px solid light-dark(#f88962, #a61a14);
+  border-radius: var(--slds-g-radius-border-2, 0.25rem);
+  background: light-dark(#fef1ee, #3e1716);
+  color: light-dark(#8e030f, #ffb8b0);
+  font: inherit;
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+  --slds-c-icon-color-foreground-default: currentColor;
+  --slds-c-icon-color-foreground: currentColor;
+}
+
+.overdue-banner:hover {
+  background: light-dark(#feded8, #4f1c1a);
+}
+
+.overdue-banner:focus-visible {
+  outline: 2px solid var(--slds-g-color-accent-2, #0b5cab);
+  outline-offset: 2px;
+}
+
+.overdue-banner-text {
+  flex: 1 1 auto;
+}
+
+/* The chevron points the way the line reads. */
+.card[dir="rtl"] .overdue-banner-go {
+  transform: scaleX(-1);
+}
+
 .summary-row {
   display: flex;
   flex-wrap: wrap;

@@ -33,6 +33,10 @@
         <name>Time_Drive_Announce_Today</name>
     </customLabels>
     <customLabels>
+        <label>逾期项目</label>
+        <name>Time_Drive_Banner_Overdue</name>
+    </customLabels>
+    <customLabels>
         <label>{0} 至 {1} 之间无内容</label>
         <name>Time_Drive_Between</name>
     </customLabels>
@@ -309,6 +313,10 @@
         <name>Time_Drive_Legend_Files</name>
     </customLabels>
     <customLabels>
+        <label>逾期任务</label>
+        <name>Time_Drive_Legend_Overdue_Tasks</name>
+    </customLabels>
+    <customLabels>
         <label>项目</label>
         <name>Time_Drive_Many_Other</name>
     </customLabels>
@@ -555,6 +563,10 @@
     <customLabels>
         <label>营销</label>
         <name>Time_Drive_View_Marketing</name>
+    </customLabels>
+    <customLabels>
+        <label>已逾期</label>
+        <name>Time_Drive_View_Overdue</name>
     </customLabels>
     <customLabels>
         <label>销售</label>

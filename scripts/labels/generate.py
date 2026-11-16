@@ -52,7 +52,10 @@ assert not too_long, f"descriptions over 80 characters: {too_long}"
 # so the card shows its own copy of the source names ($Label.Time_Drive_Legend_...)
 # and email subtitles the server sends (see labelNamed).
 CLIENT_TOO = {"Server_Sent_To", "Server_Sent_To_One_Other", "Server_Sent_To_Others"}
-js_entries = [e for e in entries if not e[0].startswith("Server_") or e[0] in CLIENT_TOO]
+# Lens names (View_*) are the timeline model's own (VIEW_LABELS in timeDriveModel.js).
+js_entries = [
+    e for e in entries if (not e[0].startswith("Server_") or e[0] in CLIENT_TOO) and not e[0].startswith("View_")
+]
 js_names = [camel(k) for k, *_ in js_entries]
 assert len(set(js_names)) == len(js_names), "two keys give the same JS name"
 

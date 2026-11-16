@@ -468,7 +468,10 @@ public with sharing class TimeDriveSetupController {
     d.developerName = TimeDriveConfig.source(t.DeveloperName) == null ? t.DeveloperName : uniqueName(t.Label);
     d.active = true;
     // All is a lens like the others: a template's copy starts in it, as well as its own.
-    List<String> lenses = new List<String>{ TimeDriveConfig.ALL_VIEW };
+    // (An Overdue template's copy is in Overdue only: its items are already in All as tasks.)
+    List<String> lenses = d.lenses != null && d.lenses.contains(TimeDriveConfig.OVERDUE_VIEW)
+      ? new List<String>()
+      : new List<String>{ TimeDriveConfig.ALL_VIEW };
     for (String lens : d.lenses == null ? new List<String>() : d.lenses) {
       if (!lenses.contains(lens)) {
         lenses.add(lens);

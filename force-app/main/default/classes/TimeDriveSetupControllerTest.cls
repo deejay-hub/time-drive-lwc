@@ -1002,6 +1002,8 @@ private class TimeDriveSetupControllerTest {
       Assert.areEqual(
         new Set<String>{
           'Fit_Lead_Tasks',
+          // Its overdue ones too, in the Overdue lens.
+          'Fit_Lead_Overdue',
           'Fit_Lead_Calls',
           'Fit_Lead_Emails',
           'Fit_Lead_Events',
@@ -1016,6 +1018,7 @@ private class TimeDriveSetupControllerTest {
       Assert.areEqual(
         new Set<String>{
           'Fit_Lead_Tasks_Every',
+          'Fit_Lead_Overdue_Every',
           'Fit_Lead_Calls_Every',
           'Fit_Lead_Emails_Every',
           'Fit_Lead_Events_Every'
@@ -1024,6 +1027,8 @@ private class TimeDriveSetupControllerTest {
       );
       Assert.isFalse(copyActive('Fit_Lead_Tasks'));
       Assert.isTrue(copyActive('Fit_Lead_Tasks_Every'));
+      Assert.isFalse(copyActive('Fit_Lead_Overdue'), 'the overdue ones switch variant too');
+      Assert.isTrue(copyActive('Fit_Lead_Overdue_Every'));
       Assert.isTrue(copyActive('Fit_Lead_Files'), 'Files have no variant');
 
       // Back by name, and a lead's timeline plots its task, file and campaign.

@@ -775,6 +775,33 @@ global with sharing class TimeDriveController {
   }
 
   /**
+   * Whether the Overdue lens (by its API name) has anything for this record,
+   * for the banner over the other lenses. Asked after the timeline has loaded,
+   * as a call of its own: its Salesforce sources are checked once per object
+   * (their conditions joined, LIMIT 1), stopping at the first that has an
+   * item. False when the lens isn't offered or the check fails.
+   * @param recordId the Id of the record the timeline is on
+   * @param historyYears how many years back the timeline looks
+   * @param futureYears how many years ahead it looks, or blank for up to today
+   * @return true when the Overdue lens has at least one item
+   */
+  @AuraEnabled(cacheable=true)
+  public static Boolean getOverdue(Id recordId, String historyYears, String futureYears) {
+    if (recordId == null || !TimeDriveConfig.isOffered(TimeDriveConfig.OVERDUE_VIEW)) {
+      return false;
+    }
+    try {
+      List<String> unused = new List<String>();
+      Run run = new Run(recordId, unused, new List<Problem>(), windowFor(historyYears, futureYears, unused));
+      return run.anyIn(TimeDriveConfig.OVERDUE_VIEW);
+    } catch (Exception e) {
+      // No banner: the lens itself still says what's wrong when opened.
+      System.debug(LoggingLevel.FINE, 'Time Drive: overdue not checked. ' + e.getMessage());
+      return false;
+    }
+  }
+
+  /**
    * Says on each item that is a Salesforce record what the user's permissions
    * on its object allow, for the menu at the end of its row (none without
    * either): no query, only the object's describe. What the record itself
@@ -1121,6 +1148,18 @@ global with sharing class TimeDriveController {
       for (Time_Drive_Source__mdt config : sources) {
         providers.add(TimeDriveConfig.providerFor(config, warnings));
       }
+    }
+
+    // Whether any of the lens's Salesforce sources has an item in the window
+    // (see TimeDriveSoqlProvider.anyOf). Data 360 and Apex sources aren't asked.
+    Boolean anyIn(String lens) {
+      List<TimeDriveContext> asked = new List<TimeDriveContext>();
+      for (Integer i = 0; i < sources.size(); i++) {
+        if (providers[i] instanceof TimeDriveSoqlProvider && TimeDriveConfig.lensesOf(sources[i]).contains(lens)) {
+          asked.add(context(i));
+        }
+      }
+      return TimeDriveSoqlProvider.anyOf(asked);
     }
 
     // Every source's events, newest first.

@@ -224,6 +224,15 @@ A lens narrows the timeline to one area, such as Sales or Service. People switch
 - A source can be in several lenses. Leave a source out of All items to show it only in the lenses you choose.
 - The ⓘ next to a source shows the filter it applies, so you can see what each one plots.
 
+### The Overdue lens
+
+The **Overdue** lens shows what's late. Time Drive doesn't decide what counts as overdue: its sources do, each with its own filter. The overdue templates (**Overdue tasks**, and the Fit to your org variants for Account, Contact, Lead and person account pages) plot open tasks due before today (`IsClosed = false AND ActivityDate < TODAY`). Add any source to the Overdue lens with a filter of your own, such as open cases older than a week, and it counts too.
+
+- An overdue template's copy is in the Overdue lens only: its tasks are in All items already.
+- Once the timeline has loaded, it asks whether the Overdue lens has anything for the record. If it does, an **Overdue items** banner sits at the top of every other lens; clicking it opens the Overdue lens. On the Overdue lens itself there's no banner.
+- The question is cheap: one query per object, asking for a single row, stopping at the first that finds one. Ten overdue sources on Task are one query, not ten.
+- The banner finds the lens by its API name, `Overdue`, so you can rename or translate the lens's label freely. Turn the lens off and the banner goes too.
+
 ## Add the timeline to a page
 
 Open a Contact, Account or Lead record, choose **Edit Page**, and drag **Time Drive** onto the page (it's under custom components). Time Drive Setup's last guided step takes you there. These properties can be set in Lightning App Builder:

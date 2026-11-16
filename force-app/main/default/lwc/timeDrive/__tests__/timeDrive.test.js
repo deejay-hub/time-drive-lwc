@@ -4,6 +4,8 @@ import TIME_ZONE from "@salesforce/i18n/timeZone";
 import { setup as setupAccessibility } from "@sa11y/jest";
 import TimeDrive from "c/timeDrive";
 import getTimeline from "@salesforce/apex/TimeDriveController.getTimeline";
+import getViews from "@salesforce/apex/TimeDriveController.getViews";
+import getOverdue from "@salesforce/apex/TimeDriveController.getOverdue";
 import getDays from "@salesforce/apex/TimeDriveController.getPageDays";
 import getRights from "@salesforce/apex/TimeDriveController.getRights";
 import getPreference from "@salesforce/apex/TimeDriveController.getPreference";
@@ -46,6 +48,24 @@ jest.mock("@salesforce/apex/TimeDriveController.saveDateRange", () => ({ default
   virtual: true
 });
 jest.mock("@salesforce/apex/TimeDriveController.getTimeline", () => ({ default: jest.fn() }), { virtual: true });
+// The lenses and the Overdue check, as wires a test can answer (left unanswered,
+// the card uses its own lenses and shows no banner, as before).
+jest.mock(
+  "@salesforce/apex/TimeDriveController.getViews",
+  () => {
+    const { createApexTestWireAdapter } = require("@salesforce/sfdx-lwc-jest");
+    return { default: createApexTestWireAdapter(jest.fn()) };
+  },
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex/TimeDriveController.getOverdue",
+  () => {
+    const { createApexTestWireAdapter } = require("@salesforce/sfdx-lwc-jest");
+    return { default: createApexTestWireAdapter(jest.fn()) };
+  },
+  { virtual: true }
+);
 // The window most tests were written for: half a year back, nothing ahead.
 // The defaults (a year back, half a year ahead) have their own test.
 const createTimeline = () => {
@@ -2957,5 +2977,65 @@ describe("display density", () => {
     await flush();
     expect(element.classList.contains("density_compact")).toBe(true);
     expect(element.classList.contains("density_comfy")).toBe(false);
+  });
+});
+
+describe("the Overdue banner", () => {
+  afterEach(() => {
+    while (document.body.firstChild) document.body.removeChild(document.body.firstChild);
+  });
+  const LENSES = [
+    { value: "All", label: "All items", labelName: "Time_Drive_View_All" },
+    { value: "Sales", label: "Sales", labelName: "Time_Drive_View_Sales" },
+    // Renamed by the admin: the banner goes by the API name, not the words.
+    { value: "Overdue", label: "Late stuff", labelName: null }
+  ];
+  const open = async ({ lenses = LENSES, overdue = true } = {}) => {
+    const element = createTimeline();
+    element.recordId = "003000000000001AAA";
+    document.body.appendChild(element);
+    getViews.emit(lenses);
+    emitEvents({ warnings: [], events: EVENTS });
+    await flush();
+    getOverdue.emit(overdue);
+    await flush();
+    return element;
+  };
+  const banner = (element) => element.shadowRoot.querySelector(".overdue-banner");
+
+  it("shows over another lens when the Overdue lens has items, and opens it", async () => {
+    const element = await open();
+    expect(banner(element)).not.toBeNull();
+    expect(banner(element).textContent).toContain("Overdue items");
+    const asked = getTimeline.mock.calls.length;
+    banner(element).click();
+    await flush();
+    // The Overdue lens runs, by its API name.
+    expect(getTimeline.mock.calls.length).toBeGreaterThan(asked);
+    expect(getTimeline.mock.calls.at(-1)[0].categories).toEqual(["Overdue"]);
+    // On the Overdue lens itself there's no banner.
+    expect(banner(element)).toBeNull();
+  });
+
+  it("shows nothing when nothing is overdue", async () => {
+    const element = await open({ overdue: false });
+    expect(banner(element)).toBeNull();
+  });
+
+  it("shows nothing when the Overdue lens isn't offered", async () => {
+    const element = await open({ lenses: LENSES.filter((l) => l.value !== "Overdue") });
+    expect(banner(element)).toBeNull();
+  });
+
+  it("asks only once the timeline has loaded", async () => {
+    const element = createTimeline();
+    element.recordId = "003000000000001AAA";
+    document.body.appendChild(element);
+    // Before the first answer: no record to ask about yet.
+    expect(getOverdue.getLastConfig()?.recordId).toBeUndefined();
+    getViews.emit(LENSES);
+    emitEvents({ warnings: [], events: EVENTS });
+    await flush();
+    expect(getOverdue.getLastConfig().recordId).toBe("003000000000001AAA");
   });
 });

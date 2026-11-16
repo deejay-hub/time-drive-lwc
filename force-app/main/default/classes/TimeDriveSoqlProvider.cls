@@ -303,6 +303,67 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
   }
 
   /**
+   * Whether any of these sources has an item in its context's window, for a
+   * banner that only needs yes or no. Sources on the same object are asked in
+   * one query (their conditions joined with OR, LIMIT 1), each object in turn,
+   * stopping at the first that has one: one query per object at most.
+   *
+   * @param contexts the sources' contexts
+   * @return true when one has an item
+   */
+  // The names are checked field paths and object names; values are bound
+  // (each source's binds renamed apart); the query runs in user mode.
+  @SuppressWarnings('PMD.ApexSOQLInjection, PMD.OperationWithLimitsInLoop')
+  public static Boolean anyOf(List<TimeDriveContext> contexts) {
+    Map<String, List<String>> conditions = new Map<String, List<String>>();
+    Map<String, String> objects = new Map<String, String>();
+    Map<String, Object> binds = new Map<String, Object>();
+    Integer k = 0;
+    for (TimeDriveContext context : contexts) {
+      Query q = new Query(context);
+      if (q.link == null) {
+        continue;
+      }
+      String condition = q.conditions(context.spans());
+      // Each source's binds under a name of its own (s0_parentId, s1_since0 ...).
+      String prefix = 's' + k + '_';
+      for (String key : q.binds.keySet()) {
+        condition = condition.replaceAll(':' + key + '\\b', ':' + prefix + key);
+        binds.put(prefix + key, q.binds.get(key));
+      }
+      String objectName = context.source.Object_Name__c;
+      String bucket = objectName + q.allRows();
+      if (!conditions.containsKey(bucket)) {
+        conditions.put(bucket, new List<String>());
+        objects.put(bucket, objectName);
+      }
+      conditions.get(bucket).add(condition);
+      k++;
+    }
+    for (String bucket : conditions.keySet()) {
+      String soql =
+        'SELECT Id FROM ' +
+        objects.get(bucket) +
+        ' WHERE (' +
+        String.join(conditions.get(bucket), ') OR (') +
+        ') LIMIT 1' +
+        bucket.removeStart(objects.get(bucket));
+      try {
+        List<SObject> found = Database.queryWithBinds(soql, binds, AccessLevel.USER_MODE);
+        TimeDriveQueries.record(objects.get(bucket), 'any', soql);
+        if (!found.isEmpty()) {
+          return true;
+        }
+      } catch (Exception e) {
+        // One object that can't be asked doesn't stop the others.
+        TimeDriveQueries.record(objects.get(bucket), 'any', soql);
+        System.debug(LoggingLevel.FINE, 'Time Drive: not asked. ' + e.getMessage());
+      }
+    }
+    return false;
+  }
+
+  /**
    * Items per hour, day, week or month in the context's spans (see
    * countGrouped).
    *

@@ -33,6 +33,10 @@
         <name>Time_Drive_Announce_Today</name>
     </customLabels>
     <customLabels>
+        <label>Myöhässä olevat kohteet</label>
+        <name>Time_Drive_Banner_Overdue</name>
+    </customLabels>
+    <customLabels>
         <label>Ei mitään välillä {0}–{1}</label>
         <name>Time_Drive_Between</name>
     </customLabels>
@@ -309,6 +313,10 @@
         <name>Time_Drive_Legend_Files</name>
     </customLabels>
     <customLabels>
+        <label>Myöhässä olevat tehtävät</label>
+        <name>Time_Drive_Legend_Overdue_Tasks</name>
+    </customLabels>
+    <customLabels>
         <label>Kohteet</label>
         <name>Time_Drive_Many_Other</name>
     </customLabels>
@@ -555,6 +563,10 @@
     <customLabels>
         <label>Markkinointi</label>
         <name>Time_Drive_View_Marketing</name>
+    </customLabels>
+    <customLabels>
+        <label>Myöhässä</label>
+        <name>Time_Drive_View_Overdue</name>
     </customLabels>
     <customLabels>
         <label>Myynti</label>

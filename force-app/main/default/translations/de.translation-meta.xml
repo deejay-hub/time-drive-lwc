@@ -33,6 +33,10 @@
         <name>Time_Drive_Announce_Today</name>
     </customLabels>
     <customLabels>
+        <label>Überfällige Einträge</label>
+        <name>Time_Drive_Banner_Overdue</name>
+    </customLabels>
+    <customLabels>
         <label>Nichts zwischen {0} und {1}</label>
         <name>Time_Drive_Between</name>
     </customLabels>
@@ -309,6 +313,10 @@
         <name>Time_Drive_Legend_Files</name>
     </customLabels>
     <customLabels>
+        <label>Überfällige Aufgaben</label>
+        <name>Time_Drive_Legend_Overdue_Tasks</name>
+    </customLabels>
+    <customLabels>
         <label>Elemente</label>
         <name>Time_Drive_Many_Other</name>
     </customLabels>
@@ -555,6 +563,10 @@
     <customLabels>
         <label>Marketing</label>
         <name>Time_Drive_View_Marketing</name>
+    </customLabels>
+    <customLabels>
+        <label>Überfällig</label>
+        <name>Time_Drive_View_Overdue</name>
     </customLabels>
     <customLabels>
         <label>Vertrieb</label>

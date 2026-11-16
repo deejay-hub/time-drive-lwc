@@ -321,6 +321,30 @@
         <value>{0}: {1} has no field {2}.</value>
     </labels>
     <labels>
+        <fullName>Time_Drive_View_Overdue</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Lens name · the Overdue lens: items past their due date</shortDescription>
+        <value>Overdue</value>
+    </labels>
+    <labels>
+        <fullName>Time_Drive_Legend_Overdue_Tasks</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Legend and filters · open tasks past their due date</shortDescription>
+        <value>Overdue tasks</value>
+    </labels>
+    <labels>
+        <fullName>Time_Drive_Banner_Overdue</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timeline banner above any lens · opens the Overdue lens</shortDescription>
+        <value>Overdue items</value>
+    </labels>
+    <labels>
         <fullName>Time_Drive_Server_Unreadable_Dates</fullName>
         <categories>Time Drive</categories>
         <language>en_US</language>

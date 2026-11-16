@@ -20,6 +20,8 @@ public with sharing class TimeDriveConfig {
   // ---- the timeline's views ------------------------------------------------
 
   public static final String ALL_VIEW = 'All';
+  // The Overdue lens, by its API name (its label can be translated or renamed).
+  public static final String OVERDUE_VIEW = 'Overdue';
   @TestVisible
   private static List<Time_Drive_View__mdt> testViews;
 
@@ -220,6 +222,21 @@ public with sharing class TimeDriveConfig {
    * @param v the view to check
    * @return true when the view is offered
    */
+  /**
+   * Whether the picker offers a lens, by its API name (DeveloperName).
+   *
+   * @param key the lens's DeveloperName
+   * @return true when it exists and is switched on
+   */
+  public static Boolean isOffered(String key) {
+    for (Time_Drive_View__mdt v : views()) {
+      if (v.DeveloperName == key) {
+        return isActive(v);
+      }
+    }
+    return false;
+  }
+
   public static Boolean isActive(Time_Drive_View__mdt v) {
     return v.DeveloperName == ALL_VIEW || !hiddenViews().contains(v.DeveloperName);
   }

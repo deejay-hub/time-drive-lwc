@@ -33,6 +33,10 @@
         <name>Time_Drive_Announce_Today</name>
     </customLabels>
     <customLabels>
+        <label>기한이 지난 항목</label>
+        <name>Time_Drive_Banner_Overdue</name>
+    </customLabels>
+    <customLabels>
         <label>{0}에서 {1} 사이에 항목 없음</label>
         <name>Time_Drive_Between</name>
     </customLabels>
@@ -309,6 +313,10 @@
         <name>Time_Drive_Legend_Files</name>
     </customLabels>
     <customLabels>
+        <label>기한이 지난 작업</label>
+        <name>Time_Drive_Legend_Overdue_Tasks</name>
+    </customLabels>
+    <customLabels>
         <label>항목</label>
         <name>Time_Drive_Many_Other</name>
     </customLabels>
@@ -555,6 +563,10 @@
     <customLabels>
         <label>마케팅</label>
         <name>Time_Drive_View_Marketing</name>
+    </customLabels>
+    <customLabels>
+        <label>기한 지남</label>
+        <name>Time_Drive_View_Overdue</name>
     </customLabels>
     <customLabels>
         <label>영업</label>

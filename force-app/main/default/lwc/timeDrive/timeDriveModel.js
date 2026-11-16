@@ -9,6 +9,7 @@ import VIEW_COMMERCE from "@salesforce/label/c.Time_Drive_View_Commerce";
 import VIEW_DIGITAL from "@salesforce/label/c.Time_Drive_View_Digital";
 import VIEW_SERVICE from "@salesforce/label/c.Time_Drive_View_Service";
 import VIEW_SALES from "@salesforce/label/c.Time_Drive_View_Sales";
+import VIEW_OVERDUE from "@salesforce/label/c.Time_Drive_View_Overdue";
 
 /**
  * Event types, timeline views and date ranges for Time Drive, and the pure
@@ -63,7 +64,8 @@ export const VIEW_LABELS = Object.freeze({
   Time_Drive_View_Commerce: VIEW_COMMERCE,
   Time_Drive_View_Digital: VIEW_DIGITAL,
   Time_Drive_View_Service: VIEW_SERVICE,
-  Time_Drive_View_Sales: VIEW_SALES
+  Time_Drive_View_Sales: VIEW_SALES,
+  Time_Drive_View_Overdue: VIEW_OVERDUE
 });
 
 export function viewFor(value) {

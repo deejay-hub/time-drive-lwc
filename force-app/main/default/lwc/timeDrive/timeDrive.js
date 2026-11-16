@@ -13,6 +13,8 @@ import getTimeline from "@salesforce/apex/TimeDriveController.getTimeline";
 import getDays from "@salesforce/apex/TimeDriveController.getPageDays";
 import getRights from "@salesforce/apex/TimeDriveController.getRights";
 import getViews from "@salesforce/apex/TimeDriveController.getViews";
+import getOverdue from "@salesforce/apex/TimeDriveController.getOverdue";
+import { refreshApex } from "@salesforce/apex";
 import getPreference from "@salesforce/apex/TimeDriveController.getPreference";
 import savePreference from "@salesforce/apex/TimeDriveController.savePreference";
 import saveDateRange from "@salesforce/apex/TimeDriveController.saveDateRange";
@@ -149,6 +151,8 @@ const DAY_SHORT_TIME_FORMAT = FORMATS.dayShortTime;
 // field (a Task's Activity Date) has no time, so "--". In a week or month,
 // both show just their day ("Tue 13").
 const NO_TIME = "--";
+// The Overdue lens's API name (DeveloperName), whatever its label says.
+const OVERDUE_VIEW = "Overdue";
 function timeTextOf(e, at, grouped, timeFormat) {
   if (e.allDay || e.dateOnly) {
     if (grouped) return DAY_SHORT_FORMAT.format(at);
@@ -714,9 +718,38 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       });
   }
 
+  // The Overdue lens (by its API name: its label can be translated): whether it
+  // has items is asked once the timeline has loaded, as a call of its own, so
+  // the timeline never waits for it.
+  @wire(getOverdue, { recordId: "$overdueRecordId", historyYears: "$overdueHistory", futureYears: "$overdueFuture" })
+  wiredOverdue(result) {
+    this._overdueWire = result;
+    this.overdue = result.data === true;
+  }
+  overdue = false;
+  overdueRecordId;
+  overdueHistory;
+  overdueFuture;
+  askOverdue() {
+    this.overdueHistory = this.queryHistory;
+    this.overdueFuture = this.queryFuture;
+    this.overdueRecordId = this._recordId;
+  }
+  get offersOverdue() {
+    return (this.views ?? []).some((v) => v.value === OVERDUE_VIEW);
+  }
+  // Over every lens but Overdue itself, while it has items.
+  get showOverdueBanner() {
+    return this.overdue && this.view !== OVERDUE_VIEW && this.offersOverdue;
+  }
+  handleOverdueBanner() {
+    this.pickView(OVERDUE_VIEW);
+  }
+
   receiveTimeline(load) {
     const data = load?.summary;
     if (!data) return;
+    this.askOverdue();
     this.summaryPending = false;
     this.refreshHeight = null;
     this.error = undefined;
@@ -1889,6 +1922,9 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   handleViewPick(event) {
     const value = event.currentTarget.dataset.value;
     this.closeViewMenu(true);
+    this.pickView(value);
+  }
+  pickView(value) {
     if (value === this.view) return;
     this.view = value;
     this._picked = true;
@@ -1936,6 +1972,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       return;
     }
     const failed = Boolean(this.error);
+    if (this._overdueWire) refreshApex(this._overdueWire);
     // Across, the skeleton replaces the track (and its scroll): remember the
     // day at the view's left edge, and how far into it, to come back to.
     this._restoreAcross = failed ? null : this.placeAcross();
@@ -1968,6 +2005,8 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     this._keepStale = true;
     this.refreshing = true;
     this.updating = true;
+    // A saved task may have been the last overdue one, or a new one.
+    if (this._overdueWire) refreshApex(this._overdueWire);
     this.requestTimeline(true).finally(() => {
       this.refreshing = false;
       this.updating = false;
