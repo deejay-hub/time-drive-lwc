@@ -59,10 +59,103 @@
           </div>
         </template>
 
+        <!-- Where to look now: Today, and Overdue while the Overdue lens has
+             items. At the end of the lens's line; the tools are on the line below. -->
+        <div class="nav">
+          <template lwc:if={firstLoad}>
+            <span class="skeleton skeleton_button skeleton_button_wide" aria-hidden="true"></span>
+          </template>
+          <template lwc:else>
+            <!-- Back to today's slot (today's items, or "Nothing today"). -->
+            <template lwc:if={hasEvents}>
+              <template lwc:if={narrow}>
+                <lightning-button-icon
+                  class="today-button today-button_icon"
+                  icon-name="utility:key_dates"
+                  variant="border"
+                  alternative-text={labels.buttonToday}
+                  title={labels.buttonToday}
+                  onclick={goToToday}
+                ></lightning-button-icon>
+              </template>
+              <template lwc:else>
+                <lightning-button
+                  class="today-button"
+                  label={labels.buttonToday}
+                  onclick={goToToday}
+                ></lightning-button>
+              </template>
+            </template>
+            <!-- Only while something is overdue: opens the Overdue lens (by its
+                 API name), and on it, pressed, goes back to the lens before. -->
+            <template lwc:if={showOverdueButton}>
+              <button
+                type="button"
+                class={overdueButtonClass}
+                aria-pressed={overduePressed}
+                title={overdueTitle}
+                onclick={toggleOverdue}
+              >
+                <lightning-icon class="overdue-icon" icon-name="utility:clock" size="x-small"></lightning-icon>
+                <span>{labels.buttonOverdue}</span>
+              </button>
+            </template>
+          </template>
+        </div>
+
+        <!-- The date range and event types panel (its own component, so
+             opening it doesn't re-render the timeline); nothing applies until
+             Apply. -->
+        <c-time-drive-filters
+          options={typeOptions}
+          back-options={backOptions}
+          ahead-options={aheadOptions}
+          back={rangeBack}
+          ahead={rangeAhead}
+          none-text={filterNoneText}
+          slds1={slds1}
+          onapply={handleFiltersApply}
+          onopenchange={handleFiltersOpenChange}
+        ></c-time-drive-filters>
+      </div>
+
+      <div class="summary-row">
+        <!-- A narrowed date range, or hidden types: their text becomes a pill,
+             whose x puts back the page's range, or every type. -->
+        <p class={summaryClass} aria-live="polite">
+          <template lwc:if={activeRange}
+            ><span class="slds-pill summary-pill range-pill"
+              ><span class="slds-pill__label">{summaryWhen}</span
+              ><button
+                type="button"
+                class="slds-button slds-button_icon slds-pill__remove pill-remove"
+                title={rangeRemoveLabel}
+                aria-label={rangeRemoveLabel}
+                onclick={handleRangeRemove}
+              >
+                <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon></button></span></template
+          ><template lwc:else>{summaryWhen}</template
+          ><template lwc:if={summaryPending}
+            >{whenSeparator}<span class="skeleton skeleton_summary" aria-hidden="true"></span
+            ><span class="assistive-text">{labels.statusUpdatingCounts}</span></template
+          ><template lwc:elseif={typesHidden}
+            >{whenSeparator}<span class="slds-pill summary-pill types-pill"
+              ><span class="slds-pill__label">{typesText}</span
+              ><button
+                type="button"
+                class="slds-button slds-button_icon slds-pill__remove pill-remove"
+                title={typesRemoveLabel}
+                aria-label={typesRemoveLabel}
+                onclick={handleTypesRemove}
+              >
+                <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon></button></span
+            >{countText}</template
+          ><template lwc:else>{summaryRestShown}</template>
+        </p>
+        <!-- The tools: at the end of the summary's line. -->
         <div class="toolbar">
           <template lwc:if={firstLoad}>
             <div class="tools tools_skeleton" aria-hidden="true">
-              <span class="skeleton skeleton_button skeleton_button_wide"></span>
               <span class="skeleton skeleton_button"></span>
               <span class="skeleton skeleton_button"></span>
             </div>
@@ -70,26 +163,6 @@
           <template lwc:else>
             <!-- Separate buttons, a little apart. -->
             <div class="tools">
-              <!-- Back to today's slot (today's items, or "Nothing today"). -->
-              <template lwc:if={hasEvents}>
-                <template lwc:if={narrow}>
-                  <lightning-button-icon
-                    class="today-button today-button_icon"
-                    icon-name="utility:key_dates"
-                    variant="border"
-                    alternative-text={labels.buttonToday}
-                    title={labels.buttonToday}
-                    onclick={goToToday}
-                  ></lightning-button-icon>
-                </template>
-                <template lwc:else>
-                  <lightning-button
-                    class="today-button"
-                    label={labels.buttonToday}
-                    onclick={goToToday}
-                  ></lightning-button>
-                </template>
-              </template>
               <!-- Lite: titles and subtitles only, no times or dates. -->
               <template lwc:if={showLiteButton}>
                 <lightning-button-icon-stateful
@@ -157,55 +230,6 @@
           </template>
         </div>
 
-        <!-- The date range and event types panel (its own component, so
-             opening it doesn't re-render the timeline); nothing applies until
-             Apply. -->
-        <c-time-drive-filters
-          options={typeOptions}
-          back-options={backOptions}
-          ahead-options={aheadOptions}
-          back={rangeBack}
-          ahead={rangeAhead}
-          none-text={filterNoneText}
-          slds1={slds1}
-          onapply={handleFiltersApply}
-          onopenchange={handleFiltersOpenChange}
-        ></c-time-drive-filters>
-      </div>
-
-      <div class="summary-row">
-        <!-- A narrowed date range, or hidden types: their text becomes a pill,
-             whose x puts back the page's range, or every type. -->
-        <p class={summaryClass} aria-live="polite">
-          <template lwc:if={activeRange}
-            ><span class="slds-pill summary-pill range-pill"
-              ><span class="slds-pill__label">{summaryWhen}</span
-              ><button
-                type="button"
-                class="slds-button slds-button_icon slds-pill__remove pill-remove"
-                title={rangeRemoveLabel}
-                aria-label={rangeRemoveLabel}
-                onclick={handleRangeRemove}
-              >
-                <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon></button></span></template
-          ><template lwc:else>{summaryWhen}</template
-          ><template lwc:if={summaryPending}
-            >{whenSeparator}<span class="skeleton skeleton_summary" aria-hidden="true"></span
-            ><span class="assistive-text">{labels.statusUpdatingCounts}</span></template
-          ><template lwc:elseif={typesHidden}
-            >{whenSeparator}<span class="slds-pill summary-pill types-pill"
-              ><span class="slds-pill__label">{typesText}</span
-              ><button
-                type="button"
-                class="slds-button slds-button_icon slds-pill__remove pill-remove"
-                title={typesRemoveLabel}
-                aria-label={typesRemoveLabel}
-                onclick={handleTypesRemove}
-              >
-                <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon></button></span
-            >{countText}</template
-          ><template lwc:else>{summaryRestShown}</template>
-        </p>
         <!-- Says where the timeline moved to after a jump or as days load. -->
         <p class="assistive-text announcer" aria-live="polite" lwc:dom="manual"></p>
       </div>
@@ -213,14 +237,6 @@
 
     <!-- Everything under the header. -->
     <div class="below-header">
-      <!-- The Overdue lens has items: a banner over any other lens opens it. -->
-      <template lwc:if={showOverdueBanner}>
-        <button type="button" class="overdue-banner" onclick={handleOverdueBanner}>
-          <lightning-icon class="overdue-banner-icon" icon-name="utility:warning" size="x-small"></lightning-icon>
-          <span class="overdue-banner-text">{labels.bannerOverdue}</span>
-          <lightning-icon class="overdue-banner-go" icon-name="utility:chevronright" size="xx-small"></lightning-icon>
-        </button>
-      </template>
       <template lwc:if={updating}>
         <div class="updating" role="status">
           <span class="updating-bar" aria-hidden="true"></span>

@@ -337,12 +337,20 @@
         <value>Overdue tasks</value>
     </labels>
     <labels>
-        <fullName>Time_Drive_Banner_Overdue</fullName>
+        <fullName>Time_Drive_Button_Overdue</fullName>
         <categories>Time Drive</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Timeline banner above any lens · opens the Overdue lens</shortDescription>
-        <value>Overdue items</value>
+        <shortDescription>Timeline header · shown while something is overdue: opens the Overdue lens</shortDescription>
+        <value>Overdue</value>
+    </labels>
+    <labels>
+        <fullName>Time_Drive_Button_Overdue_Title</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timeline header · the Overdue button's tooltip</shortDescription>
+        <value>Show overdue items</value>
     </labels>
     <labels>
         <fullName>Time_Drive_Server_Unreadable_Dates</fullName>

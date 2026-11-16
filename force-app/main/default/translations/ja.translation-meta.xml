@@ -33,10 +33,6 @@
         <name>Time_Drive_Announce_Today</name>
     </customLabels>
     <customLabels>
-        <label>期限切れの項目</label>
-        <name>Time_Drive_Banner_Overdue</name>
-    </customLabels>
-    <customLabels>
         <label>{0} から {1} の間には何もありません</label>
         <name>Time_Drive_Between</name>
     </customLabels>
@@ -47,6 +43,14 @@
     <customLabels>
         <label>タイトルのみ</label>
         <name>Time_Drive_Button_Lite_On</name>
+    </customLabels>
+    <customLabels>
+        <label>期限切れ</label>
+        <name>Time_Drive_Button_Overdue</name>
+    </customLabels>
+    <customLabels>
+        <label>期限切れの項目を表示</label>
+        <name>Time_Drive_Button_Overdue_Title</name>
     </customLabels>
     <customLabels>
         <label>更新</label>

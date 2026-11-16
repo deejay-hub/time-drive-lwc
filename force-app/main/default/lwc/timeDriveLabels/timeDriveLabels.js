@@ -27,7 +27,8 @@ import filtersActive from "@salesforce/label/c.Time_Drive_Filters_Active";
 import typesAll from "@salesforce/label/c.Time_Drive_Types_All";
 import typesSome from "@salesforce/label/c.Time_Drive_Types_Some";
 import legendOverdueTasks from "@salesforce/label/c.Time_Drive_Legend_Overdue_Tasks";
-import bannerOverdue from "@salesforce/label/c.Time_Drive_Banner_Overdue";
+import buttonOverdue from "@salesforce/label/c.Time_Drive_Button_Overdue";
+import buttonOverdueTitle from "@salesforce/label/c.Time_Drive_Button_Overdue_Title";
 import serverSentTo from "@salesforce/label/c.Time_Drive_Server_Sent_To";
 import serverSentToOneOther from "@salesforce/label/c.Time_Drive_Server_Sent_To_One_Other";
 import serverSentToOthers from "@salesforce/label/c.Time_Drive_Server_Sent_To_Others";
@@ -154,7 +155,8 @@ export const LABELS = Object.freeze({
   typesAll,
   typesSome,
   legendOverdueTasks,
-  bannerOverdue,
+  buttonOverdue,
+  buttonOverdueTitle,
   serverSentTo,
   serverSentToOneOther,
   serverSentToOthers,
@@ -284,7 +286,8 @@ const BY_NAME = Object.freeze({
   Time_Drive_Types_All: typesAll,
   Time_Drive_Types_Some: typesSome,
   Time_Drive_Legend_Overdue_Tasks: legendOverdueTasks,
-  Time_Drive_Banner_Overdue: bannerOverdue,
+  Time_Drive_Button_Overdue: buttonOverdue,
+  Time_Drive_Button_Overdue_Title: buttonOverdueTitle,
   Time_Drive_Server_Sent_To: serverSentTo,
   Time_Drive_Server_Sent_To_One_Other: serverSentToOneOther,
   Time_Drive_Server_Sent_To_Others: serverSentToOthers,

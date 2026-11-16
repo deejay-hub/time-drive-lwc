@@ -738,11 +738,37 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   get offersOverdue() {
     return (this.views ?? []).some((v) => v.value === OVERDUE_VIEW);
   }
-  // Over every lens but Overdue itself, while it has items.
-  get showOverdueBanner() {
-    return this.overdue && this.view !== OVERDUE_VIEW && this.offersOverdue;
+  // The Overdue button: only while the lens has items (on any lens, the
+  // Overdue lens too, where it shows pressed).
+  get showOverdueButton() {
+    return this.overdue && this.offersOverdue;
   }
-  handleOverdueBanner() {
+  get overduePressed() {
+    return String(this.view === OVERDUE_VIEW);
+  }
+  get overdueButtonClass() {
+    return `slds-button slds-button_neutral overdue-button${this.view === OVERDUE_VIEW ? " overdue-button_on" : ""}`;
+  }
+  // Its tooltip: what it shows, or, pressed, where it goes back to.
+  get overdueTitle() {
+    return this.view === OVERDUE_VIEW
+      ? format(LABELS.groupBack, this.viewNamed(this.lensBeforeOverdue()).label)
+      : LABELS.buttonOverdueTitle;
+  }
+  // The lens to go back to: the one Overdue was opened from, else the page's
+  // default, else the first the org offers.
+  lensBeforeOverdue() {
+    const offered = (value) => value && value !== OVERDUE_VIEW && this.viewList.some((v) => v.value === value);
+    if (offered(this._beforeOverdue)) return this._beforeOverdue;
+    if (offered(this.defaultLens)) return this.defaultLens;
+    return this.viewList.find((v) => v.value !== OVERDUE_VIEW)?.value ?? this.view;
+  }
+  toggleOverdue() {
+    if (this.view === OVERDUE_VIEW) {
+      this.pickView(this.lensBeforeOverdue());
+      return;
+    }
+    this._beforeOverdue = this.view;
     this.pickView(OVERDUE_VIEW);
   }
 

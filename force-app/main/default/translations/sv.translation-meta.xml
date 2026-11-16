@@ -33,10 +33,6 @@
         <name>Time_Drive_Announce_Today</name>
     </customLabels>
     <customLabels>
-        <label>Försenade poster</label>
-        <name>Time_Drive_Banner_Overdue</name>
-    </customLabels>
-    <customLabels>
         <label>Inget mellan {0} och {1}</label>
         <name>Time_Drive_Between</name>
     </customLabels>
@@ -47,6 +43,14 @@
     <customLabels>
         <label>Endast rubriker</label>
         <name>Time_Drive_Button_Lite_On</name>
+    </customLabels>
+    <customLabels>
+        <label>Försenade</label>
+        <name>Time_Drive_Button_Overdue</name>
+    </customLabels>
+    <customLabels>
+        <label>Visa försenade poster</label>
+        <name>Time_Drive_Button_Overdue_Title</name>
     </customLabels>
     <customLabels>
         <label>Uppdatera</label>

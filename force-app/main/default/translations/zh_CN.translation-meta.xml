@@ -33,10 +33,6 @@
         <name>Time_Drive_Announce_Today</name>
     </customLabels>
     <customLabels>
-        <label>逾期项目</label>
-        <name>Time_Drive_Banner_Overdue</name>
-    </customLabels>
-    <customLabels>
         <label>{0} 至 {1} 之间无内容</label>
         <name>Time_Drive_Between</name>
     </customLabels>
@@ -47,6 +43,14 @@
     <customLabels>
         <label>仅显示标题</label>
         <name>Time_Drive_Button_Lite_On</name>
+    </customLabels>
+    <customLabels>
+        <label>已逾期</label>
+        <name>Time_Drive_Button_Overdue</name>
+    </customLabels>
+    <customLabels>
+        <label>显示逾期项目</label>
+        <name>Time_Drive_Button_Overdue_Title</name>
     </customLabels>
     <customLabels>
         <label>刷新</label>

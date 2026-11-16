@@ -33,10 +33,6 @@
         <name>Time_Drive_Announce_Today</name>
     </customLabels>
     <customLabels>
-        <label>Elementos vencidos</label>
-        <name>Time_Drive_Banner_Overdue</name>
-    </customLabels>
-    <customLabels>
         <label>Nada entre {0} y {1}</label>
         <name>Time_Drive_Between</name>
     </customLabels>
@@ -47,6 +43,14 @@
     <customLabels>
         <label>Solo títulos</label>
         <name>Time_Drive_Button_Lite_On</name>
+    </customLabels>
+    <customLabels>
+        <label>Vencidos</label>
+        <name>Time_Drive_Button_Overdue</name>
+    </customLabels>
+    <customLabels>
+        <label>Mostrar elementos vencidos</label>
+        <name>Time_Drive_Button_Overdue_Title</name>
     </customLabels>
     <customLabels>
         <label>Actualizar</label>

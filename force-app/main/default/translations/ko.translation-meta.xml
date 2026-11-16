@@ -33,10 +33,6 @@
         <name>Time_Drive_Announce_Today</name>
     </customLabels>
     <customLabels>
-        <label>기한이 지난 항목</label>
-        <name>Time_Drive_Banner_Overdue</name>
-    </customLabels>
-    <customLabels>
         <label>{0}에서 {1} 사이에 항목 없음</label>
         <name>Time_Drive_Between</name>
     </customLabels>
@@ -47,6 +43,14 @@
     <customLabels>
         <label>제목만</label>
         <name>Time_Drive_Button_Lite_On</name>
+    </customLabels>
+    <customLabels>
+        <label>기한 지남</label>
+        <name>Time_Drive_Button_Overdue</name>
+    </customLabels>
+    <customLabels>
+        <label>기한이 지난 항목 표시</label>
+        <name>Time_Drive_Button_Overdue_Title</name>
     </customLabels>
     <customLabels>
         <label>새로 고침</label>

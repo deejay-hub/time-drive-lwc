@@ -12,7 +12,7 @@
 - Added the Opportunity Products example Apex source (Account › Opportunity › Opportunity Product)
 - Added Time Drive Setup: a guided wizard, Fit to your org, lenses, detail fields, a filter builder, an org check and diagnostics
 - Added lenses, with All as a lens and the filter each source applies shown on the Lenses page
-- Added the Overdue lens, defined by its sources' filters, with an Overdue items banner over the other lenses when the record has something overdue
+- Added the Overdue lens, defined by its sources' filters, with an Overdue button in the header while the record has something overdue
 - Added Edit and Delete from each item's menu
 - Added View all for a busy day's grouped Salesforce items, paged as you scroll
 - Added support for opening records in a new workspace tab in Console apps

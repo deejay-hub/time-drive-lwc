@@ -35,7 +35,7 @@ Along the top:
 
 - **The lens**, the timeline's heading (All items, Sales, Service ...): a lens narrows the timeline to one area. People pick one from the heading, and Time Drive remembers their choice.
 - **The summary line**: the date range, the types shown and how many items there are.
-- **Today** brings today into view. **Filters** chooses event types and narrows the date range. The other buttons switch to titles only, expand every item, and refresh.
+- **Today** brings today into view. **Overdue**, there only while something is overdue, opens the Overdue lens. **Filters** chooses event types and narrows the date range. The other buttons switch to titles only, expand every item, and refresh.
 
 Each item shows its title, subtitle and time. Open one to see the fields the admin chose. Click its title to open its record. Its menu offers Edit and Delete, when the person may.
 
@@ -229,9 +229,9 @@ A lens narrows the timeline to one area, such as Sales or Service. People switch
 The **Overdue** lens shows what's late. Time Drive doesn't decide what counts as overdue: its sources do, each with its own filter. The overdue templates (**Overdue tasks**, and the Fit to your org variants for Account, Contact, Lead and person account pages) plot open tasks due before today (`IsClosed = false AND ActivityDate < TODAY`). Add any source to the Overdue lens with a filter of your own, such as open cases older than a week, and it counts too.
 
 - An overdue template's copy is in the Overdue lens only: its tasks are in All items already.
-- Once the timeline has loaded, it asks whether the Overdue lens has anything for the record. If it does, an **Overdue items** banner sits at the top of every other lens; clicking it opens the Overdue lens. On the Overdue lens itself there's no banner.
+- Once the timeline has loaded, it asks whether the Overdue lens has anything for the record. If it does, a red **Overdue** button appears beside **Today**; clicking it opens the Overdue lens. On the Overdue lens the button shows pressed, and clicking it again goes back to the lens you came from.
 - The question is cheap: one query per object, asking for a single row, stopping at the first that finds one. Ten overdue sources on Task are one query, not ten.
-- The banner finds the lens by its API name, `Overdue`, so you can rename or translate the lens's label freely. Turn the lens off and the banner goes too.
+- The button finds the lens by its API name, `Overdue`, so you can rename or translate the lens's label freely. Turn the lens off and the button goes too.
 
 ## Add the timeline to a page
 
@@ -501,7 +501,7 @@ The timeline shows every date, time and number in the viewer's own time zone, la
 - **Horizontal** once the card is 640px wide or more: each day is a column along a time axis. From two weeks of active days a **seek bar** runs under the columns. Grab it and an overlay shows the whole history as heat bars; the columns follow the pointer, and a click glides to a day.
 - **Phone.** In the Salesforce mobile app on a phone the card is always the vertical list and fits the screen. It starts in Lite (titles only; the button after Today shows times and dates), has larger tap targets, a one-line header (Today, Filters and a ⋯ menu holding Refresh, Expand all and the Lite switch), and no activity buttons.
 
-The header carries the lens as its heading, then **Today**, **Filters** (event types) and **Refresh**. Each user's lens and Lite choice are kept for them in the org.
+The header carries the lens as its heading with **Today** (and **Overdue**, while something is) at the end of its line; under it, the summary, with **Filters** (event types) and **Refresh** at the end. Each user's lens and Lite choice are kept for them in the org.
 
 Busy days (over 50 events of a type) show one grouped row per type, its icon drawn as a stack. For Salesforce sources its title links to all its items (View all). Every event's detail names the object it came from.
 

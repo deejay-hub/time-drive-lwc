@@ -2980,14 +2980,14 @@ describe("display density", () => {
   });
 });
 
-describe("the Overdue banner", () => {
+describe("the Overdue button", () => {
   afterEach(() => {
     while (document.body.firstChild) document.body.removeChild(document.body.firstChild);
   });
   const LENSES = [
     { value: "All", label: "All items", labelName: "Time_Drive_View_All" },
     { value: "Sales", label: "Sales", labelName: "Time_Drive_View_Sales" },
-    // Renamed by the admin: the banner goes by the API name, not the words.
+    // Renamed by the admin: the button goes by the API name, not the words.
     { value: "Overdue", label: "Late stuff", labelName: null }
   ];
   const open = async ({ lenses = LENSES, overdue = true } = {}) => {
@@ -3001,30 +3001,39 @@ describe("the Overdue banner", () => {
     await flush();
     return element;
   };
-  const banner = (element) => element.shadowRoot.querySelector(".overdue-banner");
+  const button = (element) => element.shadowRoot.querySelector(".overdue-button");
 
-  it("shows over another lens when the Overdue lens has items, and opens it", async () => {
+  it("shows in the header when the Overdue lens has items, opens it, and goes back", async () => {
     const element = await open();
-    expect(banner(element)).not.toBeNull();
-    expect(banner(element).textContent).toContain("Overdue items");
+    expect(button(element)).not.toBeNull();
+    expect(button(element).textContent).toContain("Overdue");
+    expect(button(element).getAttribute("aria-pressed")).toBe("false");
+    // Beside Today, on the lens's line.
+    expect(button(element).closest(".nav")).not.toBeNull();
     const asked = getTimeline.mock.calls.length;
-    banner(element).click();
+    button(element).click();
     await flush();
     // The Overdue lens runs, by its API name.
     expect(getTimeline.mock.calls.length).toBeGreaterThan(asked);
     expect(getTimeline.mock.calls.at(-1)[0].categories).toEqual(["Overdue"]);
-    // On the Overdue lens itself there's no banner.
-    expect(banner(element)).toBeNull();
+    // On it, the button stays, pressed, and says where it goes back to.
+    expect(button(element).getAttribute("aria-pressed")).toBe("true");
+    expect(button(element).className).toContain("overdue-button_on");
+    expect(button(element).title).toBe("Back to All items");
+    button(element).click();
+    await flush();
+    expect(getTimeline.mock.calls.at(-1)[0].categories).toEqual(["All"]);
+    expect(button(element).getAttribute("aria-pressed")).toBe("false");
   });
 
   it("shows nothing when nothing is overdue", async () => {
     const element = await open({ overdue: false });
-    expect(banner(element)).toBeNull();
+    expect(button(element)).toBeNull();
   });
 
   it("shows nothing when the Overdue lens isn't offered", async () => {
     const element = await open({ lenses: LENSES.filter((l) => l.value !== "Overdue") });
-    expect(banner(element)).toBeNull();
+    expect(button(element)).toBeNull();
   });
 
   it("asks only once the timeline has loaded", async () => {
