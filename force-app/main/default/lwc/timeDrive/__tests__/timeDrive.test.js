@@ -1798,14 +1798,16 @@ describe("c-time-drive drawing less", () => {
   afterEach(() => {
     while (document.body.firstChild) document.body.removeChild(document.body.firstChild);
   });
-  // One event a day for 20 days.
+  // One event a day for 20 days, each at midday on its own day: whole days
+  // back from now would put two on one day across a clock change, late at night.
+  const today = new Date();
   const DAYS = Array.from({ length: 20 }, (_, d) => ({
     id: `d${d}`,
     type: "web",
     category: "Digital",
     title: "Page view",
     subtitle: `Day ${d}`,
-    occurredAt: new Date(Date.now() - d * 86400000).toISOString(),
+    occurredAt: new Date(today.getFullYear(), today.getMonth(), today.getDate() - d, 12).toISOString(),
     details: []
   }));
   // jsdom lays nothing out: horizontally, the columns report themselves
@@ -2787,6 +2789,8 @@ describe("c-time-drive accessibility", () => {
   afterEach(() => {
     while (document.body.firstChild) document.body.removeChild(document.body.firstChild);
   });
+  // Each at midday on its own day (see DAYS above).
+  const today = new Date();
   const LONG = Array.from({ length: 20 }, (_, d) => ({
     id: `a${d}`,
     recordId: d % 3 === 0 ? `a0100000000000${String(d).padStart(2, "0")}AA` : undefined,
@@ -2795,7 +2799,7 @@ describe("c-time-drive accessibility", () => {
     category: d % 3 === 0 ? "Commerce" : "Digital",
     title: d % 3 === 0 ? "Order placed" : "Page view",
     subtitle: `Day ${d}`,
-    occurredAt: new Date(Date.now() - d * 86400000).toISOString(),
+    occurredAt: new Date(today.getFullYear(), today.getMonth(), today.getDate() - d, 12).toISOString(),
     details: [{ label: "Order", value: `O-${d}` }]
   }));
   const mount = async (layout, events = LONG) => {

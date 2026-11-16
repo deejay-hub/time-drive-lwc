@@ -2386,6 +2386,21 @@ a.guided-button lightning-icon {
   border-color: var(--accent-fill);
 }
 
+/* The subtitle's second field: after a dot, as the timeline reads it. */
+.word-row_second {
+  align-items: center;
+}
+
+.word-dot {
+  flex: none;
+  width: 1rem;
+  color: var(--muted);
+  font-size: 1.25rem;
+  font-weight: var(--slds-g-font-weight-7, 700);
+  line-height: 1;
+  text-align: center;
+}
+
 .word-note {
   margin: 0;
   color: var(--muted);

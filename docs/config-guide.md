@@ -144,7 +144,7 @@ On the right, put the source in its place in the legend: drag it, or use the arr
 
 ![Step 5: the name, and the source's place in the legend](images/config-guide/standard-5-name.png)
 
-**Step 6, Words and style.** Choose the field each item's title and subtitle show (here Subject and Status), and its icon and colour. The preview at the top shows how an item will look.
+**Step 6, Words and style.** Choose the field each item's title shows (here Subject), up to two fields for its subtitle, and its icon and colour. The subtitle's fields read with a dot between them, and an empty one drops out with its dot: the Tasks, Calls and Events templates show **Assigned To · Related To**. A lookup to more than one object, such as a task's Related To, Name or Assigned To, leads to the record's name and type (`What.Name`) rather than its ID. The preview at the top shows how an item will look.
 
 ![Step 6: title, subtitle, icon and colour](images/config-guide/standard-6-words.png)
 

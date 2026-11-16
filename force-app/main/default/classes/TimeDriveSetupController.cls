@@ -13,6 +13,8 @@
   'PMD.CyclomaticComplexity, PMD.CognitiveComplexity, PMD.AvoidBooleanMethodParameters, PMD.ExcessiveParameterList, PMD.ExcessivePublicCount, PMD.NcssCount, PMD.TooManyFields'
 )
 public with sharing class TimeDriveSetupController {
+  // A subtitle's fields: up to two, read with a dot between them.
+  private static final Integer MAX_SUBTITLE_FIELDS = 2;
   private static final Integer MAX_DETAILS = 4;
   // Contact points (email, phone, address) are how to reach someone, not what they did, whatever
   // category Data 360 files them under.
@@ -1099,7 +1101,15 @@ public with sharing class TimeDriveSetupController {
     for (Schema.SObjectField f : describe(objectName).fields.getMap().values()) {
       Schema.DescribeFieldResult fd = f.getDescribe();
       if (fd.isAccessible()) {
-        out.add(new FieldInfo(fd));
+        FieldInfo info = new FieldInfo(fd);
+        // The Name object is reached through a lookup to many (What.Name): a
+        // query can go no further, so its own lookups are plain fields here.
+        if (objectName == 'Name') {
+          info.referenceTo = null;
+          info.relationshipName = null;
+          info.polymorphic = false;
+        }
+        out.add(info);
       }
     }
     out.sort();
@@ -2045,7 +2055,7 @@ public with sharing class TimeDriveSetupController {
       Event_Type__c = String.isBlank(d.eventType) ? d.developerName.toLowerCase().left(80) : d.eventType,
       Event_Label__c = d.eventLabel,
       Title__c = oneField(d.title),
-      Subtitle__c = oneField(d.subtitle),
+      Subtitle__c = subtitleFields(d.subtitle),
       Icon__c = d.icon,
       Icon_Colour__c = d.iconColour,
       Record_Id_Field__c = d.recordIdFieldOrRelated(),
@@ -2115,6 +2125,21 @@ public with sharing class TimeDriveSetupController {
   private static String oneField(String text) {
     Matcher m = Pattern.compile('\\{[^}]+\\}').matcher(text == null ? '' : text);
     return m.find() ? m.group() : null;
+  }
+
+  /**
+   * A subtitle as up to two fields with a dot between them ({Owner.Name} · {What.Name}); none when it has none.
+   * @param text The subtitle as drafted.
+   * @return Its first two {Field}s, joined by the timeline's separator, or null.
+   */
+  @TestVisible
+  private static String subtitleFields(String text) {
+    Matcher m = Pattern.compile('\\{[^}]+\\}').matcher(text == null ? '' : text);
+    List<String> fields = new List<String>();
+    while (m.find() && fields.size() < MAX_SUBTITLE_FIELDS) {
+      fields.add(m.group());
+    }
+    return fields.isEmpty() ? null : String.join(fields, TimeDrivePlotter.SEPARATOR);
   }
 
   /** Sources are records only admins write: it needs the Setup permission set's access, or Customize Application. */
@@ -3077,6 +3102,11 @@ public with sharing class TimeDriveSetupController {
     public String referenceTo;
     @AuraEnabled
     public String relationshipName;
+    // A lookup to more than one object (a task's Related To, its Name, its
+    // Assigned To): it leads to the Name object's fields, which a query
+    // reads through any of them (What.Name).
+    @AuraEnabled
+    public Boolean polymorphic = false;
     // That object's names, for a source named after it (a TaskRelation
     // source reading "Tasks").
     @AuraEnabled
@@ -3099,6 +3129,9 @@ public with sharing class TimeDriveSetupController {
         referenceTo = target.getName();
         referenceLabel = target.getLabel();
         referencePlural = target.getLabelPlural();
+        relationshipName = fd.getRelationshipName();
+      } else if (targets.size() > 1 && String.isNotBlank(fd.getRelationshipName())) {
+        polymorphic = true;
         relationshipName = fd.getRelationshipName();
       }
       if (fd.getType() == Schema.DisplayType.PICKLIST || fd.getType() == Schema.DisplayType.MULTIPICKLIST) {

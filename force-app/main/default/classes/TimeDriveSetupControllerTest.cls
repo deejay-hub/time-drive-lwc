@@ -276,7 +276,30 @@ private class TimeDriveSetupControllerTest {
   }
 
   @IsTest
-  static void aTitleOrSubtitleIsOneField() {
+  static void aLookupToManyObjectsLeadsToTheirNames() {
+    System.runAs(TimeDriveTestData.setupAdmin()) {
+      TimeDriveSetupController.FieldInfo what;
+      for (TimeDriveSetupController.FieldInfo f : TimeDriveSetupController.getFields('Task')) {
+        if (f.name == 'WhatId') {
+          what = f;
+        }
+      }
+      // Related To points at many objects: no one object, but it leads on (What.Name).
+      Assert.isTrue(what.polymorphic, 'Related To is a lookup to many');
+      Assert.areEqual('What', what.relationshipName);
+      Assert.isNull(what.referenceTo, 'no one object, so nothing treats it as one');
+      Boolean hasName = false;
+      for (TimeDriveSetupController.FieldInfo f : TimeDriveSetupController.getFields('Name')) {
+        hasName = hasName || f.name == 'Name';
+        Assert.isNull(f.relationshipName, 'a query goes no further than What.Name: ' + f.name);
+        Assert.isFalse(f.polymorphic, f.name);
+      }
+      Assert.isTrue(hasName, 'the Name object has its Name');
+    }
+  }
+
+  @IsTest
+  static void aTitleIsOneFieldAndASubtitleUpToTwo() {
     System.runAs(TimeDriveTestData.setupAdmin()) {
       Assert.areEqual('{Subject}', TimeDriveSetupController.oneField('{Subject}'));
       Assert.areEqual('{Status}', TimeDriveSetupController.oneField('{Status} · {Priority}'), 'the first is kept');
@@ -284,6 +307,20 @@ private class TimeDriveSetupControllerTest {
       Assert.areEqual('{Who.Name}', TimeDriveSetupController.oneField('{Who.Name}'), 'a related field is one field');
       Assert.isNull(TimeDriveSetupController.oneField('Order placed'), 'no field: the title shows the name');
       Assert.isNull(TimeDriveSetupController.oneField(null));
+
+      // A subtitle keeps two, with the timeline's dot between them.
+      Assert.areEqual(
+        '{Owner.Name} · {What.Name}',
+        TimeDriveSetupController.subtitleFields('{Owner.Name} · {What.Name}')
+      );
+      Assert.areEqual('{Status}', TimeDriveSetupController.subtitleFields('{Status}'), 'one is fine');
+      Assert.areEqual(
+        '{Status} · {Priority}',
+        TimeDriveSetupController.subtitleFields('{Status} and {Priority} then {Type}'),
+        'the first two, words gone'
+      );
+      Assert.isNull(TimeDriveSetupController.subtitleFields('Nothing here'));
+      Assert.isNull(TimeDriveSetupController.subtitleFields(null));
     }
   }
 

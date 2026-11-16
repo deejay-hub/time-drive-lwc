@@ -7,6 +7,12 @@ const MAX_DEPTH = 5;
 const related = new Map();
 
 // A lookup's name without its "ID": "Campaign ID" reads "Campaign".
+// The object a lookup leads to: its own, or for a lookup to many (a task's
+// Related To) the Name object, whose fields a query reads through any of them.
+export function lookupTarget(field) {
+  return field?.referenceTo || (field?.polymorphic ? "Name" : null);
+}
+
 export function lookupLabel(field) {
   return (field?.label ?? "").replace(/\s+ID$/i, "");
 }
@@ -40,7 +46,7 @@ export default class TimeDriveFieldPicker extends LightningElement {
   levelFields;
 
   connectedCallback() {
-    if (this.startAt?.referenceTo && this.startAt?.relationshipName) this.follow(this.startAt);
+    if (lookupTarget(this.startAt) && this.startAt?.relationshipName) this.follow(this.startAt);
     // eslint-disable-next-line @lwc/lwc/no-async-operation
     requestAnimationFrame(() => this.template.querySelector(".token-input")?.focus());
   }
@@ -66,14 +72,14 @@ export default class TimeDriveFieldPicker extends LightningElement {
       .filter((f) => !term || f.label.toLowerCase().includes(term) || f.name.toLowerCase().includes(term))
       .slice(0, 40)
       .map((f) => {
-        const follows = Boolean(f.referenceTo && f.relationshipName) && !deep && !this.noLookups;
+        const follows = Boolean(lookupTarget(f) && f.relationshipName) && !deep && !this.noLookups;
         const label = follows ? lookupLabel(f) : f.label;
         const at = term ? label.toLowerCase().indexOf(term) : -1;
         return {
           key: f.name,
           name: f.name,
           follows,
-          detail: follows ? f.referenceTo : f.name,
+          detail: follows ? (f.referenceTo ?? "Any record") : f.name,
           before: at < 0 ? label : label.slice(0, at),
           match: at < 0 ? "" : label.slice(at, at + term.length),
           after: at < 0 ? "" : label.slice(at + term.length),
@@ -86,7 +92,7 @@ export default class TimeDriveFieldPicker extends LightningElement {
   // Whether a field is on the list: a lookup always (unless lookups are off),
   // another field unless the root is lookups only or its type isn't asked for.
   listed(f) {
-    const lookup = Boolean(f.referenceTo && f.relationshipName) && !this.noLookups;
+    const lookup = Boolean(lookupTarget(f) && f.relationshipName) && !this.noLookups;
     if (lookup) return true;
     if (this.atRoot && this.rootLookupsOnly) return false;
     return !this.types?.length || this.types.includes(f.type);
@@ -124,7 +130,8 @@ export default class TimeDriveFieldPicker extends LightningElement {
   choose(name) {
     const field = this.current.find((f) => f.name === name);
     if (!field) return;
-    const follows = field.referenceTo && field.relationshipName && this.trail.length < MAX_DEPTH - 1 && !this.noLookups;
+    const follows =
+      lookupTarget(field) && field.relationshipName && this.trail.length < MAX_DEPTH - 1 && !this.noLookups;
     if (follows) {
       this.follow(field);
       return;
@@ -137,12 +144,12 @@ export default class TimeDriveFieldPicker extends LightningElement {
   async follow(field) {
     this.trail = [
       ...this.trail,
-      { relationshipName: field.relationshipName, objectName: field.referenceTo, label: lookupLabel(field) }
+      { relationshipName: field.relationshipName, objectName: lookupTarget(field), label: lookupLabel(field) }
     ];
     this.query = "";
     const input = this.template.querySelector(".token-input");
     if (input) input.value = "";
-    await this.load(field.referenceTo);
+    await this.load(lookupTarget(field));
     input?.focus();
   }
 

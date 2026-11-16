@@ -27,7 +27,7 @@ import setSourceActive from "@salesforce/apex/TimeDriveSetupController.setActive
 import removeSource from "@salesforce/apex/TimeDriveSetupController.remove";
 import setSourceLenses from "@salesforce/apex/TimeDriveSetupController.setLenses";
 import { describeError, fitIllustrations, illustrationName } from "c/timeDriveErrors";
-import { lookupLabel } from "c/timeDriveFieldPicker";
+import { lookupLabel, lookupTarget } from "c/timeDriveFieldPicker";
 import { ICON_SETS } from "./iconCatalog";
 import { PALETTE } from "./colourPalette";
 
@@ -134,7 +134,7 @@ const PARENTS = [
     value: "PersonAccount",
     label: "Person Account",
     detail: "The timeline on person account pages. Records link by the Account or its Contact.",
-    icon: "utility:person_account"
+    icon: "utility:user"
   },
   {
     value: "Lead",
@@ -614,6 +614,11 @@ const HIGHLIGHT_COLOURS = [
   { value: "#8E6CC8", label: "Purple" },
   { value: "#747474", label: "Grey" }
 ];
+
+// A subtitle's fields: up to two, with the timeline's dot between them
+// (TimeDrivePlotter.SEPARATOR, which drops out around an empty one).
+const MAX_SUBTITLE_FIELDS = 2;
+const SUBTITLE_SEPARATOR = " · ";
 
 // Fields an item can show when opened, besides its title and subtitle.
 const MAX_DETAILS = 4;
@@ -2220,7 +2225,7 @@ export default class TimeDriveSetup extends LightningElement {
       case "look":
         return !this.showWords
           ? ""
-          : "Choose the field each item's title and subtitle show. A lookup (›) leads to a related record's fields: a member's Campaign › Name, say.";
+          : "Choose the field each item's title shows, and up to two for its subtitle (read with a dot between them). A lookup (›) leads to a related record's fields: a member's Campaign › Name, say.";
       case "open":
         return this.isSalesforce
           ? "Opening an item shows more about it, right on the timeline. Clicking its title opens a record page: for a junction like Campaign Member, often the record it joins to. The previews use sample values."
@@ -3664,10 +3669,27 @@ export default class TimeDriveSetup extends LightningElement {
     return out;
   }
 
-  // The title and subtitle are one field each: the first {Field} in what's
-  // kept, or none (the title then shows the source's name).
+  // The title is one field: the first {Field} in what's kept, or none (the
+  // title then shows the source's name). The subtitle is up to two, read
+  // with a dot between them ("{Owner.Name} · {What.Name}").
   firstField(text) {
     return /\{([^}]+)\}/.exec(text ?? "")?.[1] ?? "";
+  }
+
+  fieldsIn(text) {
+    return [...(text ?? "").matchAll(/\{([^}]+)\}/g)].map((m) => m[1]).slice(0, MAX_SUBTITLE_FIELDS);
+  }
+
+  get subtitleFields() {
+    return this.isEmailMessage ? [] : this.fieldsIn(this.draft.subtitle);
+  }
+
+  // The subtitle from its fields, in order, a dot between them.
+  subtitleOf(fields) {
+    return fields
+      .filter(Boolean)
+      .map((f) => `{${f}}`)
+      .join(SUBTITLE_SEPARATOR);
   }
 
   get titleField() {
@@ -3675,7 +3697,11 @@ export default class TimeDriveSetup extends LightningElement {
   }
 
   get subtitleField() {
-    return this.isEmailMessage ? "" : this.firstField(this.draft.subtitle);
+    return this.subtitleFields[0] ?? "";
+  }
+
+  get subtitleSecondField() {
+    return this.subtitleFields[1] ?? "";
   }
 
   get titleChoice() {
@@ -3693,6 +3719,31 @@ export default class TimeDriveSetup extends LightningElement {
 
   get subtitleChoiceClass() {
     return `field-choice-name${this.subtitleField ? "" : " field-choice-name_none"}`;
+  }
+
+  // The second field: offered once there's a first.
+  get showSubtitleSecond() {
+    return Boolean(this.subtitleField) && !this.isEmailMessage;
+  }
+
+  get subtitleSecondChoice() {
+    return this.subtitleSecondField ? this.fieldLabel(this.subtitleSecondField) : "Add a second field";
+  }
+
+  get subtitleSecondChoiceClass() {
+    return `field-choice-name${this.subtitleSecondField ? "" : " field-choice-name_none"}`;
+  }
+
+  get subtitleSecondLabel() {
+    return `Subtitle, second field: ${this.subtitleSecondField ? this.fieldLabel(this.subtitleSecondField) : "none"}`;
+  }
+
+  get canClearSubtitleSecond() {
+    return Boolean(this.subtitleSecondField);
+  }
+
+  get subtitleSecondTokensOpen() {
+    return this.tokenTarget === "subtitle2";
   }
 
   get cannotChooseTitleField() {
@@ -3721,9 +3772,17 @@ export default class TimeDriveSetup extends LightningElement {
     return !this.cannotChooseSubtitleField;
   }
 
-  // Taken off: the title shows the source's name again, the subtitle nothing.
+  // Taken off: the title shows the source's name again; a subtitle field
+  // goes, and a second one moves up to first.
   handleFieldClear(event) {
-    this.update({ [event.currentTarget.dataset.field]: "" });
+    const field = event.currentTarget.dataset.field;
+    if (field === "subtitle" || field === "subtitle2") {
+      const fields = [...this.subtitleFields];
+      fields.splice(field === "subtitle" ? 0 : 1, 1);
+      this.update({ subtitle: this.subtitleOf(fields) });
+    } else {
+      this.update({ [field]: "" });
+    }
     this.tokenTarget = undefined;
   }
 
@@ -3733,7 +3792,7 @@ export default class TimeDriveSetup extends LightningElement {
 
   get subtitleParts() {
     if (this.isEmailMessage) return [{ key: "email", text: EMAIL_SAMPLE_SUBTITLE, className: "plain" }];
-    return this.partsOf(this.subtitleField ? `{${this.subtitleField}}` : "");
+    return this.partsOf(this.subtitleOf(this.subtitleFields));
   }
 
   get titleTokensOpen() {
@@ -3752,7 +3811,13 @@ export default class TimeDriveSetup extends LightningElement {
 
   // The field chosen takes the place of the one there.
   insertToken(name) {
-    this.update({ [this.tokenTarget]: `{${name}}` });
+    if (this.tokenTarget === "subtitle" || this.tokenTarget === "subtitle2") {
+      const fields = [...this.subtitleFields];
+      fields[this.tokenTarget === "subtitle" ? 0 : 1] = name;
+      this.update({ subtitle: this.subtitleOf(fields) });
+    } else {
+      this.update({ [this.tokenTarget]: `{${name}}` });
+    }
     this.tokenTarget = undefined;
   }
 
@@ -4217,7 +4282,7 @@ export default class TimeDriveSetup extends LightningElement {
     let fields = this.fields ?? [];
     for (const rel of steps.slice(0, -1)) {
       const lookup = fields.find((f) => f.relationshipName === rel);
-      objectName = lookup?.referenceTo;
+      objectName = lookupTarget(lookup);
       fields = this.fieldsOf(objectName);
     }
     const last = steps[steps.length - 1];
@@ -4311,7 +4376,8 @@ export default class TimeDriveSetup extends LightningElement {
     const rel = String(path).split(".");
     if (rel.length < 2) return;
     const lookup = (this.fields ?? []).find((f) => f.relationshipName === rel[0]);
-    if (lookup?.referenceTo) this.loadPreviewFields(lookup.referenceTo);
+    const target = lookupTarget(lookup);
+    if (target) this.loadPreviewFields(target);
   }
 
   handleDetailPickOpen(event) {

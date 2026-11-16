@@ -1689,6 +1689,40 @@
                                   <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon>
                                 </button>
                               </div>
+                              <!-- A second field, read after a dot: Assigned To · Related To. -->
+                              <div lwc:if={showSubtitleSecond} class="word-row word-row_second">
+                                <span class="word-dot" aria-hidden="true">·</span>
+                                <button
+                                  class="field-choice"
+                                  type="button"
+                                  data-field="subtitle2"
+                                  aria-label={subtitleSecondLabel}
+                                  aria-expanded={subtitleSecondTokensOpen}
+                                  onclick={handleTokenOpen}
+                                >
+                                  <span class={subtitleSecondChoiceClass}>{subtitleSecondChoice}</span>
+                                  <lightning-icon icon-name="utility:chevrondown" size="xx-small"></lightning-icon>
+                                </button>
+                                <button
+                                  lwc:if={canClearSubtitleSecond}
+                                  class="field-clear"
+                                  type="button"
+                                  data-field="subtitle2"
+                                  title="No second field"
+                                  aria-label="Take the second field off the subtitle"
+                                  onclick={handleFieldClear}
+                                >
+                                  <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon>
+                                </button>
+                              </div>
+                              <template lwc:if={subtitleSecondTokensOpen}>
+                                <c-time-drive-field-picker
+                                  fields={tokenFields}
+                                  label="Search fields for the subtitle's second field"
+                                  onpick={handleFieldPick}
+                                  onclose={handleFieldPickClose}
+                                ></c-time-drive-field-picker>
+                              </template>
                               <p lwc:if={isEmailMessage} id="subtitle-note" class="word-note">
                                 Set for you: who each email went to.
                               </p>

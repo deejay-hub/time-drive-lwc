@@ -62,6 +62,35 @@ describe("c-time-drive-field-picker", () => {
     expect(root.querySelector(".token-crumb")).toBeNull();
   });
 
+  it("follows a lookup to many objects (Related To) into the Name object's fields", async () => {
+    getFields.mockResolvedValue([
+      { name: "Name", label: "Name", type: "string" },
+      { name: "Type", label: "Type", type: "picklist" }
+    ]);
+    const element = createElement("c-time-drive-field-picker", { is: TimeDriveFieldPicker });
+    element.fields = [
+      { name: "Subject", label: "Subject", type: "string" },
+      { name: "WhatId", label: "Related To ID", type: "reference", relationshipName: "What", polymorphic: true }
+    ];
+    const picks = [];
+    element.addEventListener("pick", (e) => picks.push(e.detail));
+    document.body.appendChild(element);
+    await flush();
+    const root = element.shadowRoot;
+
+    // Not the 18-character ID: a lookup that leads on, to any record.
+    const lookup = root.querySelector('.token-result[data-name="WhatId"]');
+    expect(lookup.classList.contains("token-result_follow")).toBe(true);
+    expect(lookup.textContent).toContain("Related To");
+    lookup.click();
+    await flush();
+    await flush();
+    expect(getFields).toHaveBeenCalledWith({ objectName: "Name" });
+    root.querySelector('.token-result[data-name="Name"]').click();
+    expect(picks[0].path).toBe("What.Name");
+    expect(picks[0].label).toBe("Related To › Name");
+  });
+
   it("can start from the lookups alone and list only the types asked for beyond them", async () => {
     getFields.mockResolvedValue([
       { name: "Subject", label: "Subject", type: "string" },

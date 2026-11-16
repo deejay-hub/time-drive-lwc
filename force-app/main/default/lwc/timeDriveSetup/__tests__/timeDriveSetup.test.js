@@ -775,6 +775,44 @@ describe("c-time-drive-setup", () => {
       expect(choice("title").textContent).toBe("None: its name");
     });
 
+    it("gives the subtitle up to two fields, read with a dot between them", async () => {
+      const plain = [
+        { name: "CreatedDate", label: "Created Date", type: "datetime", filterable: true, values: [] },
+        { name: "Subject", label: "Subject", type: "string", filterable: true, values: [] },
+        { name: "Status", label: "Status", type: "picklist", filterable: true, values: [] }
+      ];
+      const root = await openStep("look", { title: "{Subject}", subtitle: "" }, () => plain);
+      await settle();
+      const choice = (field) => root.querySelector(`.field-choice[data-field="${field}"] .field-choice-name`);
+      // No first field yet: no second to add.
+      expect(root.querySelector('.field-choice[data-field="subtitle2"]')).toBeNull();
+
+      const pick = async (field, name) => {
+        root.querySelector(`.field-choice[data-field="${field}"]`).click();
+        await settle();
+        const picker = root.querySelector("c-time-drive-field-picker");
+        picker.shadowRoot.querySelector(`.token-result[data-name="${name}"]`).click();
+        await settle();
+      };
+      await pick("subtitle", "Status");
+      expect(choice("subtitle").textContent).toBe("Status");
+      expect(choice("subtitle2").textContent).toBe("Add a second field");
+      await pick("subtitle2", "CreatedDate");
+      expect(choice("subtitle2").textContent).toBe("Created Date");
+      // The sample reads both, a dot between.
+      expect([...root.querySelectorAll(".sample-sub .token")].map((t) => t.textContent)).toEqual([
+        "Status",
+        "Created Date"
+      ]);
+      expect(root.querySelector(".sample-sub").textContent).toContain("·");
+
+      // Taking the first off moves the second up.
+      root.querySelector('.field-clear[data-field="subtitle"]').click();
+      await settle();
+      expect(choice("subtitle").textContent).toBe("Created Date");
+      expect(choice("subtitle2").textContent).toBe("Add a second field");
+    });
+
     it("lays out the look: the icon preview with the title and subtitle beside it, the pickers side by side below", async () => {
       const root = await openStep("look", { icon: "utility:record", iconColour: "#0B5CAB" });
       await settle();

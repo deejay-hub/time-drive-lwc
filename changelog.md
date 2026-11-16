@@ -13,6 +13,7 @@
 - Added Time Drive Setup: a guided wizard, Fit to your org, lenses, detail fields, a filter builder, an org check and diagnostics
 - Added lenses, with All as a lens and the filter each source applies shown on the Lenses page
 - Added overdue highlights (a date field past on an open record), on by default for Tasks, and escalated highlights for Cases
+- Added a second subtitle field, read after a dot; Tasks, Calls and Events show Assigned To · Related To
 - Added the Overdue lens, defined by its sources' filters, with an Overdue button in the header while the record has something overdue
 - Added Edit and Delete from each item's menu
 - Added View all for a busy day's grouped Salesforce items, paged as you scroll
