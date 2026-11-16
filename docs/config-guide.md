@@ -125,7 +125,7 @@ This walk-through adds the Contact's cases.
 
 **Step 3, Date.** Choose the date or date/time that places each record on the timeline. Suggested fields come first. A lookup (›) leads to a related record's dates, such as the Account's.
 
-Tasks and Events dated by their usual fields are placed the way Salesforce shows them. A task dated by its **Due Date** (`ActivityDate`) is on its due date while it's open, and at the moment it was completed (`CompletedDateTime`) once it's done. An event dated by its **Start** (`StartDateTime`) is at its start, unless it's all day: then it's on its date, in every time zone. Counts and View all follow the same rules, so a day's count always matches its items. A date (with no time) shows `--` in place of a time and comes first in its day.
+Tasks and Events dated by their usual fields are placed the way Salesforce shows them. A task dated by its **Due Date** (`ActivityDate`) is on its due date, open or done. When it was completed isn't used: Salesforce stamps that at the moment it's saved as done, so logged calls and imported history would all land on the day they were entered. An event dated by its **Start** (`StartDateTime`) is at its start, unless it's all day: then it's on its date, in every time zone. Counts and View all follow the same rules, so a day's count always matches its items. A date (with no time) shows `--` in place of a time and comes first in its day.
 
 ![Step 3: the date that places each item](images/config-guide/standard-3-date.png)
 

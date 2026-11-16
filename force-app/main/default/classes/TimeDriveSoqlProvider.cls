@@ -209,10 +209,11 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
 
   /**
    * One way a source's items are dated: a field, and when it applies (a flag,
-   * and whether another field is set). Task and Event have more than one: an
-   * open task by its due date (ActivityDate) and a completed one by when it was
-   * completed (CompletedDateTime); a timed event by its start and an all-day
-   * one by its date (its start is midnight GMT, the day before west of it).
+   * and whether another field is set). Event has two: a timed event by its
+   * start and an all-day one by its date (its start is midnight GMT, the day
+   * before west of it). A task is always dated by its due date (ActivityDate),
+   * open or done: when it was completed is only when it was saved so, which
+   * for logged or imported history is the day it was entered.
    * Rows, counts and pages all use the same cases, so a count and its items
    * always fall on the same day.
    */
@@ -271,28 +272,12 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
 
   /**
    * How a source's items are dated, by its date field and the object it
-   * belongs to: Task ActivityDate and Event StartDateTime (or ActivityDateTime)
-   * have their own cases (see DateCase); any other field is just itself.
+   * belongs to: Event StartDateTime (or ActivityDateTime) has its own cases
+   * (see DateCase); any other field is just itself.
    */
   @TestVisible
   private static List<DateCase> dateCases(String dateOwner, String ownField, Boolean dateOnly, Boolean nullable) {
     String f = ownField.toLowerCase();
-    if (dateOwner == 'Task' && f == 'activitydate') {
-      List<DateCase> out = new List<DateCase>{ new DateCase('ActivityDate', true, true).onlyWhen('IsClosed', false) };
-      if (TimeDriveConfig.fieldMap('Task').containsKey('completeddatetime')) {
-        out.add(
-          new DateCase('CompletedDateTime', false, false)
-            .onlyWhen('IsClosed', true)
-            .onlyIfSet('CompletedDateTime', true)
-        );
-        out.add(
-          new DateCase('ActivityDate', true, true).onlyWhen('IsClosed', true).onlyIfSet('CompletedDateTime', false)
-        );
-      } else {
-        out.add(new DateCase('ActivityDate', true, true).onlyWhen('IsClosed', true));
-      }
-      return out;
-    }
     if (dateOwner == 'Event' && (f == 'startdatetime' || f == 'activitydatetime')) {
       return new List<DateCase>{
         new DateCase(ownField, false, nullable).onlyWhen('IsAllDayEvent', false),

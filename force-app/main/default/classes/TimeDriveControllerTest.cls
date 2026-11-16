@@ -440,11 +440,8 @@ private class TimeDriveControllerTest {
     for (TimeDriveQueries.Ran q : TimeDriveQueries.ran) {
       if (q.soql.contains('FROM Task ')) {
         sawTask = true;
-        // Each query checks its own date: ActivityDate, or a completed task's CompletedDateTime.
-        Assert.isTrue(
-          q.soql.contains('ActivityDate != null') || q.soql.contains('CompletedDateTime != null'),
-          'a nillable date must have a value: ' + q.soql
-        );
+        // A task's due date can be empty, so each query checks it.
+        Assert.isTrue(q.soql.contains('ActivityDate != null'), 'a nillable date must have a value: ' + q.soql);
       } else if (q.soql.contains('FROM Case ')) {
         Assert.isFalse(q.soql.contains('CreatedDate != null'), 'a date that is always set needs no check');
       }

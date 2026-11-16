@@ -1,6 +1,6 @@
 /**
- * Which day an item is on, whatever the viewer's time zone: open tasks by their
- * due date, completed ones by when they were completed, all-day events by their
+ * Which day an item is on, whatever the viewer's time zone: tasks by their due
+ * date, open or done (not the day they were saved as done), all-day events by their
  * date (not their midnight-GMT start), and dates an Apex source gives as text.
  * Each runs as a user in Los Angeles (UTC-8) and in Tonga (UTC+13), where a
  * date read as midnight GMT lands on the wrong day.
@@ -51,41 +51,34 @@ private class TimeDriveDatesTest {
   }
 
   @IsTest
-  static void openTasksAreOnTheirDueDateAndCompletedOnesWhenCompleted() {
+  static void tasksAreOnTheirDueDateOpenOrDone() {
     for (String zone : ZONES) {
       System.runAs(TimeDriveTestData.adminIn(zone)) {
         Contact c = new Contact(LastName = 'Dates ' + zone);
         insert c;
         Date due = Date.today().addDays(-3);
         Date longAgo = Date.today().addDays(-10);
+        // Created done today, as logged or imported history is: its due date is when it happened.
         insert new List<Task>{
           new Task(WhoId = c.Id, Subject = 'Open', ActivityDate = due, Status = 'Not Started'),
           new Task(WhoId = c.Id, Subject = 'Done', ActivityDate = longAgo, Status = 'Completed')
         };
-        Datetime completed = [SELECT CompletedDateTime FROM Task WHERE Subject = 'Done' AND WhoId = :c.Id]
-        .CompletedDateTime;
-        Assert.isNotNull(completed, 'Salesforce sets CompletedDateTime when a task is created completed');
 
         Map<String, TimeDriveController.EngagementEvent> byTitle = plotted(
           context(c.Id, source('Task', 'ActivityDate', 'task'))
         );
         Assert.areEqual(due, byTitle.get('Open').occurredAt.date(), zone + ': an open task is on its due date');
         Assert.isTrue(byTitle.get('Open').dateOnly, zone + ': with no time');
-        Assert.areEqual(
-          completed,
-          byTitle.get('Done').occurredAt,
-          zone + ': a completed task is when it was completed'
-        );
-        Assert.isFalse(byTitle.get('Done').dateOnly, zone + ': which has a time');
+        Assert.areEqual(longAgo, byTitle.get('Done').occurredAt.date(), zone + ': so is a done one');
+        Assert.isTrue(byTitle.get('Done').dateOnly, zone + ': also with no time');
 
         Map<String, Integer> byDay = counted(context(c.Id, source('Task', 'ActivityDate', 'task')));
         Assert.areEqual(1, byDay.get(String.valueOf(due)), zone + ': counted on its due date: ' + byDay);
-        Assert.areEqual(
-          1,
-          byDay.get(String.valueOf(completed.date())),
-          zone + ': counted on its completion day: ' + byDay
+        Assert.areEqual(1, byDay.get(String.valueOf(longAgo)), zone + ': the done one on its own: ' + byDay);
+        Assert.isFalse(
+          byDay.containsKey(String.valueOf(Date.today())),
+          zone + ': not on the day it was saved done: ' + byDay
         );
-        Assert.isFalse(byDay.containsKey(String.valueOf(longAgo)), zone + ': not on its old due date: ' + byDay);
       }
     }
   }
@@ -127,7 +120,7 @@ private class TimeDriveDatesTest {
   }
 
   @IsTest
-  static void viewAllPagesThroughEveryCaseOnce() {
+  static void pagesThroughEveryTaskOnce() {
     System.runAs(TimeDriveTestData.adminIn('America/Los_Angeles')) {
       Contact c = new Contact(LastName = 'Pages');
       insert c;
@@ -159,9 +152,9 @@ private class TimeDriveDatesTest {
       }
       Assert.areEqual(4, seen.size(), 'every task once, one a page: ' + seen);
       Assert.areEqual(4, new Set<String>(seen).size(), 'none twice: ' + seen);
-      // Newest first: the two completed today, then the two open three days ago.
-      Assert.areEqual(new Set<String>{ 'Done', 'Done too' }, new Set<String>{ seen[0], seen[1] }, String.valueOf(seen));
-      Assert.areEqual(new Set<String>{ 'Open', 'Open too' }, new Set<String>{ seen[2], seen[3] }, String.valueOf(seen));
+      // Newest first, by due date: the two open three days ago, then the done ones.
+      Assert.areEqual(new Set<String>{ 'Open', 'Open too' }, new Set<String>{ seen[0], seen[1] }, String.valueOf(seen));
+      Assert.areEqual(new List<String>{ 'Done', 'Done too' }, new List<String>{ seen[2], seen[3] }, String.valueOf(seen));
     }
   }
 
