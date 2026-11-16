@@ -3026,6 +3026,30 @@ describe("the Overdue button", () => {
     expect(button(element).getAttribute("aria-pressed")).toBe("false");
   });
 
+  it("says Overdue in words on a wide card and with an icon alone on a narrow one", async () => {
+    let resize;
+    global.ResizeObserver = class {
+      constructor(callback) {
+        resize = callback;
+      }
+      observe() {}
+      disconnect() {}
+    };
+    try {
+      const element = await open();
+      expect(button(element).textContent.trim()).toBe("Overdue");
+      expect(button(element).querySelector("lightning-icon")).toBeNull();
+      resize([{ contentRect: { width: 360 } }]);
+      await flush();
+      expect(button(element).querySelector("lightning-icon").iconName).toBe("utility:clock");
+      // Named for screen readers, and by its tooltip.
+      expect(button(element).querySelector(".assistive-text").textContent).toBe("Overdue");
+      expect(button(element).title).toBe("Show overdue items");
+    } finally {
+      delete global.ResizeObserver;
+    }
+  });
+
   it("shows nothing when nothing is overdue", async () => {
     const element = await open({ overdue: false });
     expect(button(element)).toBeNull();

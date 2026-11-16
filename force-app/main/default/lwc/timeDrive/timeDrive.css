@@ -351,7 +351,6 @@
 /* Overdue: SLDS's neutral button in its error colours (an icon and a word
    too, not colour alone); pressed, on the Overdue lens, filled. */
 .overdue-button {
-  gap: 0.25rem;
   border-color: light-dark(#ea001e, #fe5c4c);
   background: light-dark(#fef1ee, #3e1716);
   color: light-dark(#ba0517, #fe8f7d);

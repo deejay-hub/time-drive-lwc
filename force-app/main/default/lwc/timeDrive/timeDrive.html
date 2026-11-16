@@ -96,8 +96,12 @@
                 title={overdueTitle}
                 onclick={toggleOverdue}
               >
-                <lightning-icon class="overdue-icon" icon-name="utility:clock" size="x-small"></lightning-icon>
-                <span>{labels.buttonOverdue}</span>
+                <!-- Narrow, as Today: the icon alone; otherwise the word alone. -->
+                <template lwc:if={narrow}>
+                  <lightning-icon class="overdue-icon" icon-name="utility:clock" size="x-small"></lightning-icon>
+                  <span class="assistive-text">{labels.buttonOverdue}</span>
+                </template>
+                <template lwc:else>{labels.buttonOverdue}</template>
               </button>
             </template>
           </template>

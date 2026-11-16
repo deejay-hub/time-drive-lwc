@@ -747,7 +747,10 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     return String(this.view === OVERDUE_VIEW);
   }
   get overdueButtonClass() {
-    return `slds-button slds-button_neutral overdue-button${this.view === OVERDUE_VIEW ? " overdue-button_on" : ""}`;
+    const shape = this.narrow
+      ? " slds-button_icon slds-button_icon-border-filled overdue-button_icon"
+      : " slds-button_neutral";
+    return `slds-button${shape} overdue-button${this.view === OVERDUE_VIEW ? " overdue-button_on" : ""}`;
   }
   // Its tooltip: what it shows, or, pressed, where it goes back to.
   get overdueTitle() {
