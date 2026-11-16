@@ -995,6 +995,7 @@
                   <template lwc:if={showSpaceChooser}>
                     <h3 class="second-question space-question">Which data space holds this engagement?</h3>
                     <lightning-combobox
+                      dropdown-alignment="auto"
                       class="space-field"
                       label="Data space"
                       variant="label-hidden"
@@ -1081,6 +1082,7 @@
                     <h3 class="second-question link-question">{individualQuestion}</h3>
                     <p class="quiet">{individualHint}</p>
                     <lightning-combobox
+                      dropdown-alignment="auto"
                       class="individual-field"
                       label={individualQuestion}
                       variant="label-hidden"
@@ -1218,6 +1220,7 @@
                             <li key={c.key} class="condition">
                               <span class="condition-join">{c.joinText}</span>
                               <lightning-combobox
+                                dropdown-alignment="auto"
                                 class="condition-field"
                                 label="Field"
                                 variant="label-hidden"
@@ -1229,6 +1232,7 @@
                                 onchange={handleConditionChange}
                               ></lightning-combobox>
                               <lightning-combobox
+                                dropdown-alignment="auto"
                                 class="condition-op"
                                 label="Operator"
                                 variant="label-hidden"
@@ -1254,6 +1258,7 @@
                                 </template>
                                 <template lwc:elseif={c.isPicklist}>
                                   <lightning-combobox
+                                    dropdown-alignment="auto"
                                     label="Value"
                                     variant="label-hidden"
                                     placeholder="Value"
@@ -1266,6 +1271,7 @@
                                 </template>
                                 <template lwc:elseif={c.isBoolean}>
                                   <lightning-combobox
+                                    dropdown-alignment="auto"
                                     label="Value"
                                     variant="label-hidden"
                                     options={booleanOptions}
@@ -1854,6 +1860,7 @@
                                   </div>
                                 </template>
                                 <lightning-combobox
+                                  dropdown-alignment="auto"
                                   class="detail-format"
                                   label="Shown as"
                                   variant="label-hidden"
@@ -1982,14 +1989,15 @@
                         <template lwc:if={canHighlight}>
                           <p class="behave-heading behave-heading_next">Highlights</p>
                           <p class="behave-label">
-                            Mark an item with a small icon when a checkbox is checked, such as High priority. One per
-                            source.
+                            Mark an item with a small icon when a checkbox is checked, such as High priority, or when a
+                            date is past on a record that isn't closed (overdue). One per source.
                           </p>
                           <ul class="highlights">
                             <template for:each={highlightRows} for:item="h">
                               <li key={h.key} class="highlight">
                                 <div class="highlight-head">
                                   <lightning-combobox
+                                    dropdown-alignment="auto"
                                     class="highlight-field"
                                     label="Field"
                                     variant="label-hidden"

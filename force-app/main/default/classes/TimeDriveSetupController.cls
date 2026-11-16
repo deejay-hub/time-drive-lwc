@@ -2107,7 +2107,10 @@ public with sharing class TimeDriveSetupController {
     for (HighlightDraft h : d.highlights == null ? new List<HighlightDraft>() : d.highlights) {
       if (String.isNotBlank(h.field)) {
         r.Highlight_Field__c = h.field;
-        r.Highlight_Values__c = 'true';
+        // A checkbox shows when checked; a date when past (overdue).
+        Schema.DescribeFieldResult hf = TimeDriveConfig.pathField(d.objectName, h.field)?.field;
+        Boolean dated = hf?.getType() == Schema.DisplayType.DATE || hf?.getType() == Schema.DisplayType.DATETIME;
+        r.Highlight_Values__c = dated ? 'overdue' : 'true';
         r.Highlight_Icon__c = h.icon;
         r.Highlight_Colour__c = h.colour;
         break;

@@ -49,6 +49,7 @@ LABELS = {
     "Server_Sent_To_One_Other": "送信先: {0} 他 1 名",
     "Server_Sent_To_Others": "送信先: {0} 他 {1} 名",
     "Server_Yes": "はい",
+    "Server_Overdue": "期限切れ",
     "Server_No": "いいえ",
     "Server_Identity_Links": "ID リンク",
     "Status_Updating_Counts": "件数を更新しています",

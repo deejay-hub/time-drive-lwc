@@ -461,7 +461,7 @@ button.kd-row:focus-visible {
 }
 
 .setup-page > *:not(.crumbs, .site-bar-mark) {
-  animation: page-in 200ms var(--ease-out) both;
+  animation: page-in 200ms var(--ease-out) backwards;
 }
 
 @keyframes page-in {
@@ -1316,7 +1316,7 @@ a.guided-button lightning-icon {
 
 /* A saved source, back on its page: picked out for a moment. */
 .row_saved {
-  animation: saved-flash 1.6s var(--ease-out) both;
+  animation: saved-flash 1.6s var(--ease-out) backwards;
 }
 
 @keyframes saved-flash {
@@ -1812,7 +1812,7 @@ a.guided-button lightning-icon {
   max-width: var(--measure);
   margin: 0 auto;
   padding: calc(1.5rem * var(--d)) 0 calc(1rem * var(--d));
-  animation: scene-in 200ms var(--ease-out) both;
+  animation: scene-in 200ms var(--ease-out) backwards;
 }
 
 @keyframes scene-in {
@@ -1967,7 +1967,7 @@ a.guided-button lightning-icon {
   color: var(--ink);
   font-size: var(--slds-g-font-scale-2, 1rem);
   font-weight: var(--slds-g-font-weight-6, 600);
-  animation: scene-in 480ms var(--ease-out) both;
+  animation: scene-in 480ms var(--ease-out) backwards;
 }
 
 .volume lightning-icon {
@@ -2096,7 +2096,7 @@ a.guided-button lightning-icon {
   padding: calc(0.625rem * var(--d)) calc(0.875rem * var(--d));
   border-radius: 0.625rem;
   cursor: pointer;
-  animation: result-in 320ms var(--ease-out) both;
+  animation: result-in 320ms var(--ease-out) backwards;
 }
 
 .result_active {
@@ -2405,7 +2405,7 @@ a.guided-button lightning-icon {
   border-radius: 0.875rem;
   background: var(--surface);
   box-shadow: 0 18px 40px -12px light-dark(rgb(0 0 0 / 0.28), rgb(0 0 0 / 0.7));
-  animation: pop-in 260ms var(--ease-out) both;
+  animation: pop-in 260ms var(--ease-out) backwards;
   transform-origin: top right;
 }
 
@@ -2635,7 +2635,7 @@ a.guided-button lightning-icon {
   padding: var(--space);
   border-radius: 1rem;
   background: var(--sunk);
-  animation: scene-in 420ms var(--ease-out) both;
+  animation: scene-in 420ms var(--ease-out) backwards;
 }
 
 .conditions,
@@ -2759,7 +2759,7 @@ a.guided-button lightning-icon {
   padding: calc(0.875rem * var(--d)) calc(1rem * var(--d));
   border-radius: var(--radius-mid);
   background: var(--sunk);
-  animation: scene-in 320ms var(--ease-out) both;
+  animation: scene-in 320ms var(--ease-out) backwards;
 }
 
 .label-status {
@@ -2885,7 +2885,7 @@ a.guided-button lightning-icon {
 
 .link-chosen {
   max-width: 34rem;
-  animation: link-settle 360ms var(--ease-out) both;
+  animation: link-settle 360ms var(--ease-out) backwards;
 }
 
 .option_chosen {
@@ -2916,7 +2916,7 @@ a.guided-button lightning-icon {
   border: var(--slds-g-sizing-border-1, 1px) solid var(--rule);
   border-radius: var(--radius);
   background: var(--sunk);
-  animation: link-in 480ms 80ms var(--ease-out) both;
+  animation: link-in 480ms 80ms var(--ease-out) backwards;
 }
 
 @keyframes link-in {
@@ -2981,7 +2981,7 @@ a.guided-button lightning-icon {
   padding: calc(0.875rem * var(--d)) calc(1rem * var(--d));
   border-radius: var(--radius-mid);
   background: var(--sunk);
-  animation: scene-in 380ms var(--ease-out) both;
+  animation: scene-in 380ms var(--ease-out) backwards;
 }
 
 .behave-label {
@@ -3139,7 +3139,7 @@ a.guided-button lightning-icon {
   padding: calc(0.75rem * var(--d)) calc(0.875rem * var(--d)) calc(0.875rem * var(--d)) calc(3.875rem * var(--d));
   border-top: 1px solid var(--rule);
   background: color-mix(in srgb, var(--accent-wash) 35%, var(--surface));
-  animation: scene-in 320ms var(--ease-out) both;
+  animation: scene-in 320ms var(--ease-out) backwards;
 }
 
 .mock-facts {
@@ -3192,7 +3192,7 @@ a.guided-button lightning-icon {
   border: var(--slds-g-sizing-border-1, 1px) solid var(--rule);
   border-radius: var(--radius-mid);
   background: var(--surface);
-  animation: scene-in 320ms var(--ease-out) both;
+  animation: scene-in 320ms var(--ease-out) backwards;
 }
 
 .mock-page-head {

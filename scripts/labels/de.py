@@ -49,6 +49,7 @@ LABELS = {
     "Server_Sent_To_One_Other": "An: {0} und 1 weitere",
     "Server_Sent_To_Others": "An: {0} und {1} weitere",
     "Server_Yes": "Ja",
+    "Server_Overdue": "Überfällig",
     "Server_No": "Nein",
     "Server_Identity_Links": "Identitätsverknüpfungen",
     "Status_Updating_Counts": "Anzahlen werden aktualisiert",

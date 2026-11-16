@@ -53,6 +53,7 @@ LABELS = [
     ("Server_Sent_To_One_Other", "Email message item · subtitle: first recipient and one other", "Sent to: {0} and 1 other", "Enviado a: {0} y 1 más", "أُرسل إلى: {0} وشخص آخر"),
     ("Server_Sent_To_Others", "Email message item · subtitle: first recipient and {1} others", "Sent to: {0} and {1} others", "Enviado a: {0} y {1} más", "أُرسل إلى: {0} و{1} آخرين"),
     ("Server_Yes", "Item details and titles · a checkbox field that is ticked", "Yes", "Sí", "نعم"),
+    ("Server_Overdue", "Item highlight · the mark on an open item whose date is past", "Overdue", "Vencido", "متأخر"),
     ("Server_No", "Item details and titles · a checkbox field that isn't ticked", "No", "No", "لا"),
     ("Server_Identity_Links", "Timeline problems · name in \"{0} couldn't be read\" for Data 360 identities", "Identity links", "Vínculos de identidad", "روابط الهوية"),
     # ---- status and regions

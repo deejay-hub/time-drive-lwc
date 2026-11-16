@@ -3,6 +3,8 @@
  * the lens's sources have an item, no otherwise; once per object, not per
  * source; nothing when the lens is switched off. Runs as users west and east
  * of Greenwich, as the lens's filter (ActivityDate < TODAY) is the user's day.
+ * Also the overdue highlight (a date past on an open record) and the
+ * templates' highlights: overdue Tasks, escalated Cases.
  */
 @IsTest
 private class TimeDriveOverdueTest {
@@ -167,6 +169,70 @@ private class TimeDriveOverdueTest {
       Time_Drive_Record__c copy = [SELECT Lenses__c, Filter__c FROM Time_Drive_Record__c WHERE Key__c = :key];
       Assert.areEqual('Overdue', copy.Lenses__c, 'not All too: its tasks are in All already');
       Assert.areEqual(OVERDUE_FILTER, copy.Filter__c);
+    }
+  }
+
+  private static Map<String, TimeDriveController.EngagementEvent> plotted(Id who, Time_Drive_Source__mdt s) {
+    Map<String, TimeDriveController.EngagementEvent> byTitle = new Map<String, TimeDriveController.EngagementEvent>();
+    for (
+      TimeDriveController.EngagementEvent e : TimeDrivePlotter.run(
+        new TimeDriveSoqlProvider(),
+        new TimeDriveContext(who, 'Contact', Datetime.now().addDays(-30), s, null, null)
+      )
+    ) {
+      byTitle.put(e.title, e);
+    }
+    return byTitle;
+  }
+
+  @IsTest
+  static void anOverdueHighlightMarksOpenItemsWhoseDateIsPastInEveryTimeZone() {
+    for (String zone : new List<String>{ 'America/Los_Angeles', 'Pacific/Tongatapu' }) {
+      System.runAs(TimeDriveTestData.adminIn(zone)) {
+        Contact c = new Contact(LastName = 'Flags ' + zone);
+        insert c;
+        insert new List<Task>{
+          new Task(WhoId = c.Id, Subject = 'Late', ActivityDate = Date.today().addDays(-1), Status = 'Not Started'),
+          new Task(WhoId = c.Id, Subject = 'Today', ActivityDate = Date.today(), Status = 'Not Started'),
+          new Task(WhoId = c.Id, Subject = 'Done late', ActivityDate = Date.today().addDays(-3), Status = 'Completed')
+        };
+        TimeDriveConfig.testHighlights = new Map<String, List<Time_Drive_Highlight__mdt>>{
+          'Tasks' => new List<Time_Drive_Highlight__mdt>{
+            new Time_Drive_Highlight__mdt(Field__c = 'ActivityDate', Icon__c = 'utility:clock', Colour__c = '#C23934')
+          }
+        };
+        Map<String, TimeDriveController.EngagementEvent> byTitle = plotted(
+          c.Id,
+          source('Tasks', 'Task', 'ActivityDate', 'WhoId', null, 'All')
+        );
+        TimeDriveController.EngagementEvent late = byTitle.get('Late');
+        Assert.areEqual(1, late?.flags?.size(), zone + ': open and due yesterday is overdue');
+        Assert.areEqual('utility:clock', late.flags[0].icon);
+        Assert.areEqual(Label.Time_Drive_Server_Overdue, late.flags[0].text, 'it says Overdue, not the field');
+        Assert.isNull(byTitle.get('Today').flags, zone + ': due today is not overdue');
+        Assert.isNull(byTitle.get('Done late').flags, zone + ': a closed task never is');
+      }
+    }
+  }
+
+  @IsTest
+  static void theTaskAndCaseTemplatesBringTheirHighlights() {
+    System.runAs(TimeDriveTestData.setupAdmin()) {
+      String tasks = TimeDriveSetupController.useTemplate('Tasks').developerName;
+      String cases = TimeDriveSetupController.useTemplate('Fit_Contact_Cases').developerName;
+      Map<String, Time_Drive_Record__c> byKey = new Map<String, Time_Drive_Record__c>();
+      for (Time_Drive_Record__c r : [
+        SELECT Key__c, Highlight_Field__c, Highlight_Values__c, Highlight_Icon__c
+        FROM Time_Drive_Record__c
+        WHERE Key__c IN :new List<String>{ tasks, cases }
+      ]) {
+        byKey.put(r.Key__c, r);
+      }
+      Assert.areEqual('ActivityDate', byKey.get(tasks).Highlight_Field__c, 'Tasks: overdue');
+      Assert.areEqual('overdue', byKey.get(tasks).Highlight_Values__c);
+      Assert.areEqual('utility:clock', byKey.get(tasks).Highlight_Icon__c);
+      Assert.areEqual('IsEscalated', byKey.get(cases).Highlight_Field__c, 'Cases: escalated');
+      Assert.areEqual('true', byKey.get(cases).Highlight_Values__c);
     }
   }
 }

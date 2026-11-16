@@ -501,6 +501,10 @@
         <name>Time_Drive_Server_No_Object</name>
     </customLabels>
     <customLabels>
+        <label>Überfällig</label>
+        <name>Time_Drive_Server_Overdue</name>
+    </customLabels>
+    <customLabels>
         <label>An: {0}</label>
         <name>Time_Drive_Server_Sent_To</name>
     </customLabels>

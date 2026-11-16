@@ -49,6 +49,7 @@ LABELS = {
     "Server_Sent_To_One_Other": "받는 사람: {0} 외 1명",
     "Server_Sent_To_Others": "받는 사람: {0} 외 {1}명",
     "Server_Yes": "예",
+    "Server_Overdue": "기한 지남",
     "Server_No": "아니요",
     "Server_Identity_Links": "ID 링크",
     "Status_Updating_Counts": "개수 업데이트 중",

@@ -501,6 +501,10 @@
         <name>Time_Drive_Server_No_Object</name>
     </customLabels>
     <customLabels>
+        <label>Forfalden</label>
+        <name>Time_Drive_Server_Overdue</name>
+    </customLabels>
+    <customLabels>
         <label>Til: {0}</label>
         <name>Time_Drive_Server_Sent_To</name>
     </customLabels>

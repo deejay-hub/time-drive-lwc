@@ -148,7 +148,7 @@ On the right, put the source in its place in the legend: drag it, or use the arr
 
 ![Step 6: title, subtitle, icon and colour](images/config-guide/standard-6-words.png)
 
-**Step 7, Interactions.** Choose the fields an opened item shows, in order, and how each is formatted. Then choose what clicking its title opens: **Its own record**, or **A related record** (a member's Campaign, say). The preview uses sample values from your data. A **highlight** marks an item with a small icon when a checkbox is checked, such as High priority.
+**Step 7, Interactions.** Choose the fields an opened item shows, in order, and how each is formatted. Then choose what clicking its title opens: **Its own record**, or **A related record** (a member's Campaign, say). The preview uses sample values from your data. A **highlight** marks an item with a small icon when a checkbox is checked, such as High priority, or when a date is past on a record that isn't closed: choose a date field, shown as *Due Date (overdue)*, and the icon says **Overdue**. The Tasks templates mark overdue tasks with a red clock, and the Cases templates mark escalated cases.
 
 ![Step 7: what an opened item shows and what its title opens](images/config-guide/standard-7-interactions.png)
 

@@ -501,6 +501,10 @@
         <name>Time_Drive_Server_No_Object</name>
     </customLabels>
     <customLabels>
+        <label>期限切れ</label>
+        <name>Time_Drive_Server_Overdue</name>
+    </customLabels>
+    <customLabels>
         <label>送信先: {0}</label>
         <name>Time_Drive_Server_Sent_To</name>
     </customLabels>
