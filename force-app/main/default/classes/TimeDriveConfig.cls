@@ -687,7 +687,7 @@ public with sharing class TimeDriveConfig {
 
   private static Cache.OrgPartition partition() {
     try {
-      return Test.isRunningTest() ? null : Cache.Org.getPartition('local.TimeDrive');
+      return Test.isRunningTest() ? null : Cache.Org.getPartition(TimeDriveCache.PARTITION);
     } catch (Exception e) {
       return null;
     }

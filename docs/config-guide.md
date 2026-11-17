@@ -75,6 +75,15 @@ You need the **Customize Application** permission to add and change sources.
 
 Data 360 is _optional_. Without it, the timeline plots your Salesforce records.
 
+### Allocate Platform Cache
+
+Time Drive keeps its sources, and Data 360 identity lookups, in Platform Cache so each timeline doesn't query them again. It installs a partition, **TimeDrive**, with no capacity: until you allocate some, nothing is kept and every timeline load queries the sources.
+
+1. In Setup, open **Platform Cache** and choose the **TimeDrive** partition.
+2. Under **Org Cache Allocation**, allocate **1 MB** (plenty for Time Drive) and save.
+
+Nothing else changes: with no capacity the timeline still works, it just queries a little more.
+
 ## Time Drive Setup
 
 Open the **Time Drive Setup** tab. Its pages, along the top:
@@ -526,6 +535,7 @@ The summary counts each source rather than reading it: an aggregate query per Sa
 - When History and Future make the window too long to count every source by day within 30,000 query rows, it counts by week (from 1 January: the 1st-7th, 8th-14th ...) or by month, and the list shows weeks or months.
 - Rows are read only for the days (or weeks) on screen.
 - A busy day (over 50 items) isn't read at all; it comes back as grouped counts.
+- The sources are kept in Platform Cache for 10 minutes, and each Data 360 identity lookup for 15, once the **TimeDrive** partition has capacity (see [Allocate Platform Cache](#allocate-platform-cache)). Saving in Setup clears the sources at once; changes made another way (Data Loader, Apex) show within 10 minutes.
 
 ## Translations
 

@@ -112,9 +112,13 @@ No. The timeline counts each source first, with an aggregate query, and reads on
 
 That source is read rather than counted, and it reached its Max Records (1,000 by default). Salesforce and Data 360 sources count. An Apex source counts when its class implements `counts`.
 
+### Do I need Platform Cache?
+
+It's optional, but allocate some. Time Drive installs a **TimeDrive** partition with no capacity; give it 1 MB of org cache (Setup > Platform Cache) and it keeps its sources between page views instead of querying them on every load. Without it everything still works. See [Allocate Platform Cache](config-guide.md#allocate-platform-cache).
+
 ### Why is a timeline slow?
 
-Look first at sources that are read rather than counted: an Apex source without `counts`, or a Data 360 source whose filter only SOQL understands. Each is read over the whole window on every load. A long History or Future, or many sources on one page, add up too. Narrowing the date range (Filters > Back and Ahead) makes a busy record faster. See [Scale](config-guide.md#scale).
+Look first at sources that are read rather than counted: an Apex source without `counts`, or a Data 360 source whose filter only SOQL understands. Each is read over the whole window on every load. A long History or Future, or many sources on one page, add up too. So does a **TimeDrive** Platform Cache partition with no capacity. Narrowing the date range (Filters > Back and Ahead) makes a busy record faster. See [Scale](config-guide.md#scale).
 
 ## Data 360
 
