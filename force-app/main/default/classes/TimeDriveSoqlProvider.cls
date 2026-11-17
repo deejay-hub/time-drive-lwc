@@ -70,6 +70,11 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
     }
     for (Time_Drive_Detail_Field__mdt d : context.detailFields()) {
       fields.add(d.Field__c);
+      // The record a detail through a lookup names, for the card to link to.
+      String link = TimeDrivePlotter.linkPathOf(d.Field__c);
+      if (link != null) {
+        fields.add(link);
+      }
     }
     // Where the org has several currencies, each record's own, so its money shows in it.
     if (

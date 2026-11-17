@@ -2455,6 +2455,10 @@ global with sharing class TimeDriveController {
     // The amount's currency (ISO code), when it's money.
     @AuraEnabled
     public String currencyCode;
+    // The record the value names (an Account's name, a task's Related To),
+    // which the card links to; null when there's none to open.
+    @AuraEnabled
+    public Id recordId;
 
     /**
      * Builds a detail.

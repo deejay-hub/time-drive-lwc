@@ -544,7 +544,19 @@
                                       <template for:each={item.details} for:item="fact">
                                         <div key={fact.label} class="fact">
                                           <dt class="fact-label">{fact.label}</dt>
-                                          <dd class="fact-value">{fact.value}</dd>
+                                          <dd class="fact-value">
+                                            <!-- The record the value names (Related To, an Account): a link, opened as the title is. -->
+                                            <template lwc:if={fact.recordUrl}>
+                                              <a
+                                                class="fact-link"
+                                                href={fact.recordUrl}
+                                                data-record={fact.recordId}
+                                                onclick={openRecord}
+                                                >{fact.value}</a
+                                              >
+                                            </template>
+                                            <template lwc:else>{fact.value}</template>
+                                          </dd>
                                         </div>
                                       </template>
                                     </dl>

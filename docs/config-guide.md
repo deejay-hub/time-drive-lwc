@@ -293,6 +293,7 @@ An event expands with its source's **Time Drive Detail Field** records: Source, 
 
 - A blank label uses the field's own label, in the user's language.
 - A label can be a custom label (`$Label.Points`), to translate it.
+- A detail that names a record links to it, opened as the title is (a workspace tab in Console apps): a field through a lookup, such as a task's **Related To › Name** or **Account › Account Name**, links to that record, and a lookup chosen as itself links to the record it holds. Plain values stay words. The record's Id is read with the item, so a link costs nothing more.
 - An event with no detail fields opens on its title, subtitle and source alone.
 
 ## Data 360 sources
@@ -345,10 +346,13 @@ A source that counts covers any amount of history: the summary takes only its co
 context.plotBy('EarnedAt')               // the key holding each item's Date or Datetime
   .title('Earned {Points} points')       // {Key} is filled from each row
   .subtitle('{Reason}')                  // optional
-  .opens('OrderId');                     // optional: the key holding the Salesforce record a click opens
+  .opens('OrderId')                      // optional: the key holding the Salesforce record a click opens
+  .links('Customer', 'CustomerId');      // optional: a detail's record, so the opened item links it
 ```
 
 Setup doesn't ask an Apex source for these, so without `plotBy` nothing is plotted. A key is a field path for record rows (`Product2.Name`) or a map key for value rows (`Points`). Everything else (icon, colour, lenses, the legend name and the fields an opened item shows) is chosen in Setup.
+
+`links(detailKey, recordIdKey)` makes a detail a link: the detail chosen in Setup as `detailKey` opens the Salesforce record whose Id is in `recordIdKey`. Call it once for each detail that names a record. Record rows don't need it for a path through a lookup: `Product2.Name` links to `Product2.Id` by itself, since `fieldsToQuery` asks for it.
 
 `opens` decides whether an item's title is a link. Call it when each row holds a Salesforce record to open. Leave it out when there's nothing to open (a weather forecast, an external system's entries): the title is plain text, with no link and no Edit or Delete menu. Such items also can't be highlighted or listed in View all.
 
@@ -460,7 +464,7 @@ How you count is yours to choose: a totals endpoint, as here; a cached copy; or 
 - `since`, `until`: the timeline's window. `until` is null for "up to now".
 - `spans()`: the days asked for, either the window or the days on screen.
 - `maxRecords()`: the source's record cap.
-- `plotBy(key).title(…).subtitle(…).opens(…)`: how the rows are plotted.
+- `plotBy(key).title(…).subtitle(…).opens(…).links(…)`: how the rows are plotted, and which details link to records.
 - `fieldsToQuery(always)`: for record rows, the fields to SELECT.
 - `dateCondition(objectType, field, binds)`: for record rows, the days asked for as a bound condition.
 - `wants(dateOrDatetime)`: for data from elsewhere, whether the timeline asks for that moment.

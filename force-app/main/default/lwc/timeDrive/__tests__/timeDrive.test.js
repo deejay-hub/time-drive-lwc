@@ -1642,6 +1642,31 @@ describe("c-time-drive a file", () => {
     expect(navigated).not.toHaveBeenCalled();
   });
 
+  it("links a detail that names a record, opening it as the title does", async () => {
+    const task = {
+      ...EVENTS[0],
+      id: "t1",
+      details: [
+        { label: "Related To", value: "Acme Ltd", recordId: "001000000000001AAA" },
+        { label: "Status", value: "Open" }
+      ]
+    };
+    const root = await mountWith([task]);
+    root.querySelector('.chevron-button[data-id="t1"]').click();
+    await flush();
+    const links = root.querySelectorAll(".fact-link");
+    // Only the one with a record: Status stays words.
+    expect(links).toHaveLength(1);
+    expect(links[0].textContent).toBe("Acme Ltd");
+    expect(links[0].getAttribute("href")).toBe("/lightning/r/001000000000001AAA/view");
+    navigated.mockClear();
+    links[0].click();
+    expect(navigated).toHaveBeenLastCalledWith({
+      type: "standard__recordPage",
+      attributes: { recordId: "001000000000001AAA", actionName: "view" }
+    });
+  });
+
   it("leaves every other record going to its page", async () => {
     const root = await mountWith([EVENTS[0]]);
     root.querySelector(".event-link").click();

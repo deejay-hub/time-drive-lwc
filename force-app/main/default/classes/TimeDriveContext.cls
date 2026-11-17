@@ -251,6 +251,9 @@ global with sharing class TimeDriveContext {
 
   // ---- for Apex sources ------------------------------------------------------
 
+  // An Apex source's keys holding the records its details name (Plot.links), by detail key.
+  public Map<String, String> detailLinks = new Map<String, String>();
+
   /**
    * How an Apex source's rows are plotted, said in getRows before anything
    * else (Setup asks an Apex source for none of it): the row key holding each
@@ -310,6 +313,23 @@ global with sharing class TimeDriveContext {
     global Plot opens(String recordIdKey) {
       if (String.isBlank(context.source.Record_Id_Field__c)) {
         context.source.Record_Id_Field__c = recordIdKey;
+      }
+      return this;
+    }
+
+    /**
+     * The key holding the Salesforce record a detail names, so the opened
+     * item links it: links('Account', 'AccountId') for a row whose Account
+     * key is a name. Record rows don't need it for a path through a lookup
+     * (Product2.Name links to Product2.Id by itself, as fieldsToQuery asks
+     * for it).
+     * @param detailKey the detail field's key, as chosen in Setup
+     * @param recordIdKey the key holding that record's Salesforce Id
+     * @return this plot
+     */
+    global Plot links(String detailKey, String recordIdKey) {
+      if (String.isNotBlank(detailKey) && String.isNotBlank(recordIdKey)) {
+        context.detailLinks.put(detailKey.toLowerCase(), recordIdKey);
       }
       return this;
     }
@@ -535,6 +555,8 @@ global with sharing class TimeDriveContext {
     wanted.addAll(TimeDrivePlotter.tokens(source?.Subtitle__c));
     for (Time_Drive_Detail_Field__mdt d : detailFields()) {
       wanted.add(d.Field__c);
+      // The record a detail through a lookup names (Product2.Name: Product2.Id), for its link.
+      wanted.add(TimeDrivePlotter.linkPathOf(d.Field__c));
     }
     Set<String> seen = new Set<String>();
     List<String> out = new List<String>();

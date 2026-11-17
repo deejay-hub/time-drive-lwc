@@ -846,6 +846,22 @@
   overflow-wrap: break-word;
 }
 
+/* A detail naming a record: Salesforce's link blue, as the title. */
+.fact-link {
+  color: light-dark(#0250d9, #7cb1fe);
+  text-decoration: none;
+}
+.fact-link:hover {
+  color: light-dark(#022ac0, #a8cbff);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.fact-link:focus-visible {
+  border-radius: 0.125rem;
+  outline: 2px solid var(--time-drive-paprika);
+  outline-offset: 1px;
+}
+
 .event-source {
   display: flex;
   flex-wrap: wrap;

@@ -197,6 +197,14 @@ function keepRangeCopy(key) {
   }
 }
 
+// An item's details in the user's own words, a value naming a record linked to it.
+function linkedDetails(details) {
+  return localDetails(details)?.map((d) => {
+    if (!d.recordId || !d.value) return d;
+    return { ...d, recordUrl: recordHref(d.recordId) };
+  });
+}
+
 export default class TimeDrive extends NavigationMixin(LightningElement) {
   @api
   get recordId() {
@@ -1485,7 +1493,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       railBottomClass: `rail${last || open ? " rail_none" : ""}`,
       chevronClass: open ? "chevron chevron_open" : "chevron",
       // Numbers and money in the user's locale.
-      details: localDetails(event.details),
+      details: linkedDetails(event.details),
       hasDetails: event.details?.length > 0,
       // A fixed name; aria-expanded says whether it's open.
       toggleLabel: format(LABELS.detailsToggle, title),

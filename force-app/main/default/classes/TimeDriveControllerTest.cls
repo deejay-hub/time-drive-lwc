@@ -526,7 +526,8 @@ private class TimeDriveControllerTest {
     insert cases;
     List<String> keys = new List<String>();
     for (Integer d = 1; d <= 3; d++) {
-      Datetime at = Datetime.now().addDays(-d);
+      // Midday, so the minutes taken off never cross into the day before.
+      Datetime at = Datetime.newInstance(Date.today().addDays(-d), Time.newInstance(12, 0, 0, 0));
       keys.add(at.format('yyyy-MM-dd'));
       for (Integer i = (d - 1) * 4; i < d * 4; i++) {
         Test.setCreatedDate(cases[i].Id, at.addMinutes(-i));
@@ -596,11 +597,15 @@ private class TimeDriveControllerTest {
     insert tasks;
     List<String> keys = new List<String>();
     for (Integer d = 1; d <= 3; d++) {
-      keys.add(Datetime.now().addDays(-d).format('yyyy-MM-dd'));
+      keys.add(String.valueOf(Date.today().addDays(-d)));
     }
     for (Integer i = 0; i < 12; i++) {
       Integer daysAgo = i < 8 ? 1 : (i < 10 ? 2 : 3);
-      Test.setCreatedDate(tasks[i].Id, Datetime.now().addDays(-daysAgo).addMinutes(-i));
+      // Midday, so the minutes taken off never cross into the day before.
+      Test.setCreatedDate(
+        tasks[i].Id,
+        Datetime.newInstance(Date.today().addDays(-daysAgo), Time.newInstance(12, 0, 0, 0)).addMinutes(-i)
+      );
     }
     Time_Drive_Source__mdt source = source('Items', 'Task', 'CreatedDate', 'WhoId');
     source.Max_Records__c = 5;
@@ -1185,13 +1190,14 @@ private class TimeDriveControllerTest {
     Assert.areEqual('RecordId', context.source.Record_Id_Field__c);
 
     // The fields shown: the ones given, then the title's, subtitle's and
-    // details', once each, and nothing that isn't a field path.
+    // details' (with the record a detail through a lookup names, for its
+    // link), once each, and nothing that isn't a field path.
     context.draftDetailFields = new List<Time_Drive_Detail_Field__mdt>{
       new Time_Drive_Detail_Field__mdt(Field__c = 'Account.Name'),
       new Time_Drive_Detail_Field__mdt(Field__c = 'Id FROM User WHERE')
     };
     Assert.areEqual(
-      new List<String>{ 'Id', 'When', 'Own', 'Place', 'Account.Name' },
+      new List<String>{ 'Id', 'When', 'Own', 'Place', 'Account.Name', 'Account.Id' },
       context.fieldsToQuery(new List<String>{ 'Id', 'When', 'id' })
     );
   }

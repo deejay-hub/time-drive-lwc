@@ -77,7 +77,7 @@ public with sharing class TimeDrivePlotter {
         .source(context.sourceObject, context.sourceLabel)
         .record(salesforceId(row.get(context.recordIdField())));
       for (Time_Drive_Detail_Field__mdt d : detailFields) {
-        e.detail(detailOf(d, row));
+        e.detail(detailOf(d, row, context.detailLinks));
       }
       if (TimeDriveConfig.dateOwner(s) == 'Event' && row.get(TimeDriveConfig.datePrefix(s) + 'IsAllDayEvent') == true) {
         e.allDay = true;
@@ -217,6 +217,67 @@ public with sharing class TimeDrivePlotter {
    */
   @TestVisible
   private static TimeDriveController.Detail detailOf(Time_Drive_Detail_Field__mdt d, TimeDriveRow row) {
+    return detailOf(d, row, null);
+  }
+
+  /**
+   * A detail field's label, value and the record it names, for the card to
+   * link to: an Apex source's own key for it (see Plot.links), else the
+   * lookup the path goes through (What.Name: What.Id), else the field's own
+   * value when it's an Id (a lookup chosen as itself).
+   *
+   * @param d the detail field
+   * @param row the row
+   * @param links an Apex source's record Id keys, by detail key (lower case); may be null
+   * @return the detail
+   */
+  @TestVisible
+  private static TimeDriveController.Detail detailOf(
+    Time_Drive_Detail_Field__mdt d,
+    TimeDriveRow row,
+    Map<String, String> links
+  ) {
+    TimeDriveController.Detail detail = valueOf(d, row);
+    String field = String.valueOf(d.Field__c);
+    String own = links == null || String.isBlank(field) ? null : links.get(field.toLowerCase());
+    detail.recordId = String.isNotBlank(own) ? idAt(row, own) : idAt(row, linkPathOf(field));
+    // A lookup chosen as itself holds an Id (text that only looks like one doesn't count).
+    if (detail.recordId == null && String.isBlank(own)) {
+      Object value = valueAt(row, field);
+      detail.recordId = value instanceof Id ? (Id) value : null;
+    }
+    return detail;
+  }
+
+  /**
+   * The path to the record a lookup path names: What.Name is What.Id; a
+   * field of the row's own (no dot) names none.
+   *
+   * @param path a detail field's path
+   * @return the Id's path, or null
+   */
+  public static String linkPathOf(String path) {
+    return String.isBlank(path) || !path.contains('.') ? null : path.substringBeforeLast('.') + '.Id';
+  }
+
+  // A Salesforce Id at a key, or null: not there, not queried (an Apex
+  // source's own query may leave it out), or not an Id.
+  private static Id idAt(TimeDriveRow row, String key) {
+    return salesforceId(valueAt(row, key));
+  }
+
+  private static Object valueAt(TimeDriveRow row, String key) {
+    if (row == null || String.isBlank(key)) {
+      return null;
+    }
+    try {
+      return row.get(key);
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  private static TimeDriveController.Detail valueOf(Time_Drive_Detail_Field__mdt d, TimeDriveRow row) {
     Object value = row.get(d.Field__c);
     TimeDriveController.Detail detail = new TimeDriveController.Detail(
       detailLabel(d, row),
