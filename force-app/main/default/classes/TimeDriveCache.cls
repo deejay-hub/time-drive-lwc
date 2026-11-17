@@ -6,7 +6,12 @@
  */
 // Global: the Config Guide tells Apex sources to keep callout results here.
 global with sharing class TimeDriveCache {
-  public static final String PARTITION = 'local.TimeDrive';
+  // By the package's own namespace (drvrckt.TimeDrive): installed, 'local'
+  // isn't the package's, so a partition named that way is never found and
+  // nothing is kept. Unpackaged, 'local' is this org's.
+  public static final String PARTITION = (String.isBlank(TimeDriveConfig.NAMESPACE)
+    ? 'local'
+    : TimeDriveConfig.NAMESPACE) + '.TimeDrive';
   // How long an entry is kept, in seconds.
   public static final Integer TTL = 900;
 
