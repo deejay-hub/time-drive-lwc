@@ -2,13 +2,14 @@
  * The Overdue lens's banner check (TimeDriveController.getOverdue): yes when
  * the lens's sources have an item, no otherwise; once per object, not per
  * source; nothing when the lens is switched off. Runs as users west and east
- * of Greenwich, as the lens's filter (ActivityDate < TODAY) is the user's day.
- * Also the overdue highlight (a date past on an open record) and the
- * templates' highlights: overdue Tasks, escalated Cases.
+ * of Greenwich, as the Overdue field's TODAY() is the user's day. Also the
+ * field as a highlight, and the templates' highlights: overdue Tasks,
+ * escalated Cases.
  */
 @IsTest
 private class TimeDriveOverdueTest {
-  private static final String OVERDUE_FILTER = 'IsClosed = false AND ActivityDate < TODAY';
+  // The Overdue lens's filter: Time Drive's own formula checkbox on Activity.
+  private static final String OVERDUE_FILTER = 'Overdue__c = true';
 
   private static Time_Drive_Source__mdt source(
     String name,
@@ -186,7 +187,7 @@ private class TimeDriveOverdueTest {
   }
 
   @IsTest
-  static void anOverdueHighlightMarksOpenItemsWhoseDateIsPastInEveryTimeZone() {
+  static void theOverdueFieldMarksOpenTasksDueBeforeTodayInEveryTimeZone() {
     for (String zone : new List<String>{ 'America/Los_Angeles', 'Pacific/Tongatapu' }) {
       System.runAs(TimeDriveTestData.adminIn(zone)) {
         Contact c = new Contact(LastName = 'Flags ' + zone);
@@ -196,9 +197,10 @@ private class TimeDriveOverdueTest {
           new Task(WhoId = c.Id, Subject = 'Today', ActivityDate = Date.today(), Status = 'Not Started'),
           new Task(WhoId = c.Id, Subject = 'Done late', ActivityDate = Date.today().addDays(-3), Status = 'Completed')
         };
+        // A checkbox highlight like any other: Time Drive's own field, by its short name.
         TimeDriveConfig.testHighlights = new Map<String, List<Time_Drive_Highlight__mdt>>{
           'Tasks' => new List<Time_Drive_Highlight__mdt>{
-            new Time_Drive_Highlight__mdt(Field__c = 'ActivityDate', Icon__c = 'utility:clock', Colour__c = '#C23934')
+            new Time_Drive_Highlight__mdt(Field__c = 'Overdue__c', Icon__c = 'utility:clock', Colour__c = '#C23934')
           }
         };
         Map<String, TimeDriveController.EngagementEvent> byTitle = plotted(
@@ -208,7 +210,11 @@ private class TimeDriveOverdueTest {
         TimeDriveController.EngagementEvent late = byTitle.get('Late');
         Assert.areEqual(1, late?.flags?.size(), zone + ': open and due yesterday is overdue');
         Assert.areEqual('utility:clock', late.flags[0].icon);
-        Assert.areEqual(Label.Time_Drive_Server_Overdue, late.flags[0].text, 'it says Overdue, not the field');
+        Assert.areEqual(
+          TimeDriveConfig.fieldDescribe('Task', 'Overdue__c').getLabel(),
+          late.flags[0].text,
+          'it says the field\'s label'
+        );
         Assert.isNull(byTitle.get('Today').flags, zone + ': due today is not overdue');
         Assert.isNull(byTitle.get('Done late').flags, zone + ': a closed task never is');
       }
@@ -228,8 +234,8 @@ private class TimeDriveOverdueTest {
       ]) {
         byKey.put(r.Key__c, r);
       }
-      Assert.areEqual('ActivityDate', byKey.get(tasks).Highlight_Field__c, 'Tasks: overdue');
-      Assert.areEqual('overdue', byKey.get(tasks).Highlight_Values__c);
+      Assert.areEqual('Overdue__c', byKey.get(tasks).Highlight_Field__c, 'Tasks: overdue, by the field');
+      Assert.areEqual('true', byKey.get(tasks).Highlight_Values__c);
       Assert.areEqual('utility:clock', byKey.get(tasks).Highlight_Icon__c);
       Assert.areEqual('IsEscalated', byKey.get(cases).Highlight_Field__c, 'Cases: escalated');
       Assert.areEqual('true', byKey.get(cases).Highlight_Values__c);

@@ -479,7 +479,7 @@ public with sharing class TimeDriveConfig {
     String key = (objectName + '.' + fieldName).toLowerCase();
     Schema.DescribeFieldResult found = fieldDescribes.get(key);
     if (found == null) {
-      Schema.SObjectField f = fieldMap(objectName).get(fieldName.toLowerCase());
+      Schema.SObjectField f = ownField(fieldMap(objectName), fieldName);
       if (f == null) {
         return null;
       }
@@ -487,6 +487,18 @@ public with sharing class TimeDriveConfig {
       fieldDescribes.put(key, found);
     }
     return found;
+  }
+
+  // A field by name, or Time Drive's own by its short name: installed, the
+  // describe lists Overdue__c as drvrckt__Overdue__c, while queries and
+  // record reads take either.
+  private static Schema.SObjectField ownField(Map<String, Schema.SObjectField> fields, String name) {
+    String key = name.toLowerCase();
+    Schema.SObjectField f = fields.get(key);
+    if (f == null && FIELD_PREFIX != null && key.endsWith('__c') && key.countMatches('__') == 1) {
+      f = fields.get(FIELD_PREFIX.toLowerCase() + key);
+    }
+    return f;
   }
 
   /**
@@ -534,7 +546,7 @@ public with sharing class TimeDriveConfig {
       }
       if (out != null) {
         String last = steps[steps.size() - 1].toLowerCase();
-        Schema.SObjectField f = fieldMap(current).get(last);
+        Schema.SObjectField f = ownField(fieldMap(current), last);
         if (f == null) {
           out = null;
         } else {

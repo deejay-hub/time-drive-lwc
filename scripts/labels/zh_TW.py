@@ -49,7 +49,6 @@ LABELS = {
     "Server_Sent_To_One_Other": "傳送給：{0} 和另外 1 人",
     "Server_Sent_To_Others": "傳送給：{0} 和另外 {1} 人",
     "Server_Yes": "是",
-    "Server_Overdue": "已逾期",
     "Server_No": "否",
     "Server_Identity_Links": "身分連結",
     "Status_Updating_Counts": "正在更新計數",

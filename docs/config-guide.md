@@ -157,7 +157,7 @@ On the right, put the source in its place in the legend: drag it, or use the arr
 
 ![Step 6: title, subtitle, icon and colour](images/config-guide/standard-6-words.png)
 
-**Step 7, Interactions.** Choose the fields an opened item shows, in order, and how each is formatted. Then choose what clicking its title opens: **Its own record**, or **A related record** (a member's Campaign, say). The preview uses sample values from your data. A **highlight** marks an item with a small icon when a checkbox is checked, such as High priority, or when a date is past on a record that isn't closed: choose a date field, shown as *Due Date (overdue)*, and the icon says **Overdue**. The Tasks templates mark overdue tasks with a red clock, and the Cases templates mark escalated cases.
+**Step 7, Interactions.** Choose the fields an opened item shows, in order, and how each is formatted. Then choose what clicking its title opens: **Its own record**, or **A related record** (a member's Campaign, say). The preview uses sample values from your data. A **highlight** marks an item with a small icon when a checkbox is checked, such as High priority. The Tasks templates mark overdue tasks with a red clock, using Time Drive's **Overdue** field (see [The Overdue lens](#the-overdue-lens)), and the Cases templates mark escalated cases. For anything else, a formula checkbox of your own works the same way.
 
 ![Step 7: what an opened item shows and what its title opens](images/config-guide/standard-7-interactions.png)
 
@@ -235,7 +235,9 @@ A lens narrows the timeline to one area, such as Sales or Service. People switch
 
 ### The Overdue lens
 
-The **Overdue** lens shows what's late. Time Drive doesn't decide what counts as overdue: its sources do, each with its own filter. The overdue templates (**Overdue tasks**, and the Fit to your org variants for Account, Contact, Lead and person account pages) plot open tasks due before today (`IsClosed = false AND ActivityDate < TODAY`). Add any source to the Overdue lens with a filter of your own, such as open cases older than a week, and it counts too.
+The **Overdue** lens shows what's late. Time Drive doesn't decide what counts as overdue: its sources do, each with its own filter. The overdue templates (**Overdue tasks**, and the Fit to your org variants for Account, Contact, Lead and person account pages) plot tasks whose **Overdue** field is checked (`Overdue__c = true`). Add any source to the Overdue lens with a filter of your own, such as open cases older than a week, and it counts too.
+
+**The Overdue field.** Time Drive adds one formula checkbox to Activity, **Overdue** (`Overdue__c`): an open task whose due date is before today, in the viewing person's own day (`AND(NOT(IsClosed), NOT(ISBLANK(ActivityDate)), ActivityDate < TODAY())`). The Tasks templates' highlight and the overdue templates' filter both use it. Its formula is part of the package, so it can't be edited; for other rules (overdue after three days, or by status), make a formula checkbox of your own and choose it in the source's Highlights, or use it in the source's filter. The **Time Drive** and **Time Drive Setup** permission sets let people read it.
 
 - An overdue template's copy is in the Overdue lens only: its tasks are in All items already.
 - Once the timeline has loaded, it asks whether the Overdue lens has anything for the record. If it does, a red **Overdue** button appears beside **Today**; clicking it opens the Overdue lens. On the Overdue lens the button shows pressed, and clicking it again goes back to the lens you came from.

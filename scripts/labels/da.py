@@ -49,7 +49,6 @@ LABELS = {
     "Server_Sent_To_One_Other": "Til: {0} og 1 anden",
     "Server_Sent_To_Others": "Til: {0} og {1} andre",
     "Server_Yes": "Ja",
-    "Server_Overdue": "Forfalden",
     "Server_No": "Nej",
     "Server_Identity_Links": "Identitetslinks",
     "Status_Updating_Counts": "Opdaterer antallet",

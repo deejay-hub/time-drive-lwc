@@ -84,7 +84,7 @@
     </values>
     <values>
         <field>Filter__c</field>
-        <value xsi:type="xsd:string">IsClosed = false AND ActivityDate &lt; TODAY</value>
+        <value xsi:type="xsd:string">Overdue__c = true</value>
     </values>
     <values>
         <field>Event_Label__c</field>

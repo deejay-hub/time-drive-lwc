@@ -4757,19 +4757,11 @@ export default class TimeDriveSetup extends LightningElement {
     return (this.draft.highlights?.length ?? 0) < MAX_HIGHLIGHTS;
   }
 
-  // Checkboxes (on or off, nothing to choose between), then dates: past on a
-  // record that isn't closed is overdue.
+  // Checkboxes: on or off, nothing to choose between. Overdue tasks have one
+  // of Time Drive's own (Overdue__c); other logic is a formula checkbox of
+  // the admin's.
   get highlightFieldOptions() {
-    const fields = this.fields ?? [];
-    return [
-      ...fields.filter((f) => f.type === "boolean").map((f) => ({ label: f.label, value: f.name })),
-      ...fields
-        .filter((f) => DATE_TYPES.includes(f.type))
-        .map((f) => ({ label: `${f.label} (overdue)`, value: f.name }))
-    ];
-  }
-  isOverdueHighlight(field) {
-    return DATE_TYPES.includes(this.fieldInfo(field)?.type);
+    return (this.fields ?? []).filter((f) => f.type === "boolean").map((f) => ({ label: f.label, value: f.name }));
   }
 
   get highlightRows() {
@@ -4809,7 +4801,7 @@ export default class TimeDriveSetup extends LightningElement {
         key: `pf${i}`,
         isDot: !h.icon || h.icon === "dot",
         icon: h.icon,
-        text: this.isOverdueHighlight(h.field) ? "Overdue" : this.fieldLabel(h.field),
+        text: this.fieldLabel(h.field),
         style: `--flag: ${h.colour ?? HIGHLIGHT_COLOURS[0].value}`
       }));
   }

@@ -50,7 +50,6 @@ LABELS = {
     "Server_Sent_To_One_Other": "Kenelle: {0} + 1 muu",
     "Server_Sent_To_Others": "Kenelle: {0} + {1} muuta",
     "Server_Yes": "Kyllä",
-    "Server_Overdue": "Myöhässä",
     "Server_No": "Ei",
     "Server_Identity_Links": "Identiteettilinkit",
     "Status_Updating_Counts": "Päivitetään määriä",

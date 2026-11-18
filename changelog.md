@@ -12,7 +12,7 @@
 - Added the Opportunity Products example Apex source (Account › Opportunity › Opportunity Product)
 - Added Time Drive Setup: a guided wizard, Fit to your org, lenses, detail fields, a filter builder, an org check and diagnostics
 - Added lenses, with All as a lens and the filter each source applies shown on the Lenses page
-- Added overdue highlights (a date field past on an open record), on by default for Tasks, and escalated highlights for Cases
+- Added the Overdue formula checkbox on Activity (an open task due before today), highlighted on Tasks and used by the Overdue lens, and escalated highlights for Cases
 - Added a second subtitle field, read after a dot; Tasks, Calls and Events show Assigned To · Related To
 - Added links on an opened item's details that name a record (Related To, an Account), and Plot.links for Apex sources
 - Added the Overdue lens, defined by its sources' filters, with an Overdue button in the header while the record has something overdue
