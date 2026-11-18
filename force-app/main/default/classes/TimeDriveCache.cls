@@ -51,7 +51,6 @@ global with sharing class TimeDriveCache {
       Cache.Org.getPartition(PARTITION).put(key, value, TTL);
     } catch (Exception e) {
       // No partition, or no room: not kept.
-      System.debug(LoggingLevel.FINE, 'Time Drive cache: not kept. ' + e.getMessage());
     }
   }
 

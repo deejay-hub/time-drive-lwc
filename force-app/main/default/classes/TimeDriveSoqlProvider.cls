@@ -313,11 +313,19 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
     Map<String, Object> binds = new Map<String, Object>();
     Integer k = 0;
     for (TimeDriveContext context : contexts) {
-      Query q = new Query(context);
-      if (q.link == null) {
+      // One source that can't be asked (its junction isn't in this org, a
+      // field gone) leaves the others to answer.
+      Query q;
+      String condition;
+      try {
+        q = new Query(context);
+        if (q.link == null) {
+          continue;
+        }
+        condition = q.conditions(context.spans());
+      } catch (Exception e) {
         continue;
       }
-      String condition = q.conditions(context.spans());
       // Each source's binds under a name of its own (s0_parentId, s1_since0 ...).
       String prefix = 's' + k + '_';
       for (String key : q.binds.keySet()) {
@@ -353,7 +361,6 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
       } catch (Exception e) {
         // One object that can't be asked doesn't stop the others.
         TimeDriveQueries.record(objects.get(bucket), 'any', soql);
-        System.debug(LoggingLevel.FINE, 'Time Drive: not asked. ' + e.getMessage());
       }
     }
     return false;

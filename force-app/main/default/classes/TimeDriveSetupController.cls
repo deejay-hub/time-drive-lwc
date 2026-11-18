@@ -1144,7 +1144,7 @@ public with sharing class TimeDriveSetupController {
         out.add(new Option(String.isBlank(apiName) ? name : apiName, name, (String) ds.get('DataSpaceApiName')));
       }
     } catch (Exception e) {
-      System.debug(LoggingLevel.WARN, 'Time Drive Setup: no data spaces read. ' + e.getMessage());
+      // No Data 360 here, or no access to its data spaces: none to offer.
     }
     return out;
   }
@@ -1268,7 +1268,7 @@ public with sharing class TimeDriveSetupController {
         AggregateResult a = (AggregateResult) Database.query(q, AccessLevel.USER_MODE)[0];
         v.parents = (Integer) a.get('n');
       } catch (Exception e) {
-        System.debug(LoggingLevel.WARN, 'Time Drive Setup: parents not counted. ' + e.getMessage());
+        // Parents that can't be counted: the volume shows without them.
       }
     }
     return v;
@@ -1284,7 +1284,6 @@ public with sharing class TimeDriveSetupController {
         (archived ? ' ALL ROWS' : '');
       return Database.countQueryWithBinds(q, binds, AccessLevel.USER_MODE);
     } catch (Exception e) {
-      System.debug(LoggingLevel.WARN, 'Time Drive Setup: not counted. ' + e.getMessage());
       return null;
     }
   }
@@ -1533,7 +1532,6 @@ public with sharing class TimeDriveSetupController {
       }
     } catch (Exception e) {
       // No access to Email Messages: not something to fit to.
-      System.debug(LoggingLevel.FINE, 'Time Drive: Email Messages not read. ' + e.getMessage());
     }
     return enabled;
   }
@@ -1790,7 +1788,6 @@ public with sharing class TimeDriveSetupController {
       }
     } catch (Exception e) {
       // Licences this admin can't read: nothing to warn about.
-      System.debug(LoggingLevel.FINE, 'Time Drive: licences not read. ' + e.getMessage());
     }
     found.inUse = found.users > 0;
     return found;

@@ -809,7 +809,7 @@ describe("c-time-drive", () => {
     );
     // Vertical, the empty state is as tall as it needs.
     expect(element.shadowRoot.querySelector(".empty").style.height).toBe("");
-    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const warn = jest.spyOn(console, "warn");
     await refresh(element);
     getSummary.error({
       message: "System.QueryException: No such column 'Secret__c' on entity 'Invoice__c'",
@@ -824,9 +824,9 @@ describe("c-time-drive", () => {
     expect(state.textContent).not.toContain("Possible cause");
     // Never the raw message or the stack trace.
     expect(state.textContent).not.toMatch(/QueryException|Secret__c|line 84/);
-    // The technical summary goes to the console, without the stack trace.
-    expect(warn.mock.calls[0][1]).toContain("No such column");
-    expect(warn.mock.calls[0][1]).not.toContain("line 84");
+    // Nothing goes to the browser's console.
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
     // The error state, too.
     expect(state.style.height).toBe("");
     warn.mockRestore();
@@ -2888,7 +2888,6 @@ describe("c-time-drive accessibility", () => {
   it("empty and error states", async () => {
     const element = await mount("Vertical", []);
     await expect(element).toBeAccessible();
-    jest.spyOn(console, "warn").mockImplementation(() => {});
     getSummary.error({ message: "Boom" });
     await flush();
     await expect(element).toBeAccessible();

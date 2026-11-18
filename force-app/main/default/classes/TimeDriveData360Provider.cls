@@ -451,7 +451,6 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
       }
     } catch (Exception e) {
       // Data 360 couldn't be asked.
-      System.debug(LoggingLevel.FINE, 'Time Drive: Data 360 not asked. ' + e.getMessage());
     }
     return new List<String>();
   }
@@ -474,7 +473,7 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
         return catalog.profileDmoNames(dataSpace);
       }
     } catch (Exception e) {
-      System.debug(LoggingLevel.FINE, 'Time Drive: Data 360 not asked. ' + e.getMessage());
+      // Data 360 couldn't be asked.
     }
     return new Set<String>();
   }

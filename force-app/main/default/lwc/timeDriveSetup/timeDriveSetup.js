@@ -640,9 +640,7 @@ function plainError(error) {
   if (body?.message && (body.isUserDefinedException || !body.stackTrace)) {
     return { message: body.message, cause: "" };
   }
-  const described = describeError(error);
-  console.error("Time Drive Setup:", described.detail);
-  return described;
+  return describeError(error);
 }
 
 export default class TimeDriveSetup extends LightningElement {
@@ -3039,12 +3037,10 @@ export default class TimeDriveSetup extends LightningElement {
     const objectName = this.draft.objectName;
     if (!objectName) return;
     this.loadingSchema = true;
-    const started = performance.now();
     const waiting = new Set(["fields", ...(this.isSalesforce ? ["links"] : [])]);
     const timed = (name, promise) =>
       promise.finally(() => {
         waiting.delete(name);
-        console.info(`Time Drive setup: ${name} of ${objectName} took ${Math.round(performance.now() - started)} ms`);
       });
     // eslint-disable-next-line @lwc/lwc/no-async-operation
     const timer = setTimeout(() => {
@@ -3562,9 +3558,9 @@ export default class TimeDriveSetup extends LightningElement {
     try {
       const volumes = await getVolumes({ draftJson: this.draftJson() });
       if (seq === this.volumeSeq) this.volumes = volumes;
-    } catch (e) {
+    } catch {
+      // Not counted: the step goes on without volumes.
       if (seq === this.volumeSeq) this.volumes = undefined;
-      console.warn("Time Drive Setup: volumes not counted", plainError(e).message);
     } finally {
       if (seq === this.volumeSeq) this.loadingVolumes = false;
     }

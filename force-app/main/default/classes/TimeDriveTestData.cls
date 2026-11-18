@@ -34,7 +34,6 @@ public class TimeDriveTestData {
 
   private static Boolean refused(Savepoint before, Exception e) {
     Database.rollback(before);
-    System.debug(LoggingLevel.WARN, 'Time Drive test: this org won\'t take the records. ' + e.getMessage());
     return false;
   }
 

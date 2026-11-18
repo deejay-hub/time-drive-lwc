@@ -796,7 +796,6 @@ global with sharing class TimeDriveController {
       return run.anyIn(TimeDriveConfig.OVERDUE_VIEW);
     } catch (Exception e) {
       // No banner: the lens itself still says what's wrong when opened.
-      System.debug(LoggingLevel.FINE, 'Time Drive: overdue not checked. ' + e.getMessage());
       return false;
     }
   }
@@ -1062,10 +1061,7 @@ global with sharing class TimeDriveController {
         return (Id) rows[0].get('PersonContactId');
       }
     } catch (Exception e) {
-      System.debug(
-        LoggingLevel.WARN,
-        'Time Drive: couldn\'t tell whether ' + recordId + ' is a person account.'
-      );
+      // The Account can't be read as this user: the page's own Id is used.
     }
     return null;
   }
@@ -1788,15 +1784,6 @@ global with sharing class TimeDriveController {
         }
         return found;
       } catch (Exception e) {
-        System.debug(
-          LoggingLevel.WARN,
-          'Time Drive: ' +
-            sources[i].Label +
-            ' couldn\'t be counted, so it\'s read as rows. ' +
-            e.getTypeName() +
-            ': ' +
-            e.getMessage()
-        );
         uncounted.add(i);
         return null;
       }
@@ -2013,13 +2000,9 @@ global with sharing class TimeDriveController {
   }
 
   // An unexpected failure, as the client sees it: only the kind, never the
-  // message or stack trace (those go to the debug log).
+  // message or stack trace.
   @TestVisible
   private static AuraHandledException safeFailure(Exception e) {
-    System.debug(
-      LoggingLevel.ERROR,
-      'Time Drive failed. ' + e.getTypeName() + ': ' + e.getMessage() + '\n' + e.getStackTraceString()
-    );
     String code = 'timedrive:' + kindOf(e);
     AuraHandledException failure = new AuraHandledException(code);
     failure.setMessage(code);

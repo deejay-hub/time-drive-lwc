@@ -408,7 +408,6 @@ public with sharing class TimeDriveConfig {
         return System.Label.get(namespace, key);
       } catch (Exception e) {
         // Not a label in that namespace: try the next.
-        System.debug(LoggingLevel.FINEST, 'Time Drive: no label ' + key + '. ' + e.getMessage());
       }
     }
     return null;
@@ -678,7 +677,6 @@ public with sharing class TimeDriveConfig {
       }
     } catch (Exception e) {
       // Nothing kept to forget.
-      System.debug(LoggingLevel.FINE, 'Time Drive: cache not cleared. ' + e.getMessage());
     }
     driveSources = null;
     driveDetails = null;
@@ -715,7 +713,6 @@ public with sharing class TimeDriveConfig {
       }
     } catch (Exception e) {
       // Not readable: read the records.
-      System.debug(LoggingLevel.FINE, 'Time Drive: cache not read. ' + e.getMessage());
     }
     List<Time_Drive_Record__c> found = queryDriveRecords();
     try {
@@ -724,7 +721,6 @@ public with sharing class TimeDriveConfig {
       }
     } catch (Exception e) {
       // No room to keep them: every request reads them.
-      System.debug(LoggingLevel.FINE, 'Time Drive: cache not kept. ' + e.getMessage());
     }
     return found;
   }

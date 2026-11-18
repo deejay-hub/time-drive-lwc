@@ -58,7 +58,7 @@ global with sharing class TimeDriveContext {
   public PriorEvents priorLoader;
   public List<String> warnings;
   // Sources that couldn't be read, by name and kind of failure (shared by
-  // every source's context; the raw exception goes to the debug log only).
+  // every source's context; never the raw exception, which can carry query text).
   public List<TimeDriveController.Problem> problems = new List<TimeDriveController.Problem>();
   // A person account's own Contact: links to Contact (Task.WhoId,
   // Case.ContactId) match it, links to Account match the account.
@@ -587,16 +587,11 @@ global with sharing class TimeDriveContext {
 
   /**
    * Records a source that couldn't be read: its name and the kind of failure for the user, never
-   * the exception's message (it can carry query text and field names); that goes to the debug log
-   * for an admin.
+   * the exception's message (it can carry query text and field names).
    * @param what the source's name
    * @param e the exception raised
    */
   public void fail(String what, Exception e) {
-    System.debug(
-      LoggingLevel.WARN,
-      'Time Drive: ' + what + ' couldn\'t be read. ' + e.getTypeName() + ': ' + e.getMessage()
-    );
     for (TimeDriveController.Problem p : problems) {
       if (p.source == what) {
         return;

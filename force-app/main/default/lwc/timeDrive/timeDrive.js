@@ -1705,12 +1705,9 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     return this.artFor(this.problemNotice?.kind);
   }
   // What the user sees of an error: its kind in plain words and a likely
-  // cause. The technical summary (codes and messages, never a stack trace)
-  // goes to the console for whoever is debugging.
+  // cause.
   reportError(error) {
-    const described = describeError(error);
-    console.warn(`Time Drive: ${described.kind} error.`, described.detail);
-    return described;
+    return describeError(error);
   }
   get emptyHeading() {
     if (this.noSources) return LABELS.emptySetupHeading;
