@@ -251,6 +251,7 @@ Open a Contact, Account or Lead record, choose **Edit Page**, and drag **Time Dr
 - **Title** (default Time Drive): the timeline's name for screen readers. The lens's name is the visible heading.
 - **Layout** (default Auto): Auto is vertical in narrow regions and horizontal from 640px wide. Vertical or Horizontal pins one.
 - **Default Lens** (default All): the lens the timeline opens on. People can still pick another from the heading; a lens the org doesn't offer opens on All.
+- **Lenses** (blank: every lens): the lenses this page offers, by API name, separated by commas (`Sales, Service`), so an Account page can offer different lenses from a Contact page. **All items** and **Overdue** are always offered. A Default Lens, or a lens someone last used, that the page doesn't offer opens on All.
 - **Open At** (default Today): today's slot (with a placeholder when it has nothing), the earliest item, or the latest.
 - **Display Density** (default Auto): Auto follows each user's Comfy or Compact setting; Comfy or Compact overrides it.
 - **History (years)** (default 1): how far back it plots, from 0.25 to 10 years.

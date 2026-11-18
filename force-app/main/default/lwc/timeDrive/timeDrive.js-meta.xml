@@ -39,6 +39,12 @@
         default="All"
       />
             <property
+        name="lenses"
+        label="Lenses"
+        description="The lenses this page offers, by API name, separated by commas (Sales, Service). Blank offers every lens. All items and Overdue are always offered."
+        type="String"
+      />
+            <property
         name="openAt"
         label="Open At"
         description="Where the timeline opens: Today (today's slot, with a placeholder when it has nothing), its earliest item or its latest. Vertical lists the newest at the top; horizontal runs earliest to latest."

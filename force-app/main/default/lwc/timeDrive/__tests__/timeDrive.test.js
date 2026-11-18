@@ -3100,3 +3100,50 @@ describe("the Overdue button", () => {
     expect(getOverdue.getLastConfig().recordId).toBe("003000000000001AAA");
   });
 });
+
+describe("the page's Lenses property", () => {
+  afterEach(() => {
+    while (document.body.firstChild) document.body.removeChild(document.body.firstChild);
+  });
+  const LENSES = [
+    { value: "All", label: "All items", labelName: "Time_Drive_View_All" },
+    { value: "Sales", label: "Sales", labelName: "Time_Drive_View_Sales" },
+    { value: "Service", label: "Service", labelName: "Time_Drive_View_Service" },
+    { value: "Overdue", label: "Overdue", labelName: "Time_Drive_View_Overdue" }
+  ];
+  const open = async (props = {}) => {
+    const element = createTimeline();
+    element.recordId = "003000000000001AAA";
+    Object.assign(element, props);
+    document.body.appendChild(element);
+    getViews.emit(LENSES);
+    emitEvents({ warnings: [], events: EVENTS });
+    await flush();
+    return element;
+  };
+  const offered = async (element) => {
+    element.shadowRoot.querySelector("h2 .view-button").click();
+    await flush();
+    return [...element.shadowRoot.querySelectorAll(".view-option")].map((o) => o.dataset.value);
+  };
+
+  it("offers every lens when it's blank", async () => {
+    expect(await offered(await open())).toEqual(["All", "Sales", "Service", "Overdue"]);
+  });
+
+  it("offers only the lenses it names, by API name in any case, with All and Overdue always", async () => {
+    expect(await offered(await open({ lenses: " sales , Missing" }))).toEqual(["All", "Sales", "Overdue"]);
+  });
+
+  it("opens on All when the Default Lens or the lens they last used isn't one it offers", async () => {
+    const element = await open({ lenses: "Sales", defaultLens: "Service" });
+    expect(element.shadowRoot.querySelector(".view-button").textContent).toContain("All items");
+    getPreference.mockResolvedValueOnce({ lens: "Service" });
+    const again = await open({ lenses: "Sales" });
+    expect(again.shadowRoot.querySelector(".view-button").textContent).toContain("All items");
+    // One it does offer is kept.
+    getPreference.mockResolvedValueOnce({ lens: "Sales" });
+    const kept = await open({ lenses: "Sales" });
+    expect(kept.shadowRoot.querySelector(".view-button").textContent).toContain("Sales");
+  });
+});

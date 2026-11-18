@@ -261,7 +261,31 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
 
   // A lens the org offers (the list, once it is here, else the built-in ones).
   offers(lens) {
-    return this.viewList.some((v) => v.value === lens);
+    return this.lensAllowed(lens) && this.viewList.some((v) => v.value === lens);
+  }
+
+  // The page's Lenses property: the lens API names it offers, separated by
+  // commas (blank: every lens the org offers). All and Overdue always stay.
+  @api
+  get lenses() {
+    return this._lenses;
+  }
+  set lenses(value) {
+    this._lenses = value;
+    if (this._viewData) this.wiredViews({ data: this._viewData });
+  }
+  _lenses;
+  _viewData;
+  get lensFilter() {
+    const names = String(this._lenses ?? "")
+      .split(",")
+      .map((n) => n.trim().toLowerCase())
+      .filter(Boolean);
+    return names.length ? new Set(names) : null;
+  }
+  lensAllowed(value) {
+    const filter = this.lensFilter;
+    return !filter || value === "All" || value === OVERDUE_VIEW || filter.has(String(value).toLowerCase());
   }
 
   async loadPreference() {
@@ -444,7 +468,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   connectedCallback() {
     // Open on the chosen lens; one that isn't a lens opens on All.
     const lens = viewFor(this.defaultLens).value;
-    if (lens !== "All" && lens === this.defaultLens) this.view = lens;
+    if (lens !== "All" && lens === this.defaultLens && this.lensAllowed(lens)) this.view = lens;
     this.syncQuery();
     // Across or down is decided by the width, which the first request depends
     // on (it asks for the days around where the timeline opens): read it now,
@@ -1775,11 +1799,15 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   @wire(getViews)
   wiredViews({ data }) {
     if (!data?.length) return;
+    this._viewData = data;
+    // The page's Lenses property narrows the org's (All and Overdue stay).
     // A lens named by a built-in label shows the card's own copy of it.
-    this.views = data.map((v) => ({ ...v, label: VIEW_LABELS[v.labelName] ?? labelNamed(v.labelName, v.label) }));
+    this.views = data
+      .filter((v) => this.lensAllowed(v.value))
+      .map((v) => ({ ...v, label: VIEW_LABELS[v.labelName] ?? labelNamed(v.labelName, v.label) }));
     // A default lens the org doesn't offer (switched off since the page was
-    // built) opens on All.
-    if (!data.some((v) => v.value === this.view)) {
+    // built, or left out of the page's Lenses) opens on All.
+    if (!this.views.some((v) => v.value === this.view)) {
       this.view = "All";
       this.applyQueryChange();
     }

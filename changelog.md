@@ -15,6 +15,7 @@
 - Added the Overdue formula checkbox on Activity (an open task due before today), highlighted on Tasks and used by the Overdue lens, and escalated highlights for Cases
 - Added a second subtitle field, read after a dot; Tasks, Calls and Events show Assigned To · Related To
 - Added links on an opened item's details that name a record (Related To, an Account), and Plot.links for Apex sources
+- Added the Lenses page property: the lenses a page offers (All items and Overdue always)
 - Added the Overdue lens, defined by its sources' filters, with an Overdue button in the header while the record has something overdue
 - Added Edit and Delete from each item's menu
 - Added View all for a busy day's grouped Salesforce items, paged as you scroll
