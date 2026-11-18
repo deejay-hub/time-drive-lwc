@@ -348,25 +348,26 @@
   display: none;
 }
 
-/* Overdue: SLDS's neutral button in its error colours (an icon and a word
-   too, not colour alone); pressed, on the Overdue lens, filled. */
+/* Overdue: SLDS's neutral button in its warning colours: something to look
+   at, not an error or a delete (red is theirs). Text at least 4.5:1 on its
+   fill; pressed, on the Overdue lens, filled. */
 .overdue-button {
-  border-color: light-dark(#ea001e, #fe5c4c);
-  background: light-dark(#fef1ee, #3e1716);
-  color: light-dark(#ba0517, #fe8f7d);
+  border-color: light-dark(#dd7a01, #fe9339);
+  background: light-dark(#fdf3e7, #3d2a12);
+  color: light-dark(#8c4b02, #ffba90);
   --slds-c-icon-color-foreground-default: currentColor;
   --slds-c-icon-color-foreground: currentColor;
 }
 .overdue-button:hover {
-  border-color: light-dark(#ba0517, #fe8f7d);
-  background: light-dark(#feded8, #4f1c1a);
-  color: light-dark(#8e030f, #feb8ab);
+  border-color: light-dark(#a96404, #ffba90);
+  background: light-dark(#fbe7cf, #4d3518);
+  color: light-dark(#5f3e02, #ffd4b8);
 }
 .overdue-button_on,
 .overdue-button_on:hover {
-  border-color: light-dark(#ba0517, #fe5c4c);
-  background: light-dark(#ba0517, #fe5c4c);
-  color: light-dark(#fff, #1f0300);
+  border-color: light-dark(#a96404, #fe9339);
+  background: light-dark(#a96404, #fe9339);
+  color: light-dark(#fff, #1f1200);
 }
 .overdue-button:focus-visible {
   outline: 2px solid var(--slds-g-color-accent-2, #0b5cab);

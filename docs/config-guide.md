@@ -240,7 +240,7 @@ The **Overdue** lens shows what's late. Time Drive doesn't decide what counts as
 **The Overdue field.** Time Drive adds one formula checkbox to Activity, **Overdue** (`Overdue__c`): an open task whose due date is before today, in the viewing person's own day (`AND(NOT(IsClosed), NOT(ISBLANK(ActivityDate)), ActivityDate < TODAY())`). The Tasks templates' highlight and the overdue templates' filter both use it. Its formula is part of the package, so it can't be edited; for other rules (overdue after three days, or by status), make a formula checkbox of your own and choose it in the source's Highlights, or use it in the source's filter. The **Time Drive** and **Time Drive Setup** permission sets let people read it.
 
 - An overdue template's copy is in the Overdue lens only: its tasks are in All items already.
-- Once the timeline has loaded, it asks whether the Overdue lens has anything for the record. If it does, a red **Overdue** button appears beside **Today**; clicking it opens the Overdue lens. On the Overdue lens the button shows pressed, and clicking it again goes back to the lens you came from.
+- Once the timeline has loaded, it asks whether the Overdue lens has anything for the record. If it does, an orange **Overdue** button appears beside **Today**; clicking it opens the Overdue lens. On the Overdue lens the button shows pressed, and clicking it again goes back to the lens you came from.
 - The question is cheap: one query per object, asking for a single row, stopping at the first that finds one. Ten overdue sources on Task are one query, not ten.
 - The button finds the lens by its API name, `Overdue`, so you can rename or translate the lens's label freely. Turn the lens off and the button goes too.
 
