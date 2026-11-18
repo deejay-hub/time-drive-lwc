@@ -144,6 +144,40 @@ private class TimeDriveOverdueTest {
   }
 
   @IsTest
+  static void aJunctionSourceIsAskedOnItsOwnBesideAnother() {
+    // A sub-select can't sit inside OR: with a TaskRelation source in the lens
+    // beside another Task source, a merged query would fail and say nothing
+    // is overdue. Orgs without Shared Activities have no TaskRelation.
+    if (TimeDriveConfig.sObjectType('TaskRelation') == null) {
+      return;
+    }
+    System.runAs(TimeDriveTestData.adminIn('America/Los_Angeles')) {
+      lenses();
+      Time_Drive_Source__mdt every = source('Overdue_Every', 'Task', 'ActivityDate', null, OVERDUE_FILTER, 'Overdue');
+      every.Junction_Object__c = 'TaskRelation';
+      every.Junction_Parent_Field__c = 'RelationId';
+      every.Junction_Record_Field__c = 'TaskId';
+      TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{
+        every,
+        source('Overdue_Calls', 'Task', 'ActivityDate', 'WhoId', OVERDUE_FILTER + ' AND TaskSubtype = \'Call\'', 'Overdue')
+      };
+      Contact c = new Contact(LastName = 'Shared');
+      insert c;
+      insert new Task(WhoId = c.Id, Subject = 'Late', ActivityDate = Date.today().addDays(-2), Status = 'Not Started');
+      TimeDriveQueries.ran.clear();
+      Assert.isTrue(TimeDriveController.getOverdue(c.Id, '1', null), 'found through the junction');
+      for (TimeDriveQueries.Ran q : TimeDriveQueries.ran) {
+        if (q.kind == 'any') {
+          Assert.isFalse(
+            q.soql.containsIgnoreCase('(SELECT') && q.soql.contains(') OR ('),
+            'no sub-select inside OR: ' + q.soql
+          );
+        }
+      }
+    }
+  }
+
+  @IsTest
   static void nothingWhenTheOverdueLensIsOff() {
     System.runAs(TimeDriveTestData.adminIn('America/Los_Angeles')) {
       lenses();

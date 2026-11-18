@@ -41,7 +41,8 @@ private class TimeDriveDetailLinksTest {
       context.draftDetailFields = new List<Time_Drive_Detail_Field__mdt>{
         detail('What.Name'),
         detail('Status'),
-        detail('WhatId')
+        detail('WhatId'),
+        detail('What.Type')
       };
       List<TimeDriveController.EngagementEvent> events = TimeDrivePlotter.run(new TimeDriveSoqlProvider(), context);
       Assert.areEqual(1, events.size());
@@ -51,6 +52,7 @@ private class TimeDriveDetailLinksTest {
       Assert.areEqual(acme.Id, details[0].recordId, 'Related To links to its record (What.Id)');
       Assert.isNull(details[1].recordId, 'a plain value (Status) is no link');
       Assert.areEqual(acme.Id, details[2].recordId, 'a lookup chosen as itself links to what it holds');
+      Assert.isNull(details[3].recordId, 'Related To › Type is words, not a link to the Account');
     }
   }
 
@@ -88,10 +90,14 @@ private class TimeDriveDetailLinksTest {
   }
 
   @IsTest
-  static void aLinkPathIsTheLookupsId() {
-    Assert.areEqual('What.Id', TimeDrivePlotter.linkPathOf('What.Name'));
-    Assert.areEqual('Opportunity.Account.Id', TimeDrivePlotter.linkPathOf('Opportunity.Account.Name'));
-    Assert.isNull(TimeDrivePlotter.linkPathOf('Status'), 'the row\'s own field names no other record');
-    Assert.isNull(TimeDrivePlotter.linkPathOf(null));
+  static void aLinkPathEndsAtTheRelatedRecordsName() {
+    Assert.areEqual('What.Id', TimeDrivePlotter.linkPathOf('Task', 'What.Name'));
+    Assert.areEqual('Opportunity.Account.Id', TimeDrivePlotter.linkPathOf(null, 'Opportunity.Account.Name'));
+    // A name field not called Name, told by the describe.
+    Assert.areEqual('Parent.Id', TimeDrivePlotter.linkPathOf('CaseComment', 'Parent.CaseNumber'));
+    Assert.isNull(TimeDrivePlotter.linkPathOf('Contact', 'Account.Industry'), 'another field names no record');
+    Assert.isNull(TimeDrivePlotter.linkPathOf('Contact', 'Account.ParentId'), 'a lookup links by its own value');
+    Assert.isNull(TimeDrivePlotter.linkPathOf('Task', 'Status'), 'the row\'s own field names no other record');
+    Assert.isNull(TimeDrivePlotter.linkPathOf('Task', null));
   }
 }

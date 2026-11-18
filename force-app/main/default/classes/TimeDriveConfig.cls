@@ -217,12 +217,6 @@ public with sharing class TimeDriveConfig {
   }
 
   /**
-   * Whether a view is offered: All always; others unless made inactive.
-   *
-   * @param v the view to check
-   * @return true when the view is offered
-   */
-  /**
    * Whether the picker offers a lens, by its API name (DeveloperName).
    *
    * @param key the lens's DeveloperName
@@ -237,6 +231,12 @@ public with sharing class TimeDriveConfig {
     return false;
   }
 
+  /**
+   * Whether a view is offered: All always; others unless made inactive.
+   *
+   * @param v the view to check
+   * @return true when the view is offered
+   */
   public static Boolean isActive(Time_Drive_View__mdt v) {
     return v.DeveloperName == ALL_VIEW || !hiddenViews().contains(v.DeveloperName);
   }

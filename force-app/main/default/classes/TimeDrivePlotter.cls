@@ -240,7 +240,7 @@ public with sharing class TimeDrivePlotter {
     TimeDriveController.Detail detail = valueOf(d, row);
     String field = String.valueOf(d.Field__c);
     String own = links == null || String.isBlank(field) ? null : links.get(field.toLowerCase());
-    detail.recordId = String.isNotBlank(own) ? idAt(row, own) : idAt(row, linkPathOf(field));
+    detail.recordId = String.isNotBlank(own) ? idAt(row, own) : idAt(row, namedLinkOf(row, field));
     // A lookup chosen as itself holds an Id (text that only looks like one doesn't count).
     if (detail.recordId == null && String.isBlank(own)) {
       Object value = valueAt(row, field);
@@ -250,14 +250,41 @@ public with sharing class TimeDrivePlotter {
   }
 
   /**
-   * The path to the record a lookup path names: What.Name is What.Id; a
-   * field of the row's own (no dot) names none.
+   * The path to the record a detail names, when it ends at that record's
+   * name: What.Name is What.Id, Case.CaseNumber is Case.Id. A path ending at
+   * another field (Account.Industry) names no record, and one ending at a
+   * lookup (Account.ParentId) links by its own value instead; a field of the
+   * row's own (no dot) names none either.
    *
+   * @param objectName the source's object, to tell its related objects' name fields (may be blank)
    * @param path a detail field's path
    * @return the Id's path, or null
    */
-  public static String linkPathOf(String path) {
-    return String.isBlank(path) || !path.contains('.') ? null : path.substringBeforeLast('.') + '.Id';
+  public static String linkPathOf(String objectName, String path) {
+    if (String.isBlank(path) || !path.contains('.')) {
+      return null;
+    }
+    Boolean named = path.substringAfterLast('.').equalsIgnoreCase('Name');
+    if (!named && String.isNotBlank(objectName)) {
+      named = TimeDriveConfig.fieldDescribe(objectName, path)?.isNameField() == true;
+    }
+    return named ? path.substringBeforeLast('.') + '.Id' : null;
+  }
+
+  // As linkPathOf, telling the name field from the row's own describe.
+  private static String namedLinkOf(TimeDriveRow row, String path) {
+    if (String.isBlank(path) || !path.contains('.')) {
+      return null;
+    }
+    Boolean named = path.substringAfterLast('.').equalsIgnoreCase('Name');
+    if (!named) {
+      try {
+        named = row?.describe(path)?.isNameField() == true;
+      } catch (Exception e) {
+        named = false;
+      }
+    }
+    return named ? path.substringBeforeLast('.') + '.Id' : null;
   }
 
   // A Salesforce Id at a key, or null: not there, not queried (an Apex

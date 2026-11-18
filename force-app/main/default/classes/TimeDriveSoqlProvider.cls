@@ -71,7 +71,7 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
     for (Time_Drive_Detail_Field__mdt d : context.detailFields()) {
       fields.add(d.Field__c);
       // The record a detail through a lookup names, for the card to link to.
-      String link = TimeDrivePlotter.linkPathOf(d.Field__c);
+      String link = TimeDrivePlotter.linkPathOf(s.Object_Name__c, d.Field__c);
       if (link != null) {
         fields.add(link);
       }
@@ -294,9 +294,11 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
 
   /**
    * Whether any of these sources has an item in its context's window, for a
-   * banner that only needs yes or no. Sources on the same object are asked in
+   * button that only needs yes or no. Sources on the same object are asked in
    * one query (their conditions joined with OR, LIMIT 1), each object in turn,
-   * stopping at the first that has one: one query per object at most.
+   * stopping at the first that has one: one query per object, except that a
+   * source linked through a junction (Id IN (SELECT ...)) is asked on its own,
+   * as SOQL allows no sub-select inside OR.
    *
    * @param contexts the sources' contexts
    * @return true when one has an item
@@ -307,6 +309,7 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
   public static Boolean anyOf(List<TimeDriveContext> contexts) {
     Map<String, List<String>> conditions = new Map<String, List<String>>();
     Map<String, String> objects = new Map<String, String>();
+    Map<String, String> endings = new Map<String, String>();
     Map<String, Object> binds = new Map<String, Object>();
     Integer k = 0;
     for (TimeDriveContext context : contexts) {
@@ -322,10 +325,13 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
         binds.put(prefix + key, q.binds.get(key));
       }
       String objectName = context.source.Object_Name__c;
-      String bucket = objectName + q.allRows();
+      // A sub-select can't sit inside OR: that source is a query of its own.
+      Boolean alone = condition.containsIgnoreCase('(SELECT ');
+      String bucket = objectName + q.allRows() + (alone ? '#' + k : '');
       if (!conditions.containsKey(bucket)) {
         conditions.put(bucket, new List<String>());
         objects.put(bucket, objectName);
+        endings.put(bucket, q.allRows());
       }
       conditions.get(bucket).add(condition);
       k++;
@@ -337,7 +343,7 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
         ' WHERE (' +
         String.join(conditions.get(bucket), ') OR (') +
         ') LIMIT 1' +
-        bucket.removeStart(objects.get(bucket));
+        endings.get(bucket);
       try {
         List<SObject> found = Database.queryWithBinds(soql, binds, AccessLevel.USER_MODE);
         TimeDriveQueries.record(objects.get(bucket), 'any', soql);

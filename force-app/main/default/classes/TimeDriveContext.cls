@@ -555,8 +555,8 @@ global with sharing class TimeDriveContext {
     wanted.addAll(TimeDrivePlotter.tokens(source?.Subtitle__c));
     for (Time_Drive_Detail_Field__mdt d : detailFields()) {
       wanted.add(d.Field__c);
-      // The record a detail through a lookup names (Product2.Name: Product2.Id), for its link.
-      wanted.add(TimeDrivePlotter.linkPathOf(d.Field__c));
+      // The record a detail ending at a related record's name names (Product2.Name: Product2.Id), for its link.
+      wanted.add(TimeDrivePlotter.linkPathOf(source?.Object_Name__c, d.Field__c));
     }
     Set<String> seen = new Set<String>();
     List<String> out = new List<String>();

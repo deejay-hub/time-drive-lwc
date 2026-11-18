@@ -738,11 +738,20 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   overdueRecordId;
   overdueHistory;
   overdueFuture;
+  // Once a load lands: new parameters ask again through the wire; the same
+  // ones after a refresh are asked again here. Either way, once.
   askOverdue() {
+    const same =
+      this.overdueHistory === this.queryHistory &&
+      this.overdueFuture === this.queryFuture &&
+      this.overdueRecordId === this._recordId;
     this.overdueHistory = this.queryHistory;
     this.overdueFuture = this.queryFuture;
     this.overdueRecordId = this._recordId;
+    if (same && this._overdueStale && this._overdueWire) refreshApex(this._overdueWire);
+    this._overdueStale = false;
   }
+  _overdueStale = false;
   get offersOverdue() {
     return (this.views ?? []).some((v) => v.value === OVERDUE_VIEW);
   }
@@ -2009,7 +2018,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       return;
     }
     const failed = Boolean(this.error);
-    if (this._overdueWire) refreshApex(this._overdueWire);
+    this._overdueStale = true;
     // Across, the skeleton replaces the track (and its scroll): remember the
     // day at the view's left edge, and how far into it, to come back to.
     this._restoreAcross = failed ? null : this.placeAcross();
@@ -2043,7 +2052,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     this.refreshing = true;
     this.updating = true;
     // A saved task may have been the last overdue one, or a new one.
-    if (this._overdueWire) refreshApex(this._overdueWire);
+    this._overdueStale = true;
     this.requestTimeline(true).finally(() => {
       this.refreshing = false;
       this.updating = false;
