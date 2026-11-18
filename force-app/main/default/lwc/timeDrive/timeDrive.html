@@ -495,7 +495,9 @@
                             </span>
                             <template lwc:if={showWhen}>
                               <span class="event-when">
-                                <time class="event-time" datetime={item.isoTime}>{item.timeText}</time>
+                                <template lwc:if={item.timeText}>
+                                  <time class="event-time" datetime={item.isoTime}>{item.timeText}</time>
+                                </template>
                               </span>
                             </template>
                             <!-- Edit and Delete for a Salesforce record; the rest of the

@@ -1940,12 +1940,12 @@ describe("c-time-drive drawing less", () => {
     ).shadowRoot;
     const rows = [...root.querySelectorAll(".event")].map((e) => [
       e.querySelector(".event-title").textContent,
-      e.querySelector(".event-time").textContent
+      e.querySelector(".event-time")?.textContent ?? null
     ]);
-    // No time to show, and first in the day though plotted earlier.
+    // No time at all (not even a placeholder), and first in the day though plotted earlier.
     expect(rows.map(([title]) => title)).toEqual(["Rang Bob", "Standup"]);
-    expect(rows[0][1]).toBe("--");
-    expect(rows[1][1]).not.toBe("--");
+    expect(rows[0][1]).toBeNull();
+    expect(rows[1][1]).toMatch(/\d/);
   });
 
   it("orders a day's untimed items first, then by time, and keeps days apart", () => {

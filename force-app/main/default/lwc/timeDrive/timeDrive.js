@@ -148,9 +148,9 @@ const TIME_FORMAT = FORMATS.time;
 const DAY_SHORT_FORMAT = FORMATS.dayShort;
 const DAY_SHORT_TIME_FORMAT = FORMATS.dayShortTime;
 // The time a row shows. An all-day event says so; an item dated by a Date
-// field (a Task's Activity Date) has no time, so "--". In a week or month,
-// both show just their day ("Tue 13").
-const NO_TIME = "--";
+// field (a Task's Activity Date) has no time, so shows none. In a week or
+// month, both show just their day ("Tue 13").
+const NO_TIME = "";
 // The Overdue lens's API name (DeveloperName), whatever its label says.
 const OVERDUE_VIEW = "Overdue";
 function timeTextOf(e, at, grouped, timeFormat) {
