@@ -201,9 +201,16 @@ private class TimeDriveOverdueTest {
   static void anOverdueTemplatesCopyIsInTheOverdueLensOnly() {
     System.runAs(TimeDriveTestData.setupAdmin()) {
       String key = TimeDriveSetupController.useTemplate('Overdue_Tasks').developerName;
-      Time_Drive_Record__c copy = [SELECT Lenses__c, Filter__c FROM Time_Drive_Record__c WHERE Key__c = :key];
+      Time_Drive_Record__c copy = [
+        SELECT Lenses__c, Filter__c, Highlight_Field__c, Highlight_Icon__c
+        FROM Time_Drive_Record__c
+        WHERE Key__c = :key
+      ];
       Assert.areEqual('Overdue', copy.Lenses__c, 'not All too: its tasks are in All already');
       Assert.areEqual(OVERDUE_FILTER, copy.Filter__c);
+      // The same highlight as the Tasks templates, so overdue tasks look alike in every lens.
+      Assert.areEqual('Overdue__c', copy.Highlight_Field__c);
+      Assert.areEqual('utility:clock', copy.Highlight_Icon__c);
     }
   }
 
