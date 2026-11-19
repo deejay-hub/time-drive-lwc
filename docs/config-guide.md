@@ -121,7 +121,7 @@ The first question is where the records come from.
 
 - **A standard object**: objects Salesforce comes with, like Cases, Opportunities or Tasks.
 - **A custom object**: objects your org added.
-- **Data 360 DMO**: engagement from a Data 360 data model object, like email opens or website visits.
+- **A Data 360 DMO**: engagement from a Data 360 data model object, like email opens or website visits.
 - **An Apex class**: your code returns the items to plot.
 
 ### A standard object
@@ -219,7 +219,7 @@ On **step 1** choose **An Apex class**. An Apex source has six steps: the class 
 
 ### A Data 360 DMO
 
-On **step 1** choose **Data 360 DMO**, then on step 2 the data space and the engagement DMO, and which of its fields holds the individual. Data 360 finds the Contact's unified profile, then reads the engagement of every individual in it. See [Data 360 sources](#data-360-sources) for what to check before going live. Screenshots of this path are still to come.
+On **step 1** choose **A Data 360 DMO**, then on step 2 the data space and the engagement DMO, and which of its fields holds the individual. Data 360 finds the Contact's unified profile, then reads the engagement of every individual in it. See [Data 360 sources](#data-360-sources) for what to check before going live. Screenshots of this path are still to come.
 
 ## Lenses
 

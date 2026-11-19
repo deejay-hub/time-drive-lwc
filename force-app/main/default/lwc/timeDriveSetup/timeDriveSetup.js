@@ -101,7 +101,7 @@ const KINDS = [
   },
   {
     value: "dmo",
-    label: "Data 360 DMO",
+    label: "A Data 360 DMO",
     slot: "a Data 360 DMO",
     detail: "Engagement from a Data 360 data model object (DMO), like email opens or website visits.",
     icon: "utility:data_cloud"
