@@ -387,6 +387,44 @@ describe("c-time-drive-setup", () => {
     expect(root.querySelector(".page-title").textContent).toBe("Contact timeline");
   });
 
+  it("names the fields an opened item shows, in order, a label of its own first", async () => {
+    getFields.mockResolvedValue([
+      { name: "Name", label: "Order Number", type: "string", filterable: true, values: [] },
+      { name: "Status__c", label: "Status", type: "string", filterable: true, values: [] },
+      { name: "Order_Time__c", label: "Order Time", type: "datetime", filterable: true, values: [] }
+    ]);
+    getLinks.mockResolvedValue([
+      { key: "Customer__c", parentField: "Customer__c", label: "Orders whose Customer is this Contact" }
+    ]);
+    getSource.mockResolvedValue({
+      developerName: "Order_Placed",
+      label: "Order placed",
+      kind: "Salesforce",
+      parentObject: "Contact",
+      objectName: "Invoice__c",
+      parentField: "Customer__c",
+      dateField: "Order_Time__c",
+      title: "Order placed",
+      active: true,
+      details: [
+        { field: "Status__c", label: "", format: "Text" },
+        { field: "Name", label: "Invoice", format: "Text" }
+      ]
+    });
+    const element = mount();
+    await splash();
+    const root = element.shadowRoot;
+    await toPages(root);
+    root.querySelector("button.pcard").click();
+    await flush();
+    root.querySelector('.row-main[data-name="Order_Placed"]').click();
+    await splash();
+    const opened = [...root.querySelectorAll(".fact")].find(
+      (f) => f.querySelector("dt")?.textContent === "When it is opened"
+    );
+    expect(opened.querySelector("dd").textContent.trim()).toBe("Status, Invoice");
+  });
+
   it("shows a source's link, date, filter and interactions on its page", async () => {
     getFields.mockResolvedValue([
       { name: "Name", label: "Order Number", type: "string", filterable: true, values: [] },
@@ -425,11 +463,14 @@ describe("c-time-drive-setup", () => {
     expect(facts["Linked to the Contact by"]).toBe("Orders whose Customer is this Contact");
     expect(facts["Plotted by date"]).toBe("Order Time");
     expect(facts["Only the records where"]).toBe("Status isn't Canceled");
-    expect(facts["When it is opened"]).toBe("0 fields");
+    expect(facts["When it is opened"]).toBe("No fields");
     expect(facts["When its title is clicked"]).toBe("Its own record");
     // One diagram of the interactions: the opened item, then where a click lands.
     expect(facts.Interactions).toBeDefined();
     expect(root.querySelector(".fact_preview .mock-page")).not.toBeNull();
+    // The opened item and the page it opens share one column, so one width.
+    expect(root.querySelector(".fact-preview-stack .mock-item")).not.toBeNull();
+    expect(root.querySelector(".fact-preview-stack .mock-page")).not.toBeNull();
   });
 
   it("lets you pick a typed name after trying a custom label", async () => {

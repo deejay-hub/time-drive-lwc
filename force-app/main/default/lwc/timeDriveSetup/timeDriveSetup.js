@@ -4100,9 +4100,13 @@ export default class TimeDriveSetup extends LightningElement {
     }));
   }
 
+  // The fields an opened item shows, by name and in order (a label of their
+  // own, else the field's): "Status, Owner, Related To".
   get openAnswer() {
-    const n = (this.draft.details ?? []).filter((x) => x.field).length;
-    return `${n} ${n === 1 ? "field" : "fields"}`;
+    const names = (this.draft.details ?? [])
+      .filter((x) => x.field)
+      .map((x) => (x.label?.trim() ? x.label.trim() : this.fieldLabel(x.field)));
+    return names.length ? names.join(", ") : "No fields";
   }
 
   // What a click opens: the item's own record, or a related one.

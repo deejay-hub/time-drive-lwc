@@ -3230,10 +3230,12 @@ a.guided-button lightning-icon {
   min-width: 0;
 }
 
-/* About as wide as an item on a record page's timeline. */
-.fact_preview .mock-item {
-  max-width: 50%;
-  min-width: min(100%, 22rem);
+/* About as wide as an item on a record page's timeline: the opened item,
+   the arrow and the page it opens, all the one width. */
+.fact-preview-stack {
+  display: grid;
+  gap: calc(0.5rem * var(--d));
+  width: max(50%, min(100%, 22rem));
 }
 
 .fact-preview-note {

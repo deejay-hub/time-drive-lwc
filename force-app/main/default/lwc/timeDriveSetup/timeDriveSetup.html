@@ -810,56 +810,63 @@
                     <span class="mock-badge">Sample values</span>
                     <span>{previewSourceNote}</span>
                   </p>
-                  <div class="mock-item mock-item_open">
-                    <div class="mock-row">
-                      <span class="mock-chevron" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></svg>
-                      </span>
-                      <span class="node" style={nodeStyle}>
-                        <lightning-icon icon-name={iconName} size="xx-small" variant="inverse"></lightning-icon>
-                      </span>
-                      <span class="mock-main">
-                        <span class="mock-title mock-title_link">{previewTitle}</span>
-                        <span lwc:if={previewSubtitle} class="mock-sub">{previewSubtitle}</span>
-                      </span>
-                      <span class="mock-time">{previewTime}</span>
-                    </div>
-                    <div class="mock-detail">
-                      <template lwc:if={previewLoading}>
-                        <span class="mock-line"></span>
-                        <span class="mock-line mock-line_short"></span>
-                      </template>
-                      <template lwc:elseif={previewEmpty}>
-                        <p class="mock-empty">{previewEmptyText}</p>
-                      </template>
-                      <template lwc:else>
-                        <dl class="mock-facts">
-                          <template for:each={previewFacts} for:item="f">
-                            <div key={f.key} class="mock-fact">
-                              <dt>{f.label}</dt>
-                              <dd>{f.value}</dd>
-                            </div>
-                          </template>
-                        </dl>
-                      </template>
-                    </div>
-                  </div>
-                  <template lwc:if={isSalesforce}>
-                    <div class="mock-arrow" aria-hidden="true">
-                      <lightning-icon icon-name="utility:arrowdown" size="x-small"></lightning-icon>
-                    </div>
-                    <div class="mock-page">
-                      <div class={clickPageHeadClass}>
-                        <span class="mock-page-icon"
-                          ><lightning-icon icon-name="utility:record" size="x-small" variant="inverse"></lightning-icon
-                        ></span>
-                        <span class="mock-page-text">
-                          <span class="mock-page-object">{clickPageLabel}</span>
-                          <span class="mock-page-name">{clickPageName}</span>
+                  <!-- The opened item, and what its click opens: one column, one width. -->
+                  <div class="fact-preview-stack">
+                    <div class="mock-item mock-item_open">
+                      <div class="mock-row">
+                        <span class="mock-chevron" aria-hidden="true">
+                          <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></svg>
                         </span>
+                        <span class="node" style={nodeStyle}>
+                          <lightning-icon icon-name={iconName} size="xx-small" variant="inverse"></lightning-icon>
+                        </span>
+                        <span class="mock-main">
+                          <span class="mock-title mock-title_link">{previewTitle}</span>
+                          <span lwc:if={previewSubtitle} class="mock-sub">{previewSubtitle}</span>
+                        </span>
+                        <span class="mock-time">{previewTime}</span>
+                      </div>
+                      <div class="mock-detail">
+                        <template lwc:if={previewLoading}>
+                          <span class="mock-line"></span>
+                          <span class="mock-line mock-line_short"></span>
+                        </template>
+                        <template lwc:elseif={previewEmpty}>
+                          <p class="mock-empty">{previewEmptyText}</p>
+                        </template>
+                        <template lwc:else>
+                          <dl class="mock-facts">
+                            <template for:each={previewFacts} for:item="f">
+                              <div key={f.key} class="mock-fact">
+                                <dt>{f.label}</dt>
+                                <dd>{f.value}</dd>
+                              </div>
+                            </template>
+                          </dl>
+                        </template>
                       </div>
                     </div>
-                  </template>
+                    <template lwc:if={isSalesforce}>
+                      <div class="mock-arrow" aria-hidden="true">
+                        <lightning-icon icon-name="utility:arrowdown" size="x-small"></lightning-icon>
+                      </div>
+                      <div class="mock-page">
+                        <div class={clickPageHeadClass}>
+                          <span class="mock-page-icon"
+                            ><lightning-icon
+                              icon-name="utility:record"
+                              size="x-small"
+                              variant="inverse"
+                            ></lightning-icon
+                          ></span>
+                          <span class="mock-page-text">
+                            <span class="mock-page-object">{clickPageLabel}</span>
+                            <span class="mock-page-name">{clickPageName}</span>
+                          </span>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
                 </dd>
               </div>
             </dl>
