@@ -21,8 +21,10 @@ private class TimeDriveLensPicklistTest {
       ),
       new Time_Drive_View__mdt(DeveloperName = 'Digital', Label = 'Digital', Sequence__c = 30)
     };
-    // Switched off in Setup: not offered.
-    insert new Time_Drive_Setup__c(Name = 'Org', Hidden_Views__c = 'Digital');
+    // Switched off in Setup (saved as an admin, as Setup does): not offered.
+    System.runAs(TimeDriveTestData.setupAdmin()) {
+      insert new Time_Drive_Setup__c(Name = 'Org', Hidden_Views__c = 'Digital');
+    }
 
     TimeDriveLensPicklist picklist = new TimeDriveLensPicklist();
     Assert.areEqual('All', picklist.getDefaultValue().getValue());
