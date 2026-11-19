@@ -19,10 +19,10 @@ global with sharing class TimeDriveContext {
   public static final String KIND_APEX = 'Apex';
   // What a count is per: an hour of a day, a day, a week (from 1 January:
   // the 1st-7th, 8th-14th ... as SOQL's WEEK_IN_YEAR) or a calendar month.
-  public static final String UNIT_HOUR = 'hour';
-  public static final String UNIT_DAY = 'day';
-  public static final String UNIT_WEEK = 'week';
-  public static final String UNIT_MONTH = 'month';
+  global static final String UNIT_HOUR = 'hour';
+  global static final String UNIT_DAY = 'day';
+  global static final String UNIT_WEEK = 'week';
+  global static final String UNIT_MONTH = 'month';
   // A field a source names, as a field path and nothing else.
   private static final Pattern FIELD_PATH = Pattern.compile('[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)*');
 

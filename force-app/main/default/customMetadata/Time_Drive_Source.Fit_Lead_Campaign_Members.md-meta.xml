@@ -19,10 +19,6 @@
         <value xsi:type="xsd:string">Lead</value>
     </values>
     <values>
-        <field>Source_Mode__c</field>
-        <value xsi:type="xsd:string">Always</value>
-    </values>
-    <values>
         <field>Kind__c</field>
         <value xsi:type="xsd:string">Salesforce</value>
     </values>

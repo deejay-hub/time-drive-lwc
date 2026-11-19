@@ -272,17 +272,15 @@ private class TimeDriveOverdueTest {
       String cases = TimeDriveSetupController.useTemplate('Fit_Contact_Cases').developerName;
       Map<String, Time_Drive_Record__c> byKey = new Map<String, Time_Drive_Record__c>();
       for (Time_Drive_Record__c r : [
-        SELECT Key__c, Highlight_Field__c, Highlight_Values__c, Highlight_Icon__c
+        SELECT Key__c, Highlight_Field__c, Highlight_Icon__c
         FROM Time_Drive_Record__c
         WHERE Key__c IN :new List<String>{ tasks, cases }
       ]) {
         byKey.put(r.Key__c, r);
       }
       Assert.areEqual('Overdue__c', byKey.get(tasks).Highlight_Field__c, 'Tasks: overdue, by the field');
-      Assert.areEqual('true', byKey.get(tasks).Highlight_Values__c);
       Assert.areEqual('utility:clock', byKey.get(tasks).Highlight_Icon__c);
       Assert.areEqual('IsEscalated', byKey.get(cases).Highlight_Field__c, 'Cases: escalated');
-      Assert.areEqual('true', byKey.get(cases).Highlight_Values__c);
     }
   }
 }

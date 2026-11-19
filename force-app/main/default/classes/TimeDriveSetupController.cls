@@ -447,7 +447,7 @@ public with sharing class TimeDriveSetupController {
       Boolean onPage =
         String.isBlank(parentObject) ||
         (String.isBlank(t.Parent_Object__c) ? 'Contact' : t.Parent_Object__c) == parentObject;
-      if (onPage && t.Removed__c != true && (!fit.containsKey(t.DeveloperName) || fit.get(t.DeveloperName))) {
+      if (onPage && (!fit.containsKey(t.DeveloperName) || fit.get(t.DeveloperName))) {
         out.add(t);
       }
     }
@@ -1823,7 +1823,7 @@ public with sharing class TimeDriveSetupController {
   private static List<Time_Drive_Source__mdt> fittedSources() {
     List<SourceOrder> ordered = new List<SourceOrder>();
     for (Time_Drive_Source__mdt s : TimeDriveConfig.templates().values()) {
-      if (s.isSet(Time_Drive_Source__mdt.Org_Fit__c) && s.Org_Fit__c == true && s.Removed__c != true) {
+      if (s.isSet(Time_Drive_Source__mdt.Org_Fit__c) && s.Org_Fit__c == true) {
         ordered.add(new SourceOrder(s));
       }
     }
@@ -2092,13 +2092,11 @@ public with sharing class TimeDriveSetupController {
       r.put(TimeDriveConfig.field('Detail_' + i + '_Format__c'), null);
     }
     r.Highlight_Field__c = null;
-    r.Highlight_Values__c = null;
     r.Highlight_Icon__c = null;
     r.Highlight_Colour__c = null;
     for (HighlightDraft h : d.highlights == null ? new List<HighlightDraft>() : d.highlights) {
       if (String.isNotBlank(h.field)) {
         r.Highlight_Field__c = h.field;
-r.Highlight_Values__c = 'true';
         r.Highlight_Icon__c = h.icon;
         r.Highlight_Colour__c = h.colour;
         break;
@@ -2545,9 +2543,6 @@ r.Highlight_Values__c = 'true';
     /** How many months back to read. */
     @AuraEnabled
     public Decimal historyMonths { get; set; }
-    /** Whether the source is marked as removed. */
-    @AuraEnabled
-    public Boolean removed { get; set; }
     /** The event type key. */
     @AuraEnabled
     public String eventType { get; set; }
@@ -2640,7 +2635,6 @@ r.Highlight_Values__c = 'true';
       }
       maxRecords = s.Max_Records__c;
       historyMonths = s.History_Months__c;
-      removed = s.Removed__c;
       eventType = s.Event_Type__c;
       eventLabel = s.Event_Label__c;
       List<String> inLenses = TimeDriveConfig.lensesOf(s);
@@ -2711,7 +2705,6 @@ r.Highlight_Values__c = 'true';
         Label = String.isBlank(label) ? 'Preview' : label,
         Active__c = true,
         Kind__c = kind,
-        Source_Mode__c = 'Always',
         Parent_Object__c = parentObject,
         Object_Name__c = objectName,
         Parent_Field__c = parentField,
@@ -2748,7 +2741,6 @@ r.Highlight_Values__c = 'true';
             new Time_Drive_Highlight__mdt(
               Label = h.field,
               Field__c = h.field,
-              Values__c = 'true',
               Icon__c = h.icon,
               Colour__c = h.colour,
               Sequence__c = (out.size() + 1) * 10

@@ -297,7 +297,7 @@ Each Time Drive Source record has these fields. Setup fills them in; you can als
 - `Icon__c`, `Icon_Colour__c`: an SLDS icon (`utility:case`, `standard:case`) and its background colour (`#1F7A8C`).
 - `History_Months__c`: how far back this source plots, when that's less than the timeline's own History.
 - `Max_Records__c`: a per-source cap, newest first (default 1000), for sources that are read rather than counted.
-- `Org_Fit__c`, `Requires__c`, `Variant_Group__c`, `Removed__c`: set by Time Drive Setup. Shipped sources Fit to your org turns on, the org features each needs, alternatives of which only one is active, and sources removed in Setup.
+- `Org_Fit__c`, `Requires__c`, `Variant_Group__c`: set by Time Drive Setup. Shipped sources Fit to your org turns on, the org features each needs, and alternatives of which only one is active.
 
 ## Expanding records
 

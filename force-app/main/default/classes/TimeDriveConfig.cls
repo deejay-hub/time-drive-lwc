@@ -772,7 +772,6 @@ public with sharing class TimeDriveConfig {
         Detail_4_Label__c,
         Detail_4_Format__c,
         Highlight_Field__c,
-        Highlight_Values__c,
         Highlight_Icon__c,
         Highlight_Colour__c,
         Time_Drive__r.Parent_Object__c,
@@ -790,8 +789,7 @@ public with sharing class TimeDriveConfig {
       DeveloperName = key,
       Label = r.Name,
       Active__c = r.Active__c == true && r.Time_Drive__r.Active__c == true,
-      Parent_Object__c = r.Time_Drive__r.Parent_Object__c,
-      Source_Mode__c = 'Always'
+      Parent_Object__c = r.Time_Drive__r.Parent_Object__c
     );
     for (String name : SOURCE_COPIED) {
       Object value = r.get(field(name));
@@ -827,7 +825,6 @@ public with sharing class TimeDriveConfig {
             DeveloperName = key.left(34) + '_H1',
             Label = r.Highlight_Field__c.left(40),
             Field__c = r.Highlight_Field__c,
-            Values__c = r.Highlight_Values__c,
             Icon__c = r.Highlight_Icon__c,
             Colour__c = r.Highlight_Colour__c,
             Sequence__c = 10

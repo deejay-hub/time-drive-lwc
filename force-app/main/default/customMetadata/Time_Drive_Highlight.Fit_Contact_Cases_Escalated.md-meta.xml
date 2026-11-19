@@ -22,8 +22,4 @@
         <field>Source__c</field>
         <value xsi:type="xsd:string">Fit_Contact_Cases</value>
     </values>
-    <values>
-        <field>Values__c</field>
-        <value xsi:type="xsd:string">true</value>
-    </values>
 </CustomMetadata>
