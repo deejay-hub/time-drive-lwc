@@ -362,7 +362,7 @@ context.plotBy('EarnedAt')               // the key holding each item's Date or 
   .links('Customer', 'CustomerId');      // optional: a detail's record, so the opened item links it
 ```
 
-Setup doesn't ask an Apex source for these, so without `plotBy` nothing is plotted. A key is a field path for record rows (`Product2.Name`) or a map key for value rows (`Points`). Everything else (icon, colour, lenses, the legend name and the fields an opened item shows) is chosen in Setup.
+Setup doesn't ask an Apex source for these, so without `plotBy` nothing is plotted. A key is a field path for record rows (`Product2.Name`) or a map key for value rows (`Points`). Everything else (icon, colour, lenses, the legend name, the fields an opened item shows and its highlight) is chosen in Setup. An Apex source's highlight is typed, like its details: a checkbox field the class reads (`Flagged__c`, which `fieldsToQuery` then asks for) or a map key, and the icon marks the rows where it's `true`.
 
 `links(detailKey, recordIdKey)` makes a detail a link: the detail chosen in Setup as `detailKey` opens the Salesforce record whose Id is in `recordIdKey`. Call it once for each detail that names a record. Record rows don't need it for a path through a lookup: `Product2.Name` links to `Product2.Id` by itself, since `fieldsToQuery` asks for it.
 
@@ -503,8 +503,8 @@ The timeline shows every date, time and number in the viewer's own time zone, la
 
 ### Test and add it
 
-1. Test the class to at least 85%. Give it test data or an `HttpCalloutMock`, call `rows` and `counts` with a context for the record and window you want (`new TimeDriveContext(recordId, since, until)`), and check what they return.
-2. In Time Drive Setup, add a source of kind **Apex** on the record page and choose the class. Pick its look and lenses, then type the fields an opened item shows: a field path, or a map key.
+1. Test the class to at least 85%. Give it test data or an `HttpCalloutMock`, call `rows` and `counts` with a context for the record and window you want (`new TimeDriveContext(recordId, since, until)`), and check what they return: each count's `dayKey`, `hour` and `count` can be read, as `TimeDriveContext.UNIT_DAY` and the other units can.
+2. In Time Drive Setup, add a source of kind **Apex** on the record page and choose the class. Pick its look and lenses, then type the fields an opened item shows, and any highlight: a field path, or a map key.
 3. Saving asks you to confirm you've thought about how the class scales, because it runs every time a timeline with the source loads.
 
 ## How people use the timeline

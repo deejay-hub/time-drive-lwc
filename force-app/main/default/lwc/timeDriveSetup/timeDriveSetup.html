@@ -2022,25 +2022,36 @@
                         </template>
                         <template lwc:if={canHighlight}>
                           <p class="behave-heading behave-heading_next">Highlights</p>
-                          <p class="behave-label">
-                            Mark an item with a small icon when a checkbox is checked, such as High priority or Overdue.
-                            One per source.
-                          </p>
+                          <p class="behave-label">{highlightHelp}</p>
                           <ul class="highlights">
                             <template for:each={highlightRows} for:item="h">
                               <li key={h.key} class="highlight">
                                 <div class="highlight-head">
-                                  <lightning-combobox
-                                    dropdown-alignment="auto"
-                                    class="highlight-field"
-                                    label="Field"
-                                    variant="label-hidden"
-                                    placeholder="Choose a field"
-                                    options={highlightFieldOptions}
-                                    value={h.field}
-                                    data-index={h.index}
-                                    onchange={handleHighlightField}
-                                  ></lightning-combobox>
+                                  <!-- An Apex source has no fields to list: its key, typed. -->
+                                  <template lwc:if={isApex}>
+                                    <lightning-input
+                                      class="highlight-field"
+                                      label="Field or key"
+                                      variant="label-hidden"
+                                      placeholder="A checkbox field (Flagged__c) or a map key"
+                                      value={h.field}
+                                      data-index={h.index}
+                                      onchange={handleHighlightField}
+                                    ></lightning-input>
+                                  </template>
+                                  <template lwc:else>
+                                    <lightning-combobox
+                                      dropdown-alignment="auto"
+                                      class="highlight-field"
+                                      label="Field"
+                                      variant="label-hidden"
+                                      placeholder="Choose a field"
+                                      options={highlightFieldOptions}
+                                      value={h.field}
+                                      data-index={h.index}
+                                      onchange={handleHighlightField}
+                                    ></lightning-combobox>
+                                  </template>
                                   <lightning-button-icon
                                     icon-name="utility:close"
                                     variant="bare"

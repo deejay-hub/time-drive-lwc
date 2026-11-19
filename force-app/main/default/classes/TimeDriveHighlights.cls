@@ -1,7 +1,8 @@
 /**
  * Highlights: a small icon on an item when a checkbox field is checked (high
  * priority, escalated, VIP). The field is read with the item's own query, so a
- * highlight costs a column, not a request.
+ * highlight costs a column, not a request. An Apex source's highlight is the
+ * key (or field path) it names, marked where the row's value is true.
  */
 // The branching follows the platform's cases and the plot's rules; splitting it up would only scatter them.
 @SuppressWarnings('PMD.CyclomaticComplexity, PMD.CognitiveComplexity')
@@ -14,8 +15,34 @@ public with sharing class TimeDriveHighlights {
     public String field;
     public String icon;
     public String colour;
-    // The field's label in the user's language: what the icon says.
+    // The field's label in the user's language: what the icon says (an Apex
+    // source's: worked out from each row, or the key itself).
     public String fieldLabel;
+  }
+
+  // A key or field path, as an Apex source's highlight names it.
+  private static final Pattern KEY_PATTERN = Pattern.compile('[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)*');
+
+  /**
+   * An Apex source's rules: the key or field path each names, at most
+   * MAX_RULES. Its rows say what's there, so nothing is described up front.
+   * @param stored the saved highlight records for the source
+   * @return the rules to apply
+   */
+  public static List<Rule> rulesForRows(List<Time_Drive_Highlight__mdt> stored) {
+    List<Rule> out = new List<Rule>();
+    for (Time_Drive_Highlight__mdt h : stored == null ? new List<Time_Drive_Highlight__mdt>() : stored) {
+      String key = h.Field__c?.trim();
+      if (out.size() >= MAX_RULES || String.isBlank(key) || !KEY_PATTERN.matcher(key).matches()) {
+        continue;
+      }
+      Rule r = new Rule();
+      r.field = key;
+      r.icon = String.isBlank(h.Icon__c) ? 'dot' : h.Icon__c;
+      r.colour = String.isBlank(h.Colour__c) ? null : h.Colour__c;
+      out.add(r);
+    }
+    return out;
   }
 
   /**
@@ -82,14 +109,24 @@ public with sharing class TimeDriveHighlights {
   public static List<TimeDriveController.Flag> flagsFor(List<Rule> rules, TimeDriveRow row) {
     List<TimeDriveController.Flag> out;
     for (Rule r : rules) {
-      if (row.get(r.field) != true) {
+      if (!isTrue(row, r.field)) {
         continue;
       }
       if (out == null) {
         out = new List<TimeDriveController.Flag>();
       }
-      out.add(new TimeDriveController.Flag(r.icon, r.colour, r.fieldLabel));
+      out.add(new TimeDriveController.Flag(r.icon, r.colour, r.fieldLabel ?? row.labelOf(r.field)));
     }
     return out;
+  }
+
+  // The row's value is true: an Apex source's own query may not have read
+  // the field, which counts as not.
+  private static Boolean isTrue(TimeDriveRow row, String field) {
+    try {
+      return row.get(field) == true;
+    } catch (Exception e) {
+      return false;
+    }
   }
 }

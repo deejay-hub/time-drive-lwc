@@ -4746,7 +4746,13 @@ export default class TimeDriveSetup extends LightningElement {
   // ---- highlights: an icon when a field has a value ---------------------------
 
   get canHighlight() {
-    return this.isSalesforce;
+    return this.isSalesforce || this.isApex;
+  }
+
+  get highlightHelp() {
+    return this.isApex
+      ? "Mark an item with a small icon where a row's value is true: a checkbox field the class reads (Flagged__c), or a key of its rows. One per source."
+      : "Mark an item with a small icon when a checkbox is checked, such as High priority or Overdue. One per source.";
   }
 
   get canAddHighlight() {

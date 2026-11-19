@@ -168,13 +168,7 @@ global with sharing class TimeDriveContext {
       List<Span> out = new List<Span>();
       for (Span r : ranges) {
         if (since == null || r.until == null || r.until >= since) {
-          out.add(
-            r.since == null ||
-              since == null ||
-              r.since >= since
-              ? r
-              : new Span(since, r.until)
-          );
+          out.add(r.since == null || since == null || r.since >= since ? r : new Span(since, r.until));
         }
       }
       return out;
@@ -558,6 +552,10 @@ global with sharing class TimeDriveContext {
       // The record a detail ending at a related record's name names (Product2.Name: Product2.Id), for its link.
       wanted.add(TimeDrivePlotter.linkPathOf(source?.Object_Name__c, d.Field__c));
     }
+    // What the highlight reads (a checkbox, as a field path).
+    for (TimeDriveHighlights.Rule r : highlightRules()) {
+      wanted.add(r.field);
+    }
     Set<String> seen = new Set<String>();
     List<String> out = new List<String>();
     for (String name : wanted) {
@@ -572,14 +570,17 @@ global with sharing class TimeDriveContext {
    * The highlight rules in use (Salesforce sources whose fields the user can read).
    * @return the rules, possibly empty
    */
+  private List<Time_Drive_Highlight__mdt> storedHighlights() {
+    return draftHighlights != null ? draftHighlights : TimeDriveConfig.highlights(source?.DeveloperName);
+  }
+
   public List<TimeDriveHighlights.Rule> highlightRules() {
     if (highlightRulesCache == null) {
       highlightRulesCache = new List<TimeDriveHighlights.Rule>();
       if (source != null && kind() == KIND_SALESFORCE) {
-        highlightRulesCache = TimeDriveHighlights.rulesFor(
-          source.Object_Name__c,
-          draftHighlights != null ? draftHighlights : TimeDriveConfig.highlights(source.DeveloperName)
-        );
+        highlightRulesCache = TimeDriveHighlights.rulesFor(source.Object_Name__c, storedHighlights());
+      } else if (source != null && kind() == KIND_APEX) {
+        highlightRulesCache = TimeDriveHighlights.rulesForRows(storedHighlights());
       }
     }
     return highlightRulesCache;
@@ -673,7 +674,10 @@ global with sharing class TimeDriveContext {
      */
     public Span(Decimal historyYears, Decimal futureYears) {
       Date today = Date.today();
-      since = Datetime.newInstance(today.addMonths(-TimeDriveController.monthsIn(historyYears)), Time.newInstance(0, 0, 0, 0));
+      since = Datetime.newInstance(
+        today.addMonths(-TimeDriveController.monthsIn(historyYears)),
+        Time.newInstance(0, 0, 0, 0)
+      );
       Date last = futureYears == null ? today : today.addMonths(TimeDriveController.monthsIn(futureYears));
       until = Datetime.newInstance(last, Time.newInstance(23, 59, 59, 999));
     }
@@ -685,7 +689,11 @@ global with sharing class TimeDriveContext {
      */
     public List<TimeDriveController.EngagementEvent> within(List<TimeDriveController.EngagementEvent> events) {
       List<TimeDriveController.EngagementEvent> kept = new List<TimeDriveController.EngagementEvent>();
-      for (TimeDriveController.EngagementEvent e : events == null ? new List<TimeDriveController.EngagementEvent>() : events) {
+      for (
+        TimeDriveController.EngagementEvent e : events == null
+          ? new List<TimeDriveController.EngagementEvent>()
+          : events
+      ) {
         if (e.occurredAt != null && e.occurredAt >= since && e.occurredAt <= until) {
           kept.add(e);
         }
@@ -696,10 +704,12 @@ global with sharing class TimeDriveContext {
 
   /** A count provider's items on one day (and hour, when asked by hour). */
   global class DayCount {
-    public String dayKey;
+    // Read by an Apex source's own tests: the period's first day (yyyy-MM-dd),
+    // its hour, and how many items it has.
+    global String dayKey;
     // 0-23 in the user's time zone; null for date-only fields, or by day.
-    public Integer hour;
-    public Integer count;
+    global Integer hour;
+    global Integer count;
     // Counted for the whole period (from the summary's counts), not by hour.
     public Boolean whole = false;
 

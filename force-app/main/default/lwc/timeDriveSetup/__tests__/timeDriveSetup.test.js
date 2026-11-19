@@ -661,6 +661,31 @@ describe("c-time-drive-setup", () => {
       expect(root.querySelector(".picker-input").value).toBe("Task › Due Date");
     });
 
+    it("lets an Apex source highlight by a key it types, and saves it", async () => {
+      const root = await openStep("open", {
+        kind: "Apex",
+        providerClass: "MemoItemSource",
+        objectName: null,
+        parentField: null,
+        dateField: null,
+        title: null,
+        details: [{ field: "Status__c", label: "", format: "Text" }],
+        highlights: [{ field: "", icon: "utility:flag", colour: "#DD7A01" }]
+      });
+      await settle();
+      // No fields to list for a class: a box to type the key in.
+      const input = root.querySelector("lightning-input.highlight-field");
+      expect(input).not.toBeNull();
+      expect(root.querySelector("lightning-combobox.highlight-field")).toBeNull();
+      input.dispatchEvent(new CustomEvent("change", { detail: { value: "Flagged__c" } }));
+      await settle();
+      TimeDriveConfirm.open.mockResolvedValueOnce(true);
+      root.querySelector(".wz-foot .save").click();
+      await settle();
+      const sent = JSON.parse(save.mock.calls.at(-1)[0].draftJson);
+      expect(sent.highlights[0].field).toBe("Flagged__c");
+    });
+
     it("asks an Apex source's admin to vouch for how it scales before it's saved", async () => {
       const root = await openStep("open", {
         kind: "Apex",
