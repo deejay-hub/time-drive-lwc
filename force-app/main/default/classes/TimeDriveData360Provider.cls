@@ -102,7 +102,7 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
       fields.add(d.Field__c);
     }
 
-    List<TimeDriveController.TimeWindow> spans = context.spans();
+    List<TimeDriveContext.Span> spans = context.spans();
     if (spans.isEmpty()) {
       return rows;
     }
@@ -199,7 +199,7 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
       ids.add(quoted(id));
     }
     List<String> dates = new List<String>();
-    for (TimeDriveController.TimeWindow span : context.spans()) {
+    for (TimeDriveContext.Span span : context.spans()) {
       dates.add(
         '(' +
           dateField +

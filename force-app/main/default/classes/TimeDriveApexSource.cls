@@ -71,7 +71,7 @@ global abstract with sharing class TimeDriveApexSource implements TimeDriveRowPr
     if (given == null) {
       return null;
     }
-    List<TimeDriveController.TimeWindow> spans = context.spans();
+    List<TimeDriveContext.Span> spans = context.spans();
     Map<String, TimeDriveContext.DayCount> byPeriod = new Map<String, TimeDriveContext.DayCount>();
     for (TimeDriveContext.DayCount c : given) {
       if (c?.dayKey == null || c.count == null || c.count <= 0) {
@@ -93,8 +93,8 @@ global abstract with sharing class TimeDriveApexSource implements TimeDriveRowPr
     return byPeriod.values();
   }
 
-  private static Boolean overlaps(Date first, Date last, List<TimeDriveController.TimeWindow> spans) {
-    for (TimeDriveController.TimeWindow w : spans) {
+  private static Boolean overlaps(Date first, Date last, List<TimeDriveContext.Span> spans) {
+    for (TimeDriveContext.Span w : spans) {
       if ((w.since == null || last >= w.since.date()) && (w.until == null || first <= w.until.date())) {
         return true;
       }

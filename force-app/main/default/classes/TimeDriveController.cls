@@ -7,9 +7,7 @@
 // Size, parameter lists and field counts follow the platform's entry points, its cases and the data the components exchange;
 // splitting them up would only scatter what belongs together.
 @SuppressWarnings('PMD.CyclomaticComplexity, PMD.CognitiveComplexity, PMD.AvoidBooleanMethodParameters, PMD.ExcessiveParameterList, PMD.ExcessivePublicCount, PMD.NcssCount, PMD.TooManyFields')
-// Global only for TimeWindow, which an Apex source's context.spans() returns; its
-// methods stay the package's own.
-global with sharing class TimeDriveController {
+public with sharing class TimeDriveController {
 
   // How far back and forward the timeline reaches, in years: the App Builder's
   // History and Future. Only these values; anything else falls back to the
@@ -379,7 +377,7 @@ global with sharing class TimeDriveController {
   @TestVisible
   private static List<String> openingKeys(
     TimelineSummary summary,
-    TimeWindow window,
+    TimeDriveContext.Span window,
     String focus,
     Boolean newestFirst,
     Boolean centred,
@@ -626,7 +624,7 @@ global with sharing class TimeDriveController {
       // Whole days (the user's): a grouped row stands for every item of its
       // type in its day, week or month, and date-only items' span is an
       // instant (midday).
-      TimeWindow days = new TimeWindow(
+      TimeDriveContext.Span days = new TimeDriveContext.Span(
         Datetime.newInstance(fromAt.date(), Time.newInstance(0, 0, 0, 0)),
         Datetime.newInstance(toAt.date(), Time.newInstance(23, 59, 59, 999))
       );
@@ -694,7 +692,7 @@ global with sharing class TimeDriveController {
     if (contactId == null) {
       return result;
     }
-    result.events = collect(contactId, result.warnings, result.problems, new TimeWindow());
+    result.events = collect(contactId, result.warnings, result.problems, new TimeDriveContext.Span());
     return result;
   }
 
@@ -1067,14 +1065,14 @@ global with sharing class TimeDriveController {
   }
 
   private static List<EngagementEvent> collect(Id contactId, List<String> warnings) {
-    return collect(contactId, warnings, new List<Problem>(), new TimeWindow());
+    return collect(contactId, warnings, new List<Problem>(), new TimeDriveContext.Span());
   }
 
   private static List<EngagementEvent> collect(
     Id contactId,
     List<String> warnings,
     List<Problem> problems,
-    TimeWindow window
+    TimeDriveContext.Span window
   ) {
     return new Run(contactId, warnings, problems, window).events();
   }
@@ -1107,7 +1105,7 @@ global with sharing class TimeDriveController {
     String parentObject;
     List<String> warnings;
     List<Problem> problems;
-    TimeWindow window;
+    TimeDriveContext.Span window;
     List<Time_Drive_Source__mdt> sources;
     List<TimeDriveRowProvider> providers = new List<TimeDriveRowProvider>();
     Boolean counting = false;
@@ -1129,7 +1127,7 @@ global with sharing class TimeDriveController {
     // A person account's own Contact, when the page is one.
     Id personContactId;
 
-    Run(Id recordId, List<String> warnings, List<Problem> problems, TimeWindow window) {
+    Run(Id recordId, List<String> warnings, List<Problem> problems, TimeDriveContext.Span window) {
       this.recordId = recordId;
       this.parentObject = TimeDriveConfig.describeType(recordId.getSObjectType()).getName();
       // A person account has its own sources (Person Account in setup).
@@ -1251,7 +1249,7 @@ global with sharing class TimeDriveController {
 
     // A period (its key, yyyy-MM-dd) as the part of the window it covers;
     // null outside it.
-    TimeWindow periodIn(String key) {
+    TimeDriveContext.Span periodIn(String key) {
       Date first = Date.valueOf(key);
       Datetime since = Datetime.newInstance(first, Time.newInstance(0, 0, 0, 0));
       Datetime until = Datetime.newInstance(
@@ -1260,7 +1258,7 @@ global with sharing class TimeDriveController {
       );
       since = since < window.since ? window.since : since;
       until = until > window.until ? window.until : until;
-      return since > until ? null : new TimeWindow(since, until);
+      return since > until ? null : new TimeDriveContext.Span(since, until);
     }
 
     /**
@@ -1317,18 +1315,18 @@ global with sharing class TimeDriveController {
         : TimeDriveContext.UNIT_DAY;
       List<String> keys = new List<String>(wanted);
       keys.sort();
-      List<TimeWindow> periods = new List<TimeWindow>();
+      List<TimeDriveContext.Span> periods = new List<TimeDriveContext.Span>();
       for (String key : keys) {
-        TimeWindow w = periodIn(key);
+        TimeDriveContext.Span w = periodIn(key);
         if (w != null) {
           periods.add(w);
         }
       }
-      List<TimeWindow> toCount = periods;
+      List<TimeDriveContext.Span> toCount = periods;
       if (busyHint != null) {
-        toCount = new List<TimeWindow>();
+        toCount = new List<TimeDriveContext.Span>();
         for (String key : keys) {
-          TimeWindow w = busyHint.contains(key) ? periodIn(key) : null;
+          TimeDriveContext.Span w = busyHint.contains(key) ? periodIn(key) : null;
           if (w != null) {
             toCount.add(w);
           }
@@ -1389,7 +1387,7 @@ global with sharing class TimeDriveController {
       // A period not counted (the summary found it quiet) is read as rows.
       for (Integer i : counted.keySet()) {
         Map<String, List<TimeDriveContext.DayCount>> byPeriod = counted.get(i);
-        List<TimeWindow> quiet = new List<TimeWindow>();
+        List<TimeDriveContext.Span> quiet = new List<TimeDriveContext.Span>();
         Set<String> readKeys = new Set<String>();
         for (String key : keys) {
           Boolean uncounted = busyHint != null && !busyHint.contains(key);
@@ -1399,7 +1397,7 @@ global with sharing class TimeDriveController {
           if (byPeriod.containsKey(key) && busy.contains(key)) {
             page.add(grouped(contexts.get(i), key, byPeriod.get(key), grain));
           } else {
-            TimeWindow w = periodIn(key);
+            TimeDriveContext.Span w = periodIn(key);
             if (w != null) {
               quiet.add(w);
               readKeys.add(key);
@@ -1467,7 +1465,7 @@ global with sharing class TimeDriveController {
         // A source already read to its end has a null cursor.
         if (!cursors.containsKey(name) || cursors.get(name) != null) {
           TimeDriveContext context = context(i);
-          context.ranges = new List<TimeWindow>{ window };
+          context.ranges = new List<TimeDriveContext.Span>{ window };
           context.pageSize = size + 1;
           List<String> after = cursors.get(name);
           if (after != null) {
@@ -1612,14 +1610,14 @@ global with sharing class TimeDriveController {
     // summary is one span (a query with one range reads far faster than one
     // with a range per day, and nothing with items lies between them); any
     // other period is a span of its own.
-    List<TimeWindow> windowsFor(List<String> periodKeys) {
-      List<TimeWindow> out = new List<TimeWindow>();
+    List<TimeDriveContext.Span> windowsFor(List<String> periodKeys) {
+      List<TimeDriveContext.Span> out = new List<TimeDriveContext.Span>();
       Set<String> pending = new Set<String>(periodKeys);
       Set<String> placed = new Set<String>();
       for (List<String> run : runs ?? new List<List<String>>()) {
-        TimeWindow span;
+        TimeDriveContext.Span span;
         for (String key : run) {
-          TimeWindow w = pending.contains(key) ? periodIn(key) : null;
+          TimeDriveContext.Span w = pending.contains(key) ? periodIn(key) : null;
           if (w == null) {
             // A period not wanted now ends the span.
             if (span != null) {
@@ -1632,7 +1630,7 @@ global with sharing class TimeDriveController {
           if (span == null) {
             span = w;
           } else {
-            span = new TimeWindow(
+            span = new TimeDriveContext.Span(
               span.since < w.since ? span.since : w.since,
               span.until > w.until ? span.until : w.until
             );
@@ -1644,7 +1642,7 @@ global with sharing class TimeDriveController {
       }
       for (String key : periodKeys) {
         if (!placed.contains(key)) {
-          TimeWindow w = periodIn(key);
+          TimeDriveContext.Span w = periodIn(key);
           if (w != null) {
             out.add(w);
           }
@@ -2157,72 +2155,21 @@ global with sharing class TimeDriveController {
    * One timeline event. `type` drives the icon and colour in the component;
    * `category` groups types into the timeline views.
    */
-  /**
-   * The dates the timeline covers: from the start of the day History years
-   * ago to the end of the day Future years ahead (today, with no Future), in
-   * the user's time zone.
-   */
-  global class TimeWindow {
-    global Datetime since;
-    global Datetime until;
-
-    /** Builds the default window: the default history up to today. */
-    public TimeWindow() {
-      this(DEFAULT_HISTORY_YEARS, null);
-    }
-
-    /**
-     * Builds a window from two dates.
-     * @param since the start of the window
-     * @param until the end of the window
-     */
-    public TimeWindow(Datetime since, Datetime until) {
-      this.since = since;
-      this.until = until;
-    }
-
-    /**
-     * Builds a window from years of history and future.
-     * @param historyYears how many years back to start
-     * @param futureYears how many years ahead to end, or null for today
-     */
-    public TimeWindow(Decimal historyYears, Decimal futureYears) {
-      Date today = Date.today();
-      since = Datetime.newInstance(today.addMonths(-monthsIn(historyYears)), Time.newInstance(0, 0, 0, 0));
-      Date last = futureYears == null ? today : today.addMonths(monthsIn(futureYears));
-      until = Datetime.newInstance(last, Time.newInstance(23, 59, 59, 999));
-    }
-
-    /**
-     * Keeps the events whose time lies in the window.
-     * @param events the events to filter, or null
-     * @return the events inside the window
-     */
-    public List<EngagementEvent> within(List<EngagementEvent> events) {
-      List<EngagementEvent> kept = new List<EngagementEvent>();
-      for (EngagementEvent e : events == null ? new List<EngagementEvent>() : events) {
-        if (e.occurredAt != null && e.occurredAt >= since && e.occurredAt <= until) {
-          kept.add(e);
-        }
-      }
-      return kept;
-    }
-  }
 
   // 0.25 years -> 3 months.
-  private static Integer monthsIn(Decimal years) {
+  public static Integer monthsIn(Decimal years) {
     return (years * 12).round(System.RoundingMode.HALF_UP).intValue();
   }
 
   // The App Builder's History and Future, in years. A value not on the list
   // falls back (History to half a year, Future to none) with a warning.
   @TestVisible
-  private static TimeWindow windowFor(String historyYears, String futureYears, List<String> warnings) {
+  private static TimeDriveContext.Span windowFor(String historyYears, String futureYears, List<String> warnings) {
     Decimal history = String.isNotBlank(historyYears) && historyYears.trim() == '0'
       ? 0
       : yearsFrom(historyYears, 'History', warnings);
     Decimal future = yearsFrom(futureYears, 'Future', warnings);
-    return new TimeWindow(history == null ? DEFAULT_HISTORY_YEARS : history, future);
+    return new TimeDriveContext.Span(history == null ? DEFAULT_HISTORY_YEARS : history, future);
   }
 
   private static Decimal yearsFrom(String value, String name, List<String> warnings) {

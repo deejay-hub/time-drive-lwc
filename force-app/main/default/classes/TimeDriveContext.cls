@@ -33,7 +33,7 @@ global with sharing class TimeDriveContext {
   // are dropped anyway; queries can skip them.
   global Datetime until;
   // Just these spans of the window, when set: the days on screen.
-  public List<TimeDriveController.TimeWindow> ranges;
+  public List<Span> ranges;
   public Time_Drive_Source__mdt source;
   // A page of the source's items (View all), when set: at most pageSize,
   // newest first, after pageAt (and, at that same moment, before pageId).
@@ -162,24 +162,24 @@ global with sharing class TimeDriveContext {
    * The windows a provider should read: its ranges, or the whole window.
    * @return the time windows to read
    */
-  global List<TimeDriveController.TimeWindow> spans() {
+  global List<Span> spans() {
     if (ranges != null) {
       // Clipped to the source's own history, when it has one.
-      List<TimeDriveController.TimeWindow> out = new List<TimeDriveController.TimeWindow>();
-      for (TimeDriveController.TimeWindow r : ranges) {
+      List<Span> out = new List<Span>();
+      for (Span r : ranges) {
         if (since == null || r.until == null || r.until >= since) {
           out.add(
             r.since == null ||
               since == null ||
               r.since >= since
               ? r
-              : new TimeDriveController.TimeWindow(since, r.until)
+              : new Span(since, r.until)
           );
         }
       }
       return out;
     }
-    return new List<TimeDriveController.TimeWindow>{ new TimeDriveController.TimeWindow(since, until) };
+    return new List<Span>{ new Span(since, until) };
   }
 
   /**
@@ -349,7 +349,7 @@ global with sharing class TimeDriveContext {
     Schema.DescribeFieldResult d = TimeDriveConfig.fieldDescribe(String.valueOf(objectType), field);
     Boolean byDay = d?.getType() == Schema.DisplayType.DATE;
     List<String> out = new List<String>();
-    List<TimeDriveController.TimeWindow> windows = spans();
+    List<Span> windows = spans();
     for (Integer i = 0; i < windows.size(); i++) {
       List<String> bounds = new List<String>();
       if (windows[i].since != null) {
@@ -422,9 +422,9 @@ global with sharing class TimeDriveContext {
       this.field = field;
     }
 
-    public override String conditions(List<TimeDriveController.TimeWindow> spans) {
+    public override String conditions(List<Span> spans) {
       List<String> dates = new List<String>();
-      for (TimeDriveController.TimeWindow span : spans) {
+      for (Span span : spans) {
         String clause = field + ' >= :timeDriveSince' + bound;
         binds.put('timeDriveSince' + bound, dateOnly ? (Object) span.since.date() : span.since);
         if (span.until != null) {
@@ -515,7 +515,7 @@ global with sharing class TimeDriveContext {
     if (at == null) {
       return false;
     }
-    for (TimeDriveController.TimeWindow w : spans()) {
+    for (Span w : spans()) {
       if ((w.since == null || at >= w.since) && (w.until == null || at <= w.until)) {
         return true;
       }
@@ -534,7 +534,7 @@ global with sharing class TimeDriveContext {
     }
     Datetime starts = Datetime.newInstance(day, Time.newInstance(0, 0, 0, 0));
     Datetime ends = Datetime.newInstance(day, Time.newInstance(23, 59, 59, 999));
-    for (TimeDriveController.TimeWindow w : spans()) {
+    for (Span w : spans()) {
       if ((w.since == null || ends >= w.since) && (w.until == null || starts <= w.until)) {
         return true;
       }
@@ -639,6 +639,59 @@ global with sharing class TimeDriveContext {
      * @return the events
      */
     List<TimeDriveController.EngagementEvent> load();
+  }
+
+  /**
+   * A span of time, from since to until: one of the periods a context asks
+   * for (spans()), or the timeline's whole window, from the start of the day
+   * History years ago to the end of the day Future years ahead (today, with
+   * no Future), in the user's time zone.
+   */
+  global class Span {
+    global Datetime since;
+    global Datetime until;
+
+    /** Builds the default window: the default history up to today. */
+    public Span() {
+      this(TimeDriveController.DEFAULT_HISTORY_YEARS, null);
+    }
+
+    /**
+     * Builds a window from two dates.
+     * @param since the start of the window
+     * @param until the end of the window
+     */
+    public Span(Datetime since, Datetime until) {
+      this.since = since;
+      this.until = until;
+    }
+
+    /**
+     * Builds a window from years of history and future.
+     * @param historyYears how many years back to start
+     * @param futureYears how many years ahead to end, or null for today
+     */
+    public Span(Decimal historyYears, Decimal futureYears) {
+      Date today = Date.today();
+      since = Datetime.newInstance(today.addMonths(-TimeDriveController.monthsIn(historyYears)), Time.newInstance(0, 0, 0, 0));
+      Date last = futureYears == null ? today : today.addMonths(TimeDriveController.monthsIn(futureYears));
+      until = Datetime.newInstance(last, Time.newInstance(23, 59, 59, 999));
+    }
+
+    /**
+     * Keeps the events whose time lies in the window.
+     * @param events the events to filter, or null
+     * @return the events inside the window
+     */
+    public List<TimeDriveController.EngagementEvent> within(List<TimeDriveController.EngagementEvent> events) {
+      List<TimeDriveController.EngagementEvent> kept = new List<TimeDriveController.EngagementEvent>();
+      for (TimeDriveController.EngagementEvent e : events == null ? new List<TimeDriveController.EngagementEvent>() : events) {
+        if (e.occurredAt != null && e.occurredAt >= since && e.occurredAt <= until) {
+          kept.add(e);
+        }
+      }
+      return kept;
+    }
   }
 
   /** A count provider's items on one day (and hour, when asked by hour). */

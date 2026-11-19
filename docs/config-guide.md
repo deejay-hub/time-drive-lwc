@@ -447,7 +447,7 @@ public with sharing class MyLoyaltySource extends TimeDriveApexSource {
   public override List<TimeDriveRow> rows(TimeDriveContext context) {
     context.plotBy('EarnedAt').title('Earned {Points} points').subtitle('{Reason}');
     List<TimeDriveRow> rows = new List<TimeDriveRow>();
-    for (TimeDriveController.TimeWindow span : context.spans()) {
+    for (TimeDriveContext.Span span : context.spans()) {
       for (LoyaltyApi.Entry entry : LoyaltyApi.entriesFor(context.recordId, span.since, span.until)) {
         if (context.wants(entry.earnedAt)) {
           rows.add(

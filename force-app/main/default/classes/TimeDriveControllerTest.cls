@@ -9,7 +9,7 @@
 private class TimeDriveControllerTest {
   // What the Apex test sources were asked for in this test.
   static Integer apexRowsRead = 0;
-  static List<TimeDriveController.TimeWindow> apexSpansAsked = new List<TimeDriveController.TimeWindow>();
+  static List<TimeDriveContext.Span> apexSpansAsked = new List<TimeDriveContext.Span>();
   static List<TimeDriveContext.DayCount> givenCounts;
 
   // A well-formed Id for tests: the object's key prefix and a number.
@@ -737,8 +737,8 @@ private class TimeDriveControllerTest {
   static void countsAreBatchedUnderTheGroupLimit() {
     Datetime since = Datetime.newInstance(Date.newInstance(2026, 1, 1), Time.newInstance(9, 0, 0, 0));
     Datetime until = Datetime.newInstance(Date.newInstance(2026, 1, 10), Time.newInstance(17, 0, 0, 0));
-    List<List<TimeDriveController.TimeWindow>> batches = TimeDriveSoqlProvider.batches(
-      new List<TimeDriveController.TimeWindow>{ new TimeDriveController.TimeWindow(since, until) },
+    List<List<TimeDriveContext.Span>> batches = TimeDriveSoqlProvider.batches(
+      new List<TimeDriveContext.Span>{ new TimeDriveContext.Span(since, until) },
       4
     );
     Assert.areEqual(3, batches.size(), '4 days, 4 days, 2 days');
@@ -1154,9 +1154,9 @@ private class TimeDriveControllerTest {
       null,
       null
     );
-    context.ranges = new List<TimeDriveController.TimeWindow>{
-      new TimeDriveController.TimeWindow(a, b),
-      new TimeDriveController.TimeWindow(c, null)
+    context.ranges = new List<TimeDriveContext.Span>{
+      new TimeDriveContext.Span(a, b),
+      new TimeDriveContext.Span(c, null)
     };
     Map<String, Object> binds = new Map<String, Object>();
     Assert.areEqual(
@@ -1532,7 +1532,7 @@ private class TimeDriveControllerTest {
     Assert.areEqual(2, page.size(), 'the day on screen, in full');
     Assert.areEqual('Earned 100 points', page[0].title);
     Assert.areEqual(1, apexRowsRead, 'read once, for that day');
-    for (TimeDriveController.TimeWindow span : apexSpansAsked) {
+    for (TimeDriveContext.Span span : apexSpansAsked) {
       Assert.areEqual(Date.today(), span.since.date(), 'only the day on screen is asked for');
     }
 
@@ -1558,8 +1558,8 @@ private class TimeDriveControllerTest {
       null
     );
     Date first = Date.newInstance(2026, 3, 1);
-    context.ranges = new List<TimeDriveController.TimeWindow>{
-      new TimeDriveController.TimeWindow(
+    context.ranges = new List<TimeDriveContext.Span>{
+      new TimeDriveContext.Span(
         Datetime.newInstance(first, Time.newInstance(0, 0, 0, 0)),
         Datetime.newInstance(Date.newInstance(2026, 4, 30), Time.newInstance(23, 59, 59, 0))
       )

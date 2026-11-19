@@ -191,8 +191,8 @@ private class TimeDriveOpportunityProductsTest {
     }
     TimeDriveContext ctx = context(account('Acme'), null);
     // Just the week around the recent opportunity, as a page of quiet days asks.
-    ctx.ranges = new List<TimeDriveController.TimeWindow>{
-      new TimeDriveController.TimeWindow(Datetime.now().addDays(-14), Datetime.now().addDays(-7))
+    ctx.ranges = new List<TimeDriveContext.Span>{
+      new TimeDriveContext.Span(Datetime.now().addDays(-14), Datetime.now().addDays(-7))
     };
     List<TimeDriveRow> rows = new TimeDriveOpportunityProducts().getRows(ctx);
     Assert.areEqual(2, rows.size(), 'the two products closed in that week');

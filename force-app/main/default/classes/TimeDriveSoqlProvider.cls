@@ -425,7 +425,7 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
      * @param spans the spans to count in
      * @return the condition, without WHERE
      */
-    public abstract String conditions(List<TimeDriveController.TimeWindow> spans);
+    public abstract String conditions(List<TimeDriveContext.Span> spans);
   }
 
   // A source's own query, through its junction when it counts through one;
@@ -439,7 +439,7 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
       this.caseIndex = caseIndex;
     }
 
-    public override String conditions(List<TimeDriveController.TimeWindow> spans) {
+    public override String conditions(List<TimeDriveContext.Span> spans) {
       return q.conditions(spans, q.countsViaJunction, caseIndex);
     }
   }
@@ -497,7 +497,7 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
   @SuppressWarnings('PMD.OperationWithLimitsInLoop, PMD.ApexSOQLInjection')
   public static List<TimeDriveContext.DayCount> countGrouped(
     CountedQuery q,
-    List<TimeDriveController.TimeWindow> spans,
+    List<TimeDriveContext.Span> spans,
     String unit
   ) {
     List<TimeDriveContext.DayCount> counts = new List<TimeDriveContext.DayCount>();
@@ -525,10 +525,10 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
       selected.add(groups[i] + ' g' + i);
     }
 
-    for (List<TimeDriveController.TimeWindow> batch : batches(spans, daysPerBatch(grain))) {
+    for (List<TimeDriveContext.Span> batch : batches(spans, daysPerBatch(grain))) {
       String conditions = q.conditions(batch);
       Integer most = 0;
-      for (TimeDriveController.TimeWindow span : batch) {
+      for (TimeDriveContext.Span span : batch) {
         most += TimeDriveContext.periods(span.since.date(), lastDay(span), grain);
       }
       if (Limits.getQueryRows() + most > Limits.getLimitQueryRows()) {
@@ -662,26 +662,26 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
     return MAX_GROUPS;
   }
 
-  private static Date lastDay(TimeDriveController.TimeWindow span) {
+  private static Date lastDay(TimeDriveContext.Span span) {
     return span.until == null ? Date.today() : span.until.date();
   }
 
   // Spans in batches of at most maxDays days, long spans split to fit.
   @TestVisible
-  private static List<List<TimeDriveController.TimeWindow>> batches(
-    List<TimeDriveController.TimeWindow> spans,
+  private static List<List<TimeDriveContext.Span>> batches(
+    List<TimeDriveContext.Span> spans,
     Integer maxDays
   ) {
-    List<List<TimeDriveController.TimeWindow>> result = new List<List<TimeDriveController.TimeWindow>>();
-    List<TimeDriveController.TimeWindow> batch = new List<TimeDriveController.TimeWindow>();
+    List<List<TimeDriveContext.Span>> result = new List<List<TimeDriveContext.Span>>();
+    List<TimeDriveContext.Span> batch = new List<TimeDriveContext.Span>();
     Integer used = 0;
-    for (TimeDriveController.TimeWindow span : spans) {
+    for (TimeDriveContext.Span span : spans) {
       Date first = span.since.date();
       Date last = span.until == null ? Date.today() : span.until.date();
       while (first <= last) {
         if (used >= maxDays) {
           result.add(batch);
-          batch = new List<TimeDriveController.TimeWindow>();
+          batch = new List<TimeDriveContext.Span>();
           used = 0;
         }
         Date stop = first.addDays(maxDays - used - 1);
@@ -689,7 +689,7 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
           stop = last;
         }
         batch.add(
-          new TimeDriveController.TimeWindow(
+          new TimeDriveContext.Span(
             first == span.since.date() ? span.since : Datetime.newInstance(first, Time.newInstance(0, 0, 0, 0)),
             stop == last ? span.until : Datetime.newInstance(stop, Time.newInstance(23, 59, 59, 999))
           )
@@ -963,17 +963,17 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
 
     // The link, the dates (any of the spans) and the Filter, binding each
     // span's ends as since0/until0, since1/until1 ...
-    String conditions(List<TimeDriveController.TimeWindow> spans) {
+    String conditions(List<TimeDriveContext.Span> spans) {
       return conditions(spans, false);
     }
 
     // The same written for the junction (see countsViaJunction) when asked.
-    String conditions(List<TimeDriveController.TimeWindow> spans, Boolean viaJunction) {
+    String conditions(List<TimeDriveContext.Span> spans, Boolean viaJunction) {
       return conditions(spans, viaJunction, null);
     }
 
     // Every date case's dates (any of them), or just one case's when only is set.
-    String conditions(List<TimeDriveController.TimeWindow> spans, Boolean viaJunction, Integer only) {
+    String conditions(List<TimeDriveContext.Span> spans, Boolean viaJunction, Integer only) {
       String p = viaJunction ? countPrefix : '';
       String base = p + datePrefix;
       List<String> dates = new List<String>();
@@ -984,7 +984,7 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
         DateCase dc = cases[k];
         String dateRef = base + dc.field;
         String own = dc.clause(base);
-        for (TimeDriveController.TimeWindow span : spans) {
+        for (TimeDriveContext.Span span : spans) {
           Integer i = binds.size();
           String clause = dateRef + ' >= :since' + i;
           binds.put('since' + i, dc.dateOnly ? (Object) span.since.date() : span.since);
