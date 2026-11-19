@@ -41,9 +41,23 @@ module.exports = function (request, options) {
     // A label that isn't in the file is left to the stock stub (its name), so a
     // typo shows in a test as "c.Name" instead of passing.
     if (label in all) {
-      fs.mkdirSync(OUT, { recursive: true });
       const file = path.join(OUT, `${label}.js`);
-      fs.writeFileSync(file, `module.exports = { __esModule: true, default: ${JSON.stringify(all[label])} };\n`);
+      const source = `module.exports = { __esModule: true, default: ${JSON.stringify(all[label])} };\n`;
+      // The folder is shared by every worker: write only when the file is
+      // missing or stale, and atomically (a temp file renamed into place), so a
+      // worker never reads a half-written module.
+      let current;
+      try {
+        current = fs.readFileSync(file, "utf8");
+      } catch {
+        current = undefined;
+      }
+      if (current !== source) {
+        fs.mkdirSync(OUT, { recursive: true });
+        const temp = `${file}.${process.pid}.tmp`;
+        fs.writeFileSync(temp, source);
+        fs.renameSync(temp, file);
+      }
       return file;
     }
   }

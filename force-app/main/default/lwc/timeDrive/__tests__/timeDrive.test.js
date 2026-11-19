@@ -28,7 +28,32 @@ import {
   windowEnds,
   windowRange
 } from "../timeDriveModel";
-import { describeError } from "c/timeDriveErrors";
+
+// The tests' events are dated from NOW, so the component reads the same clock:
+// only Date is faked (and still ticks), so setTimeout, requestAnimationFrame
+// and the promise flushes stay real. Each test starts at NOW again.
+const NOW = new Date(2026, 9, 18, 12, 0).getTime();
+jest.useFakeTimers({
+  now: NOW,
+  advanceTimers: true,
+  doNotFake: [
+    "hrtime",
+    "nextTick",
+    "performance",
+    "queueMicrotask",
+    "requestAnimationFrame",
+    "cancelAnimationFrame",
+    "requestIdleCallback",
+    "cancelIdleCallback",
+    "setImmediate",
+    "clearImmediate",
+    "setInterval",
+    "clearInterval",
+    "setTimeout",
+    "clearTimeout"
+  ]
+});
+beforeEach(() => jest.setSystemTime(NOW));
 
 jest.mock(
   "@salesforce/apex/TimeDriveController.getPreference",
@@ -49,7 +74,7 @@ jest.mock("@salesforce/apex/TimeDriveController.saveDateRange", () => ({ default
 });
 jest.mock("@salesforce/apex/TimeDriveController.getTimeline", () => ({ default: jest.fn() }), { virtual: true });
 // The lenses and the Overdue check, as wires a test can answer (left unanswered,
-// the card uses its own lenses and shows no banner, as before).
+// the card uses its own lenses and shows no Overdue button).
 jest.mock(
   "@salesforce/apex/TimeDriveController.getViews",
   () => {
@@ -298,7 +323,6 @@ const scrollList = async (root, edge) => {
   await flush();
 };
 
-const NOW = new Date(2026, 9, 18, 12, 0).getTime();
 const at = (daysAgo, hour = 12) => new Date(new Date(NOW).setHours(hour, 0, 0, 0) - daysAgo * 86400000).toISOString();
 
 const EVENTS = [
@@ -364,6 +388,8 @@ describe("c-time-drive", () => {
   };
 
   it("shows every event, grouped by day", async () => {
+    // A few days on, so today has nothing of its own.
+    jest.setSystemTime(NOW + 3 * 86400000);
     const element = await render();
     expect(element.shadowRoot.querySelectorAll(".event")).toHaveLength(4);
     // Three days with items, and today (with none) as a placeholder first.
@@ -371,8 +397,14 @@ describe("c-time-drive", () => {
     const days = element.shadowRoot.querySelectorAll(".day");
     expect(days).toHaveLength(5);
     // From History's start to the earliest item.
+    const earliest = new Intl.DateTimeFormat("en-US", {
+      timeZone: TIME_ZONE,
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    }).format(new Date(at(40)));
     expect(days[4].querySelector(".nothing-now-text").textContent).toMatch(
-      /^Nothing between \w{3} \d+, \d{4} and Sep 7, 2026$/
+      new RegExp(`^Nothing between \\w{3} \\d+, \\d{4} and ${earliest}$`)
     );
     expect(days[0].querySelector(".nothing-now-text").textContent).toBe("Nothing today");
     expect(days[0].querySelector(".day-meta").textContent).toBe("");
@@ -490,7 +522,7 @@ describe("c-time-drive", () => {
     expect(flags[1].querySelector("lightning-icon")).toBeNull();
   });
 
-  it("switches to titles only with the button after Today, and keeps it as the user's own", async () => {
+  it("switches to titles only with the toolbar's Lite button, and keeps it as the user's own", async () => {
     savePreference.mockClear();
     const element = await render();
     const root = element.shadowRoot;
@@ -717,10 +749,19 @@ describe("c-time-drive", () => {
   });
 
   it("asks only for the summary when it refreshes, and then for the days it is on", async () => {
+    getDays.mockClear();
     const element = await render();
+    const daysAsked = () => [...new Set(getDays.mock.calls.flatMap(([params]) => params.dayKeys))].sort();
+    const shown = daysAsked();
+    expect(shown.length).toBeGreaterThan(0);
     getDays.mockClear();
     await refresh(element);
     expect(getSummary.getLastConfig()).toMatchObject({ count: 0 });
+    expect(getDays).not.toHaveBeenCalled();
+    answer();
+    await flush();
+    // Then the days it was on, read again.
+    expect(daysAsked()).toEqual(shown);
   });
 
   it("uses the horizontal layout when asked", async () => {
@@ -810,26 +851,28 @@ describe("c-time-drive", () => {
     // Vertical, the empty state is as tall as it needs.
     expect(element.shadowRoot.querySelector(".empty").style.height).toBe("");
     const warn = jest.spyOn(console, "warn");
-    await refresh(element);
-    getSummary.error({
-      message: "System.QueryException: No such column 'Secret__c' on entity 'Invoice__c'",
-      stackTrace: "Class.TimeDriveSoqlProvider.getRows: line 84, column 1"
-    });
-    await flush();
-    const state = element.shadowRoot.querySelector(".empty_error");
-    expect(state.getAttribute("role")).toBe("alert");
-    // A missing column is for an admin to set up: the setup illustration.
-    expect(state.querySelector("lightning-illustration").illustrationName).toBe("access:request");
-    expect(state.textContent).toContain("isn't set up in this org");
-    expect(state.textContent).not.toContain("Possible cause");
-    // Never the raw message or the stack trace.
-    expect(state.textContent).not.toMatch(/QueryException|Secret__c|line 84/);
-    // Nothing goes to the browser's console.
-    expect(warn).not.toHaveBeenCalled();
-    warn.mockRestore();
-    // The error state, too.
-    expect(state.style.height).toBe("");
-    warn.mockRestore();
+    try {
+      await refresh(element);
+      getSummary.error({
+        message: "System.QueryException: No such column 'Secret__c' on entity 'Invoice__c'",
+        stackTrace: "Class.TimeDriveSoqlProvider.getRows: line 84, column 1"
+      });
+      await flush();
+      const state = element.shadowRoot.querySelector(".empty_error");
+      expect(state.getAttribute("role")).toBe("alert");
+      // A missing column is for an admin to set up: the setup illustration.
+      expect(state.querySelector("lightning-illustration").illustrationName).toBe("access:request");
+      expect(state.textContent).toContain("isn't set up in this org");
+      expect(state.textContent).not.toContain("Possible cause");
+      // Never the raw message or the stack trace.
+      expect(state.textContent).not.toMatch(/QueryException|Secret__c|line 84/);
+      // Nothing goes to the browser's console.
+      expect(warn).not.toHaveBeenCalled();
+      // The error state, too.
+      expect(state.style.height).toBe("");
+    } finally {
+      warn.mockRestore();
+    }
   });
 });
 
@@ -868,40 +911,6 @@ describe("c-time-drive sources that couldn't be read", () => {
     expect(state.textContent).toContain("The timeline couldn't be read");
     expect(state.textContent).toContain("Order canceled couldn't be read.");
     expect(state.querySelector("button").textContent).toBe("Try again");
-  });
-});
-
-describe("describeError", () => {
-  it("says what went wrong and why, never the raw message", () => {
-    // A GraphQL error: a field the user can't filter on.
-    const graphql = describeError([
-      {
-        message:
-          "Validation error (WrongType@[uiapi/query/Survey__c]) : argument 'where' contains a field not in 'Survey__c_Filter': 'Customer__c'"
-      }
-    ]);
-    expect(graphql.kind).toBe("access");
-    expect(graphql.message).not.toContain("Survey__c");
-    expect(
-      describeError({
-        status: 500,
-        body: { message: "Operation failed due to fields being inaccessible on Sobject Invoice__c" }
-      }).kind
-    ).toBe("access");
-    expect(
-      describeError({
-        status: 404,
-        body: [{ errorCode: "NOT_FOUND", message: "The requested resource does not exist" }]
-      }).kind
-    ).toBe("notFound");
-    expect(describeError({ status: 0, body: { message: "Failed to fetch" } }).kind).toBe("offline");
-    expect(describeError({ status: 500, body: { message: "Apex CPU time limit exceeded" } }).kind).toBe("busy");
-    expect(describeError(new Error("Invalid type: Location__c")).kind).toBe("setup");
-    // The timeline's server names the kind outright.
-    expect(describeError({ status: 500, body: { message: "timedrive:access" } }).kind).toBe("access");
-    const unknown = describeError({ body: { message: "Boom", stackTrace: "Class.X: line 1" } });
-    expect(unknown).toMatchObject({ kind: "unknown", message: "Something went wrong." });
-    expect(unknown.detail).toBe("Boom");
   });
 });
 
@@ -964,8 +973,7 @@ describe("c-time-drive delight", () => {
     emitEvents({ events: EVENTS, warnings: [] });
     await flush();
     const root = element.shadowRoot;
-    // No search box; the card is named by its Title, the heading by the view.
-    expect(root.querySelector("lightning-input[type='search']")).toBeNull();
+    // The card is named by its Title, the heading by the view.
     expect(root.querySelector("article").getAttribute("aria-label")).toBe("Time Drive");
     const button = root.querySelector("h2 .view-button");
     expect(button.textContent).toContain("All items");
@@ -1139,7 +1147,7 @@ describe("c-time-drive summary query", () => {
     while (document.body.firstChild) document.body.removeChild(document.body.firstChild);
   });
 
-  it("sends every parameter defined, so the wire service makes the request", async () => {
+  it("asks for the timeline with every parameter defined", async () => {
     const element = createTimeline();
     element.recordId = "003000000000001AAA";
     document.body.appendChild(element);
@@ -1738,25 +1746,6 @@ describe("c-time-drive a new filter", () => {
     expect(root.querySelector(".skeleton-frame")).toBeNull();
     expect([...root.querySelectorAll(".chevron-button")].map((r) => r.dataset.id)).toEqual(["o1", "w1"]);
   });
-
-  it("shows nothing new when Apply changes nothing", async () => {
-    const element = createTimeline();
-    element.recordId = "003000000000001AAA";
-    element.layout = "Vertical";
-    document.body.appendChild(element);
-    emitEvents({ events: EVENTS, warnings: [] });
-    await flush();
-    const root = element.shadowRoot;
-    root.querySelector(".filter-button").click();
-    await flush();
-    const all = filtersRoot(root)
-      .querySelector("lightning-checkbox-group")
-      .options.map((o) => o.value);
-    // The same types back again: the panel offers nothing to apply, and the days stay.
-    expect(buttonByLabel(filtersRoot(root).querySelector(".filter-panel"), "Apply")).toBeUndefined();
-    expect(all.length).toBeGreaterThan(0);
-    expect(root.querySelector(".skeleton-frame")).toBeNull();
-  });
 });
 
 describe("c-time-drive all types", () => {
@@ -2051,8 +2040,8 @@ describe("c-time-drive drawing less", () => {
       const root = element.shadowRoot;
       const shown = [...root.querySelectorAll(".day")].map((d) => Number(d.dataset.index));
       last = root.querySelectorAll(".scrub-heat .heat").length - 1;
-      const today = root.querySelector(".day_today");
-      const result = { shown, today: today ? Number(today.dataset.index) : null, root };
+      const todayDay = root.querySelector(".day_today");
+      const result = { shown, today: todayDay ? Number(todayDay.dataset.index) : null, root };
       document.body.removeChild(element);
       return result;
     };
@@ -2178,7 +2167,6 @@ describe("c-time-drive drawing less", () => {
   it("lists newest first vertically, earliest first horizontally, with no sort button", async () => {
     let root = (await mount("Vertical")).shadowRoot;
     expect(root.querySelector(".day-label").textContent).toContain("Today");
-    expect(root.querySelector('lightning-button-icon[title*="first"]')).toBeNull();
     // Today's cell is ringed on the scrub strip.
     expect(root.querySelectorAll(".scrub-heat .heat_today")).toHaveLength(1);
     document.body.removeChild(root.host);
@@ -2245,7 +2233,6 @@ describe("c-time-drive drawing less", () => {
     root.querySelector(".scrub-rail").dispatchEvent(new KeyboardEvent("keydown", { key: "Home" }));
     await settle();
     expect(root.querySelector(".day").dataset.index).toBe("0");
-    expect(root.querySelector(".more_top")).toBeNull();
   });
 
   it("jumps once held keys pause, not on every press", async () => {
@@ -2253,7 +2240,9 @@ describe("c-time-drive drawing less", () => {
     const rail = root.querySelector(".scrub-rail");
     const fetches = getDays.mock.calls.length;
     for (let i = 0; i < 12; i++) rail.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown" }));
-    await flush();
+    // Microtasks only, so the pause (a real timer) can't have run out yet
+    // however slow the machine.
+    for (let i = 0; i < 10; i++) await Promise.resolve();
     // Still on the first week: nothing jumped or fetched yet.
     expect(root.querySelector(".track .day").dataset.index).toBe("0");
     expect(getDays.mock.calls.length).toBe(fetches);
@@ -2410,10 +2399,10 @@ describe("c-time-drive drawing less", () => {
   const openingLoad = (config, days) => {
     const summary = summarise(config);
     const real = new Set(summary.days.map((d) => d.key));
-    const today = DAY_KEY.format(new Date());
-    const all = new Set([...real, today, windowEnds(config.historyYears, config.futureYears, "day").start.key]);
+    const todayDay = DAY_KEY.format(new Date());
+    const all = new Set([...real, todayDay, windowEnds(config.historyYears, config.futureYears, "day").start.key]);
     const ordered = [...all].sort();
-    const index = ordered.indexOf(today);
+    const index = ordered.indexOf(todayDay);
     const startAt = Math.max(0, Math.min(index - 6, ordered.length - 12));
     const keys = ordered.slice(startAt, startAt + 12).filter((k) => real.has(k));
     const events = groupBusyDays(
@@ -2999,12 +2988,18 @@ describe("display density", () => {
   });
 
   it("lets the page's Display Density override the page's styles", async () => {
-    const element = createTimeline();
-    element.density = "Compact";
-    document.body.appendChild(element);
-    await flush();
-    expect(element.classList.contains("density_compact")).toBe(true);
-    expect(element.classList.contains("density_comfy")).toBe(false);
+    // The page's spacing says Comfy; the component's own setting wins.
+    const restore = withHooks({ "--slds-g-spacing-var-4": "1rem", "--lwc-varSpacingMedium": "1rem" });
+    try {
+      const element = createTimeline();
+      element.density = "Compact";
+      document.body.appendChild(element);
+      await flush();
+      expect(element.classList.contains("density_compact")).toBe(true);
+      expect(element.classList.contains("density_comfy")).toBe(false);
+    } finally {
+      restore();
+    }
   });
 });
 

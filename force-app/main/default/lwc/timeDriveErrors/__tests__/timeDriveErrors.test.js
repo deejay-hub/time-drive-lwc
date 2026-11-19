@@ -1,3 +1,5 @@
+import { describeError } from "c/timeDriveErrors";
+
 // isSlds2 reads the page once, so each case loads the module afresh.
 const load = () => {
   let mod;
@@ -92,5 +94,39 @@ describe("isSlds2", () => {
       callbacks[0]();
       expect(art.style.transform).toBe("");
     });
+  });
+});
+
+describe("describeError", () => {
+  it("says what went wrong and why, never the raw message", () => {
+    // A GraphQL error: a field the user can't filter on.
+    const graphql = describeError([
+      {
+        message:
+          "Validation error (WrongType@[uiapi/query/Survey__c]) : argument 'where' contains a field not in 'Survey__c_Filter': 'Customer__c'"
+      }
+    ]);
+    expect(graphql.kind).toBe("access");
+    expect(graphql.message).not.toContain("Survey__c");
+    expect(
+      describeError({
+        status: 500,
+        body: { message: "Operation failed due to fields being inaccessible on Sobject Invoice__c" }
+      }).kind
+    ).toBe("access");
+    expect(
+      describeError({
+        status: 404,
+        body: [{ errorCode: "NOT_FOUND", message: "The requested resource does not exist" }]
+      }).kind
+    ).toBe("notFound");
+    expect(describeError({ status: 0, body: { message: "Failed to fetch" } }).kind).toBe("offline");
+    expect(describeError({ status: 500, body: { message: "Apex CPU time limit exceeded" } }).kind).toBe("busy");
+    expect(describeError(new Error("Invalid type: Location__c")).kind).toBe("setup");
+    // The timeline's server names the kind outright.
+    expect(describeError({ status: 500, body: { message: "timedrive:access" } }).kind).toBe("access");
+    const unknown = describeError({ body: { message: "Boom", stackTrace: "Class.X: line 1" } });
+    expect(unknown).toMatchObject({ kind: "unknown", message: "Something went wrong." });
+    expect(unknown.detail).toBe("Boom");
   });
 });

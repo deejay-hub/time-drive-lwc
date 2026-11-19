@@ -1654,7 +1654,7 @@ export default class TimeDriveSetup extends LightningElement {
   // Anywhere on a step shows its help, done or not; its action and its
   // checkbox keep their own clicks.
   handleGuidedRow(event) {
-    if (event.target.closest(".guided-act, .guided-check, .guided-choices, .view-names")) return;
+    if (event.target.closest(".guided-act, .guided-check, .guided-choices")) return;
     this.guidedSelected = event.currentTarget.dataset.key;
   }
 

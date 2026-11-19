@@ -97,8 +97,7 @@ export default class TimeDriveGroup extends NavigationMixin(LightningElement) {
       to: s[`${ns}to`],
       count: Number(s[`${ns}count`]) || null,
       label: s[`${ns}label`],
-      icon: s[`${ns}icon`],
-      object: s[`${ns}object`]
+      icon: s[`${ns}icon`]
     };
     if (JSON.stringify(next) === JSON.stringify(this.state)) return;
     this.state = next;
