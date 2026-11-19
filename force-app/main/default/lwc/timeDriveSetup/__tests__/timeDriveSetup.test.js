@@ -293,20 +293,19 @@ describe("c-time-drive-setup", () => {
     ]);
     expect(root.querySelector('.site-link[data-to="setup"]').getAttribute("aria-current")).toBe("page");
     expect(root.querySelector("h1.page-title").textContent).toBe("Guided setup");
-    // In order: the org check, the video, permission sets, what's set up,
-    // your sources, your users' access, and the record pages.
+    // In order: the org check, the video, permission sets, the lenses, what's
+    // set up, your users' access, and the record pages.
     expect([...root.querySelectorAll(".guided-step")].map((st) => st.dataset.key)).toEqual([
       "orgcheck",
       "video",
       "perms",
       "views",
       "review",
-      "source",
       "users",
       "page"
     ]);
-    // The org check is done and sources of your own tick "Add your sources".
-    expect(root.querySelector(".guided-count-number").textContent).toBe("2 of 8");
+    // The org check is done.
+    expect(root.querySelector(".guided-count-number").textContent).toBe("1 of 7");
     expect(root.querySelector(".guided-progress_done")).toBeNull();
     expect(root.querySelector(".guided-step_on .guided-title").textContent.trim()).toBe("Watch the how-to video");
     // What the users must be able to read, and which record pages need it.
@@ -315,10 +314,10 @@ describe("c-time-drive-setup", () => {
       [...root.querySelectorAll('.guided-step[data-key="page"] .guided-button')].map((b) => b.textContent.trim())
     ).toEqual(["Contact pages"]);
     // A done step still shows its help, from anywhere on its row.
-    root.querySelector('.guided-step[data-key="source"] .guided-text').click();
+    root.querySelector('.guided-step[data-key="orgcheck"] .guided-text').click();
     await flush();
-    expect(root.querySelector(".guided-aside .aside-title").textContent).toBe("Add your sources");
-    expect(root.querySelector(".guided-aside-step").textContent).toBe("Step 6 · Done");
+    expect(root.querySelector(".guided-aside .aside-title").textContent).toBe("Check your org");
+    expect(root.querySelector(".guided-aside-step").textContent).toBe("Step 1 · Done");
     expect(root.querySelector(".guided-aside-head").textContent).toBe("What it did");
 
     const tick = async (key) => {
@@ -328,7 +327,7 @@ describe("c-time-drive-setup", () => {
       await flush();
     };
     await tick("video");
-    expect(root.querySelector(".guided-count-number").textContent).toBe("3 of 8");
+    expect(root.querySelector(".guided-count-number").textContent).toBe("2 of 7");
     for (const key of ["perms", "review", "users", "page"]) await tick(key);
     // Lenses: a question and a button to them, ticked by you. (They're managed
     // on the Lenses page.)
@@ -340,7 +339,7 @@ describe("c-time-drive-setup", () => {
     // All done: the bar says so.
     expect(root.querySelector(".guided-progress_done")).not.toBeNull();
     expect(root.querySelector(".guided-count-number").textContent).toBe("Setup complete");
-    expect(root.querySelectorAll(".guided-segment_done")).toHaveLength(8);
+    expect(root.querySelectorAll(".guided-segment_done")).toHaveLength(7);
 
     await toPages(root);
     expect(crumbs(root)).toEqual([]);

@@ -215,14 +215,6 @@ const GUIDED_STEPS = [
     why: "The timeline comes with a source or two. Knowing what's there tells you what to add, change or make inactive."
   },
   {
-    key: "source",
-    manual: true,
-    title: "Add your sources",
-    text: "Choose the records each timeline should plot: Cases, Opportunities, Data 360 engagement or your own.",
-    what: "Opens the setup wizard: where the records come from, how they link to the record page, which date places them, and how they look.",
-    why: "A source is what puts records on the timeline. Each one is a kind of item people will see, newest first."
-  },
-  {
     key: "users",
     manual: true,
     title: "Check your users can read the records",
@@ -242,11 +234,6 @@ const GUIDED_STEPS = [
 // An Email Message's subtitle, as the timeline writes it: the format, and a sample.
 const EMAIL_SUBTITLE = "Sent to: first recipient and N others";
 const EMAIL_SAMPLE_SUBTITLE = "Sent to: Ada Park and 1 other";
-
-// The shipped sources: adding your own is what ticks "Add your sources".
-const SHIPPED_SOURCES = new Set(["Tasks", "Calls", "Emails"]);
-// The shipped sources for each org setting (see Fit the timeline) are named Fit_.
-const isShipped = (src) => SHIPPED_SOURCES.has(src.developerName) || src.developerName?.startsWith("Fit_");
 
 // The Docs live in the GitHub repo: the Docs page links to them there (a new
 // tab), so nothing is fetched into the org. Change the repo here.
@@ -1497,7 +1484,6 @@ export default class TimeDriveSetup extends LightningElement {
 
   // What Setup can see for itself about each step.
   guidedState(step) {
-    const mine = this.sources.filter((src) => !isShipped(src));
     const ticked = this.guidedDone.has(step.key);
     switch (step.kind ?? step.key) {
       case "orgcheck":
@@ -1512,10 +1498,6 @@ export default class TimeDriveSetup extends LightningElement {
           done: ticked,
           status: `${this.sources.length} ${this.sources.length === 1 ? "source" : "sources"} set up, ${this.sources.filter((src) => src.active).length} active`
         };
-      case "source":
-        return mine.length
-          ? { done: true, auto: true, status: `${mine.length} ${mine.length === 1 ? "source" : "sources"} of your own` }
-          : { done: ticked, status: "" };
       case "users": {
         const objects = [
           ...new Set(this.sources.filter((src) => src.active).map((src) => src.objectLabel || src.objectName))
@@ -1561,8 +1543,6 @@ export default class TimeDriveSetup extends LightningElement {
         return [{ label: done ? "Check again" : "Check my org", handler: "check", primary: !done }];
       case "review":
         return [{ label: "Open Customize", handler: "customize", primary: !done }];
-      case "source":
-        return [{ label: done ? "Add another" : "Add a source", handler: "add", primary: !done }];
       case "users":
         return [{ label: "Open permission sets", href: "/lightning/setup/PermSets/home" }];
       case "page": {
