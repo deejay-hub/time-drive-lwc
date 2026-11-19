@@ -154,7 +154,11 @@ private class TimeDriveDatesTest {
       Assert.areEqual(4, new Set<String>(seen).size(), 'none twice: ' + seen);
       // Newest first, by due date: the two open three days ago, then the done ones.
       Assert.areEqual(new Set<String>{ 'Open', 'Open too' }, new Set<String>{ seen[0], seen[1] }, String.valueOf(seen));
-      Assert.areEqual(new List<String>{ 'Done', 'Done too' }, new List<String>{ seen[2], seen[3] }, String.valueOf(seen));
+      Assert.areEqual(
+        new List<String>{ 'Done', 'Done too' },
+        new List<String>{ seen[2], seen[3] },
+        String.valueOf(seen)
+      );
     }
   }
 
@@ -198,7 +202,11 @@ private class TimeDriveDatesTest {
           zone + ': no zone is the user’s clock'
         );
         Assert.areEqual(1, context.warnings.size(), zone + ': and it is said: ' + context.warnings);
-        Assert.isTrue(context.warnings[0].contains('1'), context.warnings[0]);
+        Assert.areEqual(
+          String.format(Label.Time_Drive_Server_Unreadable_Dates, new List<String>{ context.source.Label ?? '', '1' }),
+          context.warnings[0],
+          zone + ': with how many'
+        );
       }
     }
   }

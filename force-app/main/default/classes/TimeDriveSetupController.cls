@@ -2737,7 +2737,7 @@ r.Highlight_Values__c = 'true';
     }
 
     /**
-     * The highlights as records, for the preview (at most the two a source keeps).
+     * The highlights as records, for the preview (at most the one a source keeps, TimeDriveHighlights.MAX_RULES).
      * @return The highlight records.
      */
     public List<Time_Drive_Highlight__mdt> highlightRecords() {

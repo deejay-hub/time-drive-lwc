@@ -1,5 +1,5 @@
 /**
- * The Overdue lens's banner check (TimeDriveController.getOverdue): yes when
+ * The Overdue button's check (TimeDriveController.getOverdue): yes when
  * the lens's sources have an item, no otherwise; once per object, not per
  * source; nothing when the lens is switched off. Runs as users west and east
  * of Greenwich, as the Overdue field's TODAY() is the user's day. Also the
@@ -123,11 +123,7 @@ private class TimeDriveOverdueTest {
       TimeDriveQueries.ran.clear();
       // Nothing anywhere: every object asked, once each (Task, then Case).
       Assert.isFalse(TimeDriveController.getOverdue(c.Id, '1', null));
-      Assert.areEqual(
-        2,
-        anyQueries(),
-        'one query for the three Task sources, one for Cases: ' + TimeDriveQueries.ran.size()
-      );
+      Assert.areEqual(2, anyQueries(), 'one query for the three Task sources, one for Cases: ' + anyQueries());
 
       // An overdue call: found by the first query, so Cases aren't asked.
       insert new Task(
@@ -159,7 +155,14 @@ private class TimeDriveOverdueTest {
       every.Junction_Record_Field__c = 'TaskId';
       TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{
         every,
-        source('Overdue_Calls', 'Task', 'ActivityDate', 'WhoId', OVERDUE_FILTER + ' AND TaskSubtype = \'Call\'', 'Overdue')
+        source(
+          'Overdue_Calls',
+          'Task',
+          'ActivityDate',
+          'WhoId',
+          OVERDUE_FILTER + ' AND TaskSubtype = \'Call\'',
+          'Overdue'
+        )
       };
       Contact c = new Contact(LastName = 'Shared');
       insert c;
@@ -191,9 +194,9 @@ private class TimeDriveOverdueTest {
       insert new Time_Drive_Setup__c(Name = 'Org', Hidden_Views__c = 'Overdue');
       TimeDriveConfig.forgetHiddenViews();
       TimeDriveQueries.ran.clear();
-      Assert.isFalse(TimeDriveController.getOverdue(c.Id, '1', null), 'switched off: no banner');
+      Assert.isFalse(TimeDriveController.getOverdue(c.Id, '1', null), 'switched off: no button');
       Assert.areEqual(0, anyQueries(), 'and nothing is asked');
-      Assert.isFalse(TimeDriveController.getOverdue(null, '1', null), 'no record, no banner');
+      Assert.isFalse(TimeDriveController.getOverdue(null, '1', null), 'no record, no button');
     }
   }
 

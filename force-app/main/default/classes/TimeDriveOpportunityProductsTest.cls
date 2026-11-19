@@ -48,9 +48,22 @@ private class TimeDriveOpportunityProductsTest {
     );
   }
 
-  // The org took the products (see the setup).
+  // The org took the products (see the setup). When it didn't, the tests that
+  // read them are skipped, and only where the org's own automation refuses an
+  // opportunity product now too: where it takes one, the setup should have
+  // made them, and that fails.
   static Boolean made() {
-    return [SELECT COUNT() FROM OpportunityLineItem] > 0;
+    if ([SELECT COUNT() FROM OpportunityLineItem] > 0) {
+      return true;
+    }
+    List<PricebookEntry> prices = [SELECT Id, UnitPrice FROM PricebookEntry WHERE Product2.Name = 'Laptop' LIMIT 1];
+    Opportunity probe = opportunity('Probe', account('Acme'), Date.today());
+    Boolean orgTakesThem =
+      !prices.isEmpty() &&
+      TimeDriveTestData.tryInsert(probe) &&
+      TimeDriveTestData.tryInsert(item(probe.Id, prices[0], 1));
+    Assert.isFalse(orgTakesThem, 'this org takes opportunity products, so the setup should have made them');
+    return false;
   }
 
   static Opportunity opportunity(String name, Id accountId, Date closeDate) {
@@ -102,7 +115,7 @@ private class TimeDriveOpportunityProductsTest {
   @IsTest
   static void readsEveryProductOnEveryOpportunityOfTheAccount() {
     if (!made()) {
-      return;
+      return; // Skipped: this org's automation refuses opportunity products (see made()).
     }
     TimeDriveContext ctx = context(account('Acme'), Datetime.now().addYears(-1));
 
@@ -127,7 +140,7 @@ private class TimeDriveOpportunityProductsTest {
   @IsTest
   static void plotsEachProductOnItsOpportunitysCloseDate() {
     if (!made()) {
-      return;
+      return; // Skipped: this org's automation refuses opportunity products (see made()).
     }
     TimeDriveContext ctx = context(account('Acme'), Datetime.now().addYears(-1));
 
@@ -147,7 +160,7 @@ private class TimeDriveOpportunityProductsTest {
   @IsTest
   static void fillsInWhatSetupDoesNotAskAnApexSourceFor() {
     if (!made()) {
-      return;
+      return; // Skipped: this org's automation refuses opportunity products (see made()).
     }
     // Saved as Setup saves an Apex source: no date, title, subtitle or click, and two details.
     Time_Drive_Source__mdt s = source();
@@ -187,7 +200,7 @@ private class TimeDriveOpportunityProductsTest {
   @IsTest
   static void readsOnlyTheDaysAskedFor() {
     if (!made()) {
-      return;
+      return; // Skipped: this org's automation refuses opportunity products (see made()).
     }
     TimeDriveContext ctx = context(account('Acme'), null);
     // Just the week around the recent opportunity, as a page of quiet days asks.
@@ -205,7 +218,7 @@ private class TimeDriveOpportunityProductsTest {
   @IsTest
   static void keepsToMaxRecordsAndReadsTheFieldsTheSourceShows() {
     if (!made()) {
-      return;
+      return; // Skipped: this org's automation refuses opportunity products (see made()).
     }
     Time_Drive_Source__mdt s = source();
     s.Max_Records__c = 2;
@@ -221,7 +234,7 @@ private class TimeDriveOpportunityProductsTest {
   @IsTest
   static void countsEveryProductByPeriodWithoutReadingThem() {
     if (!made()) {
-      return;
+      return; // Skipped: this org's automation refuses opportunity products (see made()).
     }
     TimeDriveContext ctx = context(account('Acme'), Datetime.now().addYears(-1));
     TimeDriveOpportunityProducts products = new TimeDriveOpportunityProducts();
@@ -255,15 +268,5 @@ private class TimeDriveOpportunityProductsTest {
     TimeDriveContext ctx = new TimeDriveContext(person.Id, 'Contact', null, source(), null, null);
     Assert.isTrue(new TimeDriveOpportunityProducts().getRows(ctx).isEmpty(), 'products belong on the account');
     Assert.isTrue(new TimeDriveOpportunityProducts().countDays(ctx, TimeDriveContext.UNIT_DAY).isEmpty());
-  }
-
-  @IsTest
-  static void isOfferedInSetupAsAnApexSource() {
-    Boolean offered = false;
-    for (TimeDriveSetupController.Option o : TimeDriveSetupController.getApexProviders()) {
-      // Listed by its name; once packaged, its value carries the namespace (ns.TimeDriveOpportunityProducts).
-      offered = offered || o.label == 'TimeDriveOpportunityProducts';
-    }
-    Assert.isTrue(offered, 'Setup lists it among the Apex sources');
   }
 }

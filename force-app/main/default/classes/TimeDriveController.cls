@@ -6,9 +6,10 @@
 // The branching follows the platform's cases and the plot's rules; splitting it up would only scatter them.
 // Size, parameter lists and field counts follow the platform's entry points, its cases and the data the components exchange;
 // splitting them up would only scatter what belongs together.
-@SuppressWarnings('PMD.CyclomaticComplexity, PMD.CognitiveComplexity, PMD.AvoidBooleanMethodParameters, PMD.ExcessiveParameterList, PMD.ExcessivePublicCount, PMD.NcssCount, PMD.TooManyFields')
+@SuppressWarnings(
+  'PMD.CyclomaticComplexity, PMD.CognitiveComplexity, PMD.AvoidBooleanMethodParameters, PMD.ExcessiveParameterList, PMD.ExcessivePublicCount, PMD.NcssCount, PMD.TooManyFields'
+)
 public with sharing class TimeDriveController {
-
   // How far back and forward the timeline reaches, in years: the App Builder's
   // History and Future. Only these values; anything else falls back to the
   // default with a warning.
@@ -148,7 +149,11 @@ public with sharing class TimeDriveController {
     // Every source in the view is offered, found nothing or not, so the
     // filter panel always lists what the timeline looks for.
     for (Time_Drive_Source__mdt s : run.sources) {
-      if (String.isBlank(s.Event_Type__c) || typeCounts.containsKey(s.Event_Type__c) || !filters.inView(TimeDriveConfig.lensKey(s))) {
+      if (
+        String.isBlank(s.Event_Type__c) ||
+        typeCounts.containsKey(s.Event_Type__c) ||
+        !filters.inView(TimeDriveConfig.lensKey(s))
+      ) {
         continue;
       }
       TypeCount none = new TypeCount(s.Event_Type__c, 0);
@@ -216,7 +221,17 @@ public with sharing class TimeDriveController {
     Boolean centred,
     Integer count
   ) {
-    return loadTimeline(contactId, categories, hiddenTypes, historyYears, futureYears, focus, newestFirst, centred, count);
+    return loadTimeline(
+      contactId,
+      categories,
+      hiddenTypes,
+      historyYears,
+      futureYears,
+      focus,
+      newestFirst,
+      centred,
+      count
+    );
   }
 
   private static TimelineLoad loadTimeline(
@@ -306,17 +321,6 @@ public with sharing class TimeDriveController {
       runs.add(String.join(current, ','));
     }
     return runs;
-  }
-
-  /**
-   * Public entry to runsOf, for the tests.
-   * @param summary the timeline summary listing every period with items
-   * @param keys the period keys asked for
-   * @param busy the period keys that are counted, not read
-   * @return each run of consecutive wanted periods as keys joined by commas
-   */
-  public static List<String> runsFor(TimelineSummary summary, List<String> keys, List<String> busy) {
-    return runsOf(summary, new Set<String>(keys), new Set<String>(busy));
   }
 
   // The counted sources the summary found nothing in, over these periods.
@@ -563,10 +567,7 @@ public with sharing class TimeDriveController {
   // (count them here) when they don't cover every busy period: a period
   // left without counts would come back empty.
   @TestVisible
-  private static Map<String, Map<String, Integer>> countsByPeriod(
-    List<String> busyKeys,
-    List<BusyCount> busyCounts
-  ) {
+  private static Map<String, Map<String, Integer>> countsByPeriod(List<String> busyKeys, List<BusyCount> busyCounts) {
     if (busyCounts == null) {
       return null;
     }
@@ -643,7 +644,9 @@ public with sharing class TimeDriveController {
   private static String nameOf(Id recordId) {
     try {
       List<SObject> rows = Database.queryWithBinds(
-        'SELECT Name FROM ' + TimeDriveConfig.describeType(recordId.getSObjectType()).getName() + ' WHERE Id = :recordId',
+        'SELECT Name FROM ' +
+          TimeDriveConfig.describeType(recordId.getSObjectType()).getName() +
+          ' WHERE Id = :recordId',
         new Map<String, Object>{ 'recordId' => recordId },
         AccessLevel.USER_MODE
       );
@@ -774,7 +777,7 @@ public with sharing class TimeDriveController {
 
   /**
    * Whether the Overdue lens (by its API name) has anything for this record,
-   * for the banner over the other lenses. Asked after the timeline has loaded,
+   * for the Overdue button in the header. Asked after the timeline has loaded,
    * as a call of its own: its Salesforce sources are checked once per object
    * (their conditions joined, LIMIT 1), stopping at the first that has an
    * item. False when the lens isn't offered or the check fails.
@@ -793,7 +796,7 @@ public with sharing class TimeDriveController {
       Run run = new Run(recordId, unused, new List<Problem>(), windowFor(historyYears, futureYears, unused));
       return run.anyIn(TimeDriveConfig.OVERDUE_VIEW);
     } catch (Exception e) {
-      // No banner: the lens itself still says what's wrong when opened.
+      // No button: the lens itself still says what's wrong when opened.
       return false;
     }
   }
@@ -1064,10 +1067,6 @@ public with sharing class TimeDriveController {
     return null;
   }
 
-  private static List<EngagementEvent> collect(Id contactId, List<String> warnings) {
-    return collect(contactId, warnings, new List<Problem>(), new TimeDriveContext.Span());
-  }
-
   private static List<EngagementEvent> collect(
     Id contactId,
     List<String> warnings,
@@ -1075,23 +1074,6 @@ public with sharing class TimeDriveController {
     TimeDriveContext.Span window
   ) {
     return new Run(contactId, warnings, problems, window).events();
-  }
-
-  // The timeline's filters: view categories and hidden types.
-  @TestVisible
-  private static List<EngagementEvent> filter(
-    List<EngagementEvent> events,
-    List<String> categories,
-    List<String> hiddenTypes
-  ) {
-    Filters filters = new Filters(categories, hiddenTypes);
-    List<EngagementEvent> kept = new List<EngagementEvent>();
-    for (EngagementEvent e : events) {
-      if (filters.shows(e)) {
-        kept.add(e);
-      }
-    }
-    return kept;
   }
 
   /**
@@ -1213,9 +1195,7 @@ public with sharing class TimeDriveController {
         }
       }
       for (String candidate : new List<String>{ TimeDriveContext.UNIT_DAY, TimeDriveContext.UNIT_WEEK }) {
-        if (
-          queried * TimeDriveContext.periods(window.since.date(), window.until.date(), candidate) <= COUNT_ROWS
-        ) {
+        if (queried * TimeDriveContext.periods(window.since.date(), window.until.date(), candidate) <= COUNT_ROWS) {
           return candidate;
         }
       }
@@ -1252,10 +1232,7 @@ public with sharing class TimeDriveController {
     TimeDriveContext.Span periodIn(String key) {
       Date first = Date.valueOf(key);
       Datetime since = Datetime.newInstance(first, Time.newInstance(0, 0, 0, 0));
-      Datetime until = Datetime.newInstance(
-        TimeDriveContext.periodEnd(first, unit),
-        Time.newInstance(23, 59, 59, 999)
-      );
+      Datetime until = Datetime.newInstance(TimeDriveContext.periodEnd(first, unit), Time.newInstance(23, 59, 59, 999));
       since = since < window.since ? window.since : since;
       until = until > window.until ? window.until : until;
       return since > until ? null : new TimeDriveContext.Span(since, until);
@@ -1310,9 +1287,7 @@ public with sharing class TimeDriveController {
       this.runs = runs;
       counting = true;
       unit = unitFor();
-      String grain = unit == TimeDriveContext.UNIT_DAY
-        ? TimeDriveContext.UNIT_HOUR
-        : TimeDriveContext.UNIT_DAY;
+      String grain = unit == TimeDriveContext.UNIT_DAY ? TimeDriveContext.UNIT_HOUR : TimeDriveContext.UNIT_DAY;
       List<String> keys = new List<String>(wanted);
       keys.sort();
       List<TimeDriveContext.Span> periods = new List<TimeDriveContext.Span>();
@@ -1354,7 +1329,8 @@ public with sharing class TimeDriveController {
             continue;
           }
           context.ranges = toCount;
-          List<TimeDriveContext.DayCount> found = busyCounts == null || busyHint == null
+          List<TimeDriveContext.DayCount> found = busyCounts == null ||
+            busyHint == null
             ? count(i, context, grain)
             : knownCounts(sources[i].DeveloperName, busyHint, busyCounts);
           if (found != null) {
@@ -1486,7 +1462,8 @@ public with sharing class TimeDriveController {
         for (Integer k = 0; k < reads.size(); k++) {
           if (
             next[k] < reads[k].size() &&
-            (best == -1 || reads[k][next[k]].occurredAt > reads[best][next[best]].occurredAt)
+            (best == -1 ||
+            reads[k][next[k]].occurredAt > reads[best][next[best]].occurredAt)
           ) {
             best = k;
           }
@@ -1723,9 +1700,7 @@ public with sharing class TimeDriveController {
           : Datetime.newInstance(day, Time.newInstance(grain == TimeDriveContext.UNIT_HOUR ? 12 : 0, 0, 0, 0));
         Datetime toAt = c.hour != null
           ? Datetime.newInstance(day, Time.newInstance(c.hour, 59, 59, 0))
-          : (grain == TimeDriveContext.UNIT_HOUR
-              ? fromAt
-              : Datetime.newInstance(day, Time.newInstance(23, 59, 59, 0)));
+          : (grain == TimeDriveContext.UNIT_HOUR ? fromAt : Datetime.newInstance(day, Time.newInstance(23, 59, 59, 0)));
         first = first == null || fromAt < first ? fromAt : first;
         last = last == null || toAt > last ? toAt : last;
       }
@@ -1755,14 +1730,7 @@ public with sharing class TimeDriveController {
     }
 
     TimeDriveContext context(Integer i) {
-      TimeDriveContext context = new TimeDriveContext(
-        recordId,
-        parentObject,
-        window.since,
-        sources[i],
-        null,
-        warnings
-      );
+      TimeDriveContext context = new TimeDriveContext(recordId, parentObject, window.since, sources[i], null, warnings);
       context.problems = problems;
       context.personContactId = personContactId;
       context.until = window.until;
@@ -1796,7 +1764,10 @@ public with sharing class TimeDriveController {
         // when Max Records cut it short.
         if (!counts(i) && providers[i] != null && events.size() >= context.maxRecords()) {
           context.warn(
-            String.format(Label.Time_Drive_Server_Max_Records, new List<String>{ sources[i].Label, String.valueOf(context.maxRecords()) })
+            String.format(
+              Label.Time_Drive_Server_Max_Records,
+              new List<String>{ sources[i].Label, String.valueOf(context.maxRecords()) }
+            )
           );
         }
         rowsBySource.put(i, events);
@@ -1819,7 +1790,10 @@ public with sharing class TimeDriveController {
       List<EngagementEvent> events = read(i, context);
       if (providers[i] != null && events.size() >= context.maxRecords()) {
         context.warn(
-          String.format(Label.Time_Drive_Server_Max_Records, new List<String>{ sources[i].Label, String.valueOf(context.maxRecords()) })
+          String.format(
+            Label.Time_Drive_Server_Max_Records,
+            new List<String>{ sources[i].Label, String.valueOf(context.maxRecords()) }
+          )
         );
       }
       return events;
@@ -1943,7 +1917,9 @@ public with sharing class TimeDriveController {
       if (inView == null) {
         return true;
       }
-      for (String lens : String.isBlank(category) ? new List<String>{ TimeDriveConfig.ALL_VIEW } : category.split(';')) {
+      for (
+        String lens : String.isBlank(category) ? new List<String>{ TimeDriveConfig.ALL_VIEW } : category.split(';')
+      ) {
         if (inView.contains(lens)) {
           return true;
         }

@@ -141,20 +141,20 @@ private class TimeDriveSetupControllerTest {
       }
       Assert.isTrue(contactRole, 'Opportunities link through OpportunityContactRole');
 
-      // What the diagram draws: the objects and the lookups between them.
+      // What the diagram draws: the objects and the lookups between them, in the org's own labels.
       for (TimeDriveSetupController.Link l : TimeDriveSetupController.getLinks('Contact', 'Opportunity')) {
         if (l.junctionObject == 'OpportunityContactRole') {
-          Assert.areEqual('Contact', l.parentLabel);
-          Assert.areEqual('Opportunity', l.objectLabel);
-          Assert.areEqual('Contact ID', l.fieldLabel);
-          Assert.areEqual('Opportunity ID', l.recordFieldLabel);
+          Assert.areEqual(Contact.SObjectType.getDescribe().getLabel(), l.parentLabel);
+          Assert.areEqual(Opportunity.SObjectType.getDescribe().getLabel(), l.objectLabel);
+          Assert.areEqual(OpportunityContactRole.ContactId.getDescribe().getLabel(), l.fieldLabel);
+          Assert.areEqual(OpportunityContactRole.OpportunityId.getDescribe().getLabel(), l.recordFieldLabel);
           Assert.isNotNull(l.junctionLabel);
         }
       }
-      TimeDriveSetupController.Link task = TimeDriveSetupController.getLinks('Contact', 'Task')[0];
-      Assert.areEqual('Task', task.objectLabel);
-      Assert.areEqual('Subject', task.objectNameLabel);
-      Assert.isFalse(task.masterDetail, 'a Task points at its Contact by a lookup');
+      TimeDriveSetupController.Link taskLink = TimeDriveSetupController.getLinks('Contact', 'Task')[0];
+      Assert.areEqual(Task.SObjectType.getDescribe().getLabel(), taskLink.objectLabel);
+      Assert.areEqual(Task.Subject.getDescribe().getLabel(), taskLink.objectNameLabel);
+      Assert.isFalse(taskLink.masterDetail, 'a Task points at its Contact by a lookup');
     }
   }
 
@@ -246,9 +246,14 @@ private class TimeDriveSetupControllerTest {
   @IsTest
   static void reportsEinsteinActivityCaptureForTheEmailSyncCheck() {
     System.runAs(TimeDriveTestData.setupAdmin()) {
-      // Whatever this org has, the answer says whether it's in use.
-      TimeDriveSetupController.OrgCheck found = TimeDriveSetupController.runOrgCheck('ActivityCapture');
-      Assert.isNotNull(found.present);
+      // No licences assigned: not in use, and nothing to check.
+      TimeDriveSetupController.ActivityCapture none = new TimeDriveSetupController.ActivityCapture();
+      none.inUse = false;
+      TimeDriveSetupController.testActivityCapture = none;
+      TimeDriveSetupController.OrgCheck unused = TimeDriveSetupController.runOrgCheck('ActivityCapture');
+      Assert.isFalse(unused.present);
+      Assert.areEqual('Not in use', unused.found);
+      Assert.isTrue(unused.meaning.contains('nothing to check'), unused.meaning);
       // With licences assigned, setup says it is in use and asks for the email sync check.
       TimeDriveSetupController.ActivityCapture assigned = new TimeDriveSetupController.ActivityCapture();
       assigned.inUse = true;
@@ -380,13 +385,16 @@ private class TimeDriveSetupControllerTest {
       Assert.areEqual(2, TimeDriveSetupController.getDataSpaces().size());
 
       // Saved on the record, and read back for editing.
-      TimeDriveSetupController.SourceDraft d = (TimeDriveSetupController.SourceDraft) JSON.deserialize(
-        '{"kind": "Data 360", "objectName": "Reservation__dlm", "dataSpace": "Europe"}',
-        TimeDriveSetupController.SourceDraft.class
-      );
-      Time_Drive_Source__mdt record = d.toRecord();
-      Assert.areEqual('Europe', record.Data_Space__c);
-      Assert.areEqual('Europe', new TimeDriveSetupController.SourceDraft(record).dataSpace);
+      TimeDriveConfig.testSources = null;
+      TimeDriveConfig.testDetailFields = null;
+      String key = TimeDriveSetupController.save(
+          '{"label": "Reservations", "kind": "Data 360", "parentObject": "Contact", ' +
+          '"objectName": "Reservation__dlm", "dateField": "Booked__c", "dataSpace": "Europe"}'
+        )
+        .developerName;
+      Assert.areEqual('Europe', [SELECT Data_Space__c FROM Time_Drive_Record__c WHERE Key__c = :key].Data_Space__c);
+      TimeDriveConfig.reset();
+      Assert.areEqual('Europe', TimeDriveSetupController.getSource(key).dataSpace);
     }
   }
 
@@ -445,7 +453,7 @@ private class TimeDriveSetupControllerTest {
       Assert.areEqual('Off', person.found);
       Assert.isTrue(person.adds.isEmpty());
 
-      Assert.areEqual('Not in use', TimeDriveSetupController.runOrgCheck('ActivityCapture').found);
+      // Einstein Activity Capture is checked in reportsEinsteinActivityCaptureForTheEmailSyncCheck.
       try {
         TimeDriveSetupController.runOrgCheck('NoSuchCheck');
         Assert.fail('An unknown check should say so');
@@ -466,8 +474,12 @@ private class TimeDriveSetupControllerTest {
       }
       TimeDriveSetupController.testFeatures = new Set<String>{ 'SharedActivities' };
       List<TimeDriveSetupController.Link> links = TimeDriveSetupController.getLinks('Contact', 'Event');
-      TimeDriveSetupController.Link every = links[0];
-      Assert.areEqual('EventRelation', every.junctionObject, 'every contact on it comes first');
+      // Found by its junction: some orgs list EventWhoRelation before it.
+      TimeDriveSetupController.Link every;
+      for (TimeDriveSetupController.Link l : links) {
+        every = every == null && l.junctionObject == 'EventRelation' ? l : every;
+      }
+      Assert.isNotNull(every, 'every contact on it, through EventRelation');
       Assert.areEqual('RelationId', every.junctionParentField);
       Assert.areEqual('EventId', every.junctionRecordField);
       Assert.areEqual('Contact', every.parentLabel, 'the diagram shows the page, not Calendar');
@@ -829,22 +841,37 @@ private class TimeDriveSetupControllerTest {
   @IsTest
   static void aSourceKeepsAtMostFourDetailFields() {
     System.runAs(TimeDriveTestData.setupAdmin()) {
+      TimeDriveConfig.testSources = null;
+      TimeDriveConfig.testDetailFields = null;
       TimeDriveSetupController.SourceDraft d = orderDraft();
       for (String field : new List<String>{ 'Description', 'Status', 'Name', 'Type', 'Phone' }) {
         TimeDriveSetupController.DetailDraft detail = new TimeDriveSetupController.DetailDraft();
         detail.field = field;
         d.details.add(detail);
       }
-      List<Time_Drive_Detail_Field__mdt> kept = d.detailRecords();
-      Assert.areEqual(4, kept.size());
-      Assert.areEqual('Type', kept[3].Field__c);
+      String key = TimeDriveSetupController.save(JSON.serialize(d)).developerName;
+      Time_Drive_Record__c saved = [
+        SELECT Detail_1_Field__c, Detail_4_Field__c
+        FROM Time_Drive_Record__c
+        WHERE Key__c = :key
+      ];
+      Assert.areEqual('Description', saved.Detail_1_Field__c);
+      Assert.areEqual('Type', saved.Detail_4_Field__c, 'the fifth has no slot');
+      TimeDriveConfig.reset();
+      List<TimeDriveSetupController.DetailDraft> back = TimeDriveSetupController.getSource(key).details;
+      Assert.areEqual(4, back.size());
+      Assert.areEqual('Type', back[3].field);
     }
   }
 
   @IsTest
   static void aSourceKeepsOneHighlightAndItRoundTrips() {
     System.runAs(TimeDriveTestData.setupAdmin()) {
+      TimeDriveConfig.testSources = null;
+      TimeDriveConfig.testDetailFields = null;
       TimeDriveSetupController.SourceDraft d = orderDraft();
+      // Without a field a highlight is no highlight, even first.
+      d.highlights.add(new TimeDriveSetupController.HighlightDraft());
       for (String field : new List<String>{ 'IsHighPriority', 'IsClosed' }) {
         TimeDriveSetupController.HighlightDraft h = new TimeDriveSetupController.HighlightDraft();
         h.field = field;
@@ -852,15 +879,19 @@ private class TimeDriveSetupControllerTest {
         h.colour = '#C23934';
         d.highlights.add(h);
       }
-      // Without a field a highlight is no highlight.
-      d.highlights.add(new TimeDriveSetupController.HighlightDraft());
-      List<Time_Drive_Highlight__mdt> records = d.highlightRecords();
-      Assert.areEqual(1, records.size());
-      Assert.areEqual('IsHighPriority', records[0].Field__c);
-      TimeDriveSetupController.HighlightDraft back = new TimeDriveSetupController.HighlightDraft(records[0]);
-      Assert.areEqual('IsHighPriority', back.field);
-      Assert.areEqual('utility:flag', back.icon);
-      Assert.areEqual('#C23934', back.colour);
+      String key = TimeDriveSetupController.save(JSON.serialize(d)).developerName;
+      Time_Drive_Record__c saved = [
+        SELECT Highlight_Field__c, Highlight_Icon__c, Highlight_Colour__c
+        FROM Time_Drive_Record__c
+        WHERE Key__c = :key
+      ];
+      Assert.areEqual('IsHighPriority', saved.Highlight_Field__c, 'the first with a field is kept');
+      TimeDriveConfig.reset();
+      List<TimeDriveSetupController.HighlightDraft> back = TimeDriveSetupController.getSource(key).highlights;
+      Assert.areEqual(1, back.size());
+      Assert.areEqual('IsHighPriority', back[0].field);
+      Assert.areEqual('utility:flag', back[0].icon);
+      Assert.areEqual('#C23934', back[0].colour);
     }
   }
 
@@ -876,7 +907,7 @@ private class TimeDriveSetupControllerTest {
       Assert.areEqual('Order_Placed', moved[0].Key__c);
       Assert.areEqual(20, moved[0].Sequence__c);
 
-      // A source already in its place isn't redeployed; no order, no change.
+      // A source already in its place isn't saved again; no order, no change.
       d.legendOrder = new List<String>{ 'Order_Placed', TimeDriveSetupController.THIS_SOURCE };
       Assert.areEqual(0, TimeDriveSetupController.reordered(d).size());
       Assert.areEqual(20, d.sequence);
@@ -1080,27 +1111,22 @@ private class TimeDriveSetupControllerTest {
       if (!TimeDriveTestData.tryInsert(new List<SObject>{ prospect, launch })) {
         return;
       }
-      Integer expected = 0;
-      expected += TimeDriveTestData.tryInsert(
-          new Task(WhoId = prospect.Id, Subject = 'Call the lead', ActivityDate = Date.today())
+      // Each is asserted when the org let it be made (automation can refuse one).
+      Boolean taskMade = TimeDriveTestData.tryInsert(
+        new Task(WhoId = prospect.Id, Subject = 'Call the lead', ActivityDate = Date.today())
+      );
+      Boolean fileMade = TimeDriveTestData.tryInsert(
+        new ContentVersion(
+          Title = 'Brochure',
+          PathOnClient = 'brochure.txt',
+          VersionData = Blob.valueOf('Spring range'),
+          FirstPublishLocationId = prospect.Id
         )
-        ? 1
-        : 0;
-      expected += TimeDriveTestData.tryInsert(
-          new ContentVersion(
-            Title = 'Brochure',
-            PathOnClient = 'brochure.txt',
-            VersionData = Blob.valueOf('Spring range'),
-            FirstPublishLocationId = prospect.Id
-          )
-        )
-        ? 1
-        : 0;
-      expected += TimeDriveTestData.tryInsert(
-          new CampaignMember(CampaignId = launch.Id, LeadId = prospect.Id, Status = 'Sent')
-        )
-        ? 1
-        : 0;
+      );
+      Boolean memberMade = TimeDriveTestData.tryInsert(
+        new CampaignMember(CampaignId = launch.Id, LeadId = prospect.Id, Status = 'Sent')
+      );
+      Integer expected = (taskMade ? 1 : 0) + (fileMade ? 1 : 0) + (memberMade ? 1 : 0);
       TimeDriveController.TimelineSummary summary = TimeDriveController.getSummary(prospect.Id, null, null, null, null);
       Assert.areEqual(expected, summary.total, String.join(summary.warnings, ' | '));
       Map<String, TimeDriveController.EngagementEvent> byType = new Map<String, TimeDriveController.EngagementEvent>();
@@ -1120,7 +1146,8 @@ private class TimeDriveSetupControllerTest {
       ) {
         byType.put(e.type, e);
       }
-      if (byType.containsKey('file')) {
+      if (fileMade) {
+        Assert.isTrue(byType.containsKey('file'), 'the lead\'s file is plotted');
         Assert.areEqual('Brochure', byType.get('file').title);
         Assert.areEqual(
           ContentDocument.SObjectType,
@@ -1128,7 +1155,8 @@ private class TimeDriveSetupControllerTest {
           'a file opens its document'
         );
       }
-      if (byType.containsKey('campaign_member')) {
+      if (memberMade) {
+        Assert.isTrue(byType.containsKey('campaign_member'), 'the lead\'s campaign is plotted');
         Assert.areEqual('Spring launch', byType.get('campaign_member').title);
         Assert.areEqual(launch.Id, byType.get('campaign_member').recordId, 'a membership opens its campaign');
       }
@@ -1174,23 +1202,6 @@ private class TimeDriveSetupControllerTest {
       Assert.isNotNull(joined, 'the contact\'s campaign is plotted');
       Assert.areEqual('Spring launch', joined.title);
       Assert.areEqual(launch.Id, joined.recordId, 'a membership opens its campaign');
-    }
-  }
-
-  @IsTest
-  static void aPersonAccountsFilesAreTheAccounts() {
-    System.runAs(TimeDriveTestData.setupAdmin()) {
-      Id accountId = Id.valueOf(Account.SObjectType.getDescribe().getKeyPrefix() + '0'.repeat(12));
-      Id contactId = Id.valueOf(Contact.SObjectType.getDescribe().getKeyPrefix() + '0'.repeat(12));
-      TimeDriveContext context = new TimeDriveContext(accountId, 'PersonAccount', null, null, null, null);
-      context.personContactId = contactId;
-      Assert.areEqual(
-        accountId,
-        context.parentIdFor(ContentDocumentLink.LinkedEntityId.getDescribe()),
-        'files are linked to the account'
-      );
-      Assert.areEqual(contactId, context.parentIdFor(Task.WhoId.getDescribe()), 'activities are linked to its contact');
-      Assert.areEqual(accountId, context.parentIdFor(Task.AccountId.getDescribe()));
     }
   }
 
@@ -1296,6 +1307,12 @@ private class TimeDriveSetupControllerTest {
         names.add(o.value);
       }
       Assert.isFalse(names.contains('TimeDriveSoqlProvider'), 'Built-in providers need no class');
+      // Listed by its name; once packaged, its value carries the namespace (ns.TimeDriveOpportunityProducts).
+      Boolean products = false;
+      for (TimeDriveSetupController.Option o : TimeDriveSetupController.getApexProviders()) {
+        products = products || o.label == 'TimeDriveOpportunityProducts';
+      }
+      Assert.isTrue(products, 'Setup lists the opportunity products among the Apex sources');
     }
   }
 

@@ -34,19 +34,21 @@ private class TimeDriveProgressTest {
       Username = 'plain' + System.currentTimeMillis() + '@example.com'
     );
     insert other;
+    String refused = 'Only admins (with the Time Drive Setup permission set) can manage timeline sources.';
     System.runAs(other) {
       try {
         TimeDriveSetupController.getProgress();
-        System.assert(false, 'a person without Setup access reads nothing');
+        Assert.fail('a person without Setup access reads nothing');
       } catch (AuraHandledException e) {
-        System.assert(true);
+        Assert.areEqual(refused, e.getMessage());
       }
       try {
         TimeDriveSetupController.saveProgress(new List<String>{ 'orgcheck' }, null);
-        System.assert(false, 'a person without Setup access writes nothing');
+        Assert.fail('a person without Setup access writes nothing');
       } catch (AuraHandledException e) {
-        System.assert(true);
+        Assert.areEqual(refused, e.getMessage());
       }
     }
+    Assert.areEqual(0, [SELECT COUNT() FROM Time_Drive_Setup__c], 'nothing was written');
   }
 }

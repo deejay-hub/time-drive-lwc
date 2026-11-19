@@ -29,19 +29,32 @@ private class TimeDriveEmailsTest {
 
   @IsTest
   static void namesThePrimaryRecipientAndCountsTheOthers() {
+    // Names are kept by message and address, so the message has an Id of its own.
+    Id messageId = Id.valueOf(EmailMessage.SObjectType.getDescribe().getKeyPrefix() + '0'.repeat(11) + '1');
     EmailMessage m = message(
-      new Map<String, Object>{ 'ToAddress' => 'sam@example.com; ada@example.com', 'CcAddress' => 'lee@example.com' }
+      new Map<String, Object>{
+        'Id' => messageId,
+        'ToAddress' => 'sam@example.com; ada@example.com',
+        'CcAddress' => 'lee@example.com'
+      }
     );
-    Map<String, String> names = new Map<String, String>{ m.Id + '|sam@example.com' => 'Sam Lee' };
-    Assert.areEqual('Sent to: Sam Lee and 2 others', TimeDriveEmails.sentTo(m, names));
+    Map<String, String> names = new Map<String, String>{ messageId + '|sam@example.com' => 'Sam Lee' };
+    Assert.areEqual(
+      String.format(Label.Time_Drive_Server_Sent_To_Others, new List<String>{ 'Sam Lee', '2' }),
+      TimeDriveEmails.sentTo(m, names)
+    );
     // A known recipient leads, wherever they are in the list.
     Assert.areEqual(
-      'Sent to: Sam Lee and 1 other',
-      TimeDriveEmails.sentTo(message(new Map<String, Object>{ 'ToAddress' => 'ada@example.com, sam@example.com' }), names)
+      String.format(Label.Time_Drive_Server_Sent_To_One_Other, new List<String>{ 'Sam Lee' }),
+      TimeDriveEmails.sentTo(
+        message(new Map<String, Object>{ 'Id' => messageId, 'ToAddress' => 'ada@example.com, sam@example.com' }),
+        names
+      )
     );
+    // Not known by this message: the address it went to.
     Assert.areEqual(
-      'Sent to: ada@example.com',
-      TimeDriveEmails.sentTo(message(new Map<String, Object>{ 'ToAddress' => 'ada@example.com' }), names)
+      String.format(Label.Time_Drive_Server_Sent_To, new List<String>{ 'sam@example.com' }),
+      TimeDriveEmails.sentTo(message(new Map<String, Object>{ 'ToAddress' => 'sam@example.com' }), names)
     );
     Assert.isNull(TimeDriveEmails.sentTo(message(new Map<String, Object>()), names));
   }
@@ -60,7 +73,12 @@ private class TimeDriveEmailsTest {
       MessageDate = Datetime.now()
     );
     insert m;
-    insert new EmailMessageRelation(EmailMessageId = m.Id, RelationId = sam.Id, RelationType = 'ToAddress', RelationAddress = 'sam@example.com');
+    insert new EmailMessageRelation(
+      EmailMessageId = m.Id,
+      RelationId = sam.Id,
+      RelationType = 'ToAddress',
+      RelationAddress = 'sam@example.com'
+    );
 
     TimeDriveController.EngagementEvent e = new TimeDriveController.EngagementEvent(
         'e1',
@@ -73,6 +91,9 @@ private class TimeDriveEmailsTest {
       .record(m.Id);
     TimeDriveEmails.enrich(new List<TimeDriveController.EngagementEvent>{ e });
     // The timeline's own subtitle, whatever the source's template said.
-    Assert.areEqual('Sent to: Sam Lee and 1 other', e.subtitle);
+    Assert.areEqual(
+      String.format(Label.Time_Drive_Server_Sent_To_One_Other, new List<String>{ 'Sam Lee' }),
+      e.subtitle
+    );
   }
 }
