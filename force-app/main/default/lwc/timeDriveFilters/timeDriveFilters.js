@@ -8,7 +8,8 @@
  * toggle(), notePress() and close(), and hears openchange.
  *
  * The panel is a sheet inside the card, under its header and down to its
- * foot: on a wide card at the card's end, the types in two columns; on a
+ * foot: on a wide card at the card's end, the types in as many columns as fit
+ * (up to three); on a
  * narrow one over the whole timeline, in one. It uses the card's height,
  * scrolling only when the types are longer than that, and says how tall it
  * would like to be (panelsize) so a short timeline can make room for it.
@@ -33,7 +34,7 @@ export default class TimeDriveFilters extends LightningElement {
   @api noneText = "";
   // The lens being filtered: each lens keeps its own filter, so the title names it.
   @api lensLabel = "";
-  // A wide card: the panel sits at its end, the types in two columns; narrow,
+  // A wide card: the panel sits at its end, the types in up to three columns; narrow,
   // it covers the timeline, in one.
   @api wide = false;
 

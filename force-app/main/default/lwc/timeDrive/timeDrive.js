@@ -2084,7 +2084,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   toggleFilters() {
     this.filtersPanel?.toggle();
   }
-  // A wide card has the panel at its end, the types in two columns; a narrow
+  // A wide card has the panel at its end, the types in up to three columns; a narrow
   // one has it over the whole timeline.
   get filtersWide() {
     return !this.narrow;
