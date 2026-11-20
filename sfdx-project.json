@@ -1,27 +1,20 @@
 {
   "packageDirectories": [
     {
-      "path": "force-app",
-      "package": "Time Drive",
-      "versionName": "Sydney",
-      "versionNumber": "0.1.0.NEXT",
-      "versionDescription": "An interactive timeline for activity and interactions",
-      "releaseNotesUrl": "https://github.com/deejay-hub/time-drive-lwc/blob/main/changelog.md",
-      "definitionFile": "config/project-scratch-def.json",
-      "default": true
-    },
-    {
-      "path": "force-app-data360",
-      "package": "Time Drive Data 360",
       "versionName": "ver 0.1",
       "versionNumber": "0.1.0.NEXT",
+      "path": "force-app",
       "default": false,
-      "dependencies": [
-        {
-          "package": "Time Drive",
-          "versionNumber": "0.1.0.LATEST"
-        }
-      ]
+      "package": "Time Drive",
+      "versionDescription": "An interactive timeline for activity and interactions"
+    },
+    {
+      "versionName": "ver 0.1",
+      "versionNumber": "0.1.0.NEXT",
+      "path": "force-app-data360",
+      "default": true,
+      "package": "Time Drive Data 360",
+      "versionDescription": "Engagement from Data 360 on the Time Drive timeline"
     },
     {
       "path": "unpackaged",
@@ -33,13 +26,7 @@
   "sfdcLoginUrl": "https://login.salesforce.com",
   "sourceApiVersion": "67.0",
   "packageAliases": {
-    "Time Drive": "0HoNS0000006Mdl0AE",
-    "Time Drive@0.1.0-1": "04tNS000000c9VJYAY",
-    "Time Drive@0.1.0-2": "04tNS000000cAMXYA2",
-    "Time Drive@0.1.0-3": "04tNS000000cKiTYAU",
-    "Time Drive@0.1.0-4": "04tNS000000cLJZYA2",
-    "Time Drive@0.1.0-5": "04tNS000000cT0zYAE",
-    "Time Drive@0.1.0-6": "04tNS000000cTk9YAE",
-    "Time Drive@0.1.0-7": "04tNS000000cYqHYAU"
+    "Time Drive": "0HogK0000005kQPSAY",
+    "Time Drive Data 360": "0HogK0000005kS1SAI"
   }
 }

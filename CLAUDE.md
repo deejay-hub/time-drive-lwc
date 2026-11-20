@@ -50,8 +50,12 @@ and data360. The GitHub repo was renamed to `deejay-hub/time-drive-lwc` on
 - `blog/` (draft posts) and `manifest/` (local deploy manifests) aren't tracked.
 - Run `npm install` before Jest/ESLint. Jest: 14 suites, 200 tests, steady in
   parallel. Apex: 149 tests pass in the namespaced scratch org `time-drive-issues`.
-- Package: 2GP managed, namespace `drvrckt`, Dev Hub `bumpy-rckt`; betas are
-  built with `config/project-scratch-def.json` (the Translation Workbench).
+- Packages: 2GP managed, namespace `drvrckt`, both in Dev Hub `d360-hub` (a
+  Developer Edition with Data Cloud, so the Data 360 package can be built):
+  Time Drive (force-app) and Time Drive Data 360 (force-app-data360). Re-created
+  there on 2026-11-20; the betas 0.1.0-1 to -7 were in `bumpy-rckt`'s old Time
+  Drive package (never released). Betas are built with
+  `config/project-scratch-def.json` (the Translation Workbench).
 - The setup page's Docs links point at GitHub `deejay-hub/time-drive-lwc`
   (private for now, so the links need a GitHub login until it's public).
 
