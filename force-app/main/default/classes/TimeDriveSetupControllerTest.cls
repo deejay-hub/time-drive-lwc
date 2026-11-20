@@ -1437,19 +1437,25 @@ private class TimeDriveSetupControllerTest {
       TimeDriveConfig.testViews = new List<Time_Drive_View__mdt>{
         new Time_Drive_View__mdt(DeveloperName = 'All', Label = 'All'),
         new Time_Drive_View__mdt(DeveloperName = 'Sales', Label = 'Sales'),
+        new Time_Drive_View__mdt(DeveloperName = 'Marketing', Label = 'Marketing'),
+        new Time_Drive_View__mdt(DeveloperName = 'Overdue', Label = 'Overdue'),
         new Time_Drive_View__mdt(DeveloperName = 'Commerce', Label = 'Commerce'),
         new Time_Drive_View__mdt(DeveloperName = 'Digital', Label = 'Digital')
       };
       Assert.areEqual(0, [SELECT COUNT() FROM Time_Drive_Setup__c]);
-      Assert.areEqual(new List<String>{ 'All', 'Sales' }, offered());
+      Assert.areEqual(new List<String>{ 'All', 'Overdue', 'Marketing', 'Sales' }, offered());
 
       TimeDriveSetupController.saveProgress(new List<String>{ 'welcome' }, null);
       TimeDriveConfig.forgetHiddenViews();
       Assert.areEqual('Commerce,Digital', [SELECT Hidden_Views__c FROM Time_Drive_Setup__c].Hidden_Views__c);
-      Assert.areEqual(new List<String>{ 'All', 'Sales' }, offered());
+      Assert.areEqual(new List<String>{ 'All', 'Overdue', 'Marketing', 'Sales' }, offered());
 
       TimeDriveSetupController.saveViews('[{"developerName":"Commerce","active":true}]');
-      Assert.areEqual(new List<String>{ 'All', 'Commerce', 'Sales' }, offered(), 'switched on, in alphabetical order');
+      Assert.areEqual(
+        new List<String>{ 'All', 'Overdue', 'Commerce', 'Marketing', 'Sales' },
+        offered(),
+        'All, then Overdue, then the rest alphabetically'
+      );
     }
   }
 

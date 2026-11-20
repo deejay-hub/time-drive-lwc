@@ -183,7 +183,7 @@ public with sharing class TimeDriveConfig {
   }
 
   /**
-   * The views, All first, then in alphabetical order of the label people see
+   * The views, All first, then Overdue, then in alphabetical order of the label people see
    * (their language's, when it's a custom label).
    *
    * @return the views in display order
@@ -320,19 +320,21 @@ public with sharing class TimeDriveConfig {
       this.key = viewLabel(view).toLowerCase();
     }
     /**
-     * Orders views All first, then alphabetically by the label people see.
+     * Orders views All first, then Overdue, then alphabetically by the label people see.
      *
      * @param other the ViewOrder to compare with
      * @return a negative, zero or positive number
      */
     public Integer compareTo(Object other) {
       ViewOrder that = (ViewOrder) other;
-      Boolean mineAll = view.DeveloperName == ALL_VIEW;
-      Boolean theirsAll = that.view.DeveloperName == ALL_VIEW;
-      if (mineAll != theirsAll) {
-        return mineAll ? -1 : 1;
+      if (place() != that.place()) {
+        return place() - that.place();
       }
       return key == that.key ? view.DeveloperName.compareTo(that.view.DeveloperName) : key.compareTo(that.key);
+    }
+    // All first, then Overdue (a lens of its own kind), then the rest.
+    Integer place() {
+      return view.DeveloperName == ALL_VIEW ? 0 : (view.DeveloperName == OVERDUE_VIEW ? 1 : 2);
     }
   }
 
