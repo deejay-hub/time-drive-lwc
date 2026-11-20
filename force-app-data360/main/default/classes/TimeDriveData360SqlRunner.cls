@@ -23,18 +23,37 @@ public with sharing class TimeDriveData360SqlRunner implements TimeDriveData360P
    */
   @NamespaceAccessible
   public List<List<Object>> run(String sql, String dataSpace) {
-    ConnectApi.CdpQueryInput input = new ConnectApi.CdpQueryInput();
-    input.sql = sql;
-    ConnectApi.CdpQueryOutputV2 output = String.isBlank(dataSpace)
-      ? ConnectApi.CdpQuery.queryAnsiSqlV2(input)
-      : ConnectApi.CdpQuery.queryAnsiSqlV2(input, dataSpace);
+    ConnectApi.CdpQueryOutputV2 output = firstBatch(sql, dataSpace);
     List<List<Object>> rows = new List<List<Object>>();
     add(rows, output);
     while (output.done != true && String.isNotBlank(output.nextBatchId)) {
-      output = ConnectApi.CdpQuery.nextBatchAnsiSqlV2(output.nextBatchId);
+      output = nextBatch(output.nextBatchId);
       add(rows, output);
     }
     return rows;
+  }
+
+  // Data 360's query API can't run in a test, so a test hands over the
+  // batches it would return.
+  @TestVisible
+  private static List<ConnectApi.CdpQueryOutputV2> testBatches;
+
+  private static ConnectApi.CdpQueryOutputV2 firstBatch(String sql, String dataSpace) {
+    if (testBatches != null) {
+      return testBatches.remove(0);
+    }
+    ConnectApi.CdpQueryInput input = new ConnectApi.CdpQueryInput();
+    input.sql = sql;
+    return String.isBlank(dataSpace)
+      ? ConnectApi.CdpQuery.queryAnsiSqlV2(input)
+      : ConnectApi.CdpQuery.queryAnsiSqlV2(input, dataSpace);
+  }
+
+  private static ConnectApi.CdpQueryOutputV2 nextBatch(String batchId) {
+    if (testBatches != null) {
+      return testBatches.remove(0);
+    }
+    return ConnectApi.CdpQuery.nextBatchAnsiSqlV2(batchId);
   }
 
   private static void add(List<List<Object>> rows, ConnectApi.CdpQueryOutputV2 output) {

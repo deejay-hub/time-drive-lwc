@@ -12,7 +12,9 @@ public with sharing class TimeDriveData360Catalog implements TimeDriveData360Pro
   private static final Pattern DMO_NAME = Pattern.compile('\\bname=([A-Za-z0-9_]+__dlm)\\b');
   // An item's category: Profile, Engagement or Related (fields have none).
   private static final Pattern CATEGORY = Pattern.compile('\\bcategory=([A-Za-z]+)');
-  // The metadata per data space, asked for once a request.
+  // The metadata per data space, asked for once a request (a test fills it in,
+  // since Data 360's query API can't run in a test).
+  @TestVisible
   private static Map<String, List<Object>> metadataBySpace = new Map<String, List<Object>>();
 
   /** Makes the catalog; the core package does, by name. */
