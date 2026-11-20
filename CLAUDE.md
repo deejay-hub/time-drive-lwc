@@ -56,6 +56,10 @@ and data360. The GitHub repo was renamed to `deejay-hub/time-drive-lwc` on
   there on 2026-11-20; the betas 0.1.0-1 to -7 were in `bumpy-rckt`'s old Time
   Drive package (never released). Betas are built with
   `config/project-scratch-def.json` (the Translation Workbench).
+- Version names (`versionName` in `sfdx-project.json`): Time Drive uses
+  terms from quantum physics (Boson from 2026-11-20), the Data Extension
+  capital cities of the world (Canberra from 2026-11-20). Pick a new one
+  when the version number moves on, not for each beta.
 - The setup page's Docs links point at GitHub `deejay-hub/time-drive-lwc`
   (private for now, so the links need a GitHub login until it's public).
 
