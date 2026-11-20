@@ -70,16 +70,24 @@
               onchange={toggleAll}
             ></lightning-input>
             <div class="type-grid">
+              <!-- The checkbox keeps its label for screen readers; the name
+                   beside it stays on one line, cut with an ellipsis (the
+                   whole name on hover), and ticks the box when clicked. -->
               <template for:each={choices} for:item="o">
-                <lightning-input
-                  key={o.value}
-                  class="type-choice"
-                  type="checkbox"
-                  label={o.label}
-                  checked={o.checked}
-                  data-value={o.value}
-                  onchange={handleChange}
-                ></lightning-input>
+                <div key={o.value} class="type-row">
+                  <lightning-input
+                    class="type-choice"
+                    type="checkbox"
+                    variant="label-hidden"
+                    label={o.label}
+                    checked={o.checked}
+                    data-value={o.value}
+                    onchange={handleChange}
+                  ></lightning-input>
+                  <span class="type-name" title={o.label} aria-hidden="true" data-value={o.value} onclick={toggleNamed}
+                    >{o.label}</span
+                  >
+                </div>
               </template>
             </div>
           </fieldset>

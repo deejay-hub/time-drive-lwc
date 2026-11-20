@@ -164,9 +164,16 @@ export default class TimeDriveFilters extends LightningElement {
   }
   // One type ticked or cleared; the draft keeps the types' own order.
   handleChange(event) {
-    const value = event.target.dataset.value;
+    this.setType(event.target.dataset.value, event.target.checked);
+  }
+  // A type's name clicked: as its label would, it ticks or clears the box.
+  toggleNamed(event) {
+    const value = event.currentTarget.dataset.value;
+    this.setType(value, !this.draft.includes(value));
+  }
+  setType(value, shown) {
     const on = new Set(this.draft);
-    if (event.target.checked) on.add(value);
+    if (shown) on.add(value);
     else on.delete(value);
     this.draft = (this.options ?? []).map((o) => o.value).filter((v) => on.has(v));
   }

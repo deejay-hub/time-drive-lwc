@@ -1401,6 +1401,23 @@ describe("c-time-drive filters panel", () => {
     }
   });
 
+  it("keeps each type's name on one line, named in full for hover and screen readers, and ticks it on a click", async () => {
+    const element = await mount();
+    const root = element.shadowRoot;
+    const panel = await open(root);
+    const input = panel.querySelector("lightning-input.type-choice");
+    const name = panel.querySelector(".type-name");
+    expect(input.variant).toBe("label-hidden");
+    expect(input.label).toBe(name.textContent);
+    expect(name.title).toBe(name.textContent);
+    expect(name.getAttribute("aria-hidden")).toBe("true");
+    const value = name.dataset.value;
+    const was = checkedTypes(root).includes(value);
+    name.click();
+    await flush();
+    expect(checkedTypes(root).includes(value)).toBe(!was);
+  });
+
   it("asks a short timeline for the room its list needs while it's open", async () => {
     const element = await mount();
     const root = element.shadowRoot;

@@ -69,6 +69,29 @@
   grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
 }
 
+/* A type: its checkbox, then its name on one line, cut with an ellipsis. */
+.type-row {
+  display: flex;
+  align-items: center;
+  gap: calc(0.25 * var(--time-drive-space));
+  min-width: 0;
+}
+
+.type-choice {
+  flex: none;
+}
+
+.type-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8125rem;
+  line-height: 1.5rem;
+  cursor: pointer;
+}
+
 .all-types {
   padding-bottom: calc(0.375 * var(--time-drive-space));
   border-bottom: 1px solid var(--time-drive-rule);
