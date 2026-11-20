@@ -451,13 +451,6 @@
   margin-top: calc(0.5 * var(--time-drive-space));
 }
 
-/* Vertical: the air before the next day grows faster than the rest, so
-   Comfy's days stand apart as clearly as its items do (Compact keeps its
-   4px; Comfy has 12px). */
-.card:not(.card_horizontal) .day + .day {
-  margin-top: calc(var(--time-drive-space) - 0.25rem);
-}
-
 /* Vertical: the day's date pins to the top while its events scroll past,
    until the next day's header takes over. (The horizontal layout's date
    already sits above each scrolling column.) */
@@ -522,6 +515,17 @@
   /* A little air between items; half as much in Compact (--time-drive-space). */
   padding: calc(0.75 * var(--time-drive-space)) calc(0.25 * var(--time-drive-space));
   border-radius: 0.625rem;
+}
+
+/* Vertical: a day's last item has a little more air below it in Comfy, its
+   rail running on through it (--row-extra: 0.5rem in Comfy, none in Compact). */
+.event-row {
+  --row-extra: 0px;
+  padding-bottom: calc(0.75 * var(--time-drive-space) + var(--row-extra));
+}
+
+.card:not(.card_horizontal) .events > li:last-child > .event-row {
+  --row-extra: max(0px, calc(var(--time-drive-space) - 0.5rem));
 }
 
 /* The chevron is the only expand control: a small button with a larger hit
@@ -623,7 +627,7 @@
   align-items: center;
   align-self: stretch;
   /* The rail reaches through the row's padding, so rows' halves meet. */
-  margin-block: calc(-0.75 * var(--time-drive-space));
+  margin-block: calc(-0.75 * var(--time-drive-space)) calc(-0.75 * var(--time-drive-space) - var(--row-extra, 0px));
 }
 
 /* In the icon's own colour, at full strength. */

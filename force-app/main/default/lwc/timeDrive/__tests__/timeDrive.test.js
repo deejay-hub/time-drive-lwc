@@ -1426,6 +1426,10 @@ describe("c-time-drive filters panel", () => {
     const filters = root.querySelector("c-time-drive-filters");
     filters.dispatchEvent(new CustomEvent("panelsize", { detail: { height: 420 } }));
     expect(below.style.minHeight).toBe("420px");
+    // A timeline already that tall, give or take a pixel's rounding, keeps its own height.
+    below.getBoundingClientRect = () => ({ height: 419.5, width: 600, top: 0, left: 0, right: 600, bottom: 419.5 });
+    filters.dispatchEvent(new CustomEvent("panelsize", { detail: { height: 420 } }));
+    expect(below.style.minHeight).toBe("");
     filtersRoot(root).querySelector("lightning-button-icon.filter-close").click();
     await flush();
     expect(below.style.minHeight).toBe("");

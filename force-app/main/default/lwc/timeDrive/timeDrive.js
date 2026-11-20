@@ -2097,8 +2097,13 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   // timeline grows to it while it's open, set directly so nothing re-renders.
   handleFiltersSize(event) {
     const below = this.template.querySelector(".below-header");
+    if (!below) return;
     const height = event.detail?.height;
-    if (below) below.style.minHeight = height > 0 ? `${height}px` : "";
+    // Only when it needs more than the timeline has: a list that already
+    // fits (give or take rounding) leaves the card its own height.
+    below.style.minHeight = "";
+    const own = below.getBoundingClientRect().height;
+    below.style.minHeight = height > own + 2 ? `${height}px` : "";
   }
   handleFiltersOpenChange(event) {
     const { open, returnFocus } = event.detail;
