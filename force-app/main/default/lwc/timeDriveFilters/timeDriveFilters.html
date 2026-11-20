@@ -1,6 +1,6 @@
 <template>
-  <!-- The date range and event types panel, under the toolbar's end;
-       nothing applies until Apply. -->
+  <!-- The date range and event types panel, a sheet inside the card under
+       its header; nothing applies until Apply. -->
   <template lwc:if={isOpen}>
     <div
       class={panelClass}
@@ -58,22 +58,31 @@
           </fieldset>
         </template>
         <template lwc:if={hasChoices}>
-          <p class="filter-heading">{labels.filtersEventTypes}</p>
-          <lightning-input
-            class="all-types"
-            type="checkbox"
-            label={labels.typesAll}
-            checked={allChecked}
-            onchange={toggleAll}
-          ></lightning-input>
-          <lightning-checkbox-group
-            name="filter-types"
-            label={labels.filtersEventTypes}
-            variant="label-hidden"
-            options={choices}
-            value={draft}
-            onchange={handleChange}
-          ></lightning-checkbox-group>
+          <!-- Each type its own checkbox (base components), laid out in a
+               grid: two columns on a wide card, one on a narrow one. -->
+          <fieldset class="type-choices">
+            <legend class="filter-heading">{labels.filtersEventTypes}</legend>
+            <lightning-input
+              class="all-types"
+              type="checkbox"
+              label={labels.typesAll}
+              checked={allChecked}
+              onchange={toggleAll}
+            ></lightning-input>
+            <div class="type-grid">
+              <template for:each={choices} for:item="o">
+                <lightning-input
+                  key={o.value}
+                  class="type-choice"
+                  type="checkbox"
+                  label={o.label}
+                  checked={o.checked}
+                  data-value={o.value}
+                  onchange={handleChange}
+                ></lightning-input>
+              </template>
+            </div>
+          </fieldset>
         </template>
         <template lwc:else>
           <p class="filter-none">{noneText}</p>

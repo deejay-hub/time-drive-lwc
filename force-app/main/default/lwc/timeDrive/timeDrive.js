@@ -2080,10 +2080,21 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   markFilterPress() {
     this.filtersPanel?.notePress();
   }
-  // The panel floats by the button, wherever it is when the panel opens and
-  // as the page scrolls.
+  // The panel is a sheet over the timeline, under the header.
   toggleFilters() {
-    this.filtersPanel?.toggle(() => this.template.querySelector(".filter-button")?.getBoundingClientRect());
+    this.filtersPanel?.toggle();
+  }
+  // A wide card has the panel at its end, the types in two columns; a narrow
+  // one has it over the whole timeline.
+  get filtersWide() {
+    return !this.narrow;
+  }
+  // The panel asks for the height its list needs (0 once closed): a short
+  // timeline grows to it while it's open, set directly so nothing re-renders.
+  handleFiltersSize(event) {
+    const below = this.template.querySelector(".below-header");
+    const height = event.detail?.height;
+    if (below) below.style.minHeight = height > 0 ? `${height}px` : "";
   }
   handleFiltersOpenChange(event) {
     const { open, returnFocus } = event.detail;

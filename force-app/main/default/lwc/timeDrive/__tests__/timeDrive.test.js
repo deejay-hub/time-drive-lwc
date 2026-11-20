@@ -73,9 +73,13 @@ jest.mock(
 jest.mock("@salesforce/apex/TimeDriveController.saveDateRange", () => ({ default: jest.fn(() => Promise.resolve()) }), {
   virtual: true
 });
-jest.mock("@salesforce/apex/TimeDriveController.saveLensFilters", () => ({ default: jest.fn(() => Promise.resolve()) }), {
-  virtual: true
-});
+jest.mock(
+  "@salesforce/apex/TimeDriveController.saveLensFilters",
+  () => ({ default: jest.fn(() => Promise.resolve()) }),
+  {
+    virtual: true
+  }
+);
 jest.mock("@salesforce/apex/TimeDriveController.getTimeline", () => ({ default: jest.fn() }), { virtual: true });
 // The lenses and the Overdue check, as wires a test can answer (left unanswered,
 // the card uses its own lenses and shows no Overdue button).
@@ -157,6 +161,20 @@ const refresh = async (element) => {
 
 // The Filters panel lives in its own component, inside the timeline.
 const filtersRoot = (root) => root.querySelector("c-time-drive-filters").shadowRoot;
+// The types ticked in the open Filters panel, and ticking exactly these.
+const checkedTypes = (root) =>
+  [...filtersRoot(root).querySelectorAll("lightning-input.type-choice")]
+    .filter((i) => i.checked)
+    .map((i) => i.dataset.value);
+const pickTypes = (root, values) => {
+  for (const input of filtersRoot(root).querySelectorAll("lightning-input.type-choice")) {
+    const want = values.includes(input.dataset.value);
+    if (input.checked !== want) {
+      input.checked = want;
+      input.dispatchEvent(new CustomEvent("change"));
+    }
+  }
+};
 
 // ---- a small fake server: the summary and day pages, filtered like Apex ----
 
@@ -1315,9 +1333,7 @@ describe("c-time-drive filters panel", () => {
     const root = element.shadowRoot;
     const panel = await open(root);
     expect(panel).not.toBeNull();
-    panel
-      .querySelector("lightning-checkbox-group")
-      .dispatchEvent(new CustomEvent("change", { detail: { value: ["purchase"] } }));
+    pickTypes(root, ["purchase"]);
     await flush();
     buttonByLabel(filtersRoot(root).querySelector(".filter-panel"), "Cancel").click();
     await flush();
@@ -1335,9 +1351,8 @@ describe("c-time-drive filters panel", () => {
     expect(buttonByLabel(panel, "Cancel")).toBeUndefined();
     // A small close icon at the end of the header.
     expect(panel.querySelector("lightning-button-icon.filter-close").iconName).toBe("utility:close");
-    const group = () => filtersRoot(root).querySelector("lightning-checkbox-group");
-    const current = group().value;
-    group().dispatchEvent(new CustomEvent("change", { detail: { value: ["purchase"] } }));
+    const current = checkedTypes(root);
+    pickTypes(root, ["purchase"]);
     await flush();
     const changed = filtersRoot(root).querySelector(".filter-panel");
     expect(changed.querySelector(".filter-title")).toBeNull();
@@ -1348,49 +1363,55 @@ describe("c-time-drive filters panel", () => {
     expect(buttonByLabel(changed, "Apply")).toBeDefined();
     expect(buttonByLabel(changed, "Cancel")).toBeDefined();
     // Put back as it was: nothing to apply, so the title returns.
-    group().dispatchEvent(new CustomEvent("change", { detail: { value: [...current] } }));
+    pickTypes(root, current);
     await flush();
     const same = filtersRoot(root).querySelector(".filter-panel");
     expect(same.querySelector(".filter-title")).not.toBeNull();
     expect(buttonByLabel(same, "Apply")).toBeUndefined();
   });
 
-  it("floats by the Filters button, above it when the room is there, and follows the page", async () => {
-    const element = await mount();
-    const root = element.shadowRoot;
-    // jsdom lays nothing out: the button where the test says, the panel where its style puts it.
-    let button = { top: 100, bottom: 132, left: 900, right: 932, width: 32, height: 32 };
-    const proto = Element.prototype;
-    const saved = proto.getBoundingClientRect;
-    proto.getBoundingClientRect = function () {
-      if (this.classList?.contains("filter-button")) return button;
-      if (this.classList?.contains("filter-panel")) {
-        return { left: parseFloat(this.style.left) || 0, top: parseFloat(this.style.top) || 0, width: 288, height: 0 };
+  it("is a sheet at a wide card's end with two columns, and covers a narrow card", async () => {
+    let resize;
+    global.ResizeObserver = class {
+      constructor(callback) {
+        resize = callback;
       }
-      return saved.call(this);
+      observe() {}
+      disconnect() {}
     };
     try {
+      const element = await mount();
+      const root = element.shadowRoot;
+      // Inside the card, under its header: not in the header's toolbar.
+      expect(root.querySelector(".below-header > c-time-drive-filters")).not.toBeNull();
+      expect(root.querySelector("header c-time-drive-filters")).toBeNull();
       const panel = await open(root);
-      // Under the button, its end edge under the button's, as tall as the room below.
-      expect(panel.style.top).toBe("138px");
-      expect(panel.style.left).toBe(`${932 - 288}px`);
-      expect(panel.style.maxHeight).toBe(`${window.innerHeight - 132 - 6 - 8}px`);
-      // The page scrolls the button near the window's foot: the panel goes above it.
-      button = {
-        top: window.innerHeight - 68,
-        bottom: window.innerHeight - 36,
-        left: 900,
-        right: 932,
-        width: 32,
-        height: 32
-      };
-      window.dispatchEvent(new CustomEvent("scroll"));
-      await new Promise((resolve) => requestAnimationFrame(resolve));
-      expect(panel.style.maxHeight).toBe(`${window.innerHeight - 68 - 6 - 8}px`);
-      expect(panel.style.top).toBe(`${window.innerHeight - 68 - 6}px`);
+      expect(panel.classList.contains("filter-panel_wide")).toBe(true);
+      // Each type is its own checkbox, in the types' own order.
+      const types = [...panel.querySelectorAll("lightning-input.type-choice")];
+      expect(types.length).toBeGreaterThan(1);
+      expect(panel.querySelector("fieldset.type-choices legend").textContent).toBe("Event types");
+      filtersRoot(root).querySelector("lightning-button-icon.filter-close").click();
+      await flush();
+      resize([{ contentRect: { width: 360 } }]);
+      await flush();
+      expect((await open(root)).classList.contains("filter-panel_narrow")).toBe(true);
     } finally {
-      proto.getBoundingClientRect = saved;
+      delete global.ResizeObserver;
     }
+  });
+
+  it("asks a short timeline for the room its list needs while it's open", async () => {
+    const element = await mount();
+    const root = element.shadowRoot;
+    const below = root.querySelector(".below-header");
+    await open(root);
+    const filters = root.querySelector("c-time-drive-filters");
+    filters.dispatchEvent(new CustomEvent("panelsize", { detail: { height: 420 } }));
+    expect(below.style.minHeight).toBe("420px");
+    filtersRoot(root).querySelector("lightning-button-icon.filter-close").click();
+    await flush();
+    expect(below.style.minHeight).toBe("");
   });
 
   it("closes from the icon on the title, without applying", async () => {
@@ -1409,9 +1430,7 @@ describe("c-time-drive filters panel", () => {
     const panel = await open(root);
     // The date range starts on the page's own.
     expect(panel.querySelector("select.range-back").value).toBe("6");
-    panel
-      .querySelector("lightning-checkbox-group")
-      .dispatchEvent(new CustomEvent("change", { detail: { value: ["purchase", "web"] } }));
+    pickTypes(root, ["purchase", "web"]);
     await flush();
     buttonByLabel(filtersRoot(root).querySelector(".filter-panel"), "Apply").click();
     // Apply goes out after the panel is painted (a frame, then a task).
@@ -1480,7 +1499,7 @@ describe("c-time-drive filters panel", () => {
     await flush();
     const panel = await open(element.shadowRoot);
     expect(panel.querySelector(".range-choices")).toBeNull();
-    expect(panel.querySelector("lightning-checkbox-group")).not.toBeNull();
+    expect(panel.querySelector("lightning-input.type-choice")).not.toBeNull();
   });
 
   it("opens on the user's saved range, trimmed to what the page allows", async () => {
@@ -1529,12 +1548,10 @@ describe("c-time-drive filters panel", () => {
     const element = await mount();
     const root = element.shadowRoot;
     saveLensFilters.mockClear();
-    const panel = await open(root);
+    await open(root);
     // The panel names the lens it filters.
     expect(filtersRoot(root).querySelector(".filter-lens").textContent).toContain("All items");
-    panel
-      .querySelector("lightning-checkbox-group")
-      .dispatchEvent(new CustomEvent("change", { detail: { value: ["purchase", "web"] } }));
+    pickTypes(root, ["purchase", "web"]);
     await flush();
     buttonByLabel(filtersRoot(root).querySelector(".filter-panel"), "Apply").click();
     await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
@@ -1571,10 +1588,8 @@ describe("c-time-drive filters panel", () => {
     const root = element.shadowRoot;
     const summary = () => root.querySelector(".summary");
     expect(summary().querySelector(".skeleton_summary")).toBeNull();
-    const panel = await open(root);
-    panel
-      .querySelector("lightning-checkbox-group")
-      .dispatchEvent(new CustomEvent("change", { detail: { value: ["purchase", "web"] } }));
+    await open(root);
+    pickTypes(root, ["purchase", "web"]);
     await flush();
     buttonByLabel(filtersRoot(root).querySelector(".filter-panel"), "Apply").click();
     await Promise.resolve();
@@ -1759,9 +1774,7 @@ describe("c-time-drive a new filter", () => {
   const applyTypes = async (root, value) => {
     root.querySelector(".filter-button").click();
     await flush();
-    filtersRoot(root)
-      .querySelector("lightning-checkbox-group")
-      .dispatchEvent(new CustomEvent("change", { detail: { value } }));
+    pickTypes(root, value);
     await flush();
     buttonByLabel(filtersRoot(root).querySelector(".filter-panel"), "Apply").click();
     // Apply goes out after the panel is painted (a frame, then a task).
@@ -1809,17 +1822,16 @@ describe("c-time-drive all types", () => {
     root.querySelector(".filter-button").click();
     await flush();
     const all = filtersRoot(root).querySelector(".all-types");
-    const group = () => filtersRoot(root).querySelector("lightning-checkbox-group");
     expect(all.checked).toBe(true);
     all.checked = false;
     all.dispatchEvent(new CustomEvent("change"));
     await flush();
-    expect(group().value).toEqual([]);
+    expect(checkedTypes(root)).toEqual([]);
     expect(filtersRoot(root).querySelector(".all-types").checked).toBe(false);
     all.checked = true;
     all.dispatchEvent(new CustomEvent("change"));
     await flush();
-    expect(group().value).toHaveLength(4);
+    expect(checkedTypes(root)).toHaveLength(4);
   });
 });
 
@@ -2805,9 +2817,7 @@ describe("c-time-drive configured sources", () => {
     const root = await mount();
     root.querySelector(".filter-button").click();
     await flush();
-    const options = filtersRoot(root)
-      .querySelector("lightning-checkbox-group")
-      .options.map((o) => o.label);
+    const options = [...filtersRoot(root).querySelectorAll("lightning-input.type-choice")].map((i) => i.label);
     // With each type's total from the summary.
     expect(options).toEqual(["Case updates", "Loyalty points"]);
   });

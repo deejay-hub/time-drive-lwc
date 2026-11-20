@@ -106,22 +106,6 @@
             </template>
           </template>
         </div>
-
-        <!-- The date range and event types panel (its own component, so
-             opening it doesn't re-render the timeline); nothing applies until
-             Apply. -->
-        <c-time-drive-filters
-          options={typeOptions}
-          back-options={backOptions}
-          ahead-options={aheadOptions}
-          back={rangeBack}
-          ahead={rangeAhead}
-          none-text={filterNoneText}
-          lens-label={viewLabel}
-          slds1={slds1}
-          onapply={handleFiltersApply}
-          onopenchange={handleFiltersOpenChange}
-        ></c-time-drive-filters>
       </div>
 
       <div class="summary-row">
@@ -242,6 +226,22 @@
 
     <!-- Everything under the header. -->
     <div class="below-header">
+      <!-- The date range and event types panel (its own component, so
+           opening it doesn't re-render the timeline): a sheet over the
+           timeline, under the header; nothing applies until Apply. -->
+      <c-time-drive-filters
+        options={typeOptions}
+        back-options={backOptions}
+        ahead-options={aheadOptions}
+        back={rangeBack}
+        ahead={rangeAhead}
+        none-text={filterNoneText}
+        lens-label={viewLabel}
+        wide={filtersWide}
+        onapply={handleFiltersApply}
+        onopenchange={handleFiltersOpenChange}
+        onpanelsize={handleFiltersSize}
+      ></c-time-drive-filters>
       <template lwc:if={updating}>
         <div class="updating" role="status">
           <span class="updating-bar" aria-hidden="true"></span>
