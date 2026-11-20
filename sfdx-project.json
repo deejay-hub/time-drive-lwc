@@ -36,6 +36,7 @@
   "sourceApiVersion": "67.0",
   "packageAliases": {
     "Time Drive": "0HogK0000005kQPSAY",
-    "Time Drive Data Extension": "0HogK0000005kS1SAI"
+    "Time Drive Data Extension": "0HogK0000005kS1SAI",
+    "Time Drive@0.1.0-1": "04tgK000000bJIDQA2"
   }
 }
