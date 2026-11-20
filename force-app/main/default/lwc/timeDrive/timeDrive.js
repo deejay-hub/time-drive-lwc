@@ -762,9 +762,22 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   overdueRecordId;
   overdueHistory;
   overdueFuture;
-  // Once a load lands: new parameters ask again through the wire; the same
-  // ones after a refresh are asked again here. Either way, once.
+  // Once a load lands (and the lenses are in): new parameters ask again
+  // through the wire; the same ones after a refresh are asked again here.
+  // Either way, once. A lens switched off in Setup isn't offered, so nothing
+  // is asked at all and there's no button.
   askOverdue() {
+    this._overdueWanted = true;
+    this.maybeAskOverdue();
+  }
+  _overdueWanted = false;
+  maybeAskOverdue() {
+    if (!this._overdueWanted || !this.views) return;
+    if (!this.offersOverdue) {
+      this.overdue = false;
+      this._overdueStale = false;
+      return;
+    }
     const same =
       this.overdueHistory === this.queryHistory &&
       this.overdueFuture === this.queryFuture &&
@@ -1805,6 +1818,8 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     this.views = data
       .filter((v) => this.lensAllowed(v.value))
       .map((v) => ({ ...v, label: VIEW_LABELS[v.labelName] ?? labelNamed(v.labelName, v.label) }));
+    // The Overdue check waits for the lenses: only an offered lens is asked about.
+    this.maybeAskOverdue();
     // A default lens the org doesn't offer (switched off since the page was
     // built, or left out of the page's Lenses) opens on All.
     if (!this.views.some((v) => v.value === this.view)) {

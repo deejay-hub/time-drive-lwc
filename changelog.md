@@ -17,6 +17,7 @@
 - Added links on an opened item's details that name a record (Related To, an Account), and Plot.links for Apex sources
 - Added the Lenses page property: the lenses a page offers (All items and Overdue always)
 - Added highlights for Apex sources (a checkbox field or a map key), and readable DayCount fields for Apex sources' own tests
+- Documented that an org's own Apex sources are global and name the package's types with drvrckt. (a public class can't be seen from the package)
 - Added the Overdue lens, defined by its sources' filters, with an Overdue button in the header while the record has something overdue
 - Added Edit and Delete from each item's menu
 - Added View all for a busy day's grouped Salesforce items, paged as you scroll

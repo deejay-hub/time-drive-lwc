@@ -3078,9 +3078,24 @@ describe("the Overdue button", () => {
     expect(button(element)).toBeNull();
   });
 
-  it("shows nothing when the Overdue lens isn't offered", async () => {
+  it("asks nothing, and shows nothing, when the Overdue lens is switched off", async () => {
     const element = await open({ lenses: LENSES.filter((l) => l.value !== "Overdue") });
     expect(button(element)).toBeNull();
+    // No check at all: the wire never gets a record to ask about.
+    expect(getOverdue.getLastConfig()?.recordId).toBeUndefined();
+  });
+
+  it("asks once the lenses are in, when they arrive after the timeline", async () => {
+    const element = createTimeline();
+    element.recordId = "003000000000001AAA";
+    document.body.appendChild(element);
+    emitEvents({ warnings: [], events: EVENTS });
+    await flush();
+    // Loaded, but not yet known whether Overdue is offered: not asked.
+    expect(getOverdue.getLastConfig()?.recordId).toBeUndefined();
+    getViews.emit(LENSES);
+    await flush();
+    expect(getOverdue.getLastConfig().recordId).toBe("003000000000001AAA");
   });
 
   it("asks only once the timeline has loaded", async () => {
