@@ -627,7 +627,7 @@
   align-items: center;
   align-self: stretch;
   /* The rail reaches through the row's padding, so rows' halves meet. */
-  margin-block: calc(-0.75 * var(--time-drive-space)) calc(-0.75 * var(--time-drive-space) - var(--row-extra, 0px));
+  margin-block: calc(-0.75 * var(--time-drive-space));
 }
 
 /* In the icon's own colour, at full strength. */
@@ -640,6 +640,22 @@
 
 .rail_none {
   visibility: hidden;
+}
+
+/* A day's last item: the rail under its node runs on through the row's extra
+   padding (--row-extra), so the node stays centred on its text. */
+.node-col > .rail:last-child {
+  position: relative;
+}
+
+.node-col > .rail:last-child::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  height: var(--row-extra, 0px);
+  background: inherit;
 }
 
 .node {
