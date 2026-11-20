@@ -21,6 +21,7 @@
 - Long text is shortened on the timeline (details 500 characters, titles and subtitles 150) and rich text shows as plain words
 - Each lens keeps its own filter (the event types hidden in it), as a list view does
 - An opened item's footer says where it's from the same way for every source: Salesforce · object, Data 360 · DMO, Apex · source name
+- Email tasks' subtitle is Assigned To · Related To, as for tasks, calls and events
 - The Filters panel is a sheet inside the card, under its header and as tall as the timeline: at the card's end with the event types in up to three columns on a wide card, over the whole timeline in one column on a narrow one
 - Added the Overdue lens, defined by its sources' filters, with an Overdue button in the header while the record has something overdue
 - Added Edit and Delete from each item's menu
