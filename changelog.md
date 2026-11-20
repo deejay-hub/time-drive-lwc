@@ -18,6 +18,8 @@
 - Added the Lenses page property: the lenses a page offers (All items and Overdue always)
 - Added highlights for Apex sources (a checkbox field or a map key), and readable DayCount fields for Apex sources' own tests
 - Documented that an org's own Apex sources are global and name the package's types with drvrckt. (a public class can't be seen from the package)
+- Long text is shortened on the timeline (details 500 characters, titles and subtitles 150) and rich text shows as plain words
+- Each lens keeps its own filter (the event types hidden in it), as a list view does
 - Added the Overdue lens, defined by its sources' filters, with an Overdue button in the header while the record has something overdue
 - Added Edit and Delete from each item's menu
 - Added View all for a busy day's grouped Salesforce items, paged as you scroll
