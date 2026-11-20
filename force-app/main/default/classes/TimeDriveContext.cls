@@ -135,7 +135,12 @@ global with sharing class TimeDriveContext {
     this.priorEvents = priorEvents == null ? new List<TimeDriveController.EngagementEvent>() : priorEvents;
     this.warnings = warnings == null ? new List<String>() : warnings;
     this.sourceObject = source?.Object_Name__c;
-    this.sourceLabel = source?.Label;
+    // Where an opened item says it's from: Salesforce and Data 360 sources set
+    // theirs (with the object's label); an Apex source shows its own name.
+    this.sourceLabel = source != null &&
+      kind() == KIND_APEX
+      ? KIND_APEX + TimeDrivePlotter.SEPARATOR + source.Label
+      : source?.Label;
   }
 
   /**

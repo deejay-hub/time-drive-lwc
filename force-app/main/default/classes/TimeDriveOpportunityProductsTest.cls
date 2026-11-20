@@ -155,6 +155,7 @@ private class TimeDriveOpportunityProductsTest {
     Assert.areEqual(Date.today().addMonths(-3), first.occurredAt.date(), 'on the opportunity\'s close date');
     Id opportunityId = [SELECT Id FROM Opportunity WHERE Name = 'First order'].Id;
     Assert.areEqual(opportunityId, first.recordId, 'a click opens the opportunity');
+    Assert.areEqual('Apex · Products', first.sourceLabel, 'an opened item says it comes from an Apex source');
   }
 
   @IsTest
