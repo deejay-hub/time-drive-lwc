@@ -120,17 +120,6 @@
   gap: calc(0.5 * var(--time-drive-space));
 }
 
-.range-side {
-  display: grid;
-  gap: 0.125rem;
-  min-width: 0;
-}
-
-.range-label {
-  font-size: 0.8125rem;
-  line-height: 1.25rem;
-}
-
 /* Cancel and Apply at the top, always in reach; the options scroll below. */
 .filter-head {
   flex: none;

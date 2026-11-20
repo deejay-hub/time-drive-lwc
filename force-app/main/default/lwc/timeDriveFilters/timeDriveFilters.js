@@ -127,12 +127,12 @@ export default class TimeDriveFilters extends LightningElement {
   get hasRanges() {
     return (this.backOptions ?? []).length > 1 || (this.aheadOptions ?? []).length > 1;
   }
-  // The lengths, the one picked marked selected (native selects).
+  // The lengths, for the Back and Ahead selects (the one in use is their value).
   get backChoices() {
-    return (this.backOptions ?? []).map((o) => ({ ...o, selected: o.value === this.draftBack }));
+    return (this.backOptions ?? []).map((o) => ({ label: o.label, value: o.value }));
   }
   get aheadChoices() {
-    return (this.aheadOptions ?? []).map((o) => ({ ...o, selected: o.value === this.draftAhead }));
+    return (this.aheadOptions ?? []).map((o) => ({ label: o.label, value: o.value }));
   }
   // Something was ticked or cleared, or the range changed, since the panel opened.
   get changed() {
@@ -178,10 +178,10 @@ export default class TimeDriveFilters extends LightningElement {
     this.draft = (this.options ?? []).map((o) => o.value).filter((v) => on.has(v));
   }
   handleBack(event) {
-    this.draftBack = event.target.value;
+    this.draftBack = String(event.detail?.value ?? event.target.value);
   }
   handleAhead(event) {
-    this.draftAhead = event.target.value;
+    this.draftAhead = String(event.detail?.value ?? event.target.value);
   }
   apply() {
     const shown = [...this.draft];

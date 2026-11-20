@@ -1446,7 +1446,7 @@ describe("c-time-drive filters panel", () => {
     const root = element.shadowRoot;
     const panel = await open(root);
     // The date range starts on the page's own.
-    expect(panel.querySelector("select.range-back").value).toBe("6");
+    expect(panel.querySelector("lightning-select.range-back").value).toBe("6");
     pickTypes(root, ["purchase", "web"]);
     await flush();
     buttonByLabel(filtersRoot(root).querySelector(".filter-panel"), "Apply").click();
@@ -1467,14 +1467,16 @@ describe("c-time-drive filters panel", () => {
     const root = element.shadowRoot;
     expect(root.querySelector(".range-pill")).toBeNull();
     const panel = await open(root);
-    const back = panel.querySelector("select.range-back");
-    const ahead = panel.querySelector("select.range-ahead");
+    // Base components: lightning-select, labelled Back and Ahead.
+    const back = panel.querySelector("lightning-select.range-back");
+    const ahead = panel.querySelector("lightning-select.range-ahead");
+    expect(back.label).toBe("Back");
+    expect(ahead.label).toBe("Ahead");
     // Half a year back and nothing ahead: up to that, starting on it.
-    expect([...back.options].map((o) => o.textContent)).toEqual(["None", "1 month", "3 months", "6 months"]);
-    expect([...ahead.options].map((o) => o.textContent)).toEqual(["None"]);
+    expect(back.options.map((o) => o.label)).toEqual(["None", "1 month", "3 months", "6 months"]);
+    expect(ahead.options.map((o) => o.label)).toEqual(["None"]);
     expect(back.value).toBe("6");
-    back.value = "3";
-    back.dispatchEvent(new CustomEvent("change"));
+    back.dispatchEvent(new CustomEvent("change", { detail: { value: "3" } }));
     await flush();
     buttonByLabel(filtersRoot(root).querySelector(".filter-panel"), "Apply").click();
     await settle();
@@ -1486,7 +1488,7 @@ describe("c-time-drive filters panel", () => {
     expect(root.querySelector(".summary").textContent).not.toContain(windowRange("0.5", "None"));
     expect(root.querySelector(".filter-button").getAttribute("aria-label")).toBe("Filters, 1 active");
     // The panel opens on the range in use.
-    expect((await open(root)).querySelector("select.range-back").value).toBe("3");
+    expect((await open(root)).querySelector("lightning-select.range-back").value).toBe("3");
     filtersRoot(root).querySelector("lightning-button-icon.filter-close").click();
     await flush();
     // The chip's x: the page's own range again.
