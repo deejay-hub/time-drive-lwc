@@ -15,7 +15,7 @@
       "package": "Time Drive Data Extension",
       "versionName": "Sydney",
       "versionNumber": "0.1.0.NEXT",
-      "versionDescription": "Data 360 engagement on the Time Drive timeline",
+      "versionDescription": "Data extension for Time Drive (supports Data 360)",
       "definitionFile": "config/data-extension-scratch-def.json",
       "default": false,
       "dependencies": [
