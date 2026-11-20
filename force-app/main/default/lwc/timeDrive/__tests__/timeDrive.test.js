@@ -11,6 +11,7 @@ import getRights from "@salesforce/apex/TimeDriveController.getRights";
 import getPreference from "@salesforce/apex/TimeDriveController.getPreference";
 import savePreference from "@salesforce/apex/TimeDriveController.savePreference";
 import saveDateRange from "@salesforce/apex/TimeDriveController.saveDateRange";
+import saveLensFilters from "@salesforce/apex/TimeDriveController.saveLensFilters";
 import TimeDriveConfirm from "c/timeDriveConfirm";
 import { deleteRecord } from "lightning/uiRecordApi";
 import { registerRefreshHandler } from "lightning/refresh";
@@ -70,6 +71,9 @@ jest.mock(
   }
 );
 jest.mock("@salesforce/apex/TimeDriveController.saveDateRange", () => ({ default: jest.fn(() => Promise.resolve()) }), {
+  virtual: true
+});
+jest.mock("@salesforce/apex/TimeDriveController.saveLensFilters", () => ({ default: jest.fn(() => Promise.resolve()) }), {
   virtual: true
 });
 jest.mock("@salesforce/apex/TimeDriveController.getTimeline", () => ({ default: jest.fn() }), { virtual: true });
@@ -1519,6 +1523,47 @@ describe("c-time-drive filters panel", () => {
     const past = await mount();
     expect(getSummary.getLastConfig()).toMatchObject({ historyYears: "0.5", futureYears: "None" });
     expect(past.shadowRoot.querySelector(".range-pill")).toBeNull();
+  });
+
+  it("keeps each lens's own filter: back on a lens, its hidden types come back", async () => {
+    const element = await mount();
+    const root = element.shadowRoot;
+    saveLensFilters.mockClear();
+    const panel = await open(root);
+    // The panel names the lens it filters.
+    expect(filtersRoot(root).querySelector(".filter-lens").textContent).toContain("All items");
+    panel
+      .querySelector("lightning-checkbox-group")
+      .dispatchEvent(new CustomEvent("change", { detail: { value: ["purchase", "web"] } }));
+    await flush();
+    buttonByLabel(filtersRoot(root).querySelector(".filter-panel"), "Apply").click();
+    await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
+    await flush();
+    const hidden = [...getSummary.getLastConfig().hiddenTypes].sort();
+    expect(hidden.length).toBeGreaterThan(0);
+    // Kept for this person, against the lens: "All=type,type".
+    const kept = saveLensFilters.mock.calls.at(-1)[0].lensFilters;
+    expect(kept.startsWith("All=")).toBe(true);
+    expect(kept.slice(4).split(",").sort()).toEqual(hidden);
+    // Another lens starts with its own (none), then All gets its own back.
+    root.querySelector("h2 .view-button").click();
+    await flush();
+    [...root.querySelectorAll(".view-option")].find((i) => i.dataset.value === "Service").click();
+    await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
+    await flush();
+    expect(getSummary.getLastConfig().hiddenTypes).toEqual([]);
+    root.querySelector("h2 .view-button").click();
+    await flush();
+    [...root.querySelectorAll(".view-option")].find((i) => i.dataset.value === "All").click();
+    await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
+    await flush();
+    expect([...getSummary.getLastConfig().hiddenTypes].sort()).toEqual(hidden);
+  });
+
+  it("opens a lens with the types they hid in it last time", async () => {
+    getPreference.mockResolvedValueOnce({ lens: "Service", lensFilters: "Service=case;All=web" });
+    await mount();
+    expect(getSummary.getLastConfig()).toMatchObject({ categories: ["Service"], hiddenTypes: ["case"] });
   });
 
   it("shows a skeleton for the types and count until a filter's counts land", async () => {

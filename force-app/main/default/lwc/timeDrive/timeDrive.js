@@ -18,6 +18,7 @@ import { refreshApex } from "@salesforce/apex";
 import getPreference from "@salesforce/apex/TimeDriveController.getPreference";
 import savePreference from "@salesforce/apex/TimeDriveController.savePreference";
 import saveDateRange from "@salesforce/apex/TimeDriveController.saveDateRange";
+import saveLensFilters from "@salesforce/apex/TimeDriveController.saveLensFilters";
 import USER_ID from "@salesforce/user/Id";
 import TimeDriveConfirm from "c/timeDriveConfirm";
 import LightningConfirm from "lightning/confirm";
@@ -151,6 +152,8 @@ const DAY_SHORT_TIME_FORMAT = FORMATS.dayShortTime;
 // field (a Task's Activity Date) has no time, so shows none. In a week or
 // month, both show just their day ("Tue 13").
 const NO_TIME = "";
+// Time Drive Preference's Lens Filters field holds 255 characters.
+const LENS_FILTERS_MAX = 255;
 // The Overdue lens's API name (DeveloperName), whatever its label says.
 const OVERDUE_VIEW = "Overdue";
 function timeTextOf(e, at, grouped, timeFormat) {
@@ -304,10 +307,20 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
         this.applyQueryChange();
       }
       // Their last lens, while the org still offers it.
+      let changed = false;
       if (!this._picked && kept?.lens && kept.lens !== this.view && this.offers(kept.lens)) {
         this.view = kept.lens;
-        this.applyQueryChange();
+        changed = true;
       }
+      // Each lens's own filter, and the lens in use's types now (unless
+      // they've filtered meanwhile).
+      this.lensHidden = this.readLensFilters(kept?.lensFilters);
+      const ownTypes = this.lensHidden.get(this.view) ?? [];
+      if (!this._typesPicked && ownTypes.length) {
+        this.hiddenTypes = new Set(ownTypes);
+        changed = true;
+      }
+      if (changed) this.applyQueryChange();
     } catch {
       // Not read: the page's own defaults stand.
     }
@@ -2015,8 +2028,49 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     this.view = value;
     this._picked = true;
     this.keepPreference(value, null);
-    this.hiddenTypes = new Set();
+    // Each lens keeps its own filter, as a list view does: the types hidden
+    // in it last time come back with it.
+    this.hiddenTypes = new Set(this.lensHidden.get(value) ?? []);
     this.applyQueryChange();
+  }
+
+  // ---- each lens's own filter: the event types hidden in it ------------------
+  lensHidden = new Map();
+  _typesPicked = false;
+  // "Sales=call,email;Service=case" (Time Drive Preference's Lens Filters).
+  readLensFilters(text) {
+    const out = new Map();
+    for (const part of String(text ?? "").split(";")) {
+      const [lens, types] = part.split("=");
+      const kept = String(types ?? "")
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+      if (lens?.trim() && kept.length) out.set(lens.trim(), kept);
+    }
+    return out;
+  }
+  // Fitted to the field's 255 characters: the lens in use first, then the
+  // others while they fit.
+  writeLensFilters() {
+    const entries = [...this.lensHidden.entries()].sort(([a], [b]) => (a === this.view ? -1 : b === this.view ? 1 : 0));
+    let text = "";
+    for (const [lens, types] of entries) {
+      const part = `${lens}=${types.join(",")}`;
+      const next = text ? `${text};${part}` : part;
+      if (next.length > LENS_FILTERS_MAX) continue;
+      text = next;
+    }
+    return text;
+  }
+  // The types hidden now are this lens's: kept for this person.
+  rememberLensTypes() {
+    this._typesPicked = true;
+    if (this.hiddenTypes.size) this.lensHidden.set(this.view, [...this.hiddenTypes]);
+    else this.lensHidden.delete(this.view);
+    saveLensFilters({ lensFilters: this.writeLensFilters() }).catch(() => {
+      // Not kept (no access): the filter still holds for this visit.
+    });
   }
   get filtersPanel() {
     return this.template.querySelector("c-time-drive-filters");
@@ -2045,6 +2099,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   handleFiltersApply(event) {
     const shown = new Set(event.detail.shown);
     this.hiddenTypes = new Set(this.typeOptions.map((o) => o.value).filter((type) => !shown.has(type)));
+    this.rememberLensTypes();
     const { back, ahead } = event.detail;
     if (Number.isInteger(back) && Number.isInteger(ahead)) this.chooseRange(back, ahead);
     this.applyQueryChange();
@@ -2427,6 +2482,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   // The types pill's x: every type again.
   handleTypesRemove() {
     this.hiddenTypes = new Set();
+    this.rememberLensTypes();
     this.applyQueryChange();
   }
   get typesHidden() {

@@ -18,7 +18,9 @@
           <lightning-button variant="brand" label={labels.filtersApply} onclick={apply}></lightning-button>
         </template>
         <template lwc:else>
-          <h3 class="filter-title">{labels.filters}</h3>
+          <h3 class="filter-title">
+            {labels.filters}<span lwc:if={lensLabel} class="filter-lens"> · {lensLabel}</span>
+          </h3>
           <lightning-button-icon
             class="filter-close"
             icon-name="utility:close"

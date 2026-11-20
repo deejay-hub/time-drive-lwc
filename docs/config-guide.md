@@ -523,6 +523,8 @@ The timeline shows every date, time and number in the viewer's own time zone, la
 
 The header carries the lens as its heading with **Today** (and **Overdue**, while something is) at the end of its line; under it, the summary, with **Filters** (event types) and **Refresh** at the end. Each user's lens and Lite choice are kept for them in the org.
 
+Each lens keeps its own filter, as a list view does: the event types someone hides in Sales stay hidden in Sales, and come back when they return to it, while Service has its own. The Filters panel names the lens it's filtering, and the types pill's × (or **All** in the panel) shows the lens's every type again. The date range is shared by every lens. Each person's choices are kept for them in the org.
+
 Busy days (over 50 events of a type) show one grouped row per type, its icon drawn as a stack. For Salesforce sources its title links to all its items (View all). Every event's detail names the object it came from.
 
 #### Long histories

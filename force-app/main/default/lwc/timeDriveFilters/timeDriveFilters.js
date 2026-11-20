@@ -36,6 +36,8 @@ export default class TimeDriveFilters extends LightningElement {
   @api ahead = "";
   // What to say when there are no types to offer.
   @api noneText = "";
+  // The lens being filtered: each lens keeps its own filter, so the title names it.
+  @api lensLabel = "";
   // SLDS 1's corners on the panel.
   @api slds1 = false;
 

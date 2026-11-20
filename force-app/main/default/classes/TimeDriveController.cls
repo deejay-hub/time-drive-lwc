@@ -926,8 +926,35 @@ public with sharing class TimeDriveController {
       out.lens = mine.Last_Lens__c;
       out.itemDetail = mine.Item_Detail__c;
       out.dateRange = mine.Date_Range__c;
+      out.lensFilters = mine.Lens_Filters__c;
     }
     return out;
+  }
+
+  /**
+   * Keeps the event types this person hid in each lens (Sales=call,email;Service=case),
+   * so each lens keeps its own filter; blank for none. The timeline fits it to the field,
+   * the lens in use first.
+   * @param lensFilters each lens's hidden types, or blank for none
+   */
+  @SuppressWarnings('PMD.ApexCRUDViolation')
+  @AuraEnabled
+  public static void saveLensFilters(String lensFilters) {
+    String kept = String.isBlank(lensFilters) ? null : lensFilters.trim().left(255);
+    Time_Drive_Preference__c mine = own();
+    if (mine == null && kept == null) {
+      return;
+    }
+    // Written as the system, as savePreference explains.
+    if (mine == null) {
+      Database.insert(
+        new Time_Drive_Preference__c(SetupOwnerId = UserInfo.getUserId(), Lens_Filters__c = kept),
+        AccessLevel.SYSTEM_MODE
+      );
+    } else {
+      mine.Lens_Filters__c = kept;
+      Database.update(mine, AccessLevel.SYSTEM_MODE);
+    }
   }
 
   /**
@@ -992,7 +1019,7 @@ public with sharing class TimeDriveController {
     return row != null && row.Id != null && row.SetupOwnerId == UserInfo.getUserId() ? row : null;
   }
 
-  /** The user's saved choices: the lens, the label choice and the date range. */
+  /** The user's saved choices: the lens, the label choice, the date range and each lens's hidden types. */
   public class Preference {
     @AuraEnabled
     public String lens;
@@ -1000,6 +1027,8 @@ public with sharing class TimeDriveController {
     public String itemDetail;
     @AuraEnabled
     public String dateRange;
+    @AuraEnabled
+    public String lensFilters;
   }
 
   /** A view for the picker: the key sources use and its label. */

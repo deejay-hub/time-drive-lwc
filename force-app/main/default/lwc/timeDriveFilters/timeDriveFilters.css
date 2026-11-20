@@ -122,3 +122,9 @@
 .filter-panel_slds1 {
   border-radius: 0.25rem;
 }
+
+/* The lens being filtered, after the title: quieter. */
+.filter-lens {
+  font-weight: var(--slds-g-font-weight-4, 400);
+  color: var(--time-drive-muted, #5c5c5c);
+}

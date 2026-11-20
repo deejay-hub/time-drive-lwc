@@ -74,6 +74,27 @@ private class TimeDrivePreferenceTest {
   }
 
   @IsTest
+  static void eachLensKeepsItsOwnHiddenTypes() {
+    User u = person('lenses', true);
+    System.runAs(u) {
+      TimeDriveController.saveLensFilters('');
+    }
+    Assert.areEqual(0, [SELECT COUNT() FROM Time_Drive_Preference__c WHERE SetupOwnerId = :u.Id], 'none: nothing kept');
+    System.runAs(u) {
+      TimeDriveController.saveLensFilters('Sales=call,email;Service=case');
+      TimeDriveController.savePreference('Sales', null);
+      TimeDriveController.Preference p = TimeDriveController.getPreference();
+      Assert.areEqual('Sales=call,email;Service=case', p.lensFilters);
+      Assert.areEqual('Sales', p.lens, 'kept beside the lens');
+      // At most what the field holds.
+      TimeDriveController.saveLensFilters('Sales=' + 'x'.repeat(300));
+      Assert.areEqual(255, TimeDriveController.getPreference().lensFilters.length());
+      TimeDriveController.saveLensFilters(null);
+      Assert.isNull(TimeDriveController.getPreference().lensFilters, 'cleared');
+    }
+  }
+
+  @IsTest
   static void anotherUsersChoiceIsNotMine() {
     User other;
     User me;
