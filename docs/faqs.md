@@ -124,7 +124,7 @@ Look first at sources that are read rather than counted: an Apex source without 
 
 ### Does it support Data 360?
 
-Yes, in orgs with Data 360. Each engagement DMO is its own source, matched to the person through identity resolution: Time Drive finds the Contact's unified profile, then reads the engagement of every individual in it. Set the identity link object in **Time Drive Setting > Default**, and deploy `force-app-data360` too, so DMOs are counted rather than read. See [Data 360 sources](config-guide.md#data-360-sources).
+Yes, in orgs with Data 360. Each engagement DMO is its own source, matched to the person through identity resolution: Time Drive finds the Contact's unified profile, then reads the engagement of every individual in it. Set the identity link object in **Time Drive Setting > Default**, and install the **Time Drive Data Extension** package too, which brings Data 360 sources to Setup and counts DMOs rather than reading them. See [Data 360 sources](config-guide.md#data-360-sources).
 
 ## For developers
 

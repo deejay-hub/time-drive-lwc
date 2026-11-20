@@ -52,7 +52,7 @@ and data360. The GitHub repo was renamed to `deejay-hub/time-drive-lwc` on
   parallel. Apex: 149 tests pass in the namespaced scratch org `time-drive-issues`.
 - Packages: 2GP managed, namespace `drvrckt`, both in Dev Hub `d360-hub` (a
   Developer Edition with Data Cloud, so the Data 360 package can be built):
-  Time Drive (force-app) and Time Drive Data 360 (force-app-data360). Re-created
+  Time Drive (force-app) and Time Drive Data Extension (force-app-data360). Re-created
   there on 2026-11-20; the betas 0.1.0-1 to -7 were in `bumpy-rckt`'s old Time
   Drive package (never released). Betas are built with
   `config/project-scratch-def.json` (the Translation Workbench).

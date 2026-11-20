@@ -82,7 +82,7 @@ sf org create scratch -d -f config/project-scratch-def.json -a time-drive -y 30
 sf project deploy start --source-dir force-app
 ```
 
-6. Optional, for orgs with Data 360 only: deploy the Data 360 counting class (it calls `ConnectApi.CdpQuery`, so it only compiles where Data 360 is provisioned):
+6. Optional, for orgs with Data 360 only: deploy `force-app-data360`, the source of the **Time Drive Data Extension** package (it calls `ConnectApi.CdpQuery`, so it only compiles where Data 360 is provisioned). Customers install the package instead:
 
 ```
 sf project deploy start --source-dir force-app-data360

@@ -13,8 +13,8 @@
       "versionNumber": "0.1.0.NEXT",
       "path": "force-app-data360",
       "default": true,
-      "package": "Time Drive Data 360",
-      "versionDescription": "Engagement from Data 360 on the Time Drive timeline"
+      "package": "Time Drive Data Extension",
+      "versionDescription": "Data 360 engagement on the Time Drive timeline"
     },
     {
       "path": "unpackaged",
@@ -27,6 +27,6 @@
   "sourceApiVersion": "67.0",
   "packageAliases": {
     "Time Drive": "0HogK0000005kQPSAY",
-    "Time Drive Data 360": "0HogK0000005kS1SAI"
+    "Time Drive Data Extension": "0HogK0000005kS1SAI"
   }
 }

@@ -331,7 +331,7 @@ Check these before you go live:
 - **Fields.** Check each source's Object Name, Individual Field, Date Field, Id Field and templates against your mappings.
 - **Details.** Each DMO's expanded fields are its detail fields (shipped: Channel action).
 - **Access.** Users need read access to the DMOs (a Data Cloud permission set) in the data space they live in.
-- **Counting.** Deploy `force-app-data360` too: it counts each DMO in Data 360 SQL, so the day list, overview and totals cover every engagement record. Without it, or if a count's SQL isn't accepted, each DMO is read as rows, up to Max Records, with a warning when that cuts it short.
+- **Counting.** Install the **Time Drive Data Extension** package too: it counts each DMO in Data 360 SQL, so the day list, overview and totals cover every engagement record. Without it, or if a count's SQL isn't accepted, each DMO is read as rows, up to Max Records, with a warning when that cuts it short.
 - **Volume.** Rows are only read for the days on screen, and a busy day comes back as grouped counts. For very heavy histories, a calculated insight that pre-aggregates per day is still the cheapest summary.
 
 Anything missing or unreadable shows as a warning on the timeline instead of an error, and the CRM events still load.

@@ -1168,7 +1168,7 @@ public with sharing class TimeDriveSetupController {
     // DataSpace exists only in orgs with Data 360.
     return TimeDriveConfig.sObjectType('DataSpace') == null
       ? new Data360Status(false, 'This org doesn\'t have Data 360.')
-      : new Data360Status(false, 'Install the Time Drive Data 360 add-on package to use Data 360.');
+      : new Data360Status(false, 'Install the Time Drive Data Extension package to use Data 360.');
   }
 
   /** Whether the Data 360 add-on is ready, and the reason when it is not. */

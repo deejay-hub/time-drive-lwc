@@ -1954,7 +1954,7 @@ describe("c-time-drive-setup", () => {
   it("shows the Data 360 kind disabled, with the reason, until the add-on is installed", async () => {
     getData360Status.mockResolvedValue({
       ready: false,
-      reason: "Install the Time Drive Data 360 add-on package to use Data 360."
+      reason: "Install the Time Drive Data Extension package to use Data 360."
     });
     const element = mount();
     await splash();
@@ -1968,7 +1968,7 @@ describe("c-time-drive-setup", () => {
     const tile = root.querySelector('.option[data-value="dmo"]');
     expect(tile.disabled).toBe(true);
     expect(tile.querySelector(".option-detail").textContent).toBe(
-      "Install the Time Drive Data 360 add-on package to use Data 360."
+      "Install the Time Drive Data Extension package to use Data 360."
     );
     // The other kinds stay open, and a disabled one can't be clicked into.
     expect(root.querySelector('.option[data-value="standard"]').disabled).toBe(false);
