@@ -451,6 +451,13 @@
   margin-top: calc(0.5 * var(--time-drive-space));
 }
 
+/* Vertical: the air before the next day grows faster than the rest, so
+   Comfy's days stand apart as clearly as its items do (Compact keeps its
+   4px; Comfy has 12px). */
+.card:not(.card_horizontal) .day + .day {
+  margin-top: calc(var(--time-drive-space) - 0.25rem);
+}
+
 /* Vertical: the day's date pins to the top while its events scroll past,
    until the next day's header takes over. (The horizontal layout's date
    already sits above each scrolling column.) */
