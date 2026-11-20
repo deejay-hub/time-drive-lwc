@@ -163,7 +163,6 @@ private class TimeDriveSetupControllerTest {
       DeveloperName = name,
       Label = name,
       Active__c = active,
-      Org_Fit__c = true,
       Parent_Object__c = page,
       Object_Name__c = 'Task',
       Parent_Field__c = 'WhoId',
@@ -1074,14 +1073,14 @@ private class TimeDriveSetupControllerTest {
       TimeDriveSetupController.QuickStartResult first = TimeDriveSetupController.quickStart('Lead');
       Assert.areEqual(
         new Set<String>{
-          'Fit_Lead_Tasks',
+          'Lead_Tasks',
           // Its overdue ones too, in the Overdue lens.
-          'Fit_Lead_Overdue',
-          'Fit_Lead_Calls',
-          'Fit_Lead_Emails',
-          'Fit_Lead_Events',
-          'Fit_Lead_Files',
-          'Fit_Lead_Campaign_Members'
+          'Lead_Overdue_Tasks',
+          'Lead_Calls',
+          'Lead_Emails',
+          'Lead_Events',
+          'Lead_Files',
+          'Lead_Campaign_Members'
         },
         templateKeys(first.added)
       );
@@ -1090,19 +1089,19 @@ private class TimeDriveSetupControllerTest {
       TimeDriveSetupController.QuickStartResult shared = TimeDriveSetupController.quickStart('Lead');
       Assert.areEqual(
         new Set<String>{
-          'Fit_Lead_Tasks_Every',
-          'Fit_Lead_Overdue_Every',
-          'Fit_Lead_Calls_Every',
-          'Fit_Lead_Emails_Every',
-          'Fit_Lead_Events_Every'
+          'Lead_Tasks_Shared',
+          'Lead_Overdue_Tasks_Shared',
+          'Lead_Calls_Shared',
+          'Lead_Emails_Shared',
+          'Lead_Events_Shared'
         },
         templateKeys(shared.added)
       );
-      Assert.isFalse(copyActive('Fit_Lead_Tasks'));
-      Assert.isTrue(copyActive('Fit_Lead_Tasks_Every'));
-      Assert.isFalse(copyActive('Fit_Lead_Overdue'), 'the overdue ones switch variant too');
-      Assert.isTrue(copyActive('Fit_Lead_Overdue_Every'));
-      Assert.isTrue(copyActive('Fit_Lead_Files'), 'Files have no variant');
+      Assert.isFalse(copyActive('Lead_Tasks'));
+      Assert.isTrue(copyActive('Lead_Tasks_Shared'));
+      Assert.isFalse(copyActive('Lead_Overdue_Tasks'), 'the overdue ones switch variant too');
+      Assert.isTrue(copyActive('Lead_Overdue_Tasks_Shared'));
+      Assert.isTrue(copyActive('Lead_Files'), 'Files have no variant');
 
       // Back by name, and a lead's timeline plots its task, file and campaign.
       TimeDriveSetupController.testFeatures = new Set<String>();
@@ -1171,7 +1170,7 @@ private class TimeDriveSetupControllerTest {
       TimeDriveSetupController.testFeatures = new Set<String>();
       Set<String> added = templateKeys(TimeDriveSetupController.quickStart('Contact').added);
       Assert.isTrue(
-        added.containsAll(new Set<String>{ 'Fit_Contact_Files', 'Fit_Contact_Campaign_Members' }),
+        added.containsAll(new Set<String>{ 'Contact_Files', 'Contact_Campaign_Members' }),
         String.valueOf(added)
       );
 
@@ -1213,19 +1212,19 @@ private class TimeDriveSetupControllerTest {
       // First check: no Shared Activities, so Contact Tasks are read by Name.
       TimeDriveSetupController.testFeatures = new Set<String>();
       TimeDriveSetupController.QuickStartResult first = TimeDriveSetupController.quickStart('Contact');
-      Assert.isTrue(templateKeys(first.added).contains('Tasks'));
+      Assert.isTrue(templateKeys(first.added).contains('Contact_Tasks'));
       Assert.isTrue(first.switched.isEmpty());
 
       // Shared Activities is turned on: every contact's variant takes over, and the first is kept, switched off.
       TimeDriveSetupController.testFeatures = new Set<String>{ 'SharedActivities' };
       TimeDriveSetupController.QuickStartResult second = TimeDriveSetupController.quickStart('Contact');
-      Assert.isTrue(templateKeys(second.added).contains('Fit_Contact_Tasks_Every'));
+      Assert.isTrue(templateKeys(second.added).contains('Contact_Tasks_Shared'));
       TimeDriveSetupController.VariantSwitch tasks = switchTo(second, 'Tasks (every contact)');
       Assert.isNotNull(tasks, 'The switch is reported');
       Assert.areEqual('Tasks', tasks.offLabel);
       Assert.areEqual('Contact', tasks.parentObject);
-      Assert.isFalse(copyActive('Tasks'), 'The variant by Name is switched off');
-      Assert.isTrue(copyActive('Fit_Contact_Tasks_Every'), 'Only the variant that fits plots the tasks');
+      Assert.isFalse(copyActive('Contact_Tasks'), 'The variant by Name is switched off');
+      Assert.isTrue(copyActive('Contact_Tasks_Shared'), 'Only the variant that fits plots the tasks');
 
       // Checking again changes nothing.
       TimeDriveSetupController.QuickStartResult third = TimeDriveSetupController.quickStart('Contact');
@@ -1234,11 +1233,11 @@ private class TimeDriveSetupControllerTest {
       // Back without Shared Activities: the first copy is switched on again, not added a second time.
       TimeDriveSetupController.testFeatures = new Set<String>();
       TimeDriveSetupController.QuickStartResult fourth = TimeDriveSetupController.quickStart('Contact');
-      Assert.isFalse(templateKeys(fourth.added).contains('Tasks'));
+      Assert.isFalse(templateKeys(fourth.added).contains('Contact_Tasks'));
       Assert.isNotNull(switchTo(fourth, 'Tasks'));
-      Assert.isTrue(copyActive('Tasks'));
-      Assert.isFalse(copyActive('Fit_Contact_Tasks_Every'));
-      Assert.areEqual(1, [SELECT COUNT() FROM Time_Drive_Record__c WHERE Template_Key__c = 'Tasks']);
+      Assert.isTrue(copyActive('Contact_Tasks'));
+      Assert.isFalse(copyActive('Contact_Tasks_Shared'));
+      Assert.areEqual(1, [SELECT COUNT() FROM Time_Drive_Record__c WHERE Template_Key__c = 'Contact_Tasks']);
     }
   }
 
@@ -1252,19 +1251,19 @@ private class TimeDriveSetupControllerTest {
       TimeDriveSetupController.quickStart('Contact');
 
       // Both variants on (as an older check could leave them): checking switches one off.
-      switchOn('Tasks', true);
-      switchOn('Fit_Contact_Tasks_Every', true);
+      switchOn('Contact_Tasks', true);
+      switchOn('Contact_Tasks_Shared', true);
       TimeDriveSetupController.QuickStartResult mended = TimeDriveSetupController.quickStart('Contact');
       Assert.isNotNull(switchTo(mended, 'Tasks (every contact)'));
-      Assert.isFalse(copyActive('Tasks'));
-      Assert.isTrue(copyActive('Fit_Contact_Tasks_Every'));
+      Assert.isFalse(copyActive('Contact_Tasks'));
+      Assert.isTrue(copyActive('Contact_Tasks_Shared'));
 
       // The admin switches Contact Tasks off altogether: checking leaves it off.
-      switchOn('Fit_Contact_Tasks_Every', false);
+      switchOn('Contact_Tasks_Shared', false);
       TimeDriveSetupController.QuickStartResult after = TimeDriveSetupController.quickStart('Contact');
       Assert.isNull(switchTo(after, 'Tasks (every contact)'));
-      Assert.isFalse(copyActive('Tasks'));
-      Assert.isFalse(copyActive('Fit_Contact_Tasks_Every'));
+      Assert.isFalse(copyActive('Contact_Tasks'));
+      Assert.isFalse(copyActive('Contact_Tasks_Shared'));
     }
   }
 

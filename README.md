@@ -125,7 +125,7 @@ It's built for long, busy histories. The summary counts each source rather than 
 The [Config Guide](docs/config-guide.md) covers it all. Time Drive Setup's Docs page links to it here.
 
 - [Add the timeline to a page](docs/config-guide.md#add-the-timeline-to-a-page): the App Builder properties
-- [Add a source](docs/config-guide.md#add-a-source), [Fit to your org](docs/config-guide.md#fit-to-your-org) and [Lenses](docs/config-guide.md#lenses)
+- [Add a source](docs/config-guide.md#add-a-source), [Check your org](docs/config-guide.md#check-your-org) and [Lenses](docs/config-guide.md#lenses)
 - [Source fields](docs/config-guide.md#source-fields) and [Expanding records](docs/config-guide.md#expanding-records)
 - [Data 360 sources](docs/config-guide.md#data-360-sources)
 - [Apex sources](docs/config-guide.md#apex-sources): records further away, or data from another system

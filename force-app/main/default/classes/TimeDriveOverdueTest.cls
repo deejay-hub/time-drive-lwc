@@ -203,7 +203,7 @@ private class TimeDriveOverdueTest {
   @IsTest
   static void anOverdueTemplatesCopyIsInTheOverdueLensOnly() {
     System.runAs(TimeDriveTestData.setupAdmin()) {
-      String key = TimeDriveSetupController.useTemplate('Overdue_Tasks').developerName;
+      String key = TimeDriveSetupController.useTemplate('Contact_Overdue_Tasks').developerName;
       Time_Drive_Record__c copy = [
         SELECT Lenses__c, Filter__c, Highlight_Field__c, Highlight_Icon__c
         FROM Time_Drive_Record__c
@@ -268,8 +268,8 @@ private class TimeDriveOverdueTest {
   @IsTest
   static void theTaskAndCaseTemplatesBringTheirHighlights() {
     System.runAs(TimeDriveTestData.setupAdmin()) {
-      String tasks = TimeDriveSetupController.useTemplate('Tasks').developerName;
-      String cases = TimeDriveSetupController.useTemplate('Fit_Contact_Cases').developerName;
+      String tasks = TimeDriveSetupController.useTemplate('Contact_Tasks').developerName;
+      String cases = TimeDriveSetupController.useTemplate('Contact_Cases').developerName;
       Map<String, Time_Drive_Record__c> byKey = new Map<String, Time_Drive_Record__c>();
       for (Time_Drive_Record__c r : [
         SELECT Key__c, Highlight_Field__c, Highlight_Icon__c

@@ -140,9 +140,9 @@ public with sharing class TimeDriveSetupController {
   public static final String MATCH_ALL = 'all';
   public static final String MATCH_ANY = 'any';
 
-  // ---- fit the timeline to the org ------------------------------------------
+  // ---- Check your org ---------------------------------------------------------
 
-  // The org features org-fitted sources can need, and how Setup names them.
+  // The org features shipped sources can need, and how Setup names them.
   private static final Map<String, String> FEATURE_LABELS = new Map<String, String>{
     'SharedActivities' => 'Shared Activities',
     'PersonAccounts' => 'Person Accounts',
@@ -1723,7 +1723,7 @@ public with sharing class TimeDriveSetupController {
   }
 
   /**
-   * Which org-fitted sources tied to a setting should be active, given the
+   * Which shipped sources tied to a setting should be active, given the
    * settings used: in a group, the one needing the most of them (and nothing
    * else); alone, one whose needs are all used. Sources tied to no setting
    * aren't in the map, so fitting never touches them.
@@ -1823,10 +1823,10 @@ public with sharing class TimeDriveSetupController {
 
   private static List<Time_Drive_Source__mdt> fittedSources() {
     List<SourceOrder> ordered = new List<SourceOrder>();
+    // Every shipped source: Check your org only switches the ones tied to a
+    // setting (Requires) or in a group of alternatives (Variant Group).
     for (Time_Drive_Source__mdt s : TimeDriveConfig.templates().values()) {
-      if (s.isSet(Time_Drive_Source__mdt.Org_Fit__c) && s.Org_Fit__c == true) {
-        ordered.add(new SourceOrder(s));
-      }
+      ordered.add(new SourceOrder(s));
     }
     ordered.sort();
     List<Time_Drive_Source__mdt> out = new List<Time_Drive_Source__mdt>();
@@ -2571,13 +2571,10 @@ public with sharing class TimeDriveSetupController {
     /** Where a click goes (blank: the item's own record). */
     @AuraEnabled
     public String recordIdField { get; set; }
-    /** Whether the source is fitted to the org; kept as shipped through edits and switches. */
-    @AuraEnabled
-    public Boolean orgFit { get; set; }
-    /** The org settings an org-fitted source needs, separated by semicolons. */
+    /** The org settings a shipped source needs, separated by semicolons. */
     @AuraEnabled
     public String requires { get; set; }
-    /** The group of variants an org-fitted source belongs to. */
+    /** The group of variants a shipped source belongs to. */
     @AuraEnabled
     public String variantGroup { get; set; }
     /** The Apex class that supplies the events. */
@@ -2647,7 +2644,6 @@ public with sharing class TimeDriveSetupController {
       iconColour = s.Icon_Colour__c;
       recordIdField = s.Record_Id_Field__c;
       // Read only when set: a source queried without these fields has none.
-      orgFit = s.isSet(Time_Drive_Source__mdt.Org_Fit__c) && s.Org_Fit__c == true;
       requires = s.isSet(Time_Drive_Source__mdt.Requires__c) ? s.Requires__c : null;
       variantGroup = s.isSet(Time_Drive_Source__mdt.Variant_Group__c) ? s.Variant_Group__c : null;
       providerClass = s.Provider_Class__c;

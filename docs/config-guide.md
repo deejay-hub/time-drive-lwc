@@ -13,7 +13,7 @@ Everything an admin needs to put Time Drive on a record page and choose what it 
   - [A custom object](#a-custom-object)
   - [An Apex class](#an-apex-class)
 - [Add the timeline to a page](#add-the-timeline-to-a-page)
-- [Reference](#fit-to-your-org): Fit to your org, source fields, Data 360, Apex, scale, translations
+- [Reference](#check-your-org): Check your org, source fields, Data 360, Apex, scale, translations
 
 ## What Time Drive is
 
@@ -99,7 +99,7 @@ Open the **Time Drive Setup** tab. Its pages, along the top:
 
 ![Guided setup, with each step done](images/config-guide/setup-guided.png)
 
-**Check your org** looks at how your org works (Shared Activities, contacts to multiple accounts, person accounts, Enhanced Email, Einstein Activity Capture) and switches on the shipped sources that suit it. See [Fit to your org](#fit-to-your-org).
+**Check your org** looks at how your org works (Shared Activities, contacts to multiple accounts, person accounts, Enhanced Email, Einstein Activity Capture) and switches on the shipped sources that suit it. See [Check your org](#check-your-org).
 
 ### Customize
 
@@ -235,7 +235,7 @@ A lens narrows the timeline to one area, such as Sales or Service. People switch
 
 ### The Overdue lens
 
-The **Overdue** lens shows what's late. Time Drive doesn't decide what counts as overdue: its sources do, each with its own filter. The overdue templates (**Overdue tasks**, and the Fit to your org variants for Account, Contact, Lead and person account pages) plot tasks whose **Overdue** field is checked (`Overdue__c = true`). Add any source to the Overdue lens with a filter of your own, such as open cases older than a week, and it counts too.
+The **Overdue** lens shows what's late. Time Drive doesn't decide what counts as overdue: its sources do, each with its own filter. The overdue templates (**Overdue tasks**, and the Check your org variants for Account, Contact, Lead and person account pages) plot tasks whose **Overdue** field is checked (`Overdue__c = true`). Add any source to the Overdue lens with a filter of your own, such as open cases older than a week, and it counts too.
 
 **The Overdue field.** Time Drive adds one formula checkbox to Activity, **Overdue** (`Overdue__c`): an open task whose due date is before today, in the viewing person's own day (`AND(NOT(IsClosed), NOT(ISBLANK(ActivityDate)), ActivityDate < TODAY())`). The Tasks templates' highlight and the overdue templates' filter both use it. Its formula is part of the package, so it can't be edited; for other rules (overdue after three days, or by status), make a formula checkbox of your own and choose it in the source's Highlights, or use it in the source's filter. The **Time Drive** and **Time Drive Setup** permission sets let people read it.
 
@@ -264,15 +264,15 @@ Open a Contact, Account or Lead record, choose **Edit Page**, and drag **Time Dr
 
 The sections below explain what Setup does for you, and what you can change by hand.
 
-## Fit to your org
+## Check your org
 
-**Time Drive Setup > Fit to your org** checks which features the org uses (Shared Activities, person accounts, contacts to multiple accounts) and switches on the shipped sources that suit it. Alternatives share a group, and only one in a group is ever active, so running it again never plots the same record twice.
+**Time Drive Setup > Check your org** checks which features the org uses (Shared Activities, person accounts, contacts to multiple accounts) and switches on the shipped sources that suit it. Alternatives share a group, and only one in a group is ever active, so running it again never plots the same record twice.
 
 #### Account pages and shared activities
 
 An account's activities come from `Task.AccountId` and `Event.AccountId`, the field the standard timeline rolls up by: the account's own, its contacts', and those of its opportunities and contracts. An activity shared with a second contact (Shared Activities) carries another account's Id there.
 
-So with Shared Activities in use, Fit to your org switches each of Tasks, Calls, Emails and Events to its `_Every` variant (`Fit_Account_Tasks_Every` and so on). That's one query through `TaskRelation.AccountId` or `EventRelation.AccountId`, returning the account's own activities and the shared ones together. Without Shared Activities the main sources stay.
+So with Shared Activities in use, Check your org switches each of Tasks, Calls, Emails and Events to its `_Shared` variant (`Account_Tasks_Shared` and so on). That's one query through `TaskRelation.AccountId` or `EventRelation.AccountId`, returning the account's own activities and the shared ones together. Without Shared Activities the main sources stay.
 
 Cases with no contact aren't part of the standard rollup either. A custom object joins an Account page through the field that holds the account (the wizard asks "Which field holds the account?").
 
@@ -297,7 +297,7 @@ Each Time Drive Source record has these fields. Setup fills them in; you can als
 - `Icon__c`, `Icon_Colour__c`: an SLDS icon (`utility:case`, `standard:case`) and its background colour (`#1F7A8C`).
 - `History_Months__c`: how far back this source plots, when that's less than the timeline's own History.
 - `Max_Records__c`: a per-source cap, newest first (default 1000), for sources that are read rather than counted.
-- `Org_Fit__c`, `Requires__c`, `Variant_Group__c`: set by Time Drive Setup. Shipped sources Fit to your org turns on, the org features each needs, and alternatives of which only one is active.
+- `Requires__c`, `Variant_Group__c`: set on shipped sources. The org features each needs, and alternatives of which only one is active; Check your org switches only sources with one of these.
 
 ## Expanding records
 

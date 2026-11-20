@@ -50,9 +50,9 @@ Yes. Choose **A custom object** on the wizard's first step. Any custom object wi
 
 On the wizard's **Interactions** step: add the fields, in order, and how each is formatted. They're saved as **Time Drive Detail Field** records. Time Drive doesn't use compact layouts. See [Expanding records](config-guide.md#expanding-records).
 
-### What does Check your org (Fit to your org) do?
+### What does Check your org do?
 
-It checks how your org works (Shared Activities, contacts to multiple accounts, person accounts, Enhanced Email) and switches on the shipped sources that suit it. Alternatives share a group, and only one in a group is ever active, so running it again never plots the same record twice. See [Fit to your org](config-guide.md#fit-to-your-org).
+It checks how your org works (Shared Activities, contacts to multiple accounts, person accounts, Enhanced Email) and switches on the shipped sources that suit it. Alternatives share a group, and only one in a group is ever active, so running it again never plots the same record twice. See [Check your org](config-guide.md#check-your-org).
 
 ### Why don't an account's shared activities show?
 
