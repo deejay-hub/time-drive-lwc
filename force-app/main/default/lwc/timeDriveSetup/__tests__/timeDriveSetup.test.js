@@ -799,6 +799,21 @@ describe("c-time-drive-setup", () => {
       expect(choice("title").textContent).toBe("None: its name");
     });
 
+    it("says when a title or subtitle field is long or rich text, and will be shortened", async () => {
+      const fields = [
+        { name: "CreatedDate", label: "Created Date", type: "datetime", filterable: true, values: [] },
+        { name: "Subject", label: "Subject", type: "string", filterable: true, values: [], length: 255 },
+        { name: "Notes__c", label: "Notes", type: "textarea", filterable: false, values: [], length: 32768 },
+        { name: "Body__c", label: "Body", type: "textarea", filterable: false, values: [], length: 32768, html: true },
+        { name: "Code__c", label: "Code", type: "string", filterable: true, values: [], length: 20 }
+      ];
+      const root = await openStep("look", { title: "{Notes__c}", subtitle: "{Code__c} · {Body__c}" }, () => fields);
+      await settle();
+      const notes = [...root.querySelectorAll(".word-field .word-note")].map((n) => n.textContent);
+      expect(notes).toContain("Long text: shown cut to 150 characters.");
+      expect(notes).toContain("Rich text: shown as plain words, up to 150 characters.");
+    });
+
     it("gives the subtitle up to two fields, read with a dot between them", async () => {
       const plain = [
         { name: "CreatedDate", label: "Created Date", type: "datetime", filterable: true, values: [] },

@@ -602,6 +602,11 @@ const HIGHLIGHT_COLOURS = [
   { value: "#747474", label: "Grey" }
 ];
 
+// What the timeline shows of a line (title, subtitle) and of a detail
+// (TimeDrivePlotter.MAX_LINE, MAX_DETAIL): longer text is cut.
+const LINE_CHARS = 150;
+const DETAIL_CHARS = 500;
+
 // A subtitle's fields: up to two, with the timeline's dot between them
 // (TimeDrivePlotter.SEPARATOR, which drops out around an empty one).
 const MAX_SUBTITLE_FIELDS = 2;
@@ -3678,6 +3683,26 @@ export default class TimeDriveSetup extends LightningElement {
 
   get subtitleSecondField() {
     return this.subtitleFields[1] ?? "";
+  }
+
+  // A field longer than a line shows (or rich text): said under its choice.
+  cutNote(field, max) {
+    const info = this.fieldInfo(field);
+    if (!info) return "";
+    if (info.html) return `Rich text: shown as plain words, up to ${max} characters.`;
+    return info.length > max ? `Long text: shown cut to ${max} characters.` : "";
+  }
+
+  get detailChars() {
+    return DETAIL_CHARS;
+  }
+
+  get titleCutNote() {
+    return this.cutNote(this.titleField, LINE_CHARS);
+  }
+
+  get subtitleCutNote() {
+    return [this.subtitleField, this.subtitleSecondField].map((f) => this.cutNote(f, LINE_CHARS)).find(Boolean) ?? "";
   }
 
   get titleChoice() {

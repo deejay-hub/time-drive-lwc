@@ -1654,6 +1654,7 @@
                                   <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon>
                                 </button>
                               </div>
+                              <p lwc:if={titleCutNote} class="word-note">{titleCutNote}</p>
                               <template lwc:if={titleTokensOpen}>
                                 <c-time-drive-field-picker
                                   fields={tokenFields}
@@ -1733,6 +1734,7 @@
                               <p lwc:if={isEmailMessage} id="subtitle-note" class="word-note">
                                 Set for you: who each email went to.
                               </p>
+                              <p lwc:if={subtitleCutNote} class="word-note">{subtitleCutNote}</p>
                               <template lwc:if={subtitleTokensOpen}>
                                 <c-time-drive-field-picker
                                   fields={tokenFields}
@@ -1957,7 +1959,10 @@
                             ></lightning-button>
                           </template>
                           <template lwc:else>
-                            <p class="hint">Up to {maxDetails} fields, besides the title and subtitle.</p>
+                            <p class="hint">
+                              Up to {maxDetails} fields, besides the title and subtitle. Long text shows its first
+                              {detailChars} characters; rich text shows as plain words.
+                            </p>
                           </template>
                         </div>
                         <template lwc:if={isSalesforce}>

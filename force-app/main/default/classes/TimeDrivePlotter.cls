@@ -19,6 +19,13 @@ public with sharing class TimeDrivePlotter {
   private static final Pattern TOKEN = Pattern.compile('\\{([A-Za-z0-9_.]+)\\}');
   public static final String SEPARATOR = ' · ';
   private static final Integer MAX_PLACES = 6;
+  // How much text a line (title, subtitle) and a detail show: a long text
+  // area (a task's Description holds 32,000 characters) is cut, with an
+  // ellipsis, so the timeline's response stays small.
+  @TestVisible
+  private static final Integer MAX_LINE = 150;
+  @TestVisible
+  private static final Integer MAX_DETAIL = 500;
   // Each picklist's labels by value, in the user's language, once a request.
   private static Map<Schema.SObjectField, Map<String, String>> picklistLabels = new Map<Schema.SObjectField, Map<String, String>>();
 
@@ -70,8 +77,8 @@ public with sharing class TimeDrivePlotter {
           (key == null ? String.valueOf(events.size()) : String.valueOf(key)) + '-' + s.DeveloperName,
           s.Event_Type__c,
           TimeDriveConfig.lensKey(s),
-          String.isBlank(s.Title__c) ? s.Label : title(s.Title__c, row),
-          fill(s.Subtitle__c, row),
+          shorten(String.isBlank(s.Title__c) ? s.Label : title(s.Title__c, row), MAX_LINE),
+          shorten(fill(s.Subtitle__c, row), MAX_LINE),
           occurredAt
         )
         .source(context.sourceObject, context.sourceLabel)
@@ -202,6 +209,10 @@ public with sharing class TimeDrivePlotter {
       return isMoney(format, field) ? currencyOf(row) + ' ' + money(amount) : plain(amount, field);
     }
     if (value instanceof String && field != null) {
+      // Rich text arrives as HTML: shown as its words.
+      if (field.isHtmlFormatted()) {
+        return ((String) value).stripHtmlTags();
+      }
       return picklistLabel((String) value, field);
     }
     return String.valueOf(value);
@@ -308,7 +319,7 @@ public with sharing class TimeDrivePlotter {
     Object value = row.get(d.Field__c);
     TimeDriveController.Detail detail = new TimeDriveController.Detail(
       detailLabel(d, row),
-      format(value, d.Format__c, row, d.Field__c)
+      shorten(format(value, d.Format__c, row, d.Field__c), MAX_DETAIL)
     );
     detail.amount = amountOf(value);
     if (detail.amount != null && isMoney(d.Format__c, row.describe(d.Field__c))) {
@@ -470,5 +481,26 @@ public with sharing class TimeDrivePlotter {
       return d.Label;
     }
     return row.labelOf(d.Field__c);
+  }
+
+  /**
+   * Text cut to at most max characters, an ellipsis at the end when it was
+   * longer (and at a word's end where one is near).
+   *
+   * @param text the text
+   * @param max the most characters to keep
+   * @return the text, shortened
+   */
+  @TestVisible
+  private static String shorten(String text, Integer max) {
+    if (text == null || text.length() <= max) {
+      return text;
+    }
+    String cut = text.left(max - 1);
+    Integer space = cut.lastIndexOf(' ');
+    if (space > max * 0.8) {
+      cut = cut.left(space);
+    }
+    return cut.trim() + '…';
   }
 }

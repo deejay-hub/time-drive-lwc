@@ -3079,6 +3079,12 @@ public with sharing class TimeDriveSetupController {
     public String type;
     @AuraEnabled
     public Boolean filterable;
+    // Its most characters (a long text area's 32,000), and whether it's rich
+    // text: the timeline shortens long text and shows rich text as words.
+    @AuraEnabled
+    public Integer length;
+    @AuraEnabled
+    public Boolean html;
     @AuraEnabled
     public List<Option> values = new List<Option>();
     // A lookup: the object it points to and the name to reach through it
@@ -3109,6 +3115,8 @@ public with sharing class TimeDriveSetupController {
       label = fd.getLabel();
       type = String.valueOf(fd.getType()).toLowerCase();
       filterable = fd.isFilterable();
+      length = fd.getLength();
+      html = fd.isHtmlFormatted();
       List<Schema.SObjectType> targets = fd.getReferenceTo();
       if (targets.size() == 1 && String.isNotBlank(fd.getRelationshipName())) {
         Schema.DescribeSObjectResult target = targets[0].getDescribe(SObjectDescribeOptions.DEFERRED);

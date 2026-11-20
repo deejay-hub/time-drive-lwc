@@ -304,6 +304,7 @@ Each Time Drive Source record has these fields. Setup fills them in; you can als
 An event expands with its source's **Time Drive Detail Field** records: Source, Field, Label, Sequence, and Format (Text, Date, Date/Time, Currency or Number). These are the fields you chose in the wizard.
 
 - A blank label uses the field's own label, in the user's language.
+- Long text is shortened, so a long Description doesn't slow the timeline: a detail shows its first 500 characters, a title or subtitle its first 150, each ending in an ellipsis. Rich text shows as plain words. Setup says so when you choose such a field for a title or subtitle. Text areas can't be used in filters (SOQL can't filter on them).
 - A label can be a custom label (`$Label.Points`), to translate it.
 - A detail that names a record links to it, opened as the title is (a workspace tab in Console apps): a field through a lookup, such as a task's **Related To › Name** or **Account › Account Name**, links to that record, and a lookup chosen as itself links to the record it holds. Plain values stay words. The record's Id is read with the item, so a link costs nothing more.
 - An event with no detail fields opens on its title, subtitle and source alone.
