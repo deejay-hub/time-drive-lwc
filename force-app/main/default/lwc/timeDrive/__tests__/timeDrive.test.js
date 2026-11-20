@@ -3193,11 +3193,11 @@ describe("the page's Lenses property", () => {
   };
 
   it("offers every lens when it's blank", async () => {
-    expect(await offered(await open())).toEqual(["All", "Sales", "Service", "Overdue"]);
+    expect(await offered(await open())).toEqual(["All", "Overdue", "Sales", "Service"]);
   });
 
   it("offers only the lenses it names, by API name in any case, with All and Overdue always", async () => {
-    expect(await offered(await open({ lenses: " sales , Missing" }))).toEqual(["All", "Sales", "Overdue"]);
+    expect(await offered(await open({ lenses: " sales , Missing" }))).toEqual(["All", "Overdue", "Sales"]);
   });
 
   it("opens on All when the Default Lens or the lens they last used isn't one it offers", async () => {

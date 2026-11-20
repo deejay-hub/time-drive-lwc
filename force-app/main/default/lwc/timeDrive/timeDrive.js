@@ -1828,9 +1828,12 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     this._viewData = data;
     // The page's Lenses property narrows the org's (All and Overdue stay).
     // A lens named by a built-in label shows the card's own copy of it.
+    // All first, then alphabetically by the label shown (in the viewer's language).
+    const collator = new Intl.Collator(LANG, { sensitivity: "base" });
     this.views = data
       .filter((v) => this.lensAllowed(v.value))
-      .map((v) => ({ ...v, label: VIEW_LABELS[v.labelName] ?? labelNamed(v.labelName, v.label) }));
+      .map((v) => ({ ...v, label: VIEW_LABELS[v.labelName] ?? labelNamed(v.labelName, v.label) }))
+      .sort((a, b) => (a.value === "All" ? -1 : b.value === "All" ? 1 : collator.compare(a.label, b.label)));
     // The Overdue check waits for the lenses: only an offered lens is asked about.
     this.maybeAskOverdue();
     // A default lens the org doesn't offer (switched off since the page was

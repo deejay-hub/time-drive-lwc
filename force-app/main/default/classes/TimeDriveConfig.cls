@@ -183,7 +183,8 @@ public with sharing class TimeDriveConfig {
   }
 
   /**
-   * The views, All first, then by Sequence.
+   * The views, All first, then in alphabetical order of the label people see
+   * (their language's, when it's a custom label).
    *
    * @return the views in display order
    */
@@ -244,8 +245,14 @@ public with sharing class TimeDriveConfig {
   private static Set<String> hiddenViews;
 
   /**
+   * The lenses that start switched off: until Setup first saves the org's
+   * choices (Get started writes these), the picker doesn't offer them.
+   */
+  public static final List<String> OFF_BY_DEFAULT = new List<String>{ 'Commerce', 'Digital' };
+
+  /**
    * The views Setup has switched off, kept on the org's Time_Drive_Setup__c
-   * record (read once a transaction).
+   * record (read once a transaction); before there is one, OFF_BY_DEFAULT.
    *
    * @return the developer names of the views the picker doesn't offer
    */
@@ -260,7 +267,8 @@ public with sharing class TimeDriveConfig {
         ORDER BY CreatedDate
         LIMIT 1
       ];
-      String raw = rows.isEmpty() ? null : rows[0].Hidden_Views__c;
+      // No Setup record yet: the lenses that start switched off.
+      String raw = rows.isEmpty() ? String.join(OFF_BY_DEFAULT, ',') : rows[0].Hidden_Views__c;
       for (String name : String.isBlank(raw) ? new List<String>() : raw.split(',')) {
         if (String.isNotBlank(name)) {
           hiddenViews.add(name.trim());
@@ -305,22 +313,26 @@ public with sharing class TimeDriveConfig {
 
   private class ViewOrder implements Comparable {
     Time_Drive_View__mdt view;
+    // The label people see, lower-cased: the alphabetical order ignores case.
+    String key;
     ViewOrder(Time_Drive_View__mdt view) {
       this.view = view;
-    }
-    Decimal rank() {
-      return view.DeveloperName == ALL_VIEW ? -1 : (view.Sequence__c == null ? 1000 : view.Sequence__c);
+      this.key = viewLabel(view).toLowerCase();
     }
     /**
-     * Orders views by rank, then by label.
+     * Orders views All first, then alphabetically by the label people see.
      *
      * @param other the ViewOrder to compare with
      * @return a negative, zero or positive number
      */
     public Integer compareTo(Object other) {
-      Decimal a = rank();
-      Decimal b = ((ViewOrder) other).rank();
-      return a == b ? view.Label.compareTo(((ViewOrder) other).view.Label) : (a < b ? -1 : 1);
+      ViewOrder that = (ViewOrder) other;
+      Boolean mineAll = view.DeveloperName == ALL_VIEW;
+      Boolean theirsAll = that.view.DeveloperName == ALL_VIEW;
+      if (mineAll != theirsAll) {
+        return mineAll ? -1 : 1;
+      }
+      return key == that.key ? view.DeveloperName.compareTo(that.view.DeveloperName) : key.compareTo(that.key);
     }
   }
 

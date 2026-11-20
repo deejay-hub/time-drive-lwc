@@ -1565,7 +1565,8 @@ public with sharing class TimeDriveSetupController {
     requireSetupAccess();
     Time_Drive_Setup__c row = progressRow();
     if (row == null) {
-      row = new Time_Drive_Setup__c(Name = 'Org');
+      // The org's first Setup record: the lenses that start switched off stay off.
+      row = new Time_Drive_Setup__c(Name = 'Org', Hidden_Views__c = String.join(TimeDriveConfig.OFF_BY_DEFAULT, ','));
     }
     if (steps != null) {
       row.Steps_Done__c = String.join(steps, ',').left(255);

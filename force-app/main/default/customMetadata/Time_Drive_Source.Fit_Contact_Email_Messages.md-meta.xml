@@ -43,6 +43,10 @@
         <value xsi:type="xsd:string">Sales</value>
     </values>
     <values>
+        <field>Lenses__c</field>
+        <value xsi:type="xsd:string">Marketing;Sales;Service</value>
+    </values>
+    <values>
         <field>Icon__c</field>
         <value xsi:type="xsd:string">standard:email</value>
     </values>

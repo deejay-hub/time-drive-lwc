@@ -195,7 +195,7 @@ private class TimeDriveSetupControllerTest {
       };
       // Switched off in Setup before (Gone is a view that's since been deleted).
       insert new Time_Drive_Setup__c(Name = 'Org', Hidden_Views__c = 'Digital,Gone');
-      // All first, then by sequence; names come from custom labels (a blank
+      // All first, then alphabetically; names come from custom labels (a blank
       // one reads as the view's label); an inactive view isn't offered.
       List<TimeDriveController.ViewOption> views = TimeDriveController.getViews();
       Assert.areEqual(3, views.size());
@@ -210,7 +210,8 @@ private class TimeDriveSetupControllerTest {
       Assert.areEqual(4, drafts.size());
       Assert.areEqual('Time_Drive_View_All', drafts[0].labelName);
       Assert.isTrue(drafts[0].active, 'All is always offered');
-      Assert.isFalse(drafts[2].active, drafts[2].developerName);
+      Assert.areEqual('Digital', drafts[1].developerName, 'All, then alphabetically');
+      Assert.isFalse(drafts[1].active, drafts[1].developerName);
 
       // Switching views off and on is kept on the org's Setup record at once;
       // views not sent keep their state, and deleted ones drop out.
@@ -1426,5 +1427,38 @@ private class TimeDriveSetupControllerTest {
       Assert.isFalse(TimeDriveTestData.tryInsert(new List<SObject>{ new Campaign(Name = 'Not theirs') }));
       Assert.areEqual(0, [SELECT COUNT() FROM Campaign WHERE Name = 'Not theirs'], 'nothing is kept');
     }
+  }
+
+  // Commerce and Digital start switched off: before Setup is first saved they
+  // aren't offered, Get started's record keeps them off, and an admin can
+  // switch them on.
+  @IsTest
+  static void commerceAndDigitalStartSwitchedOff() {
+    System.runAs(TimeDriveTestData.setupAdmin()) {
+      TimeDriveConfig.testViews = new List<Time_Drive_View__mdt>{
+        new Time_Drive_View__mdt(DeveloperName = 'All', Label = 'All'),
+        new Time_Drive_View__mdt(DeveloperName = 'Sales', Label = 'Sales'),
+        new Time_Drive_View__mdt(DeveloperName = 'Commerce', Label = 'Commerce'),
+        new Time_Drive_View__mdt(DeveloperName = 'Digital', Label = 'Digital')
+      };
+      Assert.areEqual(0, [SELECT COUNT() FROM Time_Drive_Setup__c]);
+      Assert.areEqual(new List<String>{ 'All', 'Sales' }, offered());
+
+      TimeDriveSetupController.saveProgress(new List<String>{ 'welcome' }, null);
+      TimeDriveConfig.forgetHiddenViews();
+      Assert.areEqual('Commerce,Digital', [SELECT Hidden_Views__c FROM Time_Drive_Setup__c].Hidden_Views__c);
+      Assert.areEqual(new List<String>{ 'All', 'Sales' }, offered());
+
+      TimeDriveSetupController.saveViews('[{"developerName":"Commerce","active":true}]');
+      Assert.areEqual(new List<String>{ 'All', 'Commerce', 'Sales' }, offered(), 'switched on, in alphabetical order');
+    }
+  }
+
+  private static List<String> offered() {
+    List<String> out = new List<String>();
+    for (TimeDriveController.ViewOption v : TimeDriveController.getViews()) {
+      out.add(v.value);
+    }
+    return out;
   }
 }
