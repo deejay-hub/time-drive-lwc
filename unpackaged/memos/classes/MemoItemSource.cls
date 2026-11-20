@@ -6,8 +6,9 @@
  * Memo__r.Name: the memo's name links to the memo).
  *
  * Add it in Time Drive Setup as a source of kind Apex on the Contact page.
+ * Global, so the Time Drive package (its own namespace) can find and run it.
  */
-public with sharing class MemoItemSource extends drvrckt.TimeDriveApexSource {
+global with sharing class MemoItemSource extends drvrckt.TimeDriveApexSource {
   private static final String OCCURRED_AT = 'Occurred_At__c';
   // Any memo of the contact: the item's parent links to the page.
   private static final String THIS_CONTACT = 'Memo__r.Contact__c = :contactId';
@@ -19,7 +20,7 @@ public with sharing class MemoItemSource extends drvrckt.TimeDriveApexSource {
    * @param unit the period to count by
    * @return the counts; none off a Contact page
    */
-  public override List<drvrckt.TimeDriveContext.DayCount> counts(drvrckt.TimeDriveContext context, String unit) {
+  global override List<drvrckt.TimeDriveContext.DayCount> counts(drvrckt.TimeDriveContext context, String unit) {
     if (context.recordId?.getSObjectType() != Contact.SObjectType) {
       return new List<drvrckt.TimeDriveContext.DayCount>();
     }
@@ -38,7 +39,7 @@ public with sharing class MemoItemSource extends drvrckt.TimeDriveApexSource {
    * @param context the request context
    * @return a row for each item; none off a Contact page
    */
-  public override List<drvrckt.TimeDriveRow> rows(drvrckt.TimeDriveContext context) {
+  global override List<drvrckt.TimeDriveRow> rows(drvrckt.TimeDriveContext context) {
     List<drvrckt.TimeDriveRow> rows = new List<drvrckt.TimeDriveRow>();
     if (context.recordId?.getSObjectType() != Contact.SObjectType) {
       return rows;

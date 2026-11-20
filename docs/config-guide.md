@@ -343,6 +343,9 @@ Most sources need no code. Write an Apex source when Setup can't reach the data:
 - **Records further away**, such as an Account's products on all its opportunities, two steps from the page.
 - **Data from elsewhere**, such as an external system, a calculation or a forecast.
 
+> [!IMPORTANT]
+> Your class lives in your org; Time Drive runs it from its package, in its own namespace (`drvrckt`). So declare the class and its overrides **`global`** (`global with sharing class MySource extends drvrckt.TimeDriveApexSource`, `global override ...`), and name the package's types with `drvrckt.`. A `public` class can't be seen from the package: the timeline says it "doesn't extend TimeDriveApexSource", and Setup doesn't list it.
+
 A source class extends `TimeDriveApexSource`. Time Drive asks it two things, and it answers each its own way:
 
 - `rows(context)` (required): the items on the days in `context.spans()`. For a source that counts, that's only ever the days on screen, a few at a time.
@@ -433,10 +436,10 @@ public with sharing class TimeDriveOpportunityProducts extends TimeDriveApexSour
 Each row is a map, and its keys are what the title, subtitle and detail fields name. Give every row a unique `Id` key. Ask the service only for the days in `context.spans()`, and return only the items `context.wants`:
 
 ```apex
-public with sharing class MyLoyaltySource extends TimeDriveApexSource {
+global with sharing class MyLoyaltySource extends drvrckt.TimeDriveApexSource {
   // The summary: one call for the window's daily totals.
-  public override List<TimeDriveContext.DayCount> counts(TimeDriveContext context, String unit) {
-    TimeDriveContext.Counter counter = context.counter(unit);
+  global override List<drvrckt.TimeDriveContext.DayCount> counts(drvrckt.TimeDriveContext context, String unit) {
+    drvrckt.TimeDriveContext.Counter counter = context.counter(unit);
     for (LoyaltyApi.Total total : LoyaltyApi.dailyTotals(context.recordId, context.since, context.until)) {
       counter.add(total.day, total.entries);
     }
@@ -444,14 +447,14 @@ public with sharing class MyLoyaltySource extends TimeDriveApexSource {
   }
 
   // The days on screen.
-  public override List<TimeDriveRow> rows(TimeDriveContext context) {
+  global override List<drvrckt.TimeDriveRow> rows(drvrckt.TimeDriveContext context) {
     context.plotBy('EarnedAt').title('Earned {Points} points').subtitle('{Reason}');
-    List<TimeDriveRow> rows = new List<TimeDriveRow>();
-    for (TimeDriveContext.Span span : context.spans()) {
+    List<drvrckt.TimeDriveRow> rows = new List<drvrckt.TimeDriveRow>();
+    for (drvrckt.TimeDriveContext.Span span : context.spans()) {
       for (LoyaltyApi.Entry entry : LoyaltyApi.entriesFor(context.recordId, span.since, span.until)) {
         if (context.wants(entry.earnedAt)) {
           rows.add(
-            new TimeDriveRow(
+            new drvrckt.TimeDriveRow(
               new Map<String, Object>{
                 'Id' => entry.id,
                 'EarnedAt' => entry.earnedAt, // a Datetime or a Date

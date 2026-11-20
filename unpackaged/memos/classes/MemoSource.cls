@@ -4,8 +4,9 @@
  * description under it, a click opening it.
  *
  * Add it in Time Drive Setup as a source of kind Apex on the Contact page.
+ * Global, so the Time Drive package (its own namespace) can find and run it.
  */
-public with sharing class MemoSource extends drvrckt.TimeDriveApexSource {
+global with sharing class MemoSource extends drvrckt.TimeDriveApexSource {
   private static final String THIS_CONTACT = 'Contact__c = :contactId';
 
   /**
@@ -15,7 +16,7 @@ public with sharing class MemoSource extends drvrckt.TimeDriveApexSource {
    * @param unit the period to count by
    * @return the counts; none off a Contact page
    */
-  public override List<drvrckt.TimeDriveContext.DayCount> counts(drvrckt.TimeDriveContext context, String unit) {
+  global override List<drvrckt.TimeDriveContext.DayCount> counts(drvrckt.TimeDriveContext context, String unit) {
     if (context.recordId?.getSObjectType() != Contact.SObjectType) {
       return new List<drvrckt.TimeDriveContext.DayCount>();
     }
@@ -34,7 +35,7 @@ public with sharing class MemoSource extends drvrckt.TimeDriveApexSource {
    * @param context the request context
    * @return a row for each memo; none off a Contact page
    */
-  public override List<drvrckt.TimeDriveRow> rows(drvrckt.TimeDriveContext context) {
+  global override List<drvrckt.TimeDriveRow> rows(drvrckt.TimeDriveContext context) {
     List<drvrckt.TimeDriveRow> rows = new List<drvrckt.TimeDriveRow>();
     if (context.recordId?.getSObjectType() != Contact.SObjectType) {
       return rows;
