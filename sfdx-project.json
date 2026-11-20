@@ -1,20 +1,29 @@
 {
   "packageDirectories": [
     {
-      "versionName": "ver 0.1",
-      "versionNumber": "0.1.0.NEXT",
       "path": "force-app",
-      "default": false,
       "package": "Time Drive",
-      "versionDescription": "An interactive timeline for activity and interactions"
+      "versionName": "Sydney",
+      "versionNumber": "0.1.0.NEXT",
+      "versionDescription": "An interactive timeline for activity and interactions",
+      "releaseNotesUrl": "https://github.com/deejay-hub/time-drive-lwc/blob/main/changelog.md",
+      "definitionFile": "config/project-scratch-def.json",
+      "default": true
     },
     {
-      "versionName": "ver 0.1",
-      "versionNumber": "0.1.0.NEXT",
       "path": "force-app-data360",
-      "default": true,
       "package": "Time Drive Data Extension",
-      "versionDescription": "Data 360 engagement on the Time Drive timeline"
+      "versionName": "Sydney",
+      "versionNumber": "0.1.0.NEXT",
+      "versionDescription": "Data 360 engagement on the Time Drive timeline",
+      "definitionFile": "config/data-extension-scratch-def.json",
+      "default": false,
+      "dependencies": [
+        {
+          "package": "Time Drive",
+          "versionNumber": "0.1.0.LATEST"
+        }
+      ]
     },
     {
       "path": "unpackaged",
