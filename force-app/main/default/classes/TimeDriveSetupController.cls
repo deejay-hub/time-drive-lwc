@@ -1579,7 +1579,8 @@ public with sharing class TimeDriveSetupController {
 
   /**
    * The problems in Time Drive's log, most recent first: what failed, how
-   * often, and its likely cause.
+   * often, and its likely cause. Read as the admin (the log's own access:
+   * Time Drive Setup gives View All).
    * @return Up to 50 problems from the last 30 days.
    */
   @AuraEnabled
@@ -1599,7 +1600,7 @@ public with sharing class TimeDriveSetupController {
         Record_Id__c,
         LastModifiedBy.Name
       FROM Time_Drive_Log__c
-      WITH SYSTEM_MODE
+      WITH USER_MODE
       ORDER BY Last_Seen__c DESC
       LIMIT 50
     ]) {
@@ -1620,12 +1621,15 @@ public with sharing class TimeDriveSetupController {
     return out;
   }
 
-  /** Empties Time Drive's log (after the problems are fixed). */
+  /**
+   * Empties Time Drive's log (after the problems are fixed): as the admin, so
+   * it takes the log's own access (Time Drive Setup gives View All and Modify All).
+   */
   @AuraEnabled
   public static void clearProblems() {
     requireSetupAccess();
-    List<Time_Drive_Log__c> rows = [SELECT Id FROM Time_Drive_Log__c WITH SYSTEM_MODE LIMIT 10000];
-    Database.delete(rows, false, AccessLevel.SYSTEM_MODE);
+    List<Time_Drive_Log__c> rows = [SELECT Id FROM Time_Drive_Log__c WITH USER_MODE LIMIT 10000];
+    Database.delete(rows, AccessLevel.USER_MODE);
   }
 
   @AuraEnabled
