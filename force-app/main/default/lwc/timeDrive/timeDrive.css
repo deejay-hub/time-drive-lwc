@@ -517,17 +517,6 @@
   border-radius: 0.625rem;
 }
 
-/* Vertical: a day's last item has a little more air below it in Comfy, its
-   rail running on through it (--row-extra: 0.25rem in Comfy, none in Compact). */
-.event-row {
-  --row-extra: 0px;
-  padding-bottom: calc(0.75 * var(--time-drive-space) + var(--row-extra));
-}
-
-.card:not(.card_horizontal) .events > li:last-child > .event-row {
-  --row-extra: max(0px, calc((var(--time-drive-space) - 0.5rem) / 2));
-}
-
 /* The chevron is the only expand control: a small button with a larger hit
    area than its glyph. */
 .chevron-button {
@@ -640,22 +629,6 @@
 
 .rail_none {
   visibility: hidden;
-}
-
-/* A day's last item: the rail under its node runs on through the row's extra
-   padding (--row-extra), so the node stays centred on its text. */
-.node-col > .rail:last-child {
-  position: relative;
-}
-
-.node-col > .rail:last-child::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100%;
-  height: var(--row-extra, 0px);
-  background: inherit;
 }
 
 .node {

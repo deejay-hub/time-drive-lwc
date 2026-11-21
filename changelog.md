@@ -26,7 +26,6 @@
 - Lenses are listed All, then Overdue, then the rest alphabetically by their label
 - Tasks, calls, emails and events are in the Sales, Service and Marketing lenses; Commerce and Digital start switched off
 - The Filters panel's Back and Ahead are lightning-select base components
-- In the vertical list, a day's last item has more room below it in Comfy (Compact is unchanged)
 - Opening Filters no longer makes a horizontal timeline a pixel or two taller
 - The Filters panel is a sheet inside the card, under its header and as tall as the timeline: at the card's end with the event types in up to three columns on a wide card, over the whole timeline in one column on a narrow one
 - Added the Overdue lens, defined by its sources' filters, with an Overdue button in the header while the record has something overdue
