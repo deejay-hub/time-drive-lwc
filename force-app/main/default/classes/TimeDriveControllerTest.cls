@@ -1536,6 +1536,81 @@ private class TimeDriveControllerTest {
     }
   }
 
+  public class RowsBrokeException extends Exception {
+  }
+
+  /** Counts the orders, as CountedPoints does, but its rows can't be read. */
+  public class CountsButRowsFail extends TimeDriveApexSource {
+    /**
+     * Fails, as a source whose row query breaks would.
+     *
+     * @param context the request context
+     * @return never
+     */
+    public override List<TimeDriveRow> rows(TimeDriveContext context) {
+      throw new RowsBrokeException('the rows could not be read');
+    }
+
+    /**
+     * The orders, counted.
+     *
+     * @param context the request context
+     * @param unit the period to count by
+     * @return the counts
+     */
+    public override List<TimeDriveContext.DayCount> counts(TimeDriveContext context, String unit) {
+      TimeDriveContext.Counter counter = context.counter(unit);
+      for (Task order : [SELECT CreatedDate FROM Task WHERE WhoId = :context.recordId AND Subject LIKE 'Order%']) {
+        counter.add(order.CreatedDate);
+      }
+      return counter.counts();
+    }
+  }
+
+  // A source that counts but whose rows fail is said, as one that can't be
+  // counted is: the first load names it with the summary's problems, and a
+  // page of days fails rather than leaving a gap.
+  @IsTest
+  static void aSourceWhoseRowsFailIsSaidNotLeftOut() {
+    Id customer = contactId();
+    TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{
+      pointsSource('TimeDriveControllerTest.CountsButRowsFail')
+    };
+    TimeDriveController.TimelineLoad load = TimeDriveController.getTimeline(
+      customer,
+      null,
+      null,
+      null,
+      null,
+      null,
+      true,
+      false,
+      7
+    );
+    Assert.areEqual(2, load.summary.total, 'counted');
+    Assert.areEqual(1, load.summary.problems.size(), 'its rows failed, so it is a problem');
+    Assert.areEqual('Points', load.summary.problems[0].source);
+
+    String today = Datetime.now().format('yyyy-MM-dd');
+    try {
+      TimeDriveController.getPageDays(
+        customer,
+        null,
+        null,
+        null,
+        null,
+        new List<String>{ today },
+        new List<String>(),
+        null,
+        null,
+        null
+      );
+      Assert.fail('a page of days whose source fails fails');
+    } catch (AuraHandledException e) {
+      Assert.isTrue(e.getMessage().startsWith('timedrive:'), e.getMessage());
+    }
+  }
+
   // An Apex source as Setup saves one: the class, its look and lens, no date or title.
   private static Time_Drive_Source__mdt pointsSource(String className) {
     return new Time_Drive_Source__mdt(

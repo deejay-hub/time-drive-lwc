@@ -928,6 +928,32 @@ describe("c-time-drive sources that couldn't be read", () => {
     expect(root.querySelector(".today-button")).toBeNull();
   });
 
+  it("keeps the height the timeline had with items when it turns to the error page", async () => {
+    // jsdom lays nothing out: the timeline's frame says it was 300px tall.
+    const proto = Element.prototype;
+    const saved = proto.getBoundingClientRect;
+    proto.getBoundingClientRect = function () {
+      if (this.classList?.contains("frame"))
+        return { top: 100, bottom: 400, left: 0, right: 600, width: 600, height: 300 };
+      return saved.call(this);
+    };
+    try {
+      const element = createTimeline();
+      element.recordId = "003000000000001AAA";
+      element.layout = "Vertical";
+      document.body.appendChild(element);
+      emitEvents({ events: EVENTS, warnings: [] });
+      await flush();
+      expect(element.shadowRoot.querySelector(".frame")).not.toBeNull();
+      await refresh(element);
+      emitEvents({ events: EVENTS, warnings: [], problems });
+      await flush();
+      expect(element.shadowRoot.querySelector(".empty_error").style.minHeight).toBe("300px");
+    } finally {
+      proto.getBoundingClientRect = saved;
+    }
+  });
+
   it("fills the canvas with the error when nothing could be read", async () => {
     const root = await mountWith([]);
     const state = root.querySelector(".empty_error");

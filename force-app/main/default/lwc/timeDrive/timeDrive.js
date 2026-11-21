@@ -548,6 +548,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   // Width decides the layout when Layout is Auto. The observer starts once
   // the card is in the DOM.
   renderedCallback() {
+    this.noteShownHeight();
     if (isPhone()) {
       const header = this.template.querySelector(".header");
       const h = header ? Math.round(header.getBoundingClientRect().height) : 0;
@@ -1792,7 +1793,24 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   // The empty and error states keep the columns' height when horizontal;
   // vertical, they're as tall as they need.
   get emptyStyle() {
+    // As tall as the timeline was when it last showed items in this layout,
+    // so an error or an empty filter doesn't change the card's height.
+    const shown = this.shownHeight?.[this.horizontal ? "h" : "v"];
+    // Horizontal: that height exactly (its illustration shrinks to fit);
+    // vertical: at least that, so a short list's words still fit.
+    if (shown) return this.horizontal ? `height: ${shown}px` : `min-height: ${shown}px`;
     return this.horizontal ? this.trackStyle : "";
+  }
+  // { h, v }: the timeline's height (track and seek bar) when it last showed
+  // items, horizontal and vertical.
+  shownHeight;
+  noteShownHeight() {
+    const frame = this.hasEvents ? this.template.querySelector(".frame") : null;
+    if (!frame) return;
+    const last = this.template.querySelector(".seek") ?? frame;
+    const height = Math.round(last.getBoundingClientRect().bottom - frame.getBoundingClientRect().top);
+    const side = this.horizontal ? "h" : "v";
+    if (height > 0 && height !== this.shownHeight?.[side]) this.shownHeight = { ...this.shownHeight, [side]: height };
   }
   // The filters hide everything shown: a source they hide isn't counted, so
   // the page can't tell that from a record with no history; it says the filters.

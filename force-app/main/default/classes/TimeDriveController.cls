@@ -290,7 +290,8 @@ public with sharing class TimeDriveController {
       emptySourcesFor(out.summary, wanted),
       busyCountsFor(out.summary, wanted),
       runsOf(out.summary, wanted, new Set<String>(busy)),
-      summaryRun.isEmpty() ? null : summaryRun[0]
+      summaryRun.isEmpty() ? null : summaryRun[0],
+      out.summary.problems
     );
     return out;
   }
@@ -501,6 +502,7 @@ public with sharing class TimeDriveController {
       emptySources,
       busyCounts,
       runs,
+      null,
       null
     );
   }
@@ -527,13 +529,16 @@ public with sharing class TimeDriveController {
     List<String> emptySources,
     List<BusyCount> busyCounts,
     List<String> runs,
-    Run reuse
+    Run reuse,
+    List<Problem> said
   ) {
     if (contactId == null || dayKeys == null || dayKeys.isEmpty()) {
       return new List<EngagementEvent>();
     }
-    // What failed was already said with the summary.
+    // Warnings were already said with the summary.
     List<String> warnings = new List<String>();
+    List<EngagementEvent> events;
+    List<Problem> failed;
     try {
       Map<String, Map<String, Integer>> counted = countsByPeriod(busyKeys, busyCounts);
       Run run = reuse;
@@ -546,7 +551,7 @@ public with sharing class TimeDriveController {
         run.problems = new List<Problem>();
         run.only = null;
       }
-      List<EngagementEvent> events = run
+      events = run
         .days(
           new Set<String>(dayKeys),
           new Filters(categories, hiddenTypes),
@@ -557,10 +562,29 @@ public with sharing class TimeDriveController {
           parsedRuns(runs)
         );
       markRights(events);
-      return events;
+      failed = run.problems;
     } catch (Exception e) {
       throw safeFailure(e);
     }
+    // A source that counted but whose rows couldn't be read: with the summary,
+    // it joins the summary's problems (the timeline shows its error page,
+    // naming it); on its own (a page of days), the request fails, so the
+    // page shows the error rather than a gap.
+    if (!failed.isEmpty()) {
+      if (said == null) {
+        throw coded(failed[0].kind);
+      }
+      for (Problem p : failed) {
+        Boolean known = false;
+        for (Problem q : said) {
+          known = known || q.source == p.source;
+        }
+        if (!known) {
+          said.add(p);
+        }
+      }
+    }
+    return events;
   }
 
   // The summary's counts for the busy periods, by period then source; null
@@ -2006,7 +2030,13 @@ public with sharing class TimeDriveController {
   // message or stack trace.
   @TestVisible
   private static AuraHandledException safeFailure(Exception e) {
-    String code = 'timedrive:' + kindOf(e);
+    return coded(kindOf(e));
+  }
+
+  // The card's error for a kind of failure ("timedrive:access"): the code alone,
+  // never the raw message.
+  private static AuraHandledException coded(String kind) {
+    String code = 'timedrive:' + kind;
     AuraHandledException failure = new AuraHandledException(code);
     failure.setMessage(code);
     return failure;
