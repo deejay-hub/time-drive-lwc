@@ -502,6 +502,67 @@ public with sharing class TimeDriveConfig {
     return found;
   }
 
+  /**
+   * Whether the user can read an object: a source on one they can't is
+   * simply not theirs to see (no error). An object that doesn't exist is
+   * left to the query to report.
+   *
+   * @param objectName the object's API name
+   * @return false only when it exists and the user can't read it
+   */
+  public static Boolean canRead(String objectName) {
+    if (String.isBlank(objectName)) {
+      return true;
+    }
+    try {
+      Schema.DescribeSObjectResult d = describeObject(objectName);
+      return d == null || d.isAccessible();
+    } catch (Exception e) {
+      return true;
+    }
+  }
+
+  /**
+   * Whether the user can read a field, or a path through lookups (each lookup
+   * and the field at its end): one they can't is left out of the query and
+   * shows blank. A path through a polymorphic lookup (What.Name), or a field
+   * that doesn't exist, is left to the query.
+   *
+   * @param objectName the object the path starts from
+   * @param path the field or path
+   * @return false only when a step exists and the user can't read it
+   */
+  public static Boolean canRead(String objectName, String path) {
+    if (String.isBlank(objectName) || String.isBlank(path)) {
+      return true;
+    }
+    try {
+      List<String> steps = path.split('\\.');
+      String current = describeObject(objectName).getName();
+      for (Integer i = 0; i < steps.size() - 1; i++) {
+        Schema.DescribeFieldResult lookup = lookupNamed(current, steps[i]);
+        if (lookup == null) {
+          return true;
+        }
+        if (!lookup.isAccessible()) {
+          return false;
+        }
+        if (lookup.getReferenceTo().size() != 1) {
+          return true;
+        }
+        Schema.DescribeSObjectResult target = describeType(lookup.getReferenceTo()[0]);
+        if (!target.isAccessible()) {
+          return false;
+        }
+        current = target.getName();
+      }
+      Schema.SObjectField f = ownField(fieldMap(current), steps[steps.size() - 1]);
+      return f == null || f.getDescribe().isAccessible();
+    } catch (Exception e) {
+      return true;
+    }
+  }
+
   // A field by name, or Time Drive's own by its short name: installed, the
   // describe lists Overdue__c as drvrckt__Overdue__c, while queries and
   // record reads take either.

@@ -64,14 +64,12 @@ Three kinds of source supply the rows:
 
 ## Before you start
 
-You need the **Customize Application** permission to add and change sources.
-
 1. In Setup, open **Permission Sets**.
 2. Assign `Time Drive` to people who see the timeline.
-3. Assign `Time Drive Setup` to admins who manage it.
+3. Assign `Time Drive Setup` to admins who manage it. It includes everything in `Time Drive`, so admins don't need both. (Admins with **Customize Application** can manage sources without it.)
 
 > [!NOTE]
-> What each person sees still depends on the objects and fields they can read. Every query runs as the person looking.
+> What each person sees depends on the objects and fields they can read: every query runs as the person looking. A source on an object someone can't read is simply left out of their timeline, and a field they can't read shows blank. Neither is an error. Time Drive's own setup (its sources and lenses) is read by Time Drive itself, so people don't need access to it, and they can't change it.
 
 Data 360 is _optional_. Without it, the timeline plots your Salesforce records.
 

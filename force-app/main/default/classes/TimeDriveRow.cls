@@ -77,11 +77,17 @@ global with sharing class TimeDriveRow {
       return values.get(key);
     }
     List<String> steps = path.split('\\.');
-    SObject current = record;
-    for (Integer i = 0; i < steps.size() - 1; i++) {
-      current = current?.getSObject(steps[i]);
+    // A field that wasn't read (one the user can't see is left out of the
+    // query) is blank, not an error.
+    try {
+      SObject current = record;
+      for (Integer i = 0; i < steps.size() - 1; i++) {
+        current = current?.getSObject(steps[i]);
+      }
+      return current?.get(steps[steps.size() - 1]);
+    } catch (SObjectException e) {
+      return null;
     }
-    return current?.get(steps[steps.size() - 1]);
   }
 
   /**

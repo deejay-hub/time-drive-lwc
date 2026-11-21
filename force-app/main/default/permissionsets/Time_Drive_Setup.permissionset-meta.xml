@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
     <label>Time Drive Setup</label>
-    <description>The Time Drive Setup tab, for admins who manage Time Drive's sources. Saving sources also needs Customize Application.</description>
+    <description>For admins who manage Time Drive: the Time Drive Setup tab (sources, lenses, problems), and the timeline itself, so this set alone is enough.</description>
     <hasActivationRequired>false</hasActivationRequired>
+    <classAccesses>
+        <apexClass>TimeDriveController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <classAccesses>
         <apexClass>TimeDriveSetupController</apexClass>
         <enabled>true</enabled>

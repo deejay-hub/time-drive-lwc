@@ -50,9 +50,21 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
    * @param context the request context
    * @return the rows read
    */
+  // Whether this user can see the source at all: its object and its date
+  // field readable. One they can't isn't theirs to see, so it reads as empty
+  // (it's how their access is meant to work, not a problem to report).
+  private static Boolean visibleTo(Time_Drive_Source__mdt s) {
+    return s != null &&
+      TimeDriveConfig.canRead(s.Object_Name__c) &&
+      TimeDriveConfig.canRead(s.Object_Name__c, s.Date_Field__c);
+  }
+
   public List<TimeDriveRow> getRows(TimeDriveContext context) {
     Time_Drive_Source__mdt s = context.source;
     List<TimeDriveRow> events = new List<TimeDriveRow>();
+    if (!visibleTo(s)) {
+      return events;
+    }
     Query q = new Query(context);
     if (q.link == null) {
       return events;
@@ -61,19 +73,22 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
     Set<String> fields = new Set<String>{ 'Id', s.Date_Field__c };
     // Each way an item can be dated, and what decides which applies.
     fields.addAll(q.caseFields(q.datePrefix));
-    fields.addAll(TimeDrivePlotter.tokens(s.Title__c));
-    fields.addAll(TimeDrivePlotter.tokens(s.Subtitle__c));
+    // What's shown (title, subtitle, details, highlights): only the fields
+    // this user can read; the rest show blank.
+    Set<String> shown = new Set<String>();
+    shown.addAll(TimeDrivePlotter.tokens(s.Title__c));
+    shown.addAll(TimeDrivePlotter.tokens(s.Subtitle__c));
     for (String extra : new List<String>{ s.Id_Field__c, s.Record_Id_Field__c }) {
       if (String.isNotBlank(extra)) {
         fields.add(extra);
       }
     }
     for (Time_Drive_Detail_Field__mdt d : context.detailFields()) {
-      fields.add(d.Field__c);
+      shown.add(d.Field__c);
       // The record a detail through a lookup names, for the card to link to.
       String link = TimeDrivePlotter.linkPathOf(s.Object_Name__c, d.Field__c);
       if (link != null) {
-        fields.add(link);
+        shown.add(link);
       }
     }
     // Where the org has several currencies, each record's own, so its money shows in it.
@@ -84,7 +99,12 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
       fields.add('CurrencyIsoCode');
     }
     // What the highlights read.
-    fields.addAll(TimeDriveHighlights.fieldsOf(context.highlightRules()));
+    shown.addAll(TimeDriveHighlights.fieldsOf(context.highlightRules()));
+    for (String field : shown) {
+      if (TimeDriveConfig.canRead(s.Object_Name__c, field)) {
+        fields.add(field);
+      }
+    }
     // Events say whether they're all day (shown instead of a time).
     if (TimeDriveConfig.dateOwner(s) == 'Event') {
       fields.add(TimeDriveConfig.datePrefix(s) + 'IsAllDayEvent');
@@ -318,6 +338,9 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
       Query q;
       String condition;
       try {
+        if (!visibleTo(context.source)) {
+          continue;
+        }
         q = new Query(context);
         if (q.link == null) {
           continue;
@@ -375,6 +398,9 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
    * @return the count for each period that has records
    */
   public List<TimeDriveContext.DayCount> countDays(TimeDriveContext context, String unit) {
+    if (!visibleTo(context.source)) {
+      return new List<TimeDriveContext.DayCount>();
+    }
     Query q = new Query(context);
     if (q.link == null) {
       return new List<TimeDriveContext.DayCount>();
@@ -668,10 +694,7 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
 
   // Spans in batches of at most maxDays days, long spans split to fit.
   @TestVisible
-  private static List<List<TimeDriveContext.Span>> batches(
-    List<TimeDriveContext.Span> spans,
-    Integer maxDays
-  ) {
+  private static List<List<TimeDriveContext.Span>> batches(List<TimeDriveContext.Span> spans, Integer maxDays) {
     List<List<TimeDriveContext.Span>> result = new List<List<TimeDriveContext.Span>>();
     List<TimeDriveContext.Span> batch = new List<TimeDriveContext.Span>();
     Integer used = 0;
