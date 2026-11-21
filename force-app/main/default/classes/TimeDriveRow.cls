@@ -9,13 +9,20 @@
 // Global: customers' own Apex sources return these.
 global with sharing class TimeDriveRow {
   private SObject record;
+  // The record's type, once asked for (getSObjectType costs per call).
+  private Schema.SObjectType recordType;
   // The fields (lower case) left out of the record's query, which read as blank.
   private Set<String> leftOut;
   // An object's fields by lower-case name, and the labels worked out for its
   // paths, kept for the request: describing an object builds its whole field
   // map, and a page of rows would otherwise do it for every row.
   private static Map<Schema.SObjectType, Map<String, Schema.SObjectField>> fieldMaps = new Map<Schema.SObjectType, Map<String, Schema.SObjectField>>();
-  private static Map<String, String> labels = new Map<String, String>();
+  // Labels and field describes worked out this request, by object then path
+  // as asked: keyed by the type token (no string building per call, which
+  // measured 25 times the cost of the map lookup); the plotter asks for every
+  // row and field.
+  private static Map<Schema.SObjectType, Map<String, String>> labels = new Map<Schema.SObjectType, Map<String, String>>();
+  private static Map<Schema.SObjectType, Map<String, Schema.DescribeFieldResult>> describes = new Map<Schema.SObjectType, Map<String, Schema.DescribeFieldResult>>();
 
   // Lower-case keys, so templates and detail fields match any case.
   private Map<String, Object> values = new Map<String, Object>();
@@ -120,11 +127,16 @@ global with sharing class TimeDriveRow {
     if (record == null || String.isBlank(path)) {
       return path;
     }
-    String cacheKey = String.valueOf(record.getSObjectType()) + '|' + path;
-    String cached = labels.get(cacheKey);
+    Schema.SObjectType type = typeOf();
+    Map<String, String> byPath = labels.get(type);
+    if (byPath == null) {
+      byPath = new Map<String, String>();
+      labels.put(type, byPath);
+    }
+    String cached = byPath.get(path);
     if (cached == null) {
       cached = worksOutLabel(path);
-      labels.put(cacheKey, cached);
+      byPath.put(path, cached);
     }
     return cached;
   }
@@ -141,14 +153,9 @@ global with sharing class TimeDriveRow {
     Schema.SObjectType type = record.getSObjectType();
     Schema.DescribeFieldResult lookup;
     for (Integer i = 0; i < steps.size() - 1; i++) {
-      lookup = null;
-      for (Schema.SObjectField f : fieldsOf(type).values()) {
-        Schema.DescribeFieldResult d = f.getDescribe();
-        if (d.getRelationshipName() != null && d.getRelationshipName().equalsIgnoreCase(steps[i])) {
-          lookup = d;
-          break;
-        }
-      }
+      // By name first (AccountId, Custom__c), kept for the request; a scan of
+      // every field only when the name isn't the usual one.
+      lookup = TimeDriveConfig.lookupNamed(TimeDriveConfig.describeType(type).getName(), steps[i]);
       if (lookup == null) {
         return path;
       }
@@ -193,15 +200,32 @@ global with sharing class TimeDriveRow {
    * @param path a field name
    * @return the field's describe result, or null
    */
+  private Schema.SObjectType typeOf() {
+    if (recordType == null) {
+      recordType = record.getSObjectType();
+    }
+    return recordType;
+  }
+
   public Schema.DescribeFieldResult describe(String path) {
     if (record == null || String.isBlank(path)) {
       return null;
     }
-    // A path through lookups (Opportunity.StageName) is described where it lives.
-    if (path.contains('.')) {
-      return TimeDriveConfig.fieldDescribe(String.valueOf(record.getSObjectType()), path);
+    Schema.SObjectType type = typeOf();
+    Map<String, Schema.DescribeFieldResult> byPath = describes.get(type);
+    if (byPath == null) {
+      byPath = new Map<String, Schema.DescribeFieldResult>();
+      describes.put(type, byPath);
     }
-    Schema.SObjectField field = fieldsOf(record.getSObjectType()).get(path.toLowerCase());
-    return field?.getDescribe();
+    Schema.DescribeFieldResult kept = byPath.get(path);
+    if (kept != null || byPath.containsKey(path)) {
+      return kept;
+    }
+    // A path through lookups (Opportunity.StageName) is described where it lives.
+    Schema.DescribeFieldResult found = path.contains('.')
+      ? TimeDriveConfig.fieldDescribe(String.valueOf(type), path)
+      : fieldsOf(type).get(path.toLowerCase())?.getDescribe();
+    byPath.put(path, found);
+    return found;
   }
 }

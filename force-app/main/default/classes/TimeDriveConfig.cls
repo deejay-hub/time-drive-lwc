@@ -660,13 +660,19 @@ public with sharing class TimeDriveConfig {
     return out;
   }
 
-  // The lookup field on an object whose relationship has this name: found by
-  // the usual names first (Task is TaskId, Campaign__r is Campaign__c), else
-  // by looking through the object's lookups.
   // The lookups found (or not, as null) this request, by object and relationship.
   private static Map<String, Schema.DescribeFieldResult> lookups = new Map<String, Schema.DescribeFieldResult>();
 
-  private static Schema.DescribeFieldResult lookupNamed(String objectName, String relationship) {
+  /**
+   * The lookup field on an object whose relationship has this name, kept for
+   * the request: the usual field name first (AccountId, Campaign__c), else a
+   * look through the object's fields.
+   *
+   * @param objectName the object
+   * @param relationship the relationship name (Account, Campaign__r)
+   * @return the lookup's describe, or null
+   */
+  public static Schema.DescribeFieldResult lookupNamed(String objectName, String relationship) {
     String key = (objectName + '|' + relationship).toLowerCase();
     if (!lookups.containsKey(key)) {
       lookups.put(key, findLookup(objectName, relationship));
