@@ -62,7 +62,6 @@ LABELS = {
     "No_Title": "（無標題）",
     "Error_Load_Title": "無法載入時間軸",
     "Error_Read_Title": "無法讀取時間軸",
-    "Error_Partial_Title": "部分項目無法顯示",
     "Email_Opened": "已開啟",
     "Email_Unopened": "未開啟",
     "Email_Bounced": "已退回",

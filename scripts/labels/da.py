@@ -62,7 +62,6 @@ LABELS = {
     "No_Title": "(Ingen titel)",
     "Error_Load_Title": "Tidslinjen kunne ikke indlæses",
     "Error_Read_Title": "Tidslinjen kunne ikke læses",
-    "Error_Partial_Title": "Nogle elementer mangler",
     "Email_Opened": "Åbnet",
     "Email_Unopened": "Uåbnet",
     "Email_Bounced": "Afvist",

@@ -62,7 +62,6 @@ LABELS = {
     "No_Title": "(제목 없음)",
     "Error_Load_Title": "타임라인 로드 오류",
     "Error_Read_Title": "타임라인 읽기 오류",
-    "Error_Partial_Title": "일부 항목을 표시할 수 없음",
     "Email_Opened": "열람함",
     "Email_Unopened": "열람 안 함",
     "Email_Bounced": "반송됨",

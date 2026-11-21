@@ -169,10 +169,6 @@
         <name>Time_Drive_Error_Load_Title</name>
     </customLabels>
     <customLabels>
-        <label>部分项目无法显示</label>
-        <name>Time_Drive_Error_Partial_Title</name>
-    </customLabels>
-    <customLabels>
         <label>无法读取时间线</label>
         <name>Time_Drive_Error_Read_Title</name>
     </customLabels>

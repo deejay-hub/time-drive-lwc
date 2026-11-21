@@ -322,19 +322,6 @@
           </div>
         </template>
         <template lwc:else>
-          <!-- Some sources couldn't be read but others could: one notice
-               saying which, why and what to do (never the raw error). -->
-          <template lwc:if={showProblemNotice}>
-            <div class="issue" role="status">
-              <div class="issue-illustration">
-                <lightning-illustration illustration-name={problemArtName}></lightning-illustration>
-              </div>
-              <div class="issue-text">
-                <p class="issue-title">{labels.errorPartialTitle}</p>
-                <p>{problemNotice.message}</p>
-              </div>
-            </div>
-          </template>
           <template lwc:if={hasWarnings}>
             <ul class="warnings">
               <template for:each={warnings} for:item="warning">
@@ -714,8 +701,9 @@
               </div>
             </template>
           </template>
-          <template lwc:elseif={allFailed}>
-            <!-- Nothing to show because the sources couldn't be read. -->
+          <template lwc:elseif={readFailed}>
+            <!-- A source couldn't be read: the error page, whatever else loaded
+                 (admins set sources up so that they all can be). -->
             <div class="empty empty_error" style={emptyStyle} role="alert">
               <div class="slds-illustration slds-illustration_small">
                 <div class="illustration">

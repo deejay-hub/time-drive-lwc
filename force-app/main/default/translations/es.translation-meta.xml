@@ -169,10 +169,6 @@
         <name>Time_Drive_Error_Load_Title</name>
     </customLabels>
     <customLabels>
-        <label>No se pudieron mostrar algunos elementos</label>
-        <name>Time_Drive_Error_Partial_Title</name>
-    </customLabels>
-    <customLabels>
         <label>No se pudo leer la cronología</label>
         <name>Time_Drive_Error_Read_Title</name>
     </customLabels>

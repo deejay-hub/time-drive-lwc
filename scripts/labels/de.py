@@ -62,7 +62,6 @@ LABELS = {
     "No_Title": "(Kein Titel)",
     "Error_Load_Title": "Zeitachse nicht geladen",
     "Error_Read_Title": "Zeitachse nicht lesbar",
-    "Error_Partial_Title": "Einige Elemente fehlen",
     "Email_Opened": "Geöffnet",
     "Email_Unopened": "Ungeöffnet",
     "Email_Bounced": "Unzustellbar",

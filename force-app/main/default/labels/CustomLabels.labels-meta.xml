@@ -505,14 +505,6 @@
         <value>The timeline couldn't be read</value>
     </labels>
     <labels>
-        <fullName>Time_Drive_Error_Partial_Title</fullName>
-        <categories>Time Drive</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Timeline notice · heading when some sources couldn't be read</shortDescription>
-        <value>Some items couldn't be shown</value>
-    </labels>
-    <labels>
         <fullName>Time_Drive_Email_Opened</fullName>
         <categories>Time Drive</categories>
         <language>en_US</language>

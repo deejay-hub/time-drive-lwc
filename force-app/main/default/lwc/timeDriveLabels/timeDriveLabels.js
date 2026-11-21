@@ -43,7 +43,6 @@ import allDay from "@salesforce/label/c.Time_Drive_All_Day";
 import noTitle from "@salesforce/label/c.Time_Drive_No_Title";
 import errorLoadTitle from "@salesforce/label/c.Time_Drive_Error_Load_Title";
 import errorReadTitle from "@salesforce/label/c.Time_Drive_Error_Read_Title";
-import errorPartialTitle from "@salesforce/label/c.Time_Drive_Error_Partial_Title";
 import emailOpened from "@salesforce/label/c.Time_Drive_Email_Opened";
 import emailUnopened from "@salesforce/label/c.Time_Drive_Email_Unopened";
 import emailBounced from "@salesforce/label/c.Time_Drive_Email_Bounced";
@@ -171,7 +170,6 @@ export const LABELS = Object.freeze({
   noTitle,
   errorLoadTitle,
   errorReadTitle,
-  errorPartialTitle,
   emailOpened,
   emailUnopened,
   emailBounced,
@@ -302,7 +300,6 @@ const BY_NAME = Object.freeze({
   Time_Drive_No_Title: noTitle,
   Time_Drive_Error_Load_Title: errorLoadTitle,
   Time_Drive_Error_Read_Title: errorReadTitle,
-  Time_Drive_Error_Partial_Title: errorPartialTitle,
   Time_Drive_Email_Opened: emailOpened,
   Time_Drive_Email_Unopened: emailUnopened,
   Time_Drive_Email_Bounced: emailBounced,

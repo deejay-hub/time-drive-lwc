@@ -68,7 +68,6 @@ LABELS = [
     # ---- errors on the page
     ("Error_Load_Title", "Timeline error state · heading when it couldn't load", "The timeline couldn't load", "No se pudo cargar la cronología", "تعذّر تحميل الجدول الزمني"),
     ("Error_Read_Title", "Timeline error state · heading when no source could be read", "The timeline couldn't be read", "No se pudo leer la cronología", "تعذّرت قراءة الجدول الزمني"),
-    ("Error_Partial_Title", "Timeline notice · heading when some sources couldn't be read", "Some items couldn't be shown", "No se pudieron mostrar algunos elementos", "تعذّر عرض بعض العناصر"),
     # ---- email tracking
     ("Email_Opened", "Email message item · status after its title: opened", "Opened", "Abierto", "تم الفتح"),
     ("Email_Unopened", "Email message item · status after its title: not opened", "Unopened", "Sin abrir", "لم يُفتح"),

@@ -1674,8 +1674,10 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   get canExpand() {
     return this.hasEvents;
   }
+  // Something to show: only when every source could be read (otherwise the
+  // error page, and with it no Today, Expand all or lite view).
   get hasEvents() {
-    return (this.summary?.total ?? 0) > 0;
+    return (this.summary?.total ?? 0) > 0 && !this.readFailed;
   }
   get hasMore() {
     return !this.horizontal && this.allDays.length > this.windowFrom + this.visibleDays;
@@ -1803,17 +1805,15 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   get warnings() {
     return (this.summary?.warnings ?? []).map((text, i) => ({ key: `w${i}`, text }));
   }
-  // Sources that couldn't be read: one notice above what did load, or the
-  // whole canvas when nothing could be.
+  // Sources that couldn't be read: the error page names them, in place of
+  // the timeline.
   get problemNotice() {
     return describeProblems(this.summary?.problems, LIST_FORMAT);
   }
-  get allFailed() {
-    return Boolean(this.problemNotice) && !this.isFilteredOut;
+  get readFailed() {
+    return Boolean(this.problemNotice);
   }
-  get showProblemNotice() {
-    return Boolean(this.problemNotice) && this.hasEvents;
-  }
+
   get hasWarnings() {
     return this.warnings.length > 0;
   }

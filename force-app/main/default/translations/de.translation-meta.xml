@@ -169,10 +169,6 @@
         <name>Time_Drive_Error_Load_Title</name>
     </customLabels>
     <customLabels>
-        <label>Einige Elemente fehlen</label>
-        <name>Time_Drive_Error_Partial_Title</name>
-    </customLabels>
-    <customLabels>
         <label>Zeitachse nicht lesbar</label>
         <name>Time_Drive_Error_Read_Title</name>
     </customLabels>

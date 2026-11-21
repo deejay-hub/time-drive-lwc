@@ -63,7 +63,6 @@ LABELS = {
     "No_Title": "(Ei otsikkoa)",
     "Error_Load_Title": "Lataus epäonnistui",
     "Error_Read_Title": "Luku epäonnistui",
-    "Error_Partial_Title": "Osa kohteista puuttuu",
     "Email_Opened": "Avattu",
     "Email_Unopened": "Avaamaton",
     "Email_Bounced": "Palautunut",

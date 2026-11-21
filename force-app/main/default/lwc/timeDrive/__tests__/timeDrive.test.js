@@ -917,18 +917,19 @@ describe("c-time-drive sources that couldn't be read", () => {
     return element.shadowRoot;
   };
 
-  it("names them in one notice, above what did load", async () => {
+  it("shows the error page, naming them, even when other sources loaded", async () => {
     const root = await mountWith(EVENTS);
-    const notice = root.querySelector(".issue");
-    expect(notice.textContent).toContain("Order placed, Order delivered, and Order canceled couldn't be read.");
-    expect(notice.textContent).not.toMatch(/Possible cause|To fix/);
-    expect(root.querySelectorAll(".warning")).toHaveLength(0);
-    expect(root.querySelectorAll(".event").length).toBeGreaterThan(0);
+    const state = root.querySelector(".empty_error");
+    expect(state.textContent).toContain("Order placed, Order delivered, and Order canceled couldn't be read.");
+    expect(state.textContent).not.toMatch(/Possible cause|To fix/);
+    expect(state.querySelector("button").textContent).toBe("Try again");
+    // In place of the timeline: none of what did load, and no Today or Expand all.
+    expect(root.querySelectorAll(".event")).toHaveLength(0);
+    expect(root.querySelector(".today-button")).toBeNull();
   });
 
   it("fills the canvas with the error when nothing could be read", async () => {
     const root = await mountWith([]);
-    expect(root.querySelector(".issue")).toBeNull();
     const state = root.querySelector(".empty_error");
     expect(state.textContent).toContain("The timeline couldn't be read");
     expect(state.textContent).toContain("Order canceled couldn't be read.");

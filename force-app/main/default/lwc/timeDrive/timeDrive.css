@@ -323,7 +323,6 @@
 .card.card_slds1,
 .card_slds1 .view-menu,
 .card_slds1 .event_open,
-.card_slds1 .issue,
 .card_slds1 .warning,
 .card_slds1 .scrub-bubble,
 .card_slds1 .seek-bubble {
@@ -975,45 +974,6 @@
 
 .empty .more-button {
   margin-top: calc(0.75 * var(--time-drive-space));
-}
-
-/* Some sources couldn't be read: one notice, the error illustration small. */
-.issue {
-  display: flex;
-  align-items: flex-start;
-  gap: calc(0.75 * var(--time-drive-space));
-  margin-bottom: calc(0.5 * var(--time-drive-space));
-  padding: calc(0.625 * var(--time-drive-space)) calc(0.75 * var(--time-drive-space));
-  border-radius: 0.5rem;
-  background: var(--time-drive-cream);
-  font-size: 0.75rem;
-  line-height: 1rem;
-}
-
-.issue-illustration {
-  display: flex;
-  flex: 0 0 4rem;
-  align-items: center;
-  justify-content: center;
-  width: 4rem;
-  height: 4rem;
-}
-
-.issue-illustration lightning-illustration {
-  display: block;
-  width: 100%;
-}
-
-.issue-text {
-  display: grid;
-  gap: 0.125rem;
-  min-width: 0;
-  color: var(--time-drive-muted);
-}
-
-.issue-title {
-  color: var(--time-drive-ink);
-  font-weight: 700;
 }
 
 .warnings {

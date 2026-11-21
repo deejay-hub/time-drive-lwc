@@ -169,10 +169,6 @@
         <name>Time_Drive_Error_Load_Title</name>
     </customLabels>
     <customLabels>
-        <label>Vissa objekt saknas</label>
-        <name>Time_Drive_Error_Partial_Title</name>
-    </customLabels>
-    <customLabels>
         <label>Tidslinjen kunde inte läsas</label>
         <name>Time_Drive_Error_Read_Title</name>
     </customLabels>

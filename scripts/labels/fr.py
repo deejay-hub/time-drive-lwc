@@ -62,7 +62,6 @@ LABELS = {
     "No_Title": "(Sans titre)",
     "Error_Load_Title": "Chargement impossible",
     "Error_Read_Title": "Lecture impossible",
-    "Error_Partial_Title": "Certains éléments manquent",
     "Email_Opened": "Ouvert",
     "Email_Unopened": "Non ouvert",
     "Email_Bounced": "Rejeté",

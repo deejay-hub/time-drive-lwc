@@ -61,7 +61,6 @@ LABELS = {
     "No_Title": "（无标题）",
     "Error_Load_Title": "无法加载时间线",
     "Error_Read_Title": "无法读取时间线",
-    "Error_Partial_Title": "部分项目无法显示",
     "Email_Opened": "已打开",
     "Email_Unopened": "未打开",
     "Email_Bounced": "已退回",

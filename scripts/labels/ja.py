@@ -62,7 +62,6 @@ LABELS = {
     "No_Title": "(無題)",
     "Error_Load_Title": "読み込みエラー",
     "Error_Read_Title": "読み取りエラー",
-    "Error_Partial_Title": "一部の項目を表示できませんでした",
     "Email_Opened": "開封済み",
     "Email_Unopened": "未開封",
     "Email_Bounced": "不達",
