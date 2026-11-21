@@ -14,7 +14,7 @@ Contact, Account and Lead record pages, person accounts included. A person accou
 
 ### Who can use Time Drive Setup?
 
-Admins with the **Customize Application** permission and the `Time Drive Setup` permission set. Everyone else sees the timeline on record pages.
+Admins with the `Time Drive Setup` permission set (it includes the timeline too), or the **Customize Application** permission. Everyone else, with the `Time Drive` permission set, sees the timeline on record pages.
 
 ### How do I put the timeline on a record page?
 
