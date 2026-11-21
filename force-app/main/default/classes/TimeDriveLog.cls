@@ -11,7 +11,8 @@
  * Only requests that may write call flush (getTimeline, getPageDays,
  * getGroupPage); cacheable ones can't, so what they note is dropped, and the
  * next full load logs it. Logging never breaks the timeline: any failure of
- * its own is swallowed.
+ * its own is swallowed. The error's message is kept for triage (it's the
+ * error's own text); only admins with Time Drive Setup can read the log.
  */
 // Without sharing on purpose: the log is the org's, written for every user
 // (who has no access to it) and read only by admins with View All. Every DML

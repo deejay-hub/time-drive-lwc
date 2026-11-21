@@ -57,7 +57,7 @@ Time Drive logs what goes wrong, and **Guided setup** lists it under **Problems*
 - **A warning** is a source that couldn't be read: the timeline showed its error page. Usually it's setup: a source that needs an org feature (Shared Activities, Enhanced Email, person accounts) the org doesn't use, or a field that's gone.
 - **An eye** is a source left out for people who can't read something it needs: its object, its date field, or a field its filter uses. That's their access working as set, not a fault; give them access if they should see those items. (A field shown on an item that someone can't read just shows blank.)
 
-The log holds no record data, only what failed and why, and only admins with **Time Drive Setup** can see it.
+The log holds what failed and the error's message (for triage), not the records read, and only admins with **Time Drive Setup** can see it.
 
 ### What does Check your org do?
 

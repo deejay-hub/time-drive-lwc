@@ -30,7 +30,7 @@
 - A source that can't be read shows the timeline's error page (naming it, with Try again) rather than a notice above the rest
 - A source that counts but whose rows can't be read is reported the same way, rather than its items quietly missing
 - The error and empty pages are as tall as the timeline was with items
-- Problems are logged (Time Drive Log): one row per distinct problem, its count and when it was last seen, kept 30 days and never with record data; Guided setup lists them with the likely cause, a link to the source, and Clear
+- Problems are logged (Time Drive Log): one row per distinct problem, its count and when it was last seen, kept 30 days, with the error's message for triage; Guided setup lists them with the likely cause, a link to the source, and Clear
 - A source someone can't see (its object, date field or a filter field unreadable to them) is left out of their timeline, and a field they can't read shows blank: neither is an error, and the source left out is logged, so admins can see why items are missing
 - fieldsToQuery(objectType, always), for Apex sources: leaves out fields the user can't read
 - The Time Drive Setup permission set includes the timeline itself, so admins need only it; Time Drive reads its own setup, so people need no access to it
