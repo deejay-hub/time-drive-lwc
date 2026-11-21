@@ -368,6 +368,37 @@ button.kd-row:focus-visible {
   cursor: default;
 }
 
+/* Problems, at the top of Guided setup when anything has failed: its title
+   and Clear on one line; each row's icon by its first line, the error on hover. */
+.kd-card_problems {
+  margin-bottom: calc(1.5rem * var(--d));
+}
+
+.kd-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(0.75rem * var(--d));
+}
+
+.kd-row_problem {
+  align-items: flex-start;
+}
+
+div.kd-row_problem {
+  cursor: default;
+}
+
+.kd-row_problem lightning-icon {
+  flex: none;
+  margin-top: 0.125rem;
+}
+
+.kd-row-meta {
+  color: var(--muted);
+  font-size: var(--slds-g-font-scale-neg-1, 0.75rem);
+}
+
 .kd-row-text {
   display: grid;
   flex: 1;

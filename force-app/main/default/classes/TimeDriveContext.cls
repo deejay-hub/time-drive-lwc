@@ -598,6 +598,8 @@ global with sharing class TimeDriveContext {
    * @param e the exception raised
    */
   public void fail(String what, Exception e) {
+    // Every time, for the log's count; the card hears of it once.
+    TimeDriveLog.note(source?.DeveloperName, what, TimeDriveController.kindOf(e), e);
     for (TimeDriveController.Problem p : problems) {
       if (p.source == what) {
         return;

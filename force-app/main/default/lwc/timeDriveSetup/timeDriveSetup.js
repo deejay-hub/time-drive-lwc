@@ -22,6 +22,8 @@ import getLabelText from "@salesforce/apex/TimeDriveSetupController.getLabelText
 import getViewDrafts from "@salesforce/apex/TimeDriveSetupController.getViewDrafts";
 import saveViews from "@salesforce/apex/TimeDriveSetupController.saveViews";
 import getVolumes from "@salesforce/apex/TimeDriveSetupController.getVolumes";
+import getProblems from "@salesforce/apex/TimeDriveSetupController.getProblems";
+import clearProblems from "@salesforce/apex/TimeDriveSetupController.clearProblems";
 import saveDraft from "@salesforce/apex/TimeDriveSetupController.save";
 import setSourceActive from "@salesforce/apex/TimeDriveSetupController.setActive";
 import removeSource from "@salesforce/apex/TimeDriveSetupController.remove";
@@ -851,6 +853,7 @@ export default class TimeDriveSetup extends LightningElement {
       this.sources = await getSources();
       this.loadError = undefined;
       this.loadTemplates();
+      this.loadProblems();
     } catch (e) {
       this.loadError = plainError(e);
     } finally {
@@ -1458,6 +1461,51 @@ export default class TimeDriveSetup extends LightningElement {
 
   get hasOffSources() {
     return this.offSources.length > 0;
+  }
+
+  // ---- the dashboard's Problems: Time Drive's log ------------------------------
+
+  // What failed on record pages lately (TimeDriveLog), newest first.
+  problems = [];
+
+  async loadProblems() {
+    try {
+      this.problems = await getProblems();
+    } catch {
+      // No log to read (or no access): the card says there's nothing.
+      this.problems = [];
+    }
+  }
+
+  get problemRows() {
+    const known = new Set(this.sources.map((s) => s.developerName));
+    return this.problems.map((p, i) => ({
+      key: `${p.sourceKey || "request"}-${i}`,
+      sourceKey: p.sourceKey,
+      name: p.source || "Loading the timeline",
+      cause: p.cause,
+      times: p.count === 1 ? "Once" : `${p.count} times`,
+      lastSeen: p.lastSeen ? new Date(p.lastSeen).getTime() : null,
+      // For support: the error itself.
+      detail: [p.errorType, p.message].filter(Boolean).join(": "),
+      // A source that still exists opens; one since removed doesn't.
+      openable: Boolean(p.sourceKey) && known.has(p.sourceKey),
+      openLabel: `${p.source}: open`
+    }));
+  }
+
+  get hasProblems() {
+    return this.problems.length > 0;
+  }
+
+  async handleClearProblems() {
+    try {
+      await clearProblems();
+      this.problems = [];
+      this.toast("success", "Problems cleared", "New ones will appear here as they happen.");
+    } catch (e) {
+      this.toast("error", "The problems couldn't be cleared", plainError(e).message);
+    }
   }
 
   // An off source, opened on its own page (under its record page).

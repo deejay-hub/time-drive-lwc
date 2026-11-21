@@ -3,6 +3,8 @@ import TimeDriveSetup from "c/timeDriveSetup";
 import getProgress from "@salesforce/apex/TimeDriveSetupController.getProgress";
 import saveProgress from "@salesforce/apex/TimeDriveSetupController.saveProgress";
 import getSources from "@salesforce/apex/TimeDriveSetupController.getSources";
+import getProblems from "@salesforce/apex/TimeDriveSetupController.getProblems";
+import clearProblems from "@salesforce/apex/TimeDriveSetupController.clearProblems";
 import getSource from "@salesforce/apex/TimeDriveSetupController.getSource";
 import getObjects from "@salesforce/apex/TimeDriveSetupController.getObjects";
 import getDataSpaces from "@salesforce/apex/TimeDriveSetupController.getDataSpaces";
@@ -48,6 +50,12 @@ jest.mock("@salesforce/apex/TimeDriveSetupController.getLabelText", () => ({ def
   virtual: true
 });
 jest.mock("@salesforce/apex/TimeDriveSetupController.getVolumes", () => ({ default: jest.fn() }), {
+  virtual: true
+});
+jest.mock("@salesforce/apex/TimeDriveSetupController.getProblems", () => ({ default: jest.fn() }), {
+  virtual: true
+});
+jest.mock("@salesforce/apex/TimeDriveSetupController.clearProblems", () => ({ default: jest.fn() }), {
   virtual: true
 });
 jest.mock("@salesforce/apex/TimeDriveSetupController.save", () => ({ default: jest.fn() }), { virtual: true });
@@ -161,6 +169,8 @@ describe("c-time-drive-setup", () => {
     getSources.mockResolvedValue(SOURCES);
     getDataSpaces.mockResolvedValue([]);
     getData360Status.mockResolvedValue({ ready: true });
+    getProblems.mockResolvedValue([]);
+    clearProblems.mockResolvedValue();
   });
   afterEach(() => {
     while (document.body.firstChild) document.body.removeChild(document.body.firstChild);
@@ -168,6 +178,51 @@ describe("c-time-drive-setup", () => {
   });
 
   const crumbs = (root) => [...root.querySelectorAll(".crumb-link, .crumb-here")].map((c) => c.textContent);
+
+  it("lists what failed on record pages at the top of Guided setup, and clears it", async () => {
+    getProblems.mockResolvedValue([
+      {
+        sourceKey: SOURCES[0].developerName,
+        source: SOURCES[0].label,
+        kind: "access",
+        cause: "A field this source uses doesn't exist, or the user can't see it.",
+        errorType: "System.QueryException",
+        message: "No such column 'Due__c' on entity 'Task'",
+        count: 3,
+        lastSeen: "2026-11-21T10:00:00.000Z"
+      },
+      { sourceKey: null, source: null, kind: "busy", cause: "Too much to read.", count: 1 }
+    ]);
+    const element = mount();
+    await splash();
+    const root = element.shadowRoot;
+    const card = root.querySelector(".kd-card_problems");
+    expect(card.querySelector("h2").textContent).toBe("Problems");
+    const rows = card.querySelectorAll(".kd-row_problem");
+    expect(rows).toHaveLength(2);
+    // A source that still exists opens; the error is there on hover.
+    expect(rows[0].tagName).toBe("BUTTON");
+    expect(rows[0].dataset.name).toBe(SOURCES[0].developerName);
+    expect(rows[0].title).toBe("System.QueryException: No such column 'Due__c' on entity 'Task'");
+    expect(rows[0].textContent).toContain("A field this source uses doesn't exist");
+    expect(rows[0].textContent).toContain("3 times");
+    // A whole request that failed: named as such, nothing to open.
+    expect(rows[1].tagName).toBe("DIV");
+    expect(rows[1].textContent).toContain("Loading the timeline");
+    expect(rows[1].textContent).toContain("Once");
+
+    [...card.querySelectorAll("button.ghost")].find((b) => b.textContent.trim() === "Clear").click();
+    await flush();
+    expect(clearProblems).toHaveBeenCalled();
+    expect(root.querySelector(".kd-card_problems")).toBeNull();
+  });
+
+  it("shows no Problems card when nothing has failed", async () => {
+    const element = mount();
+    await splash();
+    expect(element.shadowRoot.querySelector(".kd-card_problems")).toBeNull();
+    expect(getProblems).toHaveBeenCalled();
+  });
 
   it("welcomes a new org with nothing but Get started, which checks the org in a popup and then opens Setup", async () => {
     getProgress.mockResolvedValue({ steps: [], report: null });

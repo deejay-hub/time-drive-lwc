@@ -30,6 +30,7 @@
 - A source that can't be read shows the timeline's error page (naming it, with Try again) rather than a notice above the rest
 - A source that counts but whose rows can't be read is reported the same way, rather than its items quietly missing
 - The error and empty pages are as tall as the timeline was with items
+- Problems are logged (Time Drive Log): one row per distinct problem, its count and when it was last seen, kept 30 days and never with record data; Guided setup lists them with the likely cause, a link to the source, and Clear
 - The Filters panel is a sheet inside the card, under its header and as tall as the timeline: at the card's end with the event types in up to three columns on a wide card, over the whole timeline in one column on a narrow one
 - Added the Overdue lens, defined by its sources' filters, with an Overdue button in the header while the record has something overdue
 - Added Edit and Delete from each item's menu

@@ -1540,6 +1540,89 @@ public with sharing class TimeDriveSetupController {
    * How far Setup has got, for the whole org (see Time_Drive_Setup__c: one record).
    * @return The steps done and the org check's report.
    */
+  /** A problem from the log, as the Setup dashboard lists it. */
+  public class ProblemInfo {
+    /** The source's API name (blank for a whole request), to open it. */
+    @AuraEnabled
+    public String sourceKey { get; set; }
+    /** The source's name as people see it. */
+    @AuraEnabled
+    public String source { get; set; }
+    /** access, busy or unknown. */
+    @AuraEnabled
+    public String kind { get; set; }
+    /** The likely cause and what to do, in plain words. */
+    @AuraEnabled
+    public String cause { get; set; }
+    /** The exception's type and message, for support. */
+    @AuraEnabled
+    public String errorType { get; set; }
+    /** The exception's message. */
+    @AuraEnabled
+    public String message { get; set; }
+    /** How many times it has happened. */
+    @AuraEnabled
+    public Integer count { get; set; }
+    /** When it was first and last seen. */
+    @AuraEnabled
+    public Datetime firstSeen { get; set; }
+    /** When it was last seen. */
+    @AuraEnabled
+    public Datetime lastSeen { get; set; }
+    /** The record page it last happened on. */
+    @AuraEnabled
+    public String recordId { get; set; }
+  }
+
+  /**
+   * The problems in Time Drive's log, most recent first: what failed, how
+   * often, and its likely cause.
+   * @return Up to 50 problems from the last 30 days.
+   */
+  @AuraEnabled
+  public static List<ProblemInfo> getProblems() {
+    requireSetupAccess();
+    List<ProblemInfo> out = new List<ProblemInfo>();
+    for (Time_Drive_Log__c row : [
+      SELECT
+        Source_Key__c,
+        Source__c,
+        Kind__c,
+        Error_Type__c,
+        Message__c,
+        Count__c,
+        CreatedDate,
+        Last_Seen__c,
+        Record_Id__c
+      FROM Time_Drive_Log__c
+      WITH SYSTEM_MODE
+      ORDER BY Last_Seen__c DESC
+      LIMIT 50
+    ]) {
+      ProblemInfo p = new ProblemInfo();
+      p.sourceKey = row.Source_Key__c;
+      p.source = row.Source__c;
+      p.kind = row.Kind__c;
+      p.cause = TimeDriveLog.causeOf(row.Kind__c, row.Message__c);
+      p.errorType = row.Error_Type__c;
+      p.message = row.Message__c;
+      p.count = row.Count__c == null ? 1 : row.Count__c.intValue();
+      p.firstSeen = row.CreatedDate;
+      p.lastSeen = row.Last_Seen__c;
+      p.recordId = row.Record_Id__c;
+      out.add(p);
+    }
+    return out;
+  }
+
+  /** Empties Time Drive's log (after the problems are fixed). */
+  @AuraEnabled
+  public static void clearProblems() {
+    requireSetupAccess();
+    List<Time_Drive_Log__c> rows = [SELECT Id FROM Time_Drive_Log__c WITH SYSTEM_MODE LIMIT 10000];
+    Database.delete(rows, false, AccessLevel.SYSTEM_MODE);
+  }
+
   @AuraEnabled
   public static Progress getProgress() {
     requireSetupAccess();

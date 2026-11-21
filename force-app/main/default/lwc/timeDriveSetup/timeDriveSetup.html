@@ -257,6 +257,55 @@
             <button class="ghost" type="button" data-handler="retry" onclick={handleGuidedAction}>Check again</button>
           </div>
         </template>
+        <!-- What failed on record pages lately (Time Drive's log), when anything has:
+             the likely cause, how often and when; a source opens to fix it. -->
+        <template lwc:if={hasProblems}>
+          <article class="kd-card kd-card_problems" aria-labelledby="setup-problems">
+            <div class="kd-card-head">
+              <h2 class="kd-card-title" id="setup-problems">Problems</h2>
+              <button class="ghost" type="button" onclick={handleClearProblems}>Clear</button>
+            </div>
+            <ul class="kd-list">
+              <template for:each={problemRows} for:item="p">
+                <li key={p.key}>
+                  <template lwc:if={p.openable}>
+                    <button
+                      class="kd-row kd-row_problem"
+                      type="button"
+                      data-name={p.sourceKey}
+                      aria-label={p.openLabel}
+                      title={p.detail}
+                      onclick={handleOpenSource}
+                    >
+                      <lightning-icon icon-name="utility:warning" size="x-small" variant="warning"></lightning-icon>
+                      <span class="kd-row-text">
+                        <span class="kd-row-name">{p.name}</span>
+                        <span class="kd-row-detail">{p.cause}</span>
+                        <span class="kd-row-meta"
+                          >{p.times} · last
+                          <lightning-relative-date-time value={p.lastSeen}></lightning-relative-date-time
+                        ></span>
+                      </span>
+                    </button>
+                  </template>
+                  <template lwc:else>
+                    <div class="kd-row kd-row_problem" title={p.detail}>
+                      <lightning-icon icon-name="utility:warning" size="x-small" variant="warning"></lightning-icon>
+                      <span class="kd-row-text">
+                        <span class="kd-row-name">{p.name}</span>
+                        <span class="kd-row-detail">{p.cause}</span>
+                        <span class="kd-row-meta"
+                          >{p.times} · last
+                          <lightning-relative-date-time value={p.lastSeen}></lightning-relative-date-time
+                        ></span>
+                      </span>
+                    </div>
+                  </template>
+                </li>
+              </template>
+            </ul>
+          </article>
+        </template>
         <div class={guidedProgressClass} role="group" aria-label="Progress">
           <p class="guided-count" role="status">
             <template lwc:if={guidedAllDone}>
