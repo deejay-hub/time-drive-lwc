@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
-    <fullName>Message__c</fullName>
-    <description>The error's message as last seen (up to 2,000 characters), kept for triage. It is the error's own text, so it can include whatever the error said, such as a value an Apex source put in it. Only admins with Time Drive Setup can read the log.</description>
-    <label>Message</label>
-    <length>2000</length>
-    <type>LongTextArea</type>
-    <visibleLines>3</visibleLines>
-</CustomField>

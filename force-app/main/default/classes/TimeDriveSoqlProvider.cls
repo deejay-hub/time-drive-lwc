@@ -52,8 +52,8 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
    */
   // Why this user can't see the source at all, or null when they can: its
   // object, its date field, or a field its filter uses that they can't read.
-  // One they can't see reads as empty (it's their access working as set, not
-  // an error); the reason is logged, so an admin can see why items are missing.
+  // One they can't see reads as empty: it's their access working as set, not
+  // an error.
   private static String hiddenReason(Time_Drive_Source__mdt s) {
     if (s == null) {
       return null;
@@ -77,13 +77,9 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
     return null;
   }
 
-  // Whether the user can see the source; when not, the reason is logged.
+  // Whether the user can see the source at all.
   private static Boolean visibleTo(Time_Drive_Source__mdt s) {
-    String reason = hiddenReason(s);
-    if (reason != null) {
-      TimeDriveLog.noteHidden(s.DeveloperName, s.Label, reason);
-    }
-    return s != null && reason == null;
+    return s != null && hiddenReason(s) == null;
   }
 
   public List<TimeDriveRow> getRows(TimeDriveContext context) {

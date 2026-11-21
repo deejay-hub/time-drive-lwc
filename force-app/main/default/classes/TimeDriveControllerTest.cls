@@ -1590,9 +1590,6 @@ private class TimeDriveControllerTest {
     Assert.areEqual(2, load.summary.total, 'counted');
     Assert.areEqual(1, load.summary.problems.size(), 'its rows failed, so it is a problem');
     Assert.areEqual('Points', load.summary.problems[0].source);
-    // And written to the log, for the admin and support.
-    Time_Drive_Log__c logged = [SELECT Source__c, Kind__c, Count__c FROM Time_Drive_Log__c];
-    Assert.areEqual('Points', logged.Source__c);
 
     String today = Datetime.now().format('yyyy-MM-dd');
     try {
@@ -1612,7 +1609,6 @@ private class TimeDriveControllerTest {
     } catch (AuraHandledException e) {
       Assert.isTrue(e.getMessage().startsWith('timedrive:'), e.getMessage());
     }
-    Assert.areEqual(2, [SELECT Count__c FROM Time_Drive_Log__c].Count__c, 'the same problem again, counted');
   }
 
   // An Apex source as Setup saves one: the class, its look and lens, no date or title.

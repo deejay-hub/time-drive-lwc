@@ -1,7 +1,7 @@
 /**
  * What someone sees follows what they can read: a source on an object they
  * can't read is simply left out of their timeline (no error page), as their
- * access is meant to work, and the log says why, for the admin.
+ * access is meant to work.
  */
 @IsTest
 private class TimeDriveAccessTest {
@@ -84,13 +84,6 @@ private class TimeDriveAccessTest {
       Assert.isTrue(load.summary.problems.isEmpty(), 'not theirs to see, so not a problem');
       Assert.areEqual(0, load.summary.total);
     }
-    // Logged once for the request (not once a read), so an admin can see why
-    // items are missing for some people.
-    Time_Drive_Log__c logged = [SELECT Source_Key__c, Kind__c, Location__c, Count__c FROM Time_Drive_Log__c];
-    Assert.areEqual('Contact_Cases', logged.Source_Key__c);
-    Assert.areEqual(TimeDriveLog.HIDDEN, logged.Kind__c);
-    Assert.areEqual('Case', logged.Location__c);
-    Assert.areEqual(1, logged.Count__c);
   }
 
   @IsTest

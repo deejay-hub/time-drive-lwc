@@ -221,23 +221,17 @@ public with sharing class TimeDriveController {
     Boolean centred,
     Integer count
   ) {
-    TimeDriveLog.recordId = contactId;
-    try {
-      return loadTimeline(
-        contactId,
-        categories,
-        hiddenTypes,
-        historyYears,
-        futureYears,
-        focus,
-        newestFirst,
-        centred,
-        count
-      );
-    } finally {
-      // What failed, written to the log once everything has been read.
-      TimeDriveLog.flush();
-    }
+    return loadTimeline(
+      contactId,
+      categories,
+      hiddenTypes,
+      historyYears,
+      futureYears,
+      focus,
+      newestFirst,
+      centred,
+      count
+    );
   }
 
   private static TimelineLoad loadTimeline(
@@ -497,25 +491,20 @@ public with sharing class TimeDriveController {
     List<BusyCount> busyCounts,
     List<String> runs
   ) {
-    TimeDriveLog.recordId = contactId;
-    try {
-      return readDays(
-        contactId,
-        categories,
-        hiddenTypes,
-        historyYears,
-        futureYears,
-        dayKeys,
-        busyKeys,
-        emptySources,
-        busyCounts,
-        runs,
-        null,
-        null
-      );
-    } finally {
-      TimeDriveLog.flush();
-    }
+    return readDays(
+      contactId,
+      categories,
+      hiddenTypes,
+      historyYears,
+      futureYears,
+      dayKeys,
+      busyKeys,
+      emptySources,
+      busyCounts,
+      runs,
+      null,
+      null
+    );
   }
 
   // Runs as the card sends them ("2026-10-03,2026-10-02"), each a list of keys.
@@ -653,7 +642,6 @@ public with sharing class TimeDriveController {
       return new GroupPage();
     }
     Integer size = pageSize == null ? GROUP_PAGE_SIZE : Math.max(1, Math.min(pageSize, MAX_GROUP_PAGE_SIZE));
-    TimeDriveLog.recordId = recordId;
     try {
       Map<String, List<String>> cursors = String.isBlank(cursor)
         ? new Map<String, List<String>>()
@@ -672,8 +660,6 @@ public with sharing class TimeDriveController {
       return page;
     } catch (Exception e) {
       throw safeFailure(e);
-    } finally {
-      TimeDriveLog.flush();
     }
   }
 
@@ -2044,9 +2030,7 @@ public with sharing class TimeDriveController {
   // message or stack trace.
   @TestVisible
   private static AuraHandledException safeFailure(Exception e) {
-    String kind = kindOf(e);
-    TimeDriveLog.note(null, null, kind, e);
-    return coded(kind);
+    return coded(kindOf(e));
   }
 
   // The card's error for a kind of failure ("timedrive:access"): the code alone,

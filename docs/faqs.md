@@ -52,12 +52,9 @@ On the wizard's **Interactions** step: add the fields, in order, and how each is
 
 ### Why does a timeline show an error, or miss items for some people?
 
-Time Drive logs what goes wrong, and **Guided setup** lists it under **Problems**: each source, the likely cause and what to do, how often it happened, when, and who it last happened to. Hover over a problem for the error itself, and click it to open the source. **Clear** empties the list once it's fixed; problems not seen for 30 days drop off by themselves.
-
-- **A warning** is a source that couldn't be read: the timeline showed its error page. Usually it's setup: a source that needs an org feature (Shared Activities, Enhanced Email, person accounts) the org doesn't use, or a field that's gone.
-- **An eye** is a source left out for people who can't read something it needs: its object, its date field, or a field its filter uses. That's their access working as set, not a fault; give them access if they should see those items. (A field shown on an item that someone can't read just shows blank.)
-
-The log holds what failed and the error's message (for triage), not the records read, and only admins with **Time Drive Setup** can see it.
+- **An error page** means a source couldn't be read. Usually it's setup: a source that needs an org feature the org doesn't use (Shared Activities, Enhanced Email, person accounts), or a field that's gone. The page names the source; switch it off or fix it in **Time Drive Setup**.
+- **Missing items for some people** means they can't read something a source needs: its object, its date field, or a field its filter uses. The source is left out of their timeline. That's their access working as set, not a fault; give them access if they should see those items.
+- **A blank field** on an item means the person can't read that field.
 
 ### What does Check your org do?
 
