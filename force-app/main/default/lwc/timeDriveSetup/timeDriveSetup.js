@@ -1151,10 +1151,6 @@ export default class TimeDriveSetup extends LightningElement {
     return `${ASSETS}/logo/time-drive.svg`;
   }
 
-  get isDashboard() {
-    return this.view === "dashboard";
-  }
-
   get isSetupPage() {
     return this.view === "setup";
   }
@@ -1221,7 +1217,7 @@ export default class TimeDriveSetup extends LightningElement {
 
   // The menu's own pages need no breadcrumb.
   get showCrumbs() {
-    return !["welcome", "dashboard", "setup", "pages", "lenses", "docs"].includes(this.view);
+    return !["welcome", "setup", "pages", "lenses", "docs"].includes(this.view);
   }
 
   // A new page starts at the top, with focus on its heading.
@@ -1358,113 +1354,6 @@ export default class TimeDriveSetup extends LightningElement {
   // The org has been checked (the Setup step is ticked).
   get orgChecked() {
     return this.guidedDone.has("orgcheck");
-  }
-
-  // ---- the home page's dashboard ------------------------------------------
-
-  get sourceTotal() {
-    return String(this.sources.length);
-  }
-
-  get onCount() {
-    return String(this.sources.filter((s) => s.active).length);
-  }
-
-  get meterStyle() {
-    const total = this.sources.length;
-    const on = this.sources.filter((s) => s.active).length;
-    return `width: ${total ? Math.round((on / total) * 100) : 0}%`;
-  }
-
-  get offNote() {
-    const off = this.sources.length - this.sources.filter((s) => s.active).length;
-    if (!this.sources.length) return "No sources yet: Add a source to start a timeline.";
-    return off ? `${off} inactive. They stay set up; make them active any time.` : "Every source is active.";
-  }
-
-  // Each kind of source, as a share of them all.
-  get kindBars() {
-    const total = Math.max(1, this.sources.length);
-    return TYPES.map((t) => {
-      const n = this.sources.filter((src) => (src.type || "standard") === t.value).length;
-      return { key: t.value, label: t.label, count: String(n), style: `width: ${Math.round((n / total) * 100)}%` };
-    });
-  }
-
-  // Each record page and how many of its sources are on.
-  get glanceRows() {
-    return this.parentCards.map((p) => {
-      const mine = this.sources.filter((s) => (s.parentObject || "Contact") === p.value);
-      const on = mine.filter((s) => s.active).length;
-      return {
-        key: p.value,
-        value: p.value,
-        label: p.label,
-        openLabel: p.openLabel,
-        detail: mine.length ? `${mine.length} ${mine.length === 1 ? "source" : "sources"}` : "No sources yet",
-        pill: mine.length ? `${on} active` : "Empty",
-        pillClass: `pill${on ? " pill_ok" : ""}`
-      };
-    });
-  }
-
-  // The dashboard's table: a column per record page, its active sources
-  // down it in legend order. Rows run as deep as the longest column.
-  get activeColumns() {
-    return this.parentCards.map((p) => ({
-      key: p.value,
-      value: p.value,
-      label: p.label,
-      openLabel: `${p.label}: customize`,
-      sources: this.sources
-        .filter((s) => s.active && (s.parentObject || "Contact") === p.value)
-        .sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0) || a.label.localeCompare(b.label))
-    }));
-  }
-
-  get activeTableRows() {
-    const columns = this.activeColumns;
-    const depth = Math.max(1, ...columns.map((c) => c.sources.length));
-    return Array.from({ length: depth }, (_, i) => ({
-      key: `row-${i}`,
-      cells: columns.map((c) => {
-        const s = c.sources[i];
-        return {
-          key: `${c.key}-${i}`,
-          has: Boolean(s),
-          label: s?.label ?? (i === 0 ? "None active" : ""),
-          iconName: s?.icon || "utility:record",
-          chipStyle: `--chip: ${s?.iconColour || "var(--setup-chip)"}`,
-          className: `kd-cell${s ? "" : " kd-cell_empty"}`
-        };
-      })
-    }));
-  }
-
-  get offSources() {
-    return this.sources
-      .filter((s) => !s.active)
-      .map((s) => ({
-        developerName: s.developerName,
-        label: s.label,
-        where: `${PARENTS.find((p) => p.value === (s.parentObject || "Contact"))?.label ?? s.parentObject} · ${
-          this.lensNames(s).join(", ") || "No view"
-        }`,
-        openLabel: `${s.label}: open`,
-        iconName: s.icon || "utility:record",
-        chipStyle: `--chip: ${s.iconColour || "var(--setup-chip)"}`
-      }));
-  }
-
-  get hasOffSources() {
-    return this.offSources.length > 0;
-  }
-
-  // An off source, opened on its own page (under its record page).
-  handleOpenSource(event) {
-    const source = this.sources.find((s) => s.developerName === event.currentTarget.dataset.name);
-    this.selectedParent = source?.parentObject || PARENTS[0].value;
-    this.handleViewSource(event);
   }
 
   handleWatchVideo() {
@@ -1657,10 +1546,6 @@ export default class TimeDriveSetup extends LightningElement {
     else if (handler === "lenses") this.show("lenses");
     else if (handler === "video") this.handleWatchVideo();
     else if (handler === "retry") this.handleRetryLoad();
-  }
-
-  handleOpenDashboard() {
-    this.show("dashboard");
   }
 
   // From home: straight into adding a source to Contact.

@@ -32,6 +32,7 @@
 - The error and empty pages are as tall as the timeline was with items
 - A source someone can't see (its object, date field or a filter field unreadable to them) is left out of their timeline, and a field they can't read shows blank: neither is an error
 - fieldsToQuery(objectType, always), for Apex sources: leaves out fields the user can't read
+- Time Drive Setup's unused Dashboard is gone
 - The Time Drive Setup permission set includes the timeline itself, so admins need only it; Time Drive reads its own setup, so people need no access to it
 - The Filters panel is a sheet inside the card, under its header and as tall as the timeline: at the card's end with the event types in up to three columns on a wide card, over the whole timeline in one column on a narrow one
 - Added the Overdue lens, defined by its sources' filters, with an Overdue button in the header while the record has something overdue
