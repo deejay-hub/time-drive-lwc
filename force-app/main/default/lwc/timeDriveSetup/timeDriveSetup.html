@@ -277,27 +277,29 @@
                       title={p.detail}
                       onclick={handleOpenSource}
                     >
-                      <lightning-icon icon-name="utility:warning" size="x-small" variant="warning"></lightning-icon>
+                      <lightning-icon icon-name={p.icon} size="x-small" variant={p.iconVariant}></lightning-icon>
                       <span class="kd-row-text">
                         <span class="kd-row-name">{p.name}</span>
                         <span class="kd-row-detail">{p.cause}</span>
                         <span class="kd-row-meta"
                           >{p.times} · last
                           <lightning-relative-date-time value={p.lastSeen}></lightning-relative-date-time
-                        ></span>
+                          >{p.lastUser}</span
+                        >
                       </span>
                     </button>
                   </template>
                   <template lwc:else>
                     <div class="kd-row kd-row_problem" title={p.detail}>
-                      <lightning-icon icon-name="utility:warning" size="x-small" variant="warning"></lightning-icon>
+                      <lightning-icon icon-name={p.icon} size="x-small" variant={p.iconVariant}></lightning-icon>
                       <span class="kd-row-text">
                         <span class="kd-row-name">{p.name}</span>
                         <span class="kd-row-detail">{p.cause}</span>
                         <span class="kd-row-meta"
                           >{p.times} · last
                           <lightning-relative-date-time value={p.lastSeen}></lightning-relative-date-time
-                        ></span>
+                          >{p.lastUser}</span
+                        >
                       </span>
                     </div>
                   </template>

@@ -24,6 +24,9 @@ public without sharing class TimeDriveLog {
   // The most a message keeps (the field's length).
   private static final Integer MESSAGE_CHARS = 2000;
 
+  /** The kind for a source left out because the user can't read what it needs. */
+  public static final String HIDDEN = 'hidden';
+
   // What this request has noted, by signature.
   private static Map<String, Entry> pending = new Map<String, Entry>();
 
@@ -71,6 +74,42 @@ public without sharing class TimeDriveLog {
       entry.count++;
     } catch (Exception ignored) {
       // Noting must never break the request it's in.
+      return;
+    }
+  }
+
+  // The hidden sources this request has noted already: each once a request,
+  // however many reads it skipped.
+  private static Set<String> hiddenNoted = new Set<String>();
+
+  /**
+   * Notes a source left out for this user because they can't read something
+   * it needs (an object, its date field, a field its filter uses). Not an
+   * error: it's their access working as set. Logged so an admin can see why
+   * items are missing for some people.
+   *
+   * @param sourceKey the source's API name
+   * @param source the source's name as people see it
+   * @param what the object or field (Object.Field) they can't read
+   */
+  public static void noteHidden(String sourceKey, String source, String what) {
+    try {
+      String signature = String.join(new List<String>{ sourceKey ?? '', HIDDEN, '', what ?? '' }, '|').left(255);
+      if (!hiddenNoted.add(signature)) {
+        return;
+      }
+      Entry entry = pending.get(signature);
+      if (entry == null) {
+        entry = new Entry();
+        entry.sourceKey = sourceKey;
+        entry.source = source;
+        entry.kind = HIDDEN;
+        entry.location = what;
+        pending.put(signature, entry);
+      }
+      entry.message = what;
+      entry.count++;
+    } catch (Exception ignored) {
       return;
     }
   }
@@ -139,11 +178,16 @@ public without sharing class TimeDriveLog {
    * The likely cause of a problem and what to do, in plain words, from its
    * kind and message.
    *
-   * @param kind access, busy or unknown
-   * @param message the exception's message
-   * @return the cause, for the Setup dashboard
+   * @param kind access, busy, unknown or hidden
+   * @param message the exception's message (hidden: what they can't read)
+   * @return the cause, for Guided setup
    */
   public static String causeOf(String kind, String message) {
+    if (kind == HIDDEN) {
+      return 'Left out for people who can\'t read ' +
+        (message ?? 'something it uses') +
+        '. That\'s their access working as set: give them access if they should see these items.';
+    }
     String text = (message ?? '').toLowerCase();
     if (text.contains('taskrelation') || text.contains('eventrelation')) {
       return 'Needs Shared Activities, which this org doesn\'t use. Switch this source off, or use its variant without "every contact".';

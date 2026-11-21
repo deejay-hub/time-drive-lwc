@@ -1490,7 +1490,11 @@ export default class TimeDriveSetup extends LightningElement {
       detail: [p.errorType, p.message].filter(Boolean).join(": "),
       // A source that still exists opens; one since removed doesn't.
       openable: Boolean(p.sourceKey) && known.has(p.sourceKey),
-      openLabel: `${p.source}: open`
+      openLabel: `${p.source}: open`,
+      // Left out for people who can't read something: their access, not a fault.
+      icon: p.kind === "hidden" ? "utility:hide" : "utility:warning",
+      iconVariant: p.kind === "hidden" ? undefined : "warning",
+      lastUser: p.lastUser ? ` · ${p.lastUser}` : ""
     }));
   }
 

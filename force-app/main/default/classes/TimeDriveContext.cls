@@ -543,23 +543,46 @@ global with sharing class TimeDriveContext {
 
   /**
    * For record rows: the fields to SELECT, those given then those the
-   * source's title, subtitle and detail fields name, each once and only if
-   * it's a field path (so a source can't put anything else into the query).
-   * @param always the fields every row needs (its Id, the date)
+   * source's title, subtitle, detail and highlight fields name, each once and
+   * only if it's a field path (so a source can't put anything else into the
+   * query). Where the source names its object (Object Name), fields the user
+   * can't read are left out: they show blank, rather than the query failing.
+   * @param always the fields every row needs (its Id, the date), always kept
    * @return the fields to SELECT
    */
   global List<String> fieldsToQuery(List<String> always) {
-    List<String> wanted = new List<String>(always);
-    wanted.addAll(TimeDrivePlotter.tokens(source?.Title__c));
-    wanted.addAll(TimeDrivePlotter.tokens(source?.Subtitle__c));
+    return fieldsFor(source?.Object_Name__c, always);
+  }
+
+  /**
+   * As fieldsToQuery(always), for the object the query reads: fields the user
+   * can't read are left out, so they show blank rather than the query failing.
+   * @param objectType the object the source queries
+   * @param always the fields every row needs (its Id, the date), always kept
+   * @return the fields to SELECT
+   */
+  global List<String> fieldsToQuery(Schema.SObjectType objectType, List<String> always) {
+    return fieldsFor(objectType == null ? source?.Object_Name__c : objectType.getDescribe().getName(), always);
+  }
+
+  private List<String> fieldsFor(String objectName, List<String> always) {
+    List<String> shown = new List<String>();
+    shown.addAll(TimeDrivePlotter.tokens(source?.Title__c));
+    shown.addAll(TimeDrivePlotter.tokens(source?.Subtitle__c));
     for (Time_Drive_Detail_Field__mdt d : detailFields()) {
-      wanted.add(d.Field__c);
+      shown.add(d.Field__c);
       // The record a detail ending at a related record's name names (Product2.Name: Product2.Id), for its link.
-      wanted.add(TimeDrivePlotter.linkPathOf(source?.Object_Name__c, d.Field__c));
+      shown.add(TimeDrivePlotter.linkPathOf(objectName, d.Field__c));
     }
     // What the highlight reads (a checkbox, as a field path).
     for (TimeDriveHighlights.Rule r : highlightRules()) {
-      wanted.add(r.field);
+      shown.add(r.field);
+    }
+    List<String> wanted = new List<String>(always ?? new List<String>());
+    for (String name : shown) {
+      if (String.isNotBlank(name) && TimeDriveConfig.canRead(objectName, name)) {
+        wanted.add(name);
+      }
     }
     Set<String> seen = new Set<String>();
     List<String> out = new List<String>();

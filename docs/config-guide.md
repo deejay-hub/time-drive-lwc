@@ -411,7 +411,7 @@ public with sharing class TimeDriveOpportunityProducts extends TimeDriveApexSour
     };
     String soql =
       'SELECT ' +
-      String.join(context.fieldsToQuery(new List<String>{ 'Id', CLOSE_DATE }), ', ') +
+      String.join(context.fieldsToQuery(OpportunityLineItem.SObjectType, new List<String>{ 'Id', CLOSE_DATE }), ', ') +
       ' FROM OpportunityLineItem WHERE ' +
       THIS_ACCOUNT +
       context.dateCondition(OpportunityLineItem.SObjectType, CLOSE_DATE, binds) +
@@ -479,7 +479,7 @@ How you count is yours to choose: a totals endpoint, as here; a cached copy; or 
 - `spans()`: the days asked for, either the window or the days on screen.
 - `maxRecords()`: the source's record cap.
 - `plotBy(key).title(…).subtitle(…).opens(…).links(…)`: how the rows are plotted, and which details link to records.
-- `fieldsToQuery(always)`: for record rows, the fields to SELECT.
+- `fieldsToQuery(objectType, always)`: for record rows, the fields to SELECT: `always` (the Id, the date) and the fields the title, subtitle, details and highlight name. Fields the user can't read are left out (they show blank), so the query, which should run in user mode, doesn't fail for them. `fieldsToQuery(always)` does the same when the source names its object, and keeps every field otherwise.
 - `dateCondition(objectType, field, binds)`: for record rows, the days asked for as a bound condition.
 - `wants(dateOrDatetime)`: for data from elsewhere, whether the timeline asks for that moment.
 - `countBy(objectType, field, condition, binds, unit)`: counts of records, grouped by the period in one query.

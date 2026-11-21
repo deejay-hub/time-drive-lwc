@@ -31,7 +31,8 @@
 - A source that counts but whose rows can't be read is reported the same way, rather than its items quietly missing
 - The error and empty pages are as tall as the timeline was with items
 - Problems are logged (Time Drive Log): one row per distinct problem, its count and when it was last seen, kept 30 days and never with record data; Guided setup lists them with the likely cause, a link to the source, and Clear
-- A source on an object someone can't read is left out of their timeline, and a field they can't read shows blank: neither is an error
+- A source someone can't see (its object, date field or a filter field unreadable to them) is left out of their timeline, and a field they can't read shows blank: neither is an error, and the source left out is logged, so admins can see why items are missing
+- fieldsToQuery(objectType, always), for Apex sources: leaves out fields the user can't read
 - The Time Drive Setup permission set includes the timeline itself, so admins need only it; Time Drive reads its own setup, so people need no access to it
 - The Filters panel is a sheet inside the card, under its header and as tall as the timeline: at the card's end with the event types in up to three columns on a wide card, over the whole timeline in one column on a narrow one
 - Added the Overdue lens, defined by its sources' filters, with an Overdue button in the header while the record has something overdue

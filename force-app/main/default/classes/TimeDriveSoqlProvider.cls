@@ -50,13 +50,40 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
    * @param context the request context
    * @return the rows read
    */
-  // Whether this user can see the source at all: its object and its date
-  // field readable. One they can't isn't theirs to see, so it reads as empty
-  // (it's how their access is meant to work, not a problem to report).
+  // Why this user can't see the source at all, or null when they can: its
+  // object, its date field, or a field its filter uses that they can't read.
+  // One they can't see reads as empty (it's their access working as set, not
+  // an error); the reason is logged, so an admin can see why items are missing.
+  private static String hiddenReason(Time_Drive_Source__mdt s) {
+    if (s == null) {
+      return null;
+    }
+    if (!TimeDriveConfig.canRead(s.Object_Name__c)) {
+      return s.Object_Name__c;
+    }
+    if (!TimeDriveConfig.canRead(s.Object_Name__c, s.Date_Field__c)) {
+      return s.Object_Name__c + '.' + s.Date_Field__c;
+    }
+    if (String.isNotBlank(s.Filter__c)) {
+      // Without that part of the filter they'd see the wrong items.
+      List<String> filtered = new List<String>();
+      prefixed(s.Filter__c, s.Object_Name__c, '', filtered);
+      for (String field : filtered) {
+        if (!TimeDriveConfig.canRead(s.Object_Name__c, field)) {
+          return s.Object_Name__c + '.' + field;
+        }
+      }
+    }
+    return null;
+  }
+
+  // Whether the user can see the source; when not, the reason is logged.
   private static Boolean visibleTo(Time_Drive_Source__mdt s) {
-    return s != null &&
-      TimeDriveConfig.canRead(s.Object_Name__c) &&
-      TimeDriveConfig.canRead(s.Object_Name__c, s.Date_Field__c);
+    String reason = hiddenReason(s);
+    if (reason != null) {
+      TimeDriveLog.noteHidden(s.DeveloperName, s.Label, reason);
+    }
+    return s != null && reason == null;
   }
 
   public List<TimeDriveRow> getRows(TimeDriveContext context) {
@@ -743,6 +770,11 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
    */
   @TestVisible
   private static String prefixed(String filter, String objectName, String prefix) {
+    return prefixed(filter, objectName, prefix, null);
+  }
+
+  // As above, adding each field the filter names to found (when given).
+  private static String prefixed(String filter, String objectName, String prefix, List<String> found) {
     String out = '';
     Integer i = 0;
     Integer n = filter.length();
@@ -792,6 +824,9 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
           out += word;
         } else if (TimeDriveConfig.pathField(objectName, word) != null) {
           out += prefix + word;
+          if (found != null) {
+            found.add(word);
+          }
         } else if (
           word == word.toUpperCase() &&
           (lower.startsWith('last_') ||

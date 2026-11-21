@@ -191,7 +191,15 @@ describe("c-time-drive-setup", () => {
         count: 3,
         lastSeen: "2026-11-21T10:00:00.000Z"
       },
-      { sourceKey: null, source: null, kind: "busy", cause: "Too much to read.", count: 1 }
+      { sourceKey: null, source: null, kind: "busy", cause: "Too much to read.", count: 1 },
+      {
+        sourceKey: SOURCES[0].developerName,
+        source: SOURCES[0].label,
+        kind: "hidden",
+        cause: "Left out for people who can't read Case.",
+        count: 2,
+        lastUser: "Ada Apex"
+      }
     ]);
     const element = mount();
     await splash();
@@ -199,7 +207,12 @@ describe("c-time-drive-setup", () => {
     const card = root.querySelector(".kd-card_problems");
     expect(card.querySelector("h2").textContent).toBe("Problems");
     const rows = card.querySelectorAll(".kd-row_problem");
-    expect(rows).toHaveLength(2);
+    expect(rows).toHaveLength(3);
+    // A problem has a warning; a source left out for someone's access, an eye,
+    // and who it last happened to.
+    expect(rows[0].querySelector("lightning-icon").iconName).toBe("utility:warning");
+    expect(rows[2].querySelector("lightning-icon").iconName).toBe("utility:hide");
+    expect(rows[2].textContent).toContain("Ada Apex");
     // A source that still exists opens; the error is there on hover.
     expect(rows[0].tagName).toBe("BUTTON");
     expect(rows[0].dataset.name).toBe(SOURCES[0].developerName);

@@ -1572,6 +1572,9 @@ public with sharing class TimeDriveSetupController {
     /** The record page it last happened on. */
     @AuraEnabled
     public String recordId { get; set; }
+    /** Who it last happened to. */
+    @AuraEnabled
+    public String lastUser { get; set; }
   }
 
   /**
@@ -1593,7 +1596,8 @@ public with sharing class TimeDriveSetupController {
         Count__c,
         CreatedDate,
         Last_Seen__c,
-        Record_Id__c
+        Record_Id__c,
+        LastModifiedBy.Name
       FROM Time_Drive_Log__c
       WITH SYSTEM_MODE
       ORDER BY Last_Seen__c DESC
@@ -1610,6 +1614,7 @@ public with sharing class TimeDriveSetupController {
       p.firstSeen = row.CreatedDate;
       p.lastSeen = row.Last_Seen__c;
       p.recordId = row.Record_Id__c;
+      p.lastUser = row.LastModifiedBy?.Name;
       out.add(p);
     }
     return out;

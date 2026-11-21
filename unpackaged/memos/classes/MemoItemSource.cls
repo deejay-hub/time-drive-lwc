@@ -51,7 +51,7 @@ global with sharing class MemoItemSource extends drvrckt.TimeDriveApexSource {
     };
     String soql =
       'SELECT ' +
-      String.join(context.fieldsToQuery(new List<String>{ 'Id', OCCURRED_AT }), ', ') +
+      String.join(context.fieldsToQuery(Memo_Item__c.SObjectType, new List<String>{ 'Id', OCCURRED_AT }), ', ') +
       ' FROM Memo_Item__c WHERE ' +
       THIS_CONTACT +
       context.dateCondition(Memo_Item__c.SObjectType, OCCURRED_AT, binds) +

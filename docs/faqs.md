@@ -50,6 +50,15 @@ Yes. Choose **A custom object** on the wizard's first step. Any custom object wi
 
 On the wizard's **Interactions** step: add the fields, in order, and how each is formatted. They're saved as **Time Drive Detail Field** records. Time Drive doesn't use compact layouts. See [Expanding records](config-guide.md#expanding-records).
 
+### Why does a timeline show an error, or miss items for some people?
+
+Time Drive logs what goes wrong, and **Guided setup** lists it under **Problems**: each source, the likely cause and what to do, how often it happened, when, and who it last happened to. Hover over a problem for the error itself, and click it to open the source. **Clear** empties the list once it's fixed; problems not seen for 30 days drop off by themselves.
+
+- **A warning** is a source that couldn't be read: the timeline showed its error page. Usually it's setup: a source that needs an org feature (Shared Activities, Enhanced Email, person accounts) the org doesn't use, or a field that's gone.
+- **An eye** is a source left out for people who can't read something it needs: its object, its date field, or a field its filter uses. That's their access working as set, not a fault; give them access if they should see those items. (A field shown on an item that someone can't read just shows blank.)
+
+The log holds no record data, only what failed and why, and only admins with **Time Drive Setup** can see it.
+
 ### What does Check your org do?
 
 It checks how your org works (Shared Activities, contacts to multiple accounts, person accounts, Enhanced Email) and switches on the shipped sources that suit it. Alternatives share a group, and only one in a group is ever active, so running it again never plots the same record twice. See [Check your org](config-guide.md#check-your-org).

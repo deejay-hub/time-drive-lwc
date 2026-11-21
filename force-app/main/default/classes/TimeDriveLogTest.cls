@@ -42,6 +42,16 @@ private class TimeDriveLogTest {
   }
 
   @IsTest
+  static void aHiddenSourceIsNotedOnceARequest() {
+    TimeDriveLog.noteHidden('Contact_Cases', 'Cases', 'Case');
+    TimeDriveLog.noteHidden('Contact_Cases', 'Cases', 'Case');
+    TimeDriveLog.noteHidden('Contact_Cases', 'Cases', 'Case.Priority');
+    TimeDriveLog.flush();
+    Assert.areEqual(2, [SELECT COUNT() FROM Time_Drive_Log__c], 'one row per reason');
+    Assert.areEqual(1, [SELECT Count__c FROM Time_Drive_Log__c WHERE Location__c = 'Case'].Count__c);
+  }
+
+  @IsTest
   static void nothingNotedWritesNothingAndOldRowsGo() {
     TimeDriveLog.flush();
     Assert.areEqual(0, [SELECT COUNT() FROM Time_Drive_Log__c], 'nothing noted, nothing written');
@@ -70,6 +80,8 @@ private class TimeDriveLogTest {
     Assert.isTrue(TimeDriveLog.causeOf('access', 'Insufficient privileges').contains('permission sets'));
     Assert.isTrue(TimeDriveLog.causeOf('busy', 'Apex CPU time limit exceeded').contains('Max Records'));
     Assert.isTrue(TimeDriveLog.causeOf('unknown', null).contains('support'));
+    String hidden = TimeDriveLog.causeOf(TimeDriveLog.HIDDEN, 'Case');
+    Assert.isTrue(hidden.startsWith('Left out for people who can\'t read Case.'), hidden);
   }
 
   @IsTest

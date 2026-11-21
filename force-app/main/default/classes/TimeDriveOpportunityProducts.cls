@@ -62,7 +62,7 @@ public with sharing class TimeDriveOpportunityProducts extends TimeDriveApexSour
     }
     String soql =
       'SELECT ' +
-      String.join(context.fieldsToQuery(always), ', ') +
+      String.join(context.fieldsToQuery(OpportunityLineItem.SObjectType, always), ', ') +
       ' FROM OpportunityLineItem WHERE ' +
       THIS_ACCOUNT +
       context.dateCondition(OpportunityLineItem.SObjectType, CLOSE_DATE, binds) +
