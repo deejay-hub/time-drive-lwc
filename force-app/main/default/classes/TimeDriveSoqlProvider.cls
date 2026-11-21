@@ -58,6 +58,22 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
     if (s == null) {
       return null;
     }
+    // Once a request for each source (rows, counts and the Overdue check all
+    // ask): keyed by what decides it, so a draft being edited asks afresh.
+    String key = String.join(
+      new List<String>{ UserInfo.getUserId(), s.DeveloperName, s.Object_Name__c, s.Date_Field__c, s.Filter__c },
+      '|'
+    );
+    if (!hiddenBySource.containsKey(key)) {
+      hiddenBySource.put(key, findHiddenReason(s));
+    }
+    return hiddenBySource.get(key);
+  }
+
+  // Why each source is hidden from the user (null: it isn't), this request.
+  private static Map<String, String> hiddenBySource = new Map<String, String>();
+
+  private static String findHiddenReason(Time_Drive_Source__mdt s) {
     if (!TimeDriveConfig.canRead(s.Object_Name__c)) {
       return s.Object_Name__c;
     }
@@ -123,9 +139,16 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
     }
     // What the highlights read.
     shown.addAll(TimeDriveHighlights.fieldsOf(context.highlightRules()));
+    // Left out: the rows say blank for these without asking the record.
+    Set<String> leftOut = new Set<String>();
     for (String field : shown) {
+      if (String.isBlank(field)) {
+        continue;
+      }
       if (TimeDriveConfig.canRead(s.Object_Name__c, field)) {
         fields.add(field);
+      } else {
+        leftOut.add(field.toLowerCase());
       }
     }
     // Events say whether they're all day (shown instead of a time).
@@ -140,7 +163,7 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
     // A source dated more than one way (open and completed tasks): one keyset
     // query for each way, merged by the moment each item plots at.
     if (paging && q.cases.size() > 1) {
-      return pagedByCase(context, q, fields);
+      return pagedByCase(context, q, fields, leftOut);
     }
     String conditions = q.conditions(context.spans());
     if (paging && context.pageAt != null) {
@@ -173,7 +196,7 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
       return events;
     }
     for (SObject row : rows) {
-      events.add(new TimeDriveRow(row));
+      events.add(new TimeDriveRow(row).leaveOut(leftOut));
     }
     q.plotDates(events, context);
     return events;
@@ -184,7 +207,7 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
   // first (by the moment each plots at, then Id) and cut to the page.
   // The names are checked field paths; values are bound; user mode.
   @SuppressWarnings('PMD.ApexSOQLInjection')
-  private List<TimeDriveRow> pagedByCase(TimeDriveContext context, Query q, Set<String> fields) {
+  private List<TimeDriveRow> pagedByCase(TimeDriveContext context, Query q, Set<String> fields, Set<String> leftOut) {
     Time_Drive_Source__mdt s = context.source;
     List<RowOrder> merged = new List<RowOrder>();
     for (Integer k = 0; k < q.cases.size(); k++) {
@@ -214,7 +237,7 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
       }
       List<TimeDriveRow> rows = new List<TimeDriveRow>();
       for (SObject row : read) {
-        rows.add(new TimeDriveRow(row));
+        rows.add(new TimeDriveRow(row).leaveOut(leftOut));
       }
       q.plotDates(rows, context);
       for (TimeDriveRow row : rows) {

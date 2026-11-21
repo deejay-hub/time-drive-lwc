@@ -562,7 +562,10 @@ global with sharing class TimeDriveContext {
    * @return the fields to SELECT
    */
   global List<String> fieldsToQuery(Schema.SObjectType objectType, List<String> always) {
-    return fieldsFor(objectType == null ? source?.Object_Name__c : objectType.getDescribe().getName(), always);
+    return fieldsFor(
+      objectType == null ? source?.Object_Name__c : TimeDriveConfig.describeType(objectType).getName(),
+      always
+    );
   }
 
   private List<String> fieldsFor(String objectName, List<String> always) {

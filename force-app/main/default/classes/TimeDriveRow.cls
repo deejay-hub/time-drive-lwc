@@ -9,6 +9,8 @@
 // Global: customers' own Apex sources return these.
 global with sharing class TimeDriveRow {
   private SObject record;
+  // The fields (lower case) left out of the record's query, which read as blank.
+  private Set<String> leftOut;
   // An object's fields by lower-case name, and the labels worked out for its
   // paths, kept for the request: describing an object builds its whole field
   // map, and a page of rows would otherwise do it for every row.
@@ -73,6 +75,11 @@ global with sharing class TimeDriveRow {
       return null;
     }
     String key = path.toLowerCase();
+    // A field left out of the query (the user can't read it): blank, without
+    // asking the record (which would throw, for every row).
+    if (leftOut != null && leftOut.contains(key)) {
+      return null;
+    }
     if (values.containsKey(key) || record == null) {
       return values.get(key);
     }
@@ -88,6 +95,16 @@ global with sharing class TimeDriveRow {
     } catch (SObjectException e) {
       return null;
     }
+  }
+  /**
+   * Says which fields were left out of the record's query (ones the user
+   * can't read): they read as blank.
+   * @param paths the fields, in lower case
+   * @return this row
+   */
+  public TimeDriveRow leaveOut(Set<String> paths) {
+    leftOut = paths == null || paths.isEmpty() ? null : paths;
+    return this;
   }
 
   /**

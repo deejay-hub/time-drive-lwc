@@ -120,4 +120,17 @@ private class TimeDriveAccessTest {
       );
     }
   }
+
+  @IsTest
+  static void aFieldLeftOutOfTheQueryReadsAsBlank() {
+    System.runAs(TimeDriveTestData.setupAdmin()) {
+      insert new Contact(LastName = 'Blank', Title = 'Buyer');
+      Contact c = [SELECT Id, LastName FROM Contact WHERE LastName = 'Blank'];
+      TimeDriveRow row = new TimeDriveRow(c).leaveOut(new Set<String>{ 'title' });
+      Assert.isNull(row.get('Title'), 'left out: blank, without asking the record');
+      Assert.areEqual('Blank', row.get('LastName'));
+      // Not queried and not said to be left out: still blank, not an error.
+      Assert.isNull(new TimeDriveRow(c).get('Department'));
+    }
+  }
 }

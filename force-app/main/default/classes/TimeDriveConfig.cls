@@ -514,12 +514,27 @@ public with sharing class TimeDriveConfig {
     if (String.isBlank(objectName)) {
       return true;
     }
-    try {
-      Schema.DescribeSObjectResult d = describeObject(objectName);
-      return d == null || d.isAccessible();
-    } catch (Exception e) {
-      return true;
+    String key = readKey(objectName, null);
+    Boolean known = readable.get(key);
+    if (known == null) {
+      try {
+        Schema.DescribeSObjectResult d = describeObject(objectName);
+        known = d == null || d.isAccessible();
+      } catch (Exception e) {
+        known = true;
+      }
+      readable.put(key, known);
     }
+    return known;
+  }
+
+  // What this request has found the user can read (canRead), by user, object
+  // and path: access doesn't change within a request, and every read of every
+  // source asks again. The user is in the key because tests switch users.
+  private static Map<String, Boolean> readable = new Map<String, Boolean>();
+
+  private static String readKey(String objectName, String path) {
+    return (UserInfo.getUserId() + '|' + objectName + '|' + (path ?? '')).toLowerCase();
   }
 
   /**
@@ -536,6 +551,16 @@ public with sharing class TimeDriveConfig {
     if (String.isBlank(objectName) || String.isBlank(path)) {
       return true;
     }
+    String key = readKey(objectName, path);
+    Boolean known = readable.get(key);
+    if (known == null) {
+      known = readsPath(objectName, path);
+      readable.put(key, known);
+    }
+    return known;
+  }
+
+  private static Boolean readsPath(String objectName, String path) {
     try {
       List<String> steps = path.split('\\.');
       String current = describeObject(objectName).getName();
@@ -556,8 +581,8 @@ public with sharing class TimeDriveConfig {
         }
         current = target.getName();
       }
-      Schema.SObjectField f = ownField(fieldMap(current), steps[steps.size() - 1]);
-      return f == null || f.getDescribe().isAccessible();
+      Schema.DescribeFieldResult last = fieldDescribe(current, steps[steps.size() - 1]);
+      return last == null || last.isAccessible();
     } catch (Exception e) {
       return true;
     }
@@ -638,7 +663,18 @@ public with sharing class TimeDriveConfig {
   // The lookup field on an object whose relationship has this name: found by
   // the usual names first (Task is TaskId, Campaign__r is Campaign__c), else
   // by looking through the object's lookups.
+  // The lookups found (or not, as null) this request, by object and relationship.
+  private static Map<String, Schema.DescribeFieldResult> lookups = new Map<String, Schema.DescribeFieldResult>();
+
   private static Schema.DescribeFieldResult lookupNamed(String objectName, String relationship) {
+    String key = (objectName + '|' + relationship).toLowerCase();
+    if (!lookups.containsKey(key)) {
+      lookups.put(key, findLookup(objectName, relationship));
+    }
+    return lookups.get(key);
+  }
+
+  private static Schema.DescribeFieldResult findLookup(String objectName, String relationship) {
     Map<String, Schema.SObjectField> fields = fieldMap(objectName);
     for (String guess : new List<String>{ relationship + 'Id', relationship.replaceAll('(?i)__r$', '__c') }) {
       Schema.SObjectField f = fields.get(guess.toLowerCase());
