@@ -61,4 +61,38 @@ private class TimeDriveLongTextTest {
       Assert.isTrue(e.details[0].value.endsWith('…'));
     }
   }
+
+  // A detail with no value still shows: its label, blank. A missing line reads
+  // as a fault; a blank one as nothing entered.
+  @IsTest
+  static void aDetailWithNoValueShowsItsLabelBlank() {
+    System.runAs(TimeDriveTestData.adminIn('America/Los_Angeles')) {
+      Contact c = new Contact(LastName = 'No notes');
+      insert c;
+      insert new Task(WhoId = c.Id, Subject = 'Call', ActivityDate = Date.today(), Status = 'Not Started');
+      Time_Drive_Source__mdt s = new Time_Drive_Source__mdt(
+        DeveloperName = 'Tasks',
+        Label = 'Tasks',
+        Active__c = true,
+        Kind__c = TimeDriveContext.KIND_SALESFORCE,
+        Parent_Object__c = 'Contact',
+        Object_Name__c = 'Task',
+        Date_Field__c = 'ActivityDate',
+        Parent_Field__c = 'WhoId',
+        Event_Type__c = 'task',
+        Title__c = '{Subject}',
+        Max_Records__c = 100
+      );
+      TimeDriveContext context = new TimeDriveContext(c.Id, 'Contact', Datetime.now().addDays(-30), s, null, null);
+      context.draftDetailFields = new List<Time_Drive_Detail_Field__mdt>{
+        new Time_Drive_Detail_Field__mdt(Label = 'Notes', Field__c = 'Description'),
+        new Time_Drive_Detail_Field__mdt(Label = 'Status', Field__c = 'Status')
+      };
+      TimeDriveController.EngagementEvent e = TimeDrivePlotter.run(new TimeDriveSoqlProvider(), context)[0];
+      Assert.areEqual(2, e.details.size(), 'both, the empty one too');
+      Assert.areEqual('Notes', e.details[0].label);
+      Assert.areEqual('', e.details[0].value, 'blank, not left out');
+      Assert.areEqual('Not Started', e.details[1].value);
+    }
+  }
 }

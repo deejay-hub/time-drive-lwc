@@ -2376,12 +2376,17 @@ public with sharing class TimeDriveController {
     }
 
     /**
-     * Adds a detail already built (an amount, say), unless it has nothing to show.
+     * Adds one of the source's detail fields. One with no value is still shown,
+     * its label with a blank value: a missing line reads as a fault, a blank one
+     * as nothing entered (or a field the user can't read).
      * @param d the detail
      * @return this event
      */
     public EngagementEvent detail(Detail d) {
-      if (d != null && String.isNotBlank(d.value)) {
+      if (d != null && String.isNotBlank(d.label)) {
+        if (d.value == null) {
+          d.value = '';
+        }
         details.add(d);
       }
       return this;
