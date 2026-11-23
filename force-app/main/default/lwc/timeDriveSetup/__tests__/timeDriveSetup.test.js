@@ -13,11 +13,9 @@ import setActive from "@salesforce/apex/TimeDriveSetupController.setActive";
 import setLenses from "@salesforce/apex/TimeDriveSetupController.setLenses";
 import save from "@salesforce/apex/TimeDriveSetupController.save";
 import TimeDriveConfirm from "c/timeDriveConfirm";
-import { subscribe } from "lightning/empApi";
+import saveViews from "@salesforce/apex/TimeDriveSetupController.saveViews";
 import { getObjectInfo } from "lightning/uiObjectInfoApi";
 import getLabelText from "@salesforce/apex/TimeDriveSetupController.getLabelText";
-import getOrgFit from "@salesforce/apex/TimeDriveSetupController.getOrgFit";
-import applyOrgFit from "@salesforce/apex/TimeDriveSetupController.applyOrgFit";
 import TimeDriveOrgCheck from "c/timeDriveOrgCheck";
 
 jest.mock("@salesforce/apex/TimeDriveSetupController.getProgress", () => ({ default: jest.fn() }), { virtual: true });
@@ -52,15 +50,8 @@ jest.mock("@salesforce/apex/TimeDriveSetupController.getLabelText", () => ({ def
 jest.mock("@salesforce/apex/TimeDriveSetupController.getVolumes", () => ({ default: jest.fn() }), {
   virtual: true
 });
-jest.mock("@salesforce/apex/TimeDriveSetupController.preview", () => ({ default: jest.fn() }), { virtual: true });
 jest.mock("@salesforce/apex/TimeDriveSetupController.save", () => ({ default: jest.fn() }), { virtual: true });
 
-jest.mock("@salesforce/apex/TimeDriveSetupController.getOrgFit", () => ({ default: jest.fn() }), {
-  virtual: true
-});
-jest.mock("@salesforce/apex/TimeDriveSetupController.applyOrgFit", () => ({ default: jest.fn() }), {
-  virtual: true
-});
 jest.mock(
   "@salesforce/apex/TimeDriveSetupController.getViewDrafts",
   () => ({
@@ -94,7 +85,7 @@ jest.mock(
 );
 jest.mock(
   "@salesforce/apex/TimeDriveSetupController.saveViews",
-  () => ({ default: jest.fn(() => Promise.resolve({ jobId: null, developerName: "Views" })) }),
+  () => ({ default: jest.fn(() => Promise.resolve({ developerName: "Views" })) }),
   { virtual: true }
 );
 jest.mock("@salesforce/apex/TimeDriveSetupController.remove", () => ({ default: jest.fn() }), { virtual: true });
@@ -115,12 +106,6 @@ jest.mock("@salesforce/apex/TimeDriveSetupController.runOrgCheck", () => ({ defa
 jest.mock("@salesforce/apex/TimeDriveSetupController.setActive", () => ({ default: jest.fn() }), {
   virtual: true
 });
-jest.mock(
-  "lightning/empApi",
-  () => ({ subscribe: jest.fn(() => Promise.resolve({})), unsubscribe: jest.fn(), onError: jest.fn() }),
-  { virtual: true }
-);
-
 const SOURCES = [
   {
     developerName: "Order_Placed",
@@ -145,12 +130,15 @@ const SOURCES = [
   }
 ];
 
-// Setup opens on its home page straight away; this lets the first reads land.
-const splash = () => new Promise((resolve) => setTimeout(resolve, 50));
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 // Several turns of the event loop, one after another.
 const flushes = (n) => (n > 0 ? flush().then(() => flushes(n - 1)) : Promise.resolve());
+
+// Setup opens on its home page straight away; this lets the first reads land.
+const splash = () => flushes(4);
+// A wizard step's reads and render (nothing in the tests needs real time).
+const wait = () => flushes(4);
 
 // The menu's Customize: the record pages.
 async function toPages(root) {
@@ -173,27 +161,6 @@ describe("c-time-drive-setup", () => {
     getSources.mockResolvedValue(SOURCES);
     getDataSpaces.mockResolvedValue([]);
     getData360Status.mockResolvedValue({ ready: true });
-    getOrgFit.mockResolvedValue({
-      features: [
-        {
-          key: "SharedActivities",
-          label: "Shared Activities",
-          enabled: true,
-          used: false,
-          turnsOn: ["Contact Tasks (every contact)"],
-          turnsOff: ["Contact Tasks"]
-        },
-        {
-          key: "PersonAccounts",
-          label: "Person Accounts",
-          enabled: false,
-          used: false,
-          turnsOn: ["Person Account Tasks"],
-          turnsOff: []
-        }
-      ]
-    });
-    applyOrgFit.mockResolvedValue({ jobId: null, developerName: "Org_Fit" });
   });
   afterEach(() => {
     while (document.body.firstChild) document.body.removeChild(document.body.firstChild);
@@ -218,7 +185,6 @@ describe("c-time-drive-setup", () => {
     const root = element.shadowRoot;
     // No menu, no other page: the product, a welcome and one button.
     expect(root.querySelector(".site-link")).toBeNull();
-    expect(root.querySelector(".site-action")).toBeNull();
     expect(root.querySelector(".welcome-logo")).not.toBeNull();
     expect(root.querySelector("h1.page-title").textContent).toBe("Welcome to Time Drive");
     expect(root.querySelectorAll(".welcome button")).toHaveLength(1);
@@ -302,19 +268,7 @@ describe("c-time-drive-setup", () => {
     const root = element.shadowRoot;
     expect(root.querySelector(".welcome")).toBeNull();
     expect(root.querySelector("h1.page-title").textContent).toBe("Guided setup");
-    const steps = [...root.querySelectorAll(".guided-step")];
-    expect(steps.map((st) => st.dataset.key)).toEqual([
-      "orgcheck",
-      "video",
-      "perms",
-      "views",
-      "review",
-      "source",
-      "users",
-      "page"
-    ]);
-    // Nothing waits for anything.
-    expect(root.querySelector(".guided-locked")).toBeNull();
+    // Nothing waits for anything (the steps' order has its own test).
     expect(root.querySelector('.guided-step[data-key="views"] .guided-button').disabled).toBe(false);
     expect(root.querySelector('.guided-step[data-key="views"] .guided-check').disabled).toBeFalsy();
 
@@ -339,20 +293,19 @@ describe("c-time-drive-setup", () => {
     ]);
     expect(root.querySelector('.site-link[data-to="setup"]').getAttribute("aria-current")).toBe("page");
     expect(root.querySelector("h1.page-title").textContent).toBe("Guided setup");
-    // In order: the org check, the video, permission sets, what's set up,
-    // your sources, your users' access, and the record pages.
+    // In order: the org check, the video, permission sets, the lenses, what's
+    // set up, your users' access, and the record pages.
     expect([...root.querySelectorAll(".guided-step")].map((st) => st.dataset.key)).toEqual([
       "orgcheck",
       "video",
       "perms",
       "views",
       "review",
-      "source",
       "users",
       "page"
     ]);
-    // The org check is done and sources of your own tick "Add your sources".
-    expect(root.querySelector(".guided-count-number").textContent).toBe("2 of 8");
+    // The org check is done.
+    expect(root.querySelector(".guided-count-number").textContent).toBe("1 of 7");
     expect(root.querySelector(".guided-progress_done")).toBeNull();
     expect(root.querySelector(".guided-step_on .guided-title").textContent.trim()).toBe("Watch the how-to video");
     // What the users must be able to read, and which record pages need it.
@@ -361,10 +314,10 @@ describe("c-time-drive-setup", () => {
       [...root.querySelectorAll('.guided-step[data-key="page"] .guided-button')].map((b) => b.textContent.trim())
     ).toEqual(["Contact pages"]);
     // A done step still shows its help, from anywhere on its row.
-    root.querySelector('.guided-step[data-key="source"] .guided-text').click();
+    root.querySelector('.guided-step[data-key="orgcheck"] .guided-text').click();
     await flush();
-    expect(root.querySelector(".guided-aside .aside-title").textContent).toBe("Add your sources");
-    expect(root.querySelector(".guided-aside-step").textContent).toBe("Step 6 · Done");
+    expect(root.querySelector(".guided-aside .aside-title").textContent).toBe("Check your org");
+    expect(root.querySelector(".guided-aside-step").textContent).toBe("Step 1 · Done");
     expect(root.querySelector(".guided-aside-head").textContent).toBe("What it did");
 
     const tick = async (key) => {
@@ -374,20 +327,19 @@ describe("c-time-drive-setup", () => {
       await flush();
     };
     await tick("video");
-    expect(root.querySelector(".guided-count-number").textContent).toBe("3 of 8");
+    expect(root.querySelector(".guided-count-number").textContent).toBe("2 of 7");
     for (const key of ["perms", "review", "users", "page"]) await tick(key);
     // Lenses: a question and a button to them, ticked by you. (They're managed
     // on the Lenses page.)
     expect(root.querySelector('.guided-step[data-key="views"] .guided-text').textContent).toBe(
       "Have you reviewed the categories for your lenses?"
     );
-    expect(root.querySelector('.guided-step[data-key="views"] .view-names')).toBeNull();
     expect(root.querySelector('.guided-step[data-key="views"] .guided-button').textContent.trim()).toBe("Open Lenses");
     await tick("views");
-    // All done: the bar says so itself; there's no separate banner.
+    // All done: the bar says so.
     expect(root.querySelector(".guided-progress_done")).not.toBeNull();
     expect(root.querySelector(".guided-count-number").textContent).toBe("Setup complete");
-    expect(root.querySelectorAll(".guided-segment_done")).toHaveLength(8);
+    expect(root.querySelectorAll(".guided-segment_done")).toHaveLength(7);
 
     await toPages(root);
     expect(crumbs(root)).toEqual([]);
@@ -434,6 +386,44 @@ describe("c-time-drive-setup", () => {
     expect(root.querySelector(".page-title").textContent).toBe("Contact timeline");
   });
 
+  it("names the fields an opened item shows, in order, a label of its own first", async () => {
+    getFields.mockResolvedValue([
+      { name: "Name", label: "Order Number", type: "string", filterable: true, values: [] },
+      { name: "Status__c", label: "Status", type: "string", filterable: true, values: [] },
+      { name: "Order_Time__c", label: "Order Time", type: "datetime", filterable: true, values: [] }
+    ]);
+    getLinks.mockResolvedValue([
+      { key: "Customer__c", parentField: "Customer__c", label: "Orders whose Customer is this Contact" }
+    ]);
+    getSource.mockResolvedValue({
+      developerName: "Order_Placed",
+      label: "Order placed",
+      kind: "Salesforce",
+      parentObject: "Contact",
+      objectName: "Invoice__c",
+      parentField: "Customer__c",
+      dateField: "Order_Time__c",
+      title: "Order placed",
+      active: true,
+      details: [
+        { field: "Status__c", label: "", format: "Text" },
+        { field: "Name", label: "Invoice", format: "Text" }
+      ]
+    });
+    const element = mount();
+    await splash();
+    const root = element.shadowRoot;
+    await toPages(root);
+    root.querySelector("button.pcard").click();
+    await flush();
+    root.querySelector('.row-main[data-name="Order_Placed"]').click();
+    await splash();
+    const opened = [...root.querySelectorAll(".fact")].find(
+      (f) => f.querySelector("dt")?.textContent === "When it is opened"
+    );
+    expect(opened.querySelector("dd").textContent.trim()).toBe("Status, Invoice");
+  });
+
   it("shows a source's link, date, filter and interactions on its page", async () => {
     getFields.mockResolvedValue([
       { name: "Name", label: "Order Number", type: "string", filterable: true, values: [] },
@@ -472,11 +462,14 @@ describe("c-time-drive-setup", () => {
     expect(facts["Linked to the Contact by"]).toBe("Orders whose Customer is this Contact");
     expect(facts["Plotted by date"]).toBe("Order Time");
     expect(facts["Only the records where"]).toBe("Status isn't Canceled");
-    expect(facts["When it is opened"]).toBe("0 fields");
+    expect(facts["When it is opened"]).toBe("No fields");
     expect(facts["When its title is clicked"]).toBe("Its own record");
     // One diagram of the interactions: the opened item, then where a click lands.
     expect(facts.Interactions).toBeDefined();
     expect(root.querySelector(".fact_preview .mock-page")).not.toBeNull();
+    // The opened item and the page it opens share one column, so one width.
+    expect(root.querySelector(".fact-preview-stack .mock-item")).not.toBeNull();
+    expect(root.querySelector(".fact-preview-stack .mock-page")).not.toBeNull();
   });
 
   it("lets you pick a typed name after trying a custom label", async () => {
@@ -708,6 +701,31 @@ describe("c-time-drive-setup", () => {
       expect(root.querySelector(".picker-input").value).toBe("Task › Due Date");
     });
 
+    it("lets an Apex source highlight by a key it types, and saves it", async () => {
+      const root = await openStep("open", {
+        kind: "Apex",
+        providerClass: "MemoItemSource",
+        objectName: null,
+        parentField: null,
+        dateField: null,
+        title: null,
+        details: [{ field: "Status__c", label: "", format: "Text" }],
+        highlights: [{ field: "", icon: "utility:flag", colour: "#DD7A01" }]
+      });
+      await settle();
+      // No fields to list for a class: a box to type the key in.
+      const input = root.querySelector("lightning-input.highlight-field");
+      expect(input).not.toBeNull();
+      expect(root.querySelector("lightning-combobox.highlight-field")).toBeNull();
+      input.dispatchEvent(new CustomEvent("change", { detail: { value: "Flagged__c" } }));
+      await settle();
+      TimeDriveConfirm.open.mockResolvedValueOnce(true);
+      root.querySelector(".wz-foot .save").click();
+      await settle();
+      const sent = JSON.parse(save.mock.calls.at(-1)[0].draftJson);
+      expect(sent.highlights[0].field).toBe("Flagged__c");
+    });
+
     it("asks an Apex source's admin to vouch for how it scales before it's saved", async () => {
       const root = await openStep("open", {
         kind: "Apex",
@@ -779,6 +797,59 @@ describe("c-time-drive-setup", () => {
       root.querySelector('.field-clear[data-field="title"]').click();
       await settle();
       expect(choice("title").textContent).toBe("None: its name");
+    });
+
+    it("says when a title or subtitle field is long or rich text, and will be shortened", async () => {
+      const fields = [
+        { name: "CreatedDate", label: "Created Date", type: "datetime", filterable: true, values: [] },
+        { name: "Subject", label: "Subject", type: "string", filterable: true, values: [], length: 255 },
+        { name: "Notes__c", label: "Notes", type: "textarea", filterable: false, values: [], length: 32768 },
+        { name: "Body__c", label: "Body", type: "textarea", filterable: false, values: [], length: 32768, html: true },
+        { name: "Code__c", label: "Code", type: "string", filterable: true, values: [], length: 20 }
+      ];
+      const root = await openStep("look", { title: "{Notes__c}", subtitle: "{Code__c} · {Body__c}" }, () => fields);
+      await settle();
+      const notes = [...root.querySelectorAll(".word-field .word-note")].map((n) => n.textContent);
+      expect(notes).toContain("Long text: shown cut to 150 characters.");
+      expect(notes).toContain("Rich text: shown as plain words, up to 150 characters.");
+    });
+
+    it("gives the subtitle up to two fields, read with a dot between them", async () => {
+      const plain = [
+        { name: "CreatedDate", label: "Created Date", type: "datetime", filterable: true, values: [] },
+        { name: "Subject", label: "Subject", type: "string", filterable: true, values: [] },
+        { name: "Status", label: "Status", type: "picklist", filterable: true, values: [] }
+      ];
+      const root = await openStep("look", { title: "{Subject}", subtitle: "" }, () => plain);
+      await settle();
+      const choice = (field) => root.querySelector(`.field-choice[data-field="${field}"] .field-choice-name`);
+      // No first field yet: no second to add.
+      expect(root.querySelector('.field-choice[data-field="subtitle2"]')).toBeNull();
+
+      const pick = async (field, name) => {
+        root.querySelector(`.field-choice[data-field="${field}"]`).click();
+        await settle();
+        const picker = root.querySelector("c-time-drive-field-picker");
+        picker.shadowRoot.querySelector(`.token-result[data-name="${name}"]`).click();
+        await settle();
+      };
+      await pick("subtitle", "Status");
+      expect(choice("subtitle").textContent).toBe("Status");
+      expect(choice("subtitle2").textContent).toBe("Add a second field");
+      await pick("subtitle2", "CreatedDate");
+      expect(choice("subtitle2").textContent).toBe("Created Date");
+      // The sample reads both, a dot between.
+      expect([...root.querySelectorAll(".sample-sub .token")].map((t) => t.textContent)).toEqual([
+        "Status",
+        "Created Date"
+      ]);
+      expect(root.querySelector(".sample-sub").textContent).toContain("·");
+
+      // Taking the first off moves the second up.
+      root.querySelector('.field-clear[data-field="subtitle"]').click();
+      await settle();
+      expect(choice("subtitle").textContent).toBe("Created Date");
+      expect(choice("subtitle2").textContent).toBe("Add a second field");
     });
 
     it("lays out the look: the icon preview with the title and subtitle beside it, the pickers side by side below", async () => {
@@ -937,7 +1008,7 @@ describe("c-time-drive-setup", () => {
     getLinks.mockResolvedValue([
       { key: "Customer__c", parentField: "Customer__c", label: "Orders whose Customer is this Contact" }
     ]);
-    save.mockResolvedValue({ developerName: "Order_Placed", jobId: "0Af000000000001" });
+    save.mockResolvedValue({ developerName: "Order_Placed" });
     const element = mount();
     const toasts = [];
     element.addEventListener("lightning__showtoast", (e) => toasts.push(e.detail));
@@ -959,7 +1030,6 @@ describe("c-time-drive-setup", () => {
     const any = root.querySelector(".look-custom lightning-input");
     any.dispatchEvent(new CustomEvent("change", { detail: { value: "#FFF59D" } }));
     await flush();
-    expect(root.querySelector(".look-warning")).toBeNull();
     root.querySelector(".wz-foot .primary").click();
     await flush();
     expect(toasts).toHaveLength(1);
@@ -1004,8 +1074,6 @@ describe("c-time-drive-setup", () => {
     root.querySelector('.knot-button[data-step="name"]').click();
     await flush();
     expect(root.querySelector(".tune")).not.toBeNull();
-    // The lens was asked under the date, not here.
-    expect(root.querySelector(".tune-view .chips")).toBeNull();
     // Every source on the page in legend order, this one marked; the name
     // shows live, and a move takes it up a place.
     const legend = () => [...root.querySelectorAll(".legend-row .legend-name")].map((n) => n.textContent);
@@ -1039,7 +1107,6 @@ describe("c-time-drive-setup", () => {
     root.querySelector(".wz-foot .save").click();
     await flush();
     const sent = JSON.parse(save.mock.calls[0][0].draftJson);
-    expect(sent).not.toHaveProperty("useCompactLayout");
     expect(sent).toMatchObject({
       details: [expect.objectContaining({ field: "Status__c" })],
       recordIdField: "Location__c",
@@ -1052,23 +1119,26 @@ describe("c-time-drive-setup", () => {
 
   it("links each doc to its page on GitHub, in a new tab, and reads nothing into the org", async () => {
     global.fetch = jest.fn();
-    const element = mount();
-    await splash();
-    const root = element.shadowRoot;
-    root.querySelector('.site-link[data-to="docs"]').click();
-    await flush();
-    const cards = [...root.querySelectorAll("a.docs-card")];
-    expect(cards.map((c) => c.querySelector(".docs-card-title").textContent)).toEqual(["Config Guide", "FAQs"]);
-    expect(cards.map((c) => c.getAttribute("href"))).toEqual([
-      "https://github.com/deejay-hub/time-drive-lwc/blob/main/docs/config-guide.md",
-      "https://github.com/deejay-hub/time-drive-lwc/blob/main/docs/faqs.md"
-    ]);
-    for (const card of cards) {
-      expect(card.getAttribute("target")).toBe("_blank");
-      expect(card.getAttribute("rel")).toBe("noopener");
+    try {
+      const element = mount();
+      await splash();
+      const root = element.shadowRoot;
+      root.querySelector('.site-link[data-to="docs"]').click();
+      await flush();
+      const cards = [...root.querySelectorAll("a.docs-card")];
+      expect(cards.map((c) => c.querySelector(".docs-card-title").textContent)).toEqual(["Config Guide", "FAQs"]);
+      expect(cards.map((c) => c.getAttribute("href"))).toEqual([
+        "https://github.com/deejay-hub/time-drive-lwc/blob/main/docs/config-guide.md",
+        "https://github.com/deejay-hub/time-drive-lwc/blob/main/docs/faqs.md"
+      ]);
+      for (const card of cards) {
+        expect(card.getAttribute("target")).toBe("_blank");
+        expect(card.getAttribute("rel")).toBe("noopener");
+      }
+      expect(global.fetch).not.toHaveBeenCalled();
+    } finally {
+      delete global.fetch;
     }
-    expect(global.fetch).not.toHaveBeenCalled();
-    delete global.fetch;
   });
 
   it("finds a page's sources by search and by type, in one list", async () => {
@@ -1173,25 +1243,38 @@ describe("c-time-drive-setup", () => {
 
     async function openLenses() {
       getSources.mockResolvedValue(SOURCES_IN_LENSES);
-      let deliver;
-      subscribe.mockImplementation((channel, replay, handler) => {
-        deliver = handler;
-        return Promise.resolve({});
-      });
       const element = mount();
       await splash();
       const root = element.shadowRoot;
       root.querySelector('.site-link[data-to="lenses"]').click();
       await flush();
       await flush();
-      return { root, deliver: (payload) => deliver({ data: { payload } }) };
+      return { root };
     }
     const cell = (root, source, lens) =>
       root.querySelector(`.lens-cell lightning-input[data-source="${source}"][data-lens="${lens}"]`);
 
+    it("saves a lens switched off at once, and says so", async () => {
+      const { root } = await openLenses();
+      const toasts = [];
+      root.host.addEventListener("lightning__showtoast", (e) => toasts.push(e.detail));
+      const marketing = root.querySelector('lightning-input.lens-active[data-key="Marketing"]');
+      marketing.checked = false;
+      marketing.dispatchEvent(new CustomEvent("change"));
+      await flush();
+      await flush();
+      expect(saveViews).toHaveBeenLastCalledWith({
+        viewsJson: JSON.stringify([
+          { developerName: "All", active: true },
+          { developerName: "Commerce", active: true },
+          { developerName: "Marketing", active: false }
+        ])
+      });
+      expect(toasts.map((t) => t.title)).toContain("Views saved");
+      expect(root.querySelector('lightning-input.lens-active[data-key="Marketing"]').checked).toBe(false);
+    });
+
     it("is in the menu, and the guided step opens it", async () => {
-      // The steps after the org check open once it has been done.
-      getProgress.mockResolvedValue({ steps: ["orgcheck"], report: null });
       const element = mount();
       await splash();
       const root = element.shadowRoot;
@@ -1252,7 +1335,7 @@ describe("c-time-drive-setup", () => {
     });
 
     it("puts a source in a lens as its cell is ticked, in addition to the ones it is in, and saves at once", async () => {
-      setLenses.mockResolvedValue({ jobId: null, developerName: "Order_Placed" });
+      setLenses.mockResolvedValue({ developerName: "Order_Placed" });
       const { root } = await openLenses();
       const marketing = cell(root, "Order_Placed", "Marketing");
       marketing.checked = true;
@@ -1264,7 +1347,7 @@ describe("c-time-drive-setup", () => {
     });
 
     it("takes a source out of one lens and leaves the others", async () => {
-      setLenses.mockResolvedValue({ jobId: null, developerName: "Tasks" });
+      setLenses.mockResolvedValue({ developerName: "Tasks" });
       getSources.mockResolvedValue([
         {
           ...SOURCES_IN_LENSES[1],
@@ -1288,25 +1371,30 @@ describe("c-time-drive-setup", () => {
       expect(setLenses).toHaveBeenCalledWith({ developerName: "Tasks", lenses: ["Marketing"] });
     });
 
-    it("puts a tick back when the save fails, and says so", async () => {
+    it("takes a tick back when the save fails, and says so", async () => {
       setLenses.mockRejectedValue({ body: { message: "No access" } });
       const { root } = await openLenses();
+      const toasts = [];
+      root.host.addEventListener("lightning__showtoast", (e) => toasts.push(e.detail));
       const marketing = cell(root, "Order_Placed", "Marketing");
       marketing.checked = true;
       marketing.dispatchEvent(new CustomEvent("change"));
       await flush();
       await flush();
       expect(cell(root, "Order_Placed", "Marketing").checked).toBe(false);
+      expect(toasts).toHaveLength(1);
+      expect(toasts[0]).toMatchObject({ variant: "error", message: "No access" });
+      expect(toasts[0].title).toMatch(/couldn't be changed$/);
     });
   });
 
   it("switches a source off in place and waits for the save", async () => {
-    setActive.mockResolvedValue({ jobId: "0Af000000000001AAA", developerName: "Order_Placed" });
-    let deliver;
-    subscribe.mockImplementation((channel, replay, handler) => {
-      deliver = handler;
-      return Promise.resolve({});
-    });
+    let finish;
+    setActive.mockReturnValue(
+      new Promise((resolve) => {
+        finish = () => resolve({ developerName: "Order_Placed" });
+      })
+    );
     const element = mount();
     await splash();
     await toPages(element.shadowRoot);
@@ -1322,7 +1410,7 @@ describe("c-time-drive-setup", () => {
     // The save lands while the list is still being read again: the row shows
     // the new state at once, not the old one for a moment.
     getSources.mockReturnValue(new Promise(() => {}));
-    deliver({ data: { payload: { Job_Id__c: "0Af000000000001AAA", Status__c: "Succeeded" } } });
+    finish();
     await flush();
     expect(element.shadowRoot.querySelector(".pending")).toBeNull();
     expect(element.shadowRoot.querySelector('lightning-input[data-name="Order_Placed"]').checked).toBe(false);
@@ -1344,7 +1432,6 @@ describe("c-time-drive-setup", () => {
     const element = mount();
     await flush();
     const root = element.shadowRoot;
-    const wait = () => new Promise((resolve) => setTimeout(resolve, 300));
     await splash();
     await toPages(root);
     root.querySelector("button.pcard").click();
@@ -1425,7 +1512,6 @@ describe("c-time-drive-setup", () => {
     const element = mount();
     await flush();
     const root = element.shadowRoot;
-    const wait = () => new Promise((resolve) => setTimeout(resolve, 300));
     await splash();
     await toPages(root);
     root.querySelector("button.pcard").click();
@@ -1596,7 +1682,6 @@ describe("c-time-drive-setup", () => {
     const element = mount();
     await flush();
     const root = element.shadowRoot;
-    const wait = () => new Promise((resolve) => setTimeout(resolve, 300));
     await splash();
     await toPages(root);
     root.querySelector("button.pcard").click();
@@ -1636,12 +1721,9 @@ describe("c-time-drive-setup", () => {
     // How they link is asked on the same screen, under the object.
     expect(root.querySelector(".question").textContent).toBe("Which object should we use?");
     expect(root.querySelector(".link-question").textContent).toBe("How do they link to the Contact?");
-    // The only link is chosen for you: shown as the choice, with what it means
-    // over a diagram of the two objects.
-    expect(root.querySelector(".auto-note")).toBeNull();
+    // The only link is chosen for you, and shown as the choice.
     expect(root.querySelector(".link-chosen .option-label").textContent).toBe("Orders whose Customer is this Contact");
-    // No diagram: the words say what it means, and "all or some" sits under it.
-    expect(root.querySelector(".erd")).toBeNull();
+    // The words say what it means, and "all or some" sits under it.
     expect(root.querySelector(".link-story")).not.toBeNull();
     expect(root.querySelector('[aria-label="Which records"]')).not.toBeNull();
     expect(root.querySelector(".options_hidden")).not.toBeNull();
@@ -1656,16 +1738,12 @@ describe("c-time-drive-setup", () => {
     );
     expect(root.querySelector(".result-label").textContent).toBe("Order Time");
     expect(root.querySelector(".result-tag").textContent).toBe("Suggested");
-    // The lens isn't asked here: sources are put in lenses on the Lenses page.
     root.querySelector(".result").click();
     await flush();
-    expect(root.querySelector(".tune-view")).toBeNull();
-    expect(root.textContent).not.toContain("Which lens?");
     // The steps along the top name each step; the answers are in So far
     // (and in each step's label, for screen readers).
     const done = [...root.querySelectorAll(".knot_done")];
     expect(done.map((k) => k.querySelector(".knot-name").textContent)).toEqual(["Source", "Records"]);
-    expect(root.querySelector(".knot-answer")).toBeNull();
     expect(done[0].querySelector(".knot-button").getAttribute("aria-label")).toBe("Source: A custom object");
     expect(done[1].querySelector(".knot-button").getAttribute("aria-label")).toContain("Customer");
     expect(root.querySelector(".knot_current .knot-name").textContent).toBe("Date");
@@ -1689,7 +1767,6 @@ describe("c-time-drive-setup", () => {
     const element = mount();
     await flush();
     const root = element.shadowRoot;
-    const wait = () => new Promise((resolve) => setTimeout(resolve, 300));
     await splash();
     await toPages(root);
     root.querySelector("button.pcard").click();
@@ -1766,7 +1843,6 @@ describe("c-time-drive-setup", () => {
     const element = mount();
     await flush();
     const root = element.shadowRoot;
-    const wait = () => new Promise((resolve) => setTimeout(resolve, 300));
     await splash();
     await toPages(root);
     root.querySelector("button.pcard").click();
@@ -1812,7 +1888,6 @@ describe("c-time-drive-setup", () => {
     const element = mount();
     await flush();
     const root = element.shadowRoot;
-    const wait = () => new Promise((resolve) => setTimeout(resolve, 300));
     await splash();
     await toPages(root);
     root.querySelector("button.pcard").click();
@@ -1837,7 +1912,7 @@ describe("c-time-drive-setup", () => {
     expect(root.querySelector('[aria-label="Which records"]')).not.toBeNull();
     expect(root.querySelector(".wz-foot .primary").disabled).toBe(false);
 
-    // Then just the date, and the lens under it.
+    // Then just the date.
     root.querySelector(".wz-foot .primary").click();
     await wait();
     expect(root.querySelector(".knot_current .knot-name").textContent).toBe("Date");
@@ -1846,7 +1921,6 @@ describe("c-time-drive-setup", () => {
 
   it("asks for the data space of a Data 360 source only when there's a choice", async () => {
     getObjects.mockResolvedValue([{ value: "Reservation__dlm", label: "Reservation", detail: "Reservation__dlm" }]);
-    const wait = () => new Promise((resolve) => setTimeout(resolve, 300));
     const startDmo = async (root) => {
       await splash();
       await toPages(root);
@@ -1895,7 +1969,7 @@ describe("c-time-drive-setup", () => {
   it("shows the Data 360 kind disabled, with the reason, until the add-on is installed", async () => {
     getData360Status.mockResolvedValue({
       ready: false,
-      reason: "Install the Time Drive Data 360 add-on package to use Data 360."
+      reason: "Install the Time Drive Data Extension package to use Data 360."
     });
     const element = mount();
     await splash();
@@ -1909,7 +1983,7 @@ describe("c-time-drive-setup", () => {
     const tile = root.querySelector('.option[data-value="dmo"]');
     expect(tile.disabled).toBe(true);
     expect(tile.querySelector(".option-detail").textContent).toBe(
-      "Install the Time Drive Data 360 add-on package to use Data 360."
+      "Install the Time Drive Data Extension package to use Data 360."
     );
     // The other kinds stay open, and a disabled one can't be clicked into.
     expect(root.querySelector('.option[data-value="standard"]').disabled).toBe(false);
@@ -1918,7 +1992,7 @@ describe("c-time-drive-setup", () => {
     expect(tile.getAttribute("aria-checked")).toBe("false");
   });
 
-  it("shows a plain error, not the raw one, when sources can't load", async () => {
+  it("shows the server's message when sources can't load", async () => {
     getSources.mockRejectedValue({
       body: { message: "Only admins (with Customize Application) can manage timeline sources." }
     });

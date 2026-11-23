@@ -93,7 +93,7 @@ describe("c-time-drive-org-check", () => {
     expect(root.querySelector("lightning-button.done")).not.toBeNull();
   });
 
-  it("Done closes it with the report once it has checked (close is blocked while it is checking)", async () => {
+  it("Done closes it with the report once it has checked", async () => {
     LightningModal.closed.length = 0;
     const element = mount();
     const root = element.shadowRoot;

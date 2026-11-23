@@ -74,7 +74,6 @@ describe("c-time-drive-group", () => {
     const table = root.querySelector("lightning-datatable");
     expect(table.data).toHaveLength(50);
     expect(table.enableInfiniteLoading).toBe(true);
-    expect(table.columns.map((c) => c.label)).toEqual(["Name", "Summary", "Status", "Priority", "Date/Time"]);
     expect(table.data[0]).toMatchObject({
       title: "Case 0",
       recordUrl: "/lightning/r/500000000000000AAA/view",
@@ -90,7 +89,7 @@ describe("c-time-drive-group", () => {
         deliver = resolve;
       })
     );
-    const element = await mount({ ...STATE, c__object: "Case", c__icon: "standard:case" });
+    const element = await mount({ ...STATE, c__icon: "standard:case" });
     // Asked at once: no layout to wait for.
     expect(getGroupPage).toHaveBeenCalledTimes(1);
     // Meanwhile, the table's shape and a placeholder for the way back.

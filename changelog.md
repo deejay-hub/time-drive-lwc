@@ -12,7 +12,33 @@
 - Added the Opportunity Products example Apex source (Account › Opportunity › Opportunity Product)
 - Added Time Drive Setup: a guided wizard, Fit to your org, lenses, detail fields, a filter builder, an org check and diagnostics
 - Added lenses, with All as a lens and the filter each source applies shown on the Lenses page
-- Added activity actions (New Task, New Event, Log a Call, Email) and Edit and Delete from each item's menu
+- Added the Overdue formula checkbox on Activity (an open task due before today), highlighted on Tasks and used by the Overdue lens, and escalated highlights for Cases
+- Added a second subtitle field, read after a dot; Tasks, Calls and Events show Assigned To · Related To
+- Added links on an opened item's details that name a record (Related To, an Account), and Plot.links for Apex sources
+- Added the Lenses page property: the lenses a page offers (All items and Overdue always)
+- Added highlights for Apex sources (a checkbox field or a map key), and readable DayCount fields for Apex sources' own tests
+- Documented that an org's own Apex sources are global and name the package's types with drvrckt. (a public class can't be seen from the package)
+- Long text is shortened on the timeline (details 500 characters, titles and subtitles 150) and rich text shows as plain words
+- Each lens keeps its own filter (the event types hidden in it), as a list view does
+- An opened item's footer says where it's from the same way for every source: Salesforce · object, Data 360 · DMO, Apex · source name
+- Email tasks' subtitle is Assigned To · Related To, as for tasks, calls and events
+- The shipped sources are named by page and kind (Contact_Tasks, Account_Calls_Shared, Person_Overdue_Tasks), with _Shared for the Shared Activities versions; the Org Fit field is gone
+- Lenses are listed All, then Overdue, then the rest alphabetically by their label
+- Tasks, calls, emails and events are in the Sales, Service and Marketing lenses; Commerce and Digital start switched off
+- The Filters panel's Back and Ahead are lightning-select base components
+- Opening Filters no longer makes a horizontal timeline a pixel or two taller
+- A source that can't be read shows the timeline's error page (naming it, with Try again) rather than a notice above the rest
+- A source that counts but whose rows can't be read is reported the same way, rather than its items quietly missing
+- The error and empty pages are as tall as the timeline was with items
+- A source someone can't see (its object, date field or a filter field unreadable to them) is left out of their timeline, and a field they can't read shows blank: neither is an error
+- fieldsToQuery(objectType, always), for Apex sources: leaves out fields the user can't read
+- Time Drive Setup's unused Dashboard is gone
+- An opened item shows every detail field, a blank one with its label and no value, rather than leaving it out
+- Diagnostics drawer (Ctrl+Alt+Shift+D): the view's settings, time zones and Overdue check, requests with their errors' own words, and, while open, a trace of every request (each source's rows, left out and why, or failed, even when the load fails); SOQL, exceptions, cache use and limits for Time Drive Setup admins and Login As sessions
+- The Time Drive Setup permission set includes the timeline itself, so admins need only it; Time Drive reads its own setup, so people need no access to it
+- The Filters panel is a sheet inside the card, under its header and as tall as the timeline: at the card's end with the event types in up to three columns on a wide card, over the whole timeline in one column on a narrow one
+- Added the Overdue lens, defined by its sources' filters, with an Overdue button in the header while the record has something overdue
+- Added Edit and Delete from each item's menu
 - Added View all for a busy day's grouped Salesforce items, paged as you scroll
 - Added support for opening records in a new workspace tab in Console apps
 - Added translatable custom labels for every timeline string, with Spanish and Arabic translations

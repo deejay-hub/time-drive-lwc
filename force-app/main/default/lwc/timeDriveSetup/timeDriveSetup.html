@@ -71,171 +71,6 @@
         </section>
       </template>
 
-      <!-- Dashboard: the current setup at a glance -->
-      <template lwc:elseif={isDashboard}>
-        <div class="kh">
-          <!-- The dashboard: the current setup at a glance, and the way in -->
-          <section class="kd" aria-labelledby="dash-title">
-            <header class="kd-head">
-              <div class="page-head-text">
-                <h1 class="page-title" id="dash-title" tabindex="-1">Dashboard</h1>
-                <p class="page-lede">What your record pages' Time Drive timelines show, at a glance.</p>
-              </div>
-              <div class="kd-actions">
-                <button class="ghost" type="button" onclick={handleGetStarted}>Open record pages</button>
-              </div>
-            </header>
-
-            <template lwc:if={loadError}>
-              <div class="notice notice_error kh-notice" role="alert">
-                <lightning-icon icon-name="utility:error" size="x-small" variant="error"></lightning-icon>
-                <div>
-                  <p class="notice-title">{loadError.message}</p>
-                  <p lwc:if={loadError.cause}>{loadError.cause}</p>
-                </div>
-                <button class="ghost" type="button" onclick={handleRetryLoad}>Try again</button>
-              </div>
-            </template>
-
-            <section class="kd-table-card" aria-labelledby="dash-active">
-              <h2 class="kd-card-title" id="dash-active">Active by record page</h2>
-              <div class="kd-scroll" tabindex="0" aria-labelledby="dash-active">
-                <table class="kd-table">
-                  <thead>
-                    <tr>
-                      <template for:each={activeColumns} for:item="c">
-                        <th key={c.key} scope="col">
-                          <button
-                            class="kd-th"
-                            type="button"
-                            data-value={c.value}
-                            aria-label={c.openLabel}
-                            onclick={handleParentCard}
-                          >
-                            {c.label}
-                            <lightning-icon icon-name="utility:chevronright" size="xx-small"></lightning-icon>
-                          </button>
-                        </th>
-                      </template>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <template for:each={activeTableRows} for:item="r">
-                      <tr key={r.key}>
-                        <template for:each={r.cells} for:item="cell">
-                          <td key={cell.key} class={cell.className}>
-                            <template lwc:if={cell.has}>
-                              <span class="kd-cell-in">
-                                <span class="chip chip_tiny" style={cell.chipStyle}>
-                                  <lightning-icon
-                                    icon-name={cell.iconName}
-                                    size="xx-small"
-                                    variant="inverse"
-                                  ></lightning-icon>
-                                </span>
-                                <span class="kd-cell-text">{cell.label}</span>
-                              </span>
-                            </template>
-                            <template lwc:else>{cell.label}</template>
-                          </td>
-                        </template>
-                      </tr>
-                    </template>
-                  </tbody>
-                </table>
-              </div>
-            </section>
-
-            <div class="kd-grid">
-              <article class="kd-card" aria-labelledby="dash-on">
-                <h2 class="kd-card-title" id="dash-on">Sources on</h2>
-                <p class="kd-figure">
-                  <span class="kd-number">{onCount}</span>
-                  <span class="kd-of">of {sourceTotal}</span>
-                </p>
-                <div class="kd-meter" aria-hidden="true"><span class="kd-meter-fill" style={meterStyle}></span></div>
-                <p class="kd-note">{offNote}</p>
-              </article>
-
-              <article class="kd-card" aria-labelledby="dash-kinds">
-                <h2 class="kd-card-title" id="dash-kinds">By kind</h2>
-                <ul class="kd-bars">
-                  <template for:each={kindBars} for:item="k">
-                    <li key={k.key} class="kd-bar">
-                      <span class="kd-bar-label">{k.label}</span>
-                      <span class="kd-bar-count">{k.count}</span>
-                      <span class="kd-bar-track" aria-hidden="true"
-                        ><span class="kd-bar-fill" style={k.style}></span
-                      ></span>
-                    </li>
-                  </template>
-                </ul>
-              </article>
-
-              <article class="kd-card" aria-labelledby="dash-pages">
-                <h2 class="kd-card-title" id="dash-pages">Record pages</h2>
-                <ul class="kd-list">
-                  <template for:each={glanceRows} for:item="g">
-                    <li key={g.key}>
-                      <button
-                        class="kd-row"
-                        type="button"
-                        data-value={g.value}
-                        aria-label={g.openLabel}
-                        onclick={handleParentCard}
-                      >
-                        <span class="kd-row-text">
-                          <span class="kd-row-name">{g.label}</span>
-                          <span class="kd-row-detail">{g.detail}</span>
-                        </span>
-                        <span class={g.pillClass}><span class="pill-dot" aria-hidden="true"></span>{g.pill}</span>
-                      </button>
-                    </li>
-                  </template>
-                  <li class="kd-row kd-row_soon">
-                    <span class="kd-row-text">
-                      <span class="kd-row-name">More record pages</span>
-                      <span class="kd-row-detail">Other record pages are planned.</span>
-                    </span>
-                  </li>
-                </ul>
-              </article>
-
-              <article class="kd-card" aria-labelledby="dash-off">
-                <h2 class="kd-card-title" id="dash-off">Switched off</h2>
-                <template lwc:if={hasOffSources}>
-                  <ul class="kd-list">
-                    <template for:each={offSources} for:item="o">
-                      <li key={o.developerName}>
-                        <button
-                          class="kd-row"
-                          type="button"
-                          data-name={o.developerName}
-                          aria-label={o.openLabel}
-                          onclick={handleOpenSource}
-                        >
-                          <span class="chip chip_small" style={o.chipStyle}>
-                            <lightning-icon icon-name={o.iconName} size="xx-small" variant="inverse"></lightning-icon>
-                          </span>
-                          <span class="kd-row-text">
-                            <span class="kd-row-name">{o.label}</span>
-                            <span class="kd-row-detail">{o.where}</span>
-                          </span>
-                          <span class="pill pill_off">Inactive</span>
-                        </button>
-                      </li>
-                    </template>
-                  </ul>
-                </template>
-                <template lwc:else>
-                  <p class="kd-note">Every source is active.</p>
-                </template>
-              </article>
-            </div>
-          </section>
-        </div>
-      </template>
-
       <!-- Setup: guided steps, each with what to do and a way to do it -->
       <template lwc:elseif={isSetupPage}>
         <header class="page-head page-head_split">
@@ -810,56 +645,63 @@
                     <span class="mock-badge">Sample values</span>
                     <span>{previewSourceNote}</span>
                   </p>
-                  <div class="mock-item mock-item_open">
-                    <div class="mock-row">
-                      <span class="mock-chevron" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></svg>
-                      </span>
-                      <span class="node" style={nodeStyle}>
-                        <lightning-icon icon-name={iconName} size="xx-small" variant="inverse"></lightning-icon>
-                      </span>
-                      <span class="mock-main">
-                        <span class="mock-title mock-title_link">{previewTitle}</span>
-                        <span lwc:if={previewSubtitle} class="mock-sub">{previewSubtitle}</span>
-                      </span>
-                      <span class="mock-time">{previewTime}</span>
-                    </div>
-                    <div class="mock-detail">
-                      <template lwc:if={previewLoading}>
-                        <span class="mock-line"></span>
-                        <span class="mock-line mock-line_short"></span>
-                      </template>
-                      <template lwc:elseif={previewEmpty}>
-                        <p class="mock-empty">{previewEmptyText}</p>
-                      </template>
-                      <template lwc:else>
-                        <dl class="mock-facts">
-                          <template for:each={previewFacts} for:item="f">
-                            <div key={f.key} class="mock-fact">
-                              <dt>{f.label}</dt>
-                              <dd>{f.value}</dd>
-                            </div>
-                          </template>
-                        </dl>
-                      </template>
-                    </div>
-                  </div>
-                  <template lwc:if={isSalesforce}>
-                    <div class="mock-arrow" aria-hidden="true">
-                      <lightning-icon icon-name="utility:arrowdown" size="x-small"></lightning-icon>
-                    </div>
-                    <div class="mock-page">
-                      <div class={clickPageHeadClass}>
-                        <span class="mock-page-icon"
-                          ><lightning-icon icon-name="utility:record" size="x-small" variant="inverse"></lightning-icon
-                        ></span>
-                        <span class="mock-page-text">
-                          <span class="mock-page-object">{clickPageLabel}</span>
-                          <span class="mock-page-name">{clickPageName}</span>
+                  <!-- The opened item, and what its click opens: one column, one width. -->
+                  <div class="fact-preview-stack">
+                    <div class="mock-item mock-item_open">
+                      <div class="mock-row">
+                        <span class="mock-chevron" aria-hidden="true">
+                          <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></svg>
                         </span>
+                        <span class="node" style={nodeStyle}>
+                          <lightning-icon icon-name={iconName} size="xx-small" variant="inverse"></lightning-icon>
+                        </span>
+                        <span class="mock-main">
+                          <span class="mock-title mock-title_link">{previewTitle}</span>
+                          <span lwc:if={previewSubtitle} class="mock-sub">{previewSubtitle}</span>
+                        </span>
+                        <span class="mock-time">{previewTime}</span>
+                      </div>
+                      <div class="mock-detail">
+                        <template lwc:if={previewLoading}>
+                          <span class="mock-line"></span>
+                          <span class="mock-line mock-line_short"></span>
+                        </template>
+                        <template lwc:elseif={previewEmpty}>
+                          <p class="mock-empty">{previewEmptyText}</p>
+                        </template>
+                        <template lwc:else>
+                          <dl class="mock-facts">
+                            <template for:each={previewFacts} for:item="f">
+                              <div key={f.key} class="mock-fact">
+                                <dt>{f.label}</dt>
+                                <dd>{f.value}</dd>
+                              </div>
+                            </template>
+                          </dl>
+                        </template>
                       </div>
                     </div>
-                  </template>
+                    <template lwc:if={isSalesforce}>
+                      <div class="mock-arrow" aria-hidden="true">
+                        <lightning-icon icon-name="utility:arrowdown" size="x-small"></lightning-icon>
+                      </div>
+                      <div class="mock-page">
+                        <div class={clickPageHeadClass}>
+                          <span class="mock-page-icon"
+                            ><lightning-icon
+                              icon-name="utility:record"
+                              size="x-small"
+                              variant="inverse"
+                            ></lightning-icon
+                          ></span>
+                          <span class="mock-page-text">
+                            <span class="mock-page-object">{clickPageLabel}</span>
+                            <span class="mock-page-name">{clickPageName}</span>
+                          </span>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
                 </dd>
               </div>
             </dl>
@@ -995,6 +837,7 @@
                   <template lwc:if={showSpaceChooser}>
                     <h3 class="second-question space-question">Which data space holds this engagement?</h3>
                     <lightning-combobox
+                      dropdown-alignment="auto"
                       class="space-field"
                       label="Data space"
                       variant="label-hidden"
@@ -1081,6 +924,7 @@
                     <h3 class="second-question link-question">{individualQuestion}</h3>
                     <p class="quiet">{individualHint}</p>
                     <lightning-combobox
+                      dropdown-alignment="auto"
                       class="individual-field"
                       label={individualQuestion}
                       variant="label-hidden"
@@ -1218,6 +1062,7 @@
                             <li key={c.key} class="condition">
                               <span class="condition-join">{c.joinText}</span>
                               <lightning-combobox
+                                dropdown-alignment="auto"
                                 class="condition-field"
                                 label="Field"
                                 variant="label-hidden"
@@ -1229,6 +1074,7 @@
                                 onchange={handleConditionChange}
                               ></lightning-combobox>
                               <lightning-combobox
+                                dropdown-alignment="auto"
                                 class="condition-op"
                                 label="Operator"
                                 variant="label-hidden"
@@ -1254,6 +1100,7 @@
                                 </template>
                                 <template lwc:elseif={c.isPicklist}>
                                   <lightning-combobox
+                                    dropdown-alignment="auto"
                                     label="Value"
                                     variant="label-hidden"
                                     placeholder="Value"
@@ -1266,6 +1113,7 @@
                                 </template>
                                 <template lwc:elseif={c.isBoolean}>
                                   <lightning-combobox
+                                    dropdown-alignment="auto"
                                     label="Value"
                                     variant="label-hidden"
                                     options={booleanOptions}
@@ -1641,6 +1489,7 @@
                                   <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon>
                                 </button>
                               </div>
+                              <p lwc:if={titleCutNote} class="word-note">{titleCutNote}</p>
                               <template lwc:if={titleTokensOpen}>
                                 <c-time-drive-field-picker
                                   fields={tokenFields}
@@ -1683,9 +1532,44 @@
                                   <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon>
                                 </button>
                               </div>
+                              <!-- A second field, read after a dot: Assigned To · Related To. -->
+                              <div lwc:if={showSubtitleSecond} class="word-row word-row_second">
+                                <span class="word-dot" aria-hidden="true">·</span>
+                                <button
+                                  class="field-choice"
+                                  type="button"
+                                  data-field="subtitle2"
+                                  aria-label={subtitleSecondLabel}
+                                  aria-expanded={subtitleSecondTokensOpen}
+                                  onclick={handleTokenOpen}
+                                >
+                                  <span class={subtitleSecondChoiceClass}>{subtitleSecondChoice}</span>
+                                  <lightning-icon icon-name="utility:chevrondown" size="xx-small"></lightning-icon>
+                                </button>
+                                <button
+                                  lwc:if={canClearSubtitleSecond}
+                                  class="field-clear"
+                                  type="button"
+                                  data-field="subtitle2"
+                                  title="No second field"
+                                  aria-label="Take the second field off the subtitle"
+                                  onclick={handleFieldClear}
+                                >
+                                  <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon>
+                                </button>
+                              </div>
+                              <template lwc:if={subtitleSecondTokensOpen}>
+                                <c-time-drive-field-picker
+                                  fields={tokenFields}
+                                  label="Search fields for the subtitle's second field"
+                                  onpick={handleFieldPick}
+                                  onclose={handleFieldPickClose}
+                                ></c-time-drive-field-picker>
+                              </template>
                               <p lwc:if={isEmailMessage} id="subtitle-note" class="word-note">
                                 Set for you: who each email went to.
                               </p>
+                              <p lwc:if={subtitleCutNote} class="word-note">{subtitleCutNote}</p>
                               <template lwc:if={subtitleTokensOpen}>
                                 <c-time-drive-field-picker
                                   fields={tokenFields}
@@ -1854,6 +1738,7 @@
                                   </div>
                                 </template>
                                 <lightning-combobox
+                                  dropdown-alignment="auto"
                                   class="detail-format"
                                   label="Shown as"
                                   variant="label-hidden"
@@ -1909,7 +1794,10 @@
                             ></lightning-button>
                           </template>
                           <template lwc:else>
-                            <p class="hint">Up to {maxDetails} fields, besides the title and subtitle.</p>
+                            <p class="hint">
+                              Up to {maxDetails} fields, besides the title and subtitle. Long text shows its first
+                              {detailChars} characters; rich text shows as plain words.
+                            </p>
                           </template>
                         </div>
                         <template lwc:if={isSalesforce}>
@@ -1981,24 +1869,36 @@
                         </template>
                         <template lwc:if={canHighlight}>
                           <p class="behave-heading behave-heading_next">Highlights</p>
-                          <p class="behave-label">
-                            Mark an item with a small icon when a checkbox is checked, such as High priority. One per
-                            source.
-                          </p>
+                          <p class="behave-label">{highlightHelp}</p>
                           <ul class="highlights">
                             <template for:each={highlightRows} for:item="h">
                               <li key={h.key} class="highlight">
                                 <div class="highlight-head">
-                                  <lightning-combobox
-                                    class="highlight-field"
-                                    label="Field"
-                                    variant="label-hidden"
-                                    placeholder="Choose a field"
-                                    options={highlightFieldOptions}
-                                    value={h.field}
-                                    data-index={h.index}
-                                    onchange={handleHighlightField}
-                                  ></lightning-combobox>
+                                  <!-- An Apex source has no fields to list: its key, typed. -->
+                                  <template lwc:if={isApex}>
+                                    <lightning-input
+                                      class="highlight-field"
+                                      label="Field or key"
+                                      variant="label-hidden"
+                                      placeholder="A checkbox field (Flagged__c) or a map key"
+                                      value={h.field}
+                                      data-index={h.index}
+                                      onchange={handleHighlightField}
+                                    ></lightning-input>
+                                  </template>
+                                  <template lwc:else>
+                                    <lightning-combobox
+                                      dropdown-alignment="auto"
+                                      class="highlight-field"
+                                      label="Field"
+                                      variant="label-hidden"
+                                      placeholder="Choose a field"
+                                      options={highlightFieldOptions}
+                                      value={h.field}
+                                      data-index={h.index}
+                                      onchange={handleHighlightField}
+                                    ></lightning-combobox>
+                                  </template>
                                   <lightning-button-icon
                                     icon-name="utility:close"
                                     variant="bare"

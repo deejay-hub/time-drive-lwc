@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Overdue__c</fullName>
+    <businessStatus>Active</businessStatus>
+    <description>Time Drive: an open task whose due date has passed, in the viewing user's day. The Tasks templates highlight it and the Overdue lens plots it. For other logic, make your own formula checkbox and choose it in the source's Highlights or filter.</description>
+    <externalId>false</externalId>
+    <formula>AND(NOT(IsClosed), NOT(ISBLANK(ActivityDate)), ActivityDate &lt; TODAY())</formula>
+    <inlineHelpText>Open, and due before today.</inlineHelpText>
+    <label>Overdue</label>
+    <type>Checkbox</type>
+</CustomField>

@@ -20,7 +20,14 @@
  * Methods added here later come with a default, so a class written today
  * keeps working.
  */
-public abstract with sharing class TimeDriveApexSource implements TimeDriveRowProvider, TimeDriveCountProvider {
+// Global: customers extend it with their own sources, in their own namespace.
+global abstract with sharing class TimeDriveApexSource implements TimeDriveRowProvider, TimeDriveCountProvider {
+  /** Lets a class in another namespace extend this one. */
+  global TimeDriveApexSource() {
+    // Nothing to set up.
+    return;
+  }
+
   /**
    * The items on the days asked for: context.spans(), checked with
    * context.wants(...) or context.dateCondition(...).
@@ -28,7 +35,7 @@ public abstract with sharing class TimeDriveApexSource implements TimeDriveRowPr
    * @param context the request context
    * @return a row for each item
    */
-  public abstract List<TimeDriveRow> rows(TimeDriveContext context);
+  global abstract List<TimeDriveRow> rows(TimeDriveContext context);
 
   /**
    * How many items each period has, in the days asked for.
@@ -37,7 +44,7 @@ public abstract with sharing class TimeDriveApexSource implements TimeDriveRowPr
    * @param unit the period asked for: TimeDriveContext.UNIT_HOUR, _DAY, _WEEK or _MONTH
    * @return the counts, or null when this source doesn't count
    */
-  public virtual List<TimeDriveContext.DayCount> counts(TimeDriveContext context, String unit) {
+  global virtual List<TimeDriveContext.DayCount> counts(TimeDriveContext context, String unit) {
     return null;
   }
 
@@ -64,7 +71,7 @@ public abstract with sharing class TimeDriveApexSource implements TimeDriveRowPr
     if (given == null) {
       return null;
     }
-    List<TimeDriveController.TimeWindow> spans = context.spans();
+    List<TimeDriveContext.Span> spans = context.spans();
     Map<String, TimeDriveContext.DayCount> byPeriod = new Map<String, TimeDriveContext.DayCount>();
     for (TimeDriveContext.DayCount c : given) {
       if (c?.dayKey == null || c.count == null || c.count <= 0) {
@@ -86,8 +93,8 @@ public abstract with sharing class TimeDriveApexSource implements TimeDriveRowPr
     return byPeriod.values();
   }
 
-  private static Boolean overlaps(Date first, Date last, List<TimeDriveController.TimeWindow> spans) {
-    for (TimeDriveController.TimeWindow w : spans) {
+  private static Boolean overlaps(Date first, Date last, List<TimeDriveContext.Span> spans) {
+    for (TimeDriveContext.Span w : spans) {
       if ((w.since == null || last >= w.since.date()) && (w.until == null || first <= w.until.date())) {
         return true;
       }

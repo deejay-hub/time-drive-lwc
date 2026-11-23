@@ -9,22 +9,6 @@
         <name>Time_Drive_Action_Edit</name>
     </customLabels>
     <customLabels>
-        <label>이메일</label>
-        <name>Time_Drive_Action_Email</name>
-    </customLabels>
-    <customLabels>
-        <label>전화 기록</label>
-        <name>Time_Drive_Action_Log_Call</name>
-    </customLabels>
-    <customLabels>
-        <label>새 이벤트</label>
-        <name>Time_Drive_Action_New_Event</name>
-    </customLabels>
-    <customLabels>
-        <label>새 작업</label>
-        <name>Time_Drive_Action_New_Task</name>
-    </customLabels>
-    <customLabels>
         <label>종일</label>
         <name>Time_Drive_All_Day</name>
     </customLabels>
@@ -59,6 +43,14 @@
     <customLabels>
         <label>제목만</label>
         <name>Time_Drive_Button_Lite_On</name>
+    </customLabels>
+    <customLabels>
+        <label>기한 지남</label>
+        <name>Time_Drive_Button_Overdue</name>
+    </customLabels>
+    <customLabels>
+        <label>기한이 지난 항목 표시</label>
+        <name>Time_Drive_Button_Overdue_Title</name>
     </customLabels>
     <customLabels>
         <label>새로 고침</label>
@@ -175,10 +167,6 @@
     <customLabels>
         <label>타임라인 로드 오류</label>
         <name>Time_Drive_Error_Load_Title</name>
-    </customLabels>
-    <customLabels>
-        <label>일부 항목을 표시할 수 없음</label>
-        <name>Time_Drive_Error_Partial_Title</name>
     </customLabels>
     <customLabels>
         <label>타임라인 읽기 오류</label>
@@ -325,12 +313,12 @@
         <name>Time_Drive_Legend_Files</name>
     </customLabels>
     <customLabels>
-        <label>항목</label>
-        <name>Time_Drive_Many_Other</name>
+        <label>기한이 지난 작업</label>
+        <name>Time_Drive_Legend_Overdue_Tasks</name>
     </customLabels>
     <customLabels>
-        <label>새 활동</label>
-        <name>Time_Drive_Menu_New_Activity</name>
+        <label>항목</label>
+        <name>Time_Drive_Many_Other</name>
     </customLabels>
     <customLabels>
         <label>보기</label>
@@ -521,6 +509,10 @@
         <name>Time_Drive_Server_Sent_To_Others</name>
     </customLabels>
     <customLabels>
+        <label>{0}: {1}개 항목의 날짜를 Time Drive에서 읽을 수 없어 표시되지 않습니다.</label>
+        <name>Time_Drive_Server_Unreadable_Dates</name>
+    </customLabels>
+    <customLabels>
         <label>예</label>
         <name>Time_Drive_Server_Yes</name>
     </customLabels>
@@ -571,6 +563,10 @@
     <customLabels>
         <label>마케팅</label>
         <name>Time_Drive_View_Marketing</name>
+    </customLabels>
+    <customLabels>
+        <label>기한 지남</label>
+        <name>Time_Drive_View_Overdue</name>
     </customLabels>
     <customLabels>
         <label>영업</label>

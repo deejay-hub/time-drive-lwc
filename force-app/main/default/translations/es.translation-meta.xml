@@ -9,22 +9,6 @@
         <name>Time_Drive_Action_Edit</name>
     </customLabels>
     <customLabels>
-        <label>Correo electrónico</label>
-        <name>Time_Drive_Action_Email</name>
-    </customLabels>
-    <customLabels>
-        <label>Registrar una llamada</label>
-        <name>Time_Drive_Action_Log_Call</name>
-    </customLabels>
-    <customLabels>
-        <label>Nuevo evento</label>
-        <name>Time_Drive_Action_New_Event</name>
-    </customLabels>
-    <customLabels>
-        <label>Nueva tarea</label>
-        <name>Time_Drive_Action_New_Task</name>
-    </customLabels>
-    <customLabels>
         <label>Día ent.</label>
         <name>Time_Drive_All_Day</name>
     </customLabels>
@@ -59,6 +43,14 @@
     <customLabels>
         <label>Solo títulos</label>
         <name>Time_Drive_Button_Lite_On</name>
+    </customLabels>
+    <customLabels>
+        <label>Vencidos</label>
+        <name>Time_Drive_Button_Overdue</name>
+    </customLabels>
+    <customLabels>
+        <label>Mostrar elementos vencidos</label>
+        <name>Time_Drive_Button_Overdue_Title</name>
     </customLabels>
     <customLabels>
         <label>Actualizar</label>
@@ -175,10 +167,6 @@
     <customLabels>
         <label>No se pudo cargar la cronología</label>
         <name>Time_Drive_Error_Load_Title</name>
-    </customLabels>
-    <customLabels>
-        <label>No se pudieron mostrar algunos elementos</label>
-        <name>Time_Drive_Error_Partial_Title</name>
     </customLabels>
     <customLabels>
         <label>No se pudo leer la cronología</label>
@@ -325,12 +313,12 @@
         <name>Time_Drive_Legend_Files</name>
     </customLabels>
     <customLabels>
-        <label>Elementos</label>
-        <name>Time_Drive_Many_Other</name>
+        <label>Tareas vencidas</label>
+        <name>Time_Drive_Legend_Overdue_Tasks</name>
     </customLabels>
     <customLabels>
-        <label>Nueva actividad</label>
-        <name>Time_Drive_Menu_New_Activity</name>
+        <label>Elementos</label>
+        <name>Time_Drive_Many_Other</name>
     </customLabels>
     <customLabels>
         <label>Vistas</label>
@@ -521,6 +509,10 @@
         <name>Time_Drive_Server_Sent_To_Others</name>
     </customLabels>
     <customLabels>
+        <label>{0}: {1} elementos tienen una fecha que Time Drive no puede leer, así que no se muestran.</label>
+        <name>Time_Drive_Server_Unreadable_Dates</name>
+    </customLabels>
+    <customLabels>
         <label>Sí</label>
         <name>Time_Drive_Server_Yes</name>
     </customLabels>
@@ -571,6 +563,10 @@
     <customLabels>
         <label>Marketing</label>
         <name>Time_Drive_View_Marketing</name>
+    </customLabels>
+    <customLabels>
+        <label>Vencidos</label>
+        <name>Time_Drive_View_Overdue</name>
     </customLabels>
     <customLabels>
         <label>Ventas</label>

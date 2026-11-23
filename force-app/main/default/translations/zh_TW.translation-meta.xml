@@ -9,22 +9,6 @@
         <name>Time_Drive_Action_Edit</name>
     </customLabels>
     <customLabels>
-        <label>電子郵件</label>
-        <name>Time_Drive_Action_Email</name>
-    </customLabels>
-    <customLabels>
-        <label>記錄通話</label>
-        <name>Time_Drive_Action_Log_Call</name>
-    </customLabels>
-    <customLabels>
-        <label>新增事件</label>
-        <name>Time_Drive_Action_New_Event</name>
-    </customLabels>
-    <customLabels>
-        <label>新增任務</label>
-        <name>Time_Drive_Action_New_Task</name>
-    </customLabels>
-    <customLabels>
         <label>全天</label>
         <name>Time_Drive_All_Day</name>
     </customLabels>
@@ -59,6 +43,14 @@
     <customLabels>
         <label>僅顯示標題</label>
         <name>Time_Drive_Button_Lite_On</name>
+    </customLabels>
+    <customLabels>
+        <label>已逾期</label>
+        <name>Time_Drive_Button_Overdue</name>
+    </customLabels>
+    <customLabels>
+        <label>顯示逾期項目</label>
+        <name>Time_Drive_Button_Overdue_Title</name>
     </customLabels>
     <customLabels>
         <label>重新整理</label>
@@ -175,10 +167,6 @@
     <customLabels>
         <label>無法載入時間軸</label>
         <name>Time_Drive_Error_Load_Title</name>
-    </customLabels>
-    <customLabels>
-        <label>部分項目無法顯示</label>
-        <name>Time_Drive_Error_Partial_Title</name>
     </customLabels>
     <customLabels>
         <label>無法讀取時間軸</label>
@@ -325,12 +313,12 @@
         <name>Time_Drive_Legend_Files</name>
     </customLabels>
     <customLabels>
-        <label>項目</label>
-        <name>Time_Drive_Many_Other</name>
+        <label>逾期工作</label>
+        <name>Time_Drive_Legend_Overdue_Tasks</name>
     </customLabels>
     <customLabels>
-        <label>新增活動</label>
-        <name>Time_Drive_Menu_New_Activity</name>
+        <label>項目</label>
+        <name>Time_Drive_Many_Other</name>
     </customLabels>
     <customLabels>
         <label>檢視</label>
@@ -521,6 +509,10 @@
         <name>Time_Drive_Server_Sent_To_Others</name>
     </customLabels>
     <customLabels>
+        <label>{0}：{1} 個項目的日期 Time Drive 無法讀取，因此未顯示。</label>
+        <name>Time_Drive_Server_Unreadable_Dates</name>
+    </customLabels>
+    <customLabels>
         <label>是</label>
         <name>Time_Drive_Server_Yes</name>
     </customLabels>
@@ -571,6 +563,10 @@
     <customLabels>
         <label>行銷</label>
         <name>Time_Drive_View_Marketing</name>
+    </customLabels>
+    <customLabels>
+        <label>已逾期</label>
+        <name>Time_Drive_View_Overdue</name>
     </customLabels>
     <customLabels>
         <label>銷售</label>

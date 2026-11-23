@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>A note about a contact, with items under it. An org's own object, plotted on Time Drive by an Apex source (MemoSource).</description>
+    <enableActivities>false</enableActivities>
+    <enableHistory>false</enableHistory>
+    <enableReports>true</enableReports>
+    <enableSearch>true</enableSearch>
+    <label>Memo</label>
+    <nameField>
+        <label>Memo Name</label>
+        <type>Text</type>
+    </nameField>
+    <pluralLabel>Memos</pluralLabel>
+    <sharingModel>ReadWrite</sharingModel>
+</CustomObject>

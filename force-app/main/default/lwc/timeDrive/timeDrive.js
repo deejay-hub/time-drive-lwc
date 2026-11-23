@@ -10,14 +10,20 @@ import { IsConsoleNavigation, openTab } from "lightning/platformWorkspaceApi";
 import { LABELS, format, labelNamed } from "c/timeDriveLabels";
 import { localDetails, ownWords } from "c/timeDriveFormat";
 import getTimeline from "@salesforce/apex/TimeDriveController.getTimeline";
+import getTimelineTrace from "@salesforce/apex/TimeDriveController.getTimelineTrace";
+import getPageDaysTrace from "@salesforce/apex/TimeDriveController.getPageDaysTrace";
+import USER_TIME_ZONE from "@salesforce/i18n/timeZone";
+import USER_LOCALE from "@salesforce/i18n/locale";
 import getDays from "@salesforce/apex/TimeDriveController.getPageDays";
 import getRights from "@salesforce/apex/TimeDriveController.getRights";
 import getViews from "@salesforce/apex/TimeDriveController.getViews";
+import getOverdue from "@salesforce/apex/TimeDriveController.getOverdue";
+import { refreshApex } from "@salesforce/apex";
 import getPreference from "@salesforce/apex/TimeDriveController.getPreference";
 import savePreference from "@salesforce/apex/TimeDriveController.savePreference";
 import saveDateRange from "@salesforce/apex/TimeDriveController.saveDateRange";
+import saveLensFilters from "@salesforce/apex/TimeDriveController.saveLensFilters";
 import USER_ID from "@salesforce/user/Id";
-import getActivityActions from "@salesforce/apex/TimeDriveController.getActivityActions";
 import TimeDriveConfirm from "c/timeDriveConfirm";
 import LightningConfirm from "lightning/confirm";
 import { deleteRecord } from "lightning/uiRecordApi";
@@ -40,6 +46,8 @@ import {
   VIEWS,
   VIEW_LABELS,
   FORMATS,
+  itemOrder,
+  isoDate,
   filePreviewRef,
   isFileId,
   recordHref,
@@ -130,42 +138,6 @@ const FIT_MIN_REM = 15;
 
 // The Salesforce mobile app on a phone: one column, lighter rows, bigger targets.
 const isPhone = () => FORM_FACTOR === "Small";
-// App Builder Activity Actions.
-// Full actions shown before the rest go in a menu: in a narrow card, and in a wide one.
-const NARROW_ACTIONS = 1;
-// The actions that stay on show first (the icons' names).
-const ACTION_PRIORITY = ["log_a_call", "email", "new_event", "new_task"];
-const WIDE_ACTIONS = 4;
-const ACTION_MODES = ["none", "one button", "inline", "full"];
-
-// A button icon takes a utility icon: an action's own (action:new_task) as
-// its utility match (utility:task).
-const UTILITY_FOR_ACTION = {
-  new_task: "utility:task",
-  new_event: "utility:event",
-  log_a_call: "utility:call",
-  email: "utility:email",
-  new_note: "utility:note",
-  new_case: "utility:case"
-};
-// The four standard activity actions are named by our own labels (so they
-// follow the translations here); any other action keeps Salesforce's.
-const ACTION_LABEL = {
-  new_task: LABELS.actionNewTask,
-  new_event: LABELS.actionNewEvent,
-  log_a_call: LABELS.actionLogCall,
-  email: LABELS.actionEmail
-};
-function actionLabelFor(action) {
-  return ACTION_LABEL[action.icon?.split(":")[1]] ?? action.label;
-}
-function utilityIconFor(icon) {
-  if (!icon) return "utility:add";
-  const [set, name] = icon.split(":");
-  if (set === "utility") return icon;
-  return UTILITY_FOR_ACTION[name] ?? (name?.startsWith("new_") ? `utility:${name.slice(4)}` : "utility:add");
-}
-
 // The icon after an Email Message's title, by what tracking says.
 const EMAIL_STATES = {
   opened: { icon: "utility:preview", label: LABELS.emailOpened },
@@ -180,6 +152,21 @@ const MINIMAP_MIN_DAYS = 2;
 const TIME_FORMAT = FORMATS.time;
 const DAY_SHORT_FORMAT = FORMATS.dayShort;
 const DAY_SHORT_TIME_FORMAT = FORMATS.dayShortTime;
+// The time a row shows. An all-day event says so; an item dated by a Date
+// field (a Task's Activity Date) has no time, so shows none. In a week or
+// month, both show just their day ("Tue 13").
+const NO_TIME = "";
+// Time Drive Preference's Lens Filters field holds 255 characters.
+const LENS_FILTERS_MAX = 255;
+// The Overdue lens's API name (DeveloperName), whatever its label says.
+const OVERDUE_VIEW = "Overdue";
+function timeTextOf(e, at, grouped, timeFormat) {
+  if (e.allDay || e.dateOnly) {
+    if (grouped) return DAY_SHORT_FORMAT.format(at);
+    return e.allDay ? LABELS.allDay : NO_TIME;
+  }
+  return timeFormat.format(at);
+}
 const DATE_TIME_FORMAT = FORMATS.dateTime;
 const WEEKDAY_SHORT = FORMATS.weekday;
 const MONTH_SHORT = FORMATS.month;
@@ -215,6 +202,23 @@ function keepRangeCopy(key) {
   } catch {
     // No storage here: the saved preference still holds.
   }
+}
+
+// An item's details in the user's own words, a value naming a record linked to it.
+// A traced request that failed, as an error the card handles like any other
+// (its code says the kind; the trace already said the rest).
+function tracedFailure(kind) {
+  const error = new Error(`timedrive:${kind}`);
+  error.body = { message: `timedrive:${kind}` };
+  error.traced = true;
+  return error;
+}
+
+function linkedDetails(details) {
+  return localDetails(details)?.map((d) => {
+    if (!d.recordId || !d.value) return d;
+    return { ...d, recordUrl: recordHref(d.recordId) };
+  });
 }
 
 export default class TimeDrive extends NavigationMixin(LightningElement) {
@@ -273,7 +277,31 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
 
   // A lens the org offers (the list, once it is here, else the built-in ones).
   offers(lens) {
-    return this.viewList.some((v) => v.value === lens);
+    return this.lensAllowed(lens) && this.viewList.some((v) => v.value === lens);
+  }
+
+  // The page's Lenses property: the lens API names it offers, separated by
+  // commas (blank: every lens the org offers). All and Overdue always stay.
+  @api
+  get lenses() {
+    return this._lenses;
+  }
+  set lenses(value) {
+    this._lenses = value;
+    if (this._viewData) this.wiredViews({ data: this._viewData });
+  }
+  _lenses;
+  _viewData;
+  get lensFilter() {
+    const names = String(this._lenses ?? "")
+      .split(",")
+      .map((n) => n.trim().toLowerCase())
+      .filter(Boolean);
+    return names.length ? new Set(names) : null;
+  }
+  lensAllowed(value) {
+    const filter = this.lensFilter;
+    return !filter || value === "All" || value === OVERDUE_VIEW || filter.has(String(value).toLowerCase());
   }
 
   async loadPreference() {
@@ -292,10 +320,20 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
         this.applyQueryChange();
       }
       // Their last lens, while the org still offers it.
+      let changed = false;
       if (!this._picked && kept?.lens && kept.lens !== this.view && this.offers(kept.lens)) {
         this.view = kept.lens;
-        this.applyQueryChange();
+        changed = true;
       }
+      // Each lens's own filter, and the lens in use's types now (unless
+      // they've filtered meanwhile).
+      this.lensHidden = this.readLensFilters(kept?.lensFilters);
+      const ownTypes = this.lensHidden.get(this.view) ?? [];
+      if (!this._typesPicked && ownTypes.length) {
+        this.hiddenTypes = new Set(ownTypes);
+        changed = true;
+      }
+      if (changed) this.applyQueryChange();
     } catch {
       // Not read: the page's own defaults stand.
     }
@@ -405,131 +443,10 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     this.chooseRange(pageMonths(this._historyYears, "back"), pageMonths(this._futureYears, "ahead"));
   }
 
-  // App Builder "Activity Actions": the record's New Task, Log a Call,
-  // Email, New Event ... as on the standard Activity component. None; One
-  // button (a + menu); Inline (a button each, among the tools); Full (a
-  // button each with its name, on a line of its own, or among the tools in
-  // a wide horizontal card). Defaults to Full.
-  @api
-  get activityActionsMode() {
-    return this._actionsMode;
-  }
-  set activityActionsMode(value) {
-    const mode = String(value ?? "").toLowerCase();
-    this._actionsMode = ACTION_MODES.includes(mode) ? mode : "full";
-  }
-  _actionsMode = "full";
-
-  // The actions, from the record's layout (see getActivityActions); none
-  // asked for when the option is None.
-  @wire(getActivityActions, { recordId: "$actionsRecordId" })
-  wiredActions({ data }) {
-    this.actions = data ?? [];
-  }
-  actions = [];
-  get actionsRecordId() {
-    // None on a phone, which has no activity buttons: nothing to ask for.
-    return this._actionsMode === "none" || isPhone() ? undefined : this.recordId;
-  }
-  get activityActions() {
-    return this.actions.map((a) => ({
-      ...a,
-      key: a.apiName,
-      label: actionLabelFor(a),
-      buttonIcon: utilityIconFor(a.icon),
-      // The action's own colour for its circle (grey if it has none).
-      style: `--action: ${a.colour || "#747474"}`
-    }));
-  }
-  // One in a narrow card, up to four in a wide one (as many as fit: their
-  // labels can be twice as long translated); the rest go in a menu beside them.
-  get actionsShownMax() {
-    return this.actionsNarrow ? NARROW_ACTIONS : Math.min(WIDE_ACTIONS, this.actionsFit);
-  }
   // The lens menu at most the card's width, less its side padding (cardWidth
   // is rounded to 40px, so a little more), as the card clips what overflows.
   get viewMenuStyle() {
     return this.cardWidth > 0 ? `--view-menu-max: ${Math.max(160, this.cardWidth - 48)}px` : "";
-  }
-  // How many Full actions fit on the title row, measured after each render
-  // (fitActions); back to all four when the card's width changes.
-  actionsFit = WIDE_ACTIONS;
-  fitActions() {
-    if (!this.fullActionsOwnRow || this.actionsNarrow || this.actionsFit <= 1) return;
-    const group = this.template.querySelector(".actions-group:not(.actions-group_skeleton)");
-    const row = group?.parentElement;
-    if (!group || !row) return;
-    const room = row.clientWidth;
-    // Wider than its row: one more action goes in the menu (and this runs
-    // again after that render, until the rest fit).
-    if (room > 0 && group.getBoundingClientRect().width > room) {
-      this.actionsFit = Math.min(this.actionsFit, this.shownActions.length) - 1;
-    }
-  }
-  // Which fit when there are too many: Log a Call and Email first, then
-  // New Event, New Task and any others; each group keeps the layout's order.
-  get keptActionKeys() {
-    const rank = (a) => {
-      const at = ACTION_PRIORITY.indexOf(a.icon?.split(":")[1]);
-      return at === -1 ? ACTION_PRIORITY.length : at;
-    };
-    const ranked = [...this.activityActions].sort((x, y) => rank(x) - rank(y));
-    return new Set(ranked.slice(0, this.actionsShownMax).map((a) => a.key));
-  }
-  get shownActions() {
-    const keep = this.keptActionKeys;
-    return this.activityActions.filter((a) => keep.has(a.key));
-  }
-  get overflowActions() {
-    const keep = this.keptActionKeys;
-    return this.activityActions.filter((a) => !keep.has(a.key));
-  }
-  get hasOverflowActions() {
-    return this.overflowActions.length > 0;
-  }
-  get actionsNarrow() {
-    return this.narrow;
-  }
-  // The title row holds the Full actions (see fullActionsOwnRow).
-  get actionsOnTitleRow() {
-    return this.fullActionsOwnRow || this.fullActionsSkeleton;
-  }
-  // With them there, the filter summary moves down beside the tools.
-  get summaryAfterTools() {
-    return !this.actionsOnTitleRow;
-  }
-  get titleRowClass() {
-    return this.actionsOnTitleRow ? "title-row title-row_actions" : "title-row";
-  }
-  get hasActivityActions() {
-    return this._actionsMode !== "none" && this.actions.length > 0;
-  }
-  // One button always folds them into the + menu; Inline does when the card
-  // is narrow.
-  get actionsAsMenu() {
-    return this._actionsMode === "one button" || (this.cardWidth > 0 && this.cardWidth < 480);
-  }
-  get showInlineActions() {
-    return this.hasActivityActions && this._actionsMode !== "full" && !isPhone();
-  }
-  // Full: on the view's line, at its end, whatever the card's width.
-  get fullActionsOwnRow() {
-    return this.hasActivityActions && this._actionsMode === "full" && !isPhone();
-  }
-  get fullActionsSkeleton() {
-    return this._actionsMode === "full" && this.firstLoad && !isPhone();
-  }
-
-  // Opens the action as Salesforce does (its own window or email composer);
-  // when it saves, the page refreshes and so does the timeline.
-  handleActivityAction(event) {
-    const apiName = event.currentTarget?.dataset?.action ?? event.detail?.value;
-    if (!apiName) return;
-    this[NavigationMixin.Navigate]({
-      type: "standard__quickAction",
-      attributes: { apiName },
-      state: { recordId: this.recordId }
-    });
   }
 
   // The whole history as per-day counts (getSummary), and the full events of
@@ -577,7 +494,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   connectedCallback() {
     // Open on the chosen lens; one that isn't a lens opens on All.
     const lens = viewFor(this.defaultLens).value;
-    if (lens !== "All" && lens === this.defaultLens) this.view = lens;
+    if (lens !== "All" && lens === this.defaultLens && this.lensAllowed(lens)) this.view = lens;
     this.syncQuery();
     // Across or down is decided by the width, which the first request depends
     // on (it asks for the days around where the timeline opens): read it now,
@@ -639,11 +556,22 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       if (this.headerMenu) this.headerMenu = null;
     };
     document.addEventListener("scroll", this._onDocumentScroll, true);
+    // Diagnostics: Ctrl+Alt+Shift+D (Ctrl+Option+Shift+D on a Mac) shows or
+    // hides the drawer, anywhere on the page (by the key, so Option's
+    // characters on a Mac don't matter).
+    this._onDiagKey = (event) => {
+      if (event.ctrlKey && event.altKey && event.shiftKey && event.code === "KeyD") {
+        event.preventDefault();
+        this.toggleDiagnostics();
+      }
+    };
+    window.addEventListener("keydown", this._onDiagKey);
   }
 
   // Width decides the layout when Layout is Auto. The observer starts once
   // the card is in the DOM.
   renderedCallback() {
+    this.noteShownHeight();
     if (isPhone()) {
       const header = this.template.querySelector(".header");
       const h = header ? Math.round(header.getBoundingClientRect().height) : 0;
@@ -662,7 +590,6 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     }
     fitIllustrations(this.template);
     this.measureBeforeFirstRequest();
-    this.fitActions();
     this.loadNeededDays();
     this.focusViewMenu();
     this.listenToWheel();
@@ -720,8 +647,6 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     const rounded = Math.round(width / 40) * 40;
     if (rounded && rounded !== this.cardWidth) {
       this.cardWidth = rounded;
-      // Measured again for the new width (see fitActions).
-      this.actionsFit = WIDE_ACTIONS;
     }
   }
 
@@ -742,6 +667,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     if (this._refreshId !== undefined) unregisterRefreshHandler(this._refreshId);
     document.removeEventListener("pointerdown", this._onDocumentPointer);
     document.removeEventListener("scroll", this._onDocumentScroll, true);
+    window.removeEventListener("keydown", this._onDiagKey);
     window.removeEventListener("resize", this._onViewport);
     window.visualViewport?.removeEventListener("resize", this._onViewport);
     this._wheelTrack?.removeEventListener("wheel", this._onTrackWheel);
@@ -837,7 +763,10 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     this._timelineKey = key;
     const seq = ++this._timelineSeq;
     const centred = this.horizontal;
-    return getTimeline({
+    // Traced while the diagnostics drawer is open.
+    const traced = this.diagOpen;
+    const started = Date.now();
+    return (traced ? getTimelineTrace : getTimeline)({
       contactId: this._recordId,
       categories: this.queryCategories,
       hiddenTypes: this.queryHidden,
@@ -850,9 +779,16 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       count: this._keepStale ? 0 : centred ? this.openingColumns : DAY_PAGE
     })
       .then((load) => {
+        if (traced) this.noteTrace("timeline", started, load?.trace);
+        // A traced load never throws: it says it failed, and the card shows
+        // its error page as for any failed load.
+        const failed = load?.trace?.failedKind;
+        if (failed) throw tracedFailure(failed);
+        this.noteRequest("timeline", started, null);
         if (seq === this._timelineSeq) this.receiveTimeline(load);
       })
       .catch((error) => {
+        this.noteRequest("timeline", started, error);
         if (seq !== this._timelineSeq) return;
         this.summaryPending = false;
         this.refreshHeight = null;
@@ -862,9 +798,89 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       });
   }
 
+  // The Overdue lens (by its API name: its label can be translated): whether it
+  // has items is asked once the timeline has loaded, as a call of its own, so
+  // the timeline never waits for it.
+  @wire(getOverdue, { recordId: "$overdueRecordId", historyYears: "$overdueHistory", futureYears: "$overdueFuture" })
+  wiredOverdue(result) {
+    this._overdueWire = result;
+    this.overdue = result.data === true;
+  }
+  overdue = false;
+  overdueRecordId;
+  overdueHistory;
+  overdueFuture;
+  // Once a load lands (and the lenses are in): new parameters ask again
+  // through the wire; the same ones after a refresh are asked again here.
+  // Either way, once. A lens switched off in Setup isn't offered, so nothing
+  // is asked at all and there's no button.
+  askOverdue() {
+    this._overdueWanted = true;
+    this.maybeAskOverdue();
+  }
+  _overdueWanted = false;
+  maybeAskOverdue() {
+    if (!this._overdueWanted || !this.views) return;
+    if (!this.offersOverdue) {
+      this.overdue = false;
+      this._overdueStale = false;
+      return;
+    }
+    const same =
+      this.overdueHistory === this.queryHistory &&
+      this.overdueFuture === this.queryFuture &&
+      this.overdueRecordId === this._recordId;
+    this.overdueHistory = this.queryHistory;
+    this.overdueFuture = this.queryFuture;
+    this.overdueRecordId = this._recordId;
+    if (same && this._overdueStale && this._overdueWire) refreshApex(this._overdueWire);
+    this._overdueStale = false;
+  }
+  _overdueStale = false;
+  get offersOverdue() {
+    return (this.views ?? []).some((v) => v.value === OVERDUE_VIEW);
+  }
+  // The Overdue button: only while the lens has items (on any lens, the
+  // Overdue lens too, where it shows pressed).
+  get showOverdueButton() {
+    return this.overdue && this.offersOverdue;
+  }
+  get overduePressed() {
+    return String(this.view === OVERDUE_VIEW);
+  }
+  get overdueButtonClass() {
+    const shape = this.narrow
+      ? " slds-button_icon slds-button_icon-border-filled overdue-button_icon"
+      : " slds-button_neutral";
+    return `slds-button${shape} overdue-button${this.view === OVERDUE_VIEW ? " overdue-button_on" : ""}`;
+  }
+  // Its tooltip: what it shows, or, pressed, where it goes back to.
+  get overdueTitle() {
+    return this.view === OVERDUE_VIEW
+      ? format(LABELS.groupBack, this.viewNamed(this.lensBeforeOverdue()).label)
+      : LABELS.buttonOverdueTitle;
+  }
+  // The lens to go back to: the one Overdue was opened from, else the page's
+  // default, else the first the org offers.
+  lensBeforeOverdue() {
+    const offered = (value) => value && value !== OVERDUE_VIEW && this.viewList.some((v) => v.value === value);
+    if (offered(this._beforeOverdue)) return this._beforeOverdue;
+    if (offered(this.defaultLens)) return this.defaultLens;
+    return this.viewList.find((v) => v.value !== OVERDUE_VIEW)?.value ?? this.view;
+  }
+  toggleOverdue() {
+    if (this.view === OVERDUE_VIEW) {
+      this.pickView(this.lensBeforeOverdue());
+      return;
+    }
+    this._beforeOverdue = this.view;
+    this.pickView(OVERDUE_VIEW);
+  }
+
   receiveTimeline(load) {
     const data = load?.summary;
     if (!data) return;
+    this.askOverdue();
     this.summaryPending = false;
     this.refreshHeight = null;
     this.error = undefined;
@@ -1020,7 +1036,9 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     const counts = new Map(wanted.map((d) => [d.key, d.count]));
     const busyKeys = over == null ? null : keys.filter((key) => (counts.get(key) ?? 0) > over);
     const version = this._queryVersion;
-    getDays({
+    const started = Date.now();
+    const traced = this.diagOpen;
+    (traced ? getPageDaysTrace : getDays)({
       contactId: this.recordId,
       categories: this.queryCategories,
       hiddenTypes: this.queryHidden,
@@ -1031,11 +1049,20 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       runs: this.runsOf(days, keys, busyKeys),
       ...this.summaryHints(wanted, keys, busyKeys)
     })
-      .then((events) => {
+      .then((answer) => {
+        let events = answer;
+        if (traced) {
+          this.noteTrace(`days (${keys.length})`, started, answer?.trace);
+          const failed = answer?.trace?.failedKind;
+          if (failed) throw tracedFailure(failed);
+          events = answer?.events ?? [];
+        }
+        this.noteRequest(`days (${keys.length})`, started, null);
         if (version !== this._queryVersion) return;
         this.ingestDays(keys, events);
       })
       .catch((error) => {
+        this.noteRequest(`days (${keys.length})`, started, error);
         if (version !== this._queryVersion) return;
         this.error = this.reportError(error);
       })
@@ -1125,14 +1152,9 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       // Its type's name and an email's subtitle in the card's own words.
       const e = ownWords(raw);
       const at = new Date(e.occurredAt);
-      // An all-day event has no time to show.
-      byDay.get(e.dayKey)?.push({
-        ...e,
-        at: at.getTime(),
-        timeText: e.allDay ? (grouped ? DAY_SHORT_FORMAT.format(at) : LABELS.allDay) : timeFormat.format(at)
-      });
+      byDay.get(e.dayKey)?.push({ ...e, at: at.getTime(), timeText: timeTextOf(e, at, grouped, timeFormat) });
     }
-    byDay.forEach((list) => list.sort((a, b) => b.at - a.at));
+    byDay.forEach((list) => list.sort(itemOrder));
     byDay.forEach((list, key) => this._dayCache.set(key, list));
     this.trimDayCache();
     this.daysLoaded++;
@@ -1559,9 +1581,10 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       typeLabel: event.typeLabel || info.label,
       nodeStyle: this.nodeStyleFor(event),
       itemStyle: this.itemStyleFor(event),
-      // Time only: the day's sticky header carries the date.
+      // Time only: the day's sticky header carries the date. A Date-only
+      // item has none, so its datetime is just its date.
       timeText: event.timeText,
-      isoTime: event.occurredAt,
+      isoTime: event.dateOnly ? isoDate(new Date(event.occurredAt)) : event.occurredAt,
       // How long ago, when the source asks for it.
       open,
       ariaExpanded: String(open),
@@ -1575,7 +1598,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       railBottomClass: `rail${last || open ? " rail_none" : ""}`,
       chevronClass: open ? "chevron chevron_open" : "chevron",
       // Numbers and money in the user's locale.
-      details: localDetails(event.details),
+      details: linkedDetails(event.details),
       hasDetails: event.details?.length > 0,
       // A fixed name; aria-expanded says whether it's open.
       toggleLabel: format(LABELS.detailsToggle, title),
@@ -1697,8 +1720,10 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   get canExpand() {
     return this.hasEvents;
   }
+  // Something to show: only when every source could be read (otherwise the
+  // error page, and with it no Today, Expand all or lite view).
   get hasEvents() {
-    return (this.summary?.total ?? 0) > 0;
+    return (this.summary?.total ?? 0) > 0 && !this.readFailed;
   }
   get hasMore() {
     return !this.horizontal && this.allDays.length > this.windowFrom + this.visibleDays;
@@ -1778,12 +1803,9 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     return this.artFor(this.problemNotice?.kind);
   }
   // What the user sees of an error: its kind in plain words and a likely
-  // cause. The technical summary (codes and messages, never a stack trace)
-  // goes to the console for whoever is debugging.
+  // cause.
   reportError(error) {
-    const described = describeError(error);
-    console.warn(`Time Drive: ${described.kind} error.`, described.detail);
-    return described;
+    return describeError(error);
   }
   get emptyHeading() {
     if (this.noSources) return LABELS.emptySetupHeading;
@@ -1816,7 +1838,24 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   // The empty and error states keep the columns' height when horizontal;
   // vertical, they're as tall as they need.
   get emptyStyle() {
+    // As tall as the timeline was when it last showed items in this layout,
+    // so an error or an empty filter doesn't change the card's height.
+    const shown = this.shownHeight?.[this.horizontal ? "h" : "v"];
+    // Horizontal: that height exactly (its illustration shrinks to fit);
+    // vertical: at least that, so a short list's words still fit.
+    if (shown) return this.horizontal ? `height: ${shown}px` : `min-height: ${shown}px`;
     return this.horizontal ? this.trackStyle : "";
+  }
+  // { h, v }: the timeline's height (track and seek bar) when it last showed
+  // items, horizontal and vertical.
+  shownHeight;
+  noteShownHeight() {
+    const frame = this.hasEvents ? this.template.querySelector(".frame") : null;
+    if (!frame) return;
+    const last = this.template.querySelector(".seek") ?? frame;
+    const height = Math.round(last.getBoundingClientRect().bottom - frame.getBoundingClientRect().top);
+    const side = this.horizontal ? "h" : "v";
+    if (height > 0 && height !== this.shownHeight?.[side]) this.shownHeight = { ...this.shownHeight, [side]: height };
   }
   // The filters hide everything shown: a source they hide isn't counted, so
   // the page can't tell that from a record with no history; it says the filters.
@@ -1829,17 +1868,15 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   get warnings() {
     return (this.summary?.warnings ?? []).map((text, i) => ({ key: `w${i}`, text }));
   }
-  // Sources that couldn't be read: one notice above what did load, or the
-  // whole canvas when nothing could be.
+  // Sources that couldn't be read: the error page names them, in place of
+  // the timeline.
   get problemNotice() {
     return describeProblems(this.summary?.problems, LIST_FORMAT);
   }
-  get allFailed() {
-    return Boolean(this.problemNotice) && !this.isFilteredOut;
+  get readFailed() {
+    return Boolean(this.problemNotice);
   }
-  get showProblemNotice() {
-    return Boolean(this.problemNotice) && this.hasEvents;
-  }
+
   get hasWarnings() {
     return this.warnings.length > 0;
   }
@@ -1851,11 +1888,21 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   @wire(getViews)
   wiredViews({ data }) {
     if (!data?.length) return;
+    this._viewData = data;
+    // The page's Lenses property narrows the org's (All and Overdue stay).
     // A lens named by a built-in label shows the card's own copy of it.
-    this.views = data.map((v) => ({ ...v, label: VIEW_LABELS[v.labelName] ?? labelNamed(v.labelName, v.label) }));
+    // All first, then Overdue, then alphabetically by the label shown (in the viewer's language).
+    const collator = new Intl.Collator(LANG, { sensitivity: "base" });
+    const place = (v) => (v.value === "All" ? 0 : v.value === "Overdue" ? 1 : 2);
+    this.views = data
+      .filter((v) => this.lensAllowed(v.value))
+      .map((v) => ({ ...v, label: VIEW_LABELS[v.labelName] ?? labelNamed(v.labelName, v.label) }))
+      .sort((a, b) => place(a) - place(b) || collator.compare(a.label, b.label));
+    // The Overdue check waits for the lenses: only an offered lens is asked about.
+    this.maybeAskOverdue();
     // A default lens the org doesn't offer (switched off since the page was
-    // built) opens on All.
-    if (!data.some((v) => v.value === this.view)) {
+    // built, or left out of the page's Lenses) opens on All.
+    if (!this.views.some((v) => v.value === this.view)) {
       this.view = "All";
       this.applyQueryChange();
     }
@@ -2041,12 +2088,56 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   handleViewPick(event) {
     const value = event.currentTarget.dataset.value;
     this.closeViewMenu(true);
+    this.pickView(value);
+  }
+  pickView(value) {
     if (value === this.view) return;
     this.view = value;
     this._picked = true;
     this.keepPreference(value, null);
-    this.hiddenTypes = new Set();
+    // Each lens keeps its own filter, as a list view does: the types hidden
+    // in it last time come back with it.
+    this.hiddenTypes = new Set(this.lensHidden.get(value) ?? []);
     this.applyQueryChange();
+  }
+
+  // ---- each lens's own filter: the event types hidden in it ------------------
+  lensHidden = new Map();
+  _typesPicked = false;
+  // "Sales=call,email;Service=case" (Time Drive Preference's Lens Filters).
+  readLensFilters(text) {
+    const out = new Map();
+    for (const part of String(text ?? "").split(";")) {
+      const [lens, types] = part.split("=");
+      const kept = String(types ?? "")
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+      if (lens?.trim() && kept.length) out.set(lens.trim(), kept);
+    }
+    return out;
+  }
+  // Fitted to the field's 255 characters: the lens in use first, then the
+  // others while they fit.
+  writeLensFilters() {
+    const entries = [...this.lensHidden.entries()].sort(([a], [b]) => (a === this.view ? -1 : b === this.view ? 1 : 0));
+    let text = "";
+    for (const [lens, types] of entries) {
+      const part = `${lens}=${types.join(",")}`;
+      const next = text ? `${text};${part}` : part;
+      if (next.length > LENS_FILTERS_MAX) continue;
+      text = next;
+    }
+    return text;
+  }
+  // The types hidden now are this lens's: kept for this person.
+  rememberLensTypes() {
+    this._typesPicked = true;
+    if (this.hiddenTypes.size) this.lensHidden.set(this.view, [...this.hiddenTypes]);
+    else this.lensHidden.delete(this.view);
+    saveLensFilters({ lensFilters: this.writeLensFilters() }).catch(() => {
+      // Not kept (no access): the filter still holds for this visit.
+    });
   }
   get filtersPanel() {
     return this.template.querySelector("c-time-drive-filters");
@@ -2056,10 +2147,26 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   markFilterPress() {
     this.filtersPanel?.notePress();
   }
-  // The panel floats by the button, wherever it is when the panel opens and
-  // as the page scrolls.
+  // The panel is a sheet over the timeline, under the header.
   toggleFilters() {
-    this.filtersPanel?.toggle(() => this.template.querySelector(".filter-button")?.getBoundingClientRect());
+    this.filtersPanel?.toggle();
+  }
+  // A wide card has the panel at its end, the types in up to three columns; a narrow
+  // one has it over the whole timeline.
+  get filtersWide() {
+    return !this.narrow;
+  }
+  // The panel asks for the height its list needs (0 once closed): a short
+  // timeline grows to it while it's open, set directly so nothing re-renders.
+  handleFiltersSize(event) {
+    const below = this.template.querySelector(".below-header");
+    if (!below) return;
+    const height = event.detail?.height;
+    // Only when it needs more than the timeline has: a list that already
+    // fits (give or take rounding) leaves the card its own height.
+    below.style.minHeight = "";
+    const own = below.getBoundingClientRect().height;
+    below.style.minHeight = height > own + 2 ? `${height}px` : "";
   }
   handleFiltersOpenChange(event) {
     const { open, returnFocus } = event.detail;
@@ -2075,6 +2182,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   handleFiltersApply(event) {
     const shown = new Set(event.detail.shown);
     this.hiddenTypes = new Set(this.typeOptions.map((o) => o.value).filter((type) => !shown.has(type)));
+    this.rememberLensTypes();
     const { back, ahead } = event.detail;
     if (Number.isInteger(back) && Number.isInteger(ahead)) this.chooseRange(back, ahead);
     this.applyQueryChange();
@@ -2082,12 +2190,172 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   // The Refresh button: the loading skeleton shows while it works, at the
   // height the timeline already has (so the card doesn't jump), then the
   // fresh days. After an error, the timeline loads again from the start.
+  // ---- diagnostics: a drawer for support ---------------------------------------
+  // What the timeline did, for a support ticket: shown by Ctrl+Alt+Shift+D.
+  // Everyone sees how the view is set (lens, filters, range), the requests it
+  // made and, once a load is traced, each source's outcome (rows, left out
+  // and why, failed). The SOQL and limits come only for admins with Time
+  // Drive Setup or a Login As session (the server decides). Never record values.
+  diagOpen = false;
+  // The traced requests, newest first: { key, label, trace }.
+  diagTraces = [];
+  diagRequests = [];
+  diagShowText = false;
+
+  toggleDiagnostics() {
+    this.diagOpen = !this.diagOpen;
+    if (this.diagOpen) {
+      // eslint-disable-next-line @lwc/lwc/no-async-operation
+      requestAnimationFrame(() => this.template.querySelector(".diag-close")?.focus());
+    }
+  }
+  closeDiagnostics() {
+    this.diagOpen = false;
+  }
+  handleDiagKey(event) {
+    if (event.key === "Escape") {
+      event.stopPropagation();
+      this.closeDiagnostics();
+    }
+  }
+  // Reloads in place, as Refresh does: with the drawer open, the load and the
+  // days it reads are traced.
+  handleDiagTrace() {
+    this.handleRefresh();
+  }
+  // The last requests, newest first: what, how long, how it ended, and the
+  // error's own words (Salesforce's, for limits and missing access, which
+  // Time Drive's code can't catch).
+  noteRequest(kind, started, error) {
+    const described = error ? describeError(error) : null;
+    const entry = {
+      key: `${started}-${kind}-${Math.random()}`,
+      kind,
+      ms: Date.now() - started,
+      at: new Date(started).toLocaleTimeString(),
+      result: described ? described.kind : "ok",
+      detail: described && !error.traced ? described.detail : ""
+    };
+    this.diagRequests = [entry, ...this.diagRequests].slice(0, 12);
+  }
+  noteTrace(label, started, trace) {
+    if (!trace) return;
+    const entry = {
+      key: `${started}-${label}-${Math.random()}`,
+      label,
+      at: new Date(started).toLocaleTimeString(),
+      trace
+    };
+    this.diagTraces = [entry, ...this.diagTraces].slice(0, 8);
+  }
+  get overdueState() {
+    const answer = this._overdueWire;
+    if (!answer) return "not asked";
+    if (answer.error) {
+      const described = describeError(answer.error);
+      return `failed (${described.kind}: ${described.detail})`;
+    }
+    return answer.data === true ? "yes" : answer.data === false ? "no" : "asking";
+  }
+  get diagView() {
+    const hidden = [...(this.hiddenTypes ?? [])];
+    const browserZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const sourcesFrom = this.diagTraces.find((t) => t.trace.sourcesFrom)?.trace.sourcesFrom;
+    return [
+      ["Record", this.recordId],
+      ["Lens", `${this.viewLabel} (${this.view})`],
+      ["Hidden types", hidden.length ? hidden.join(", ") : "none"],
+      ["Range", `history ${this.queryHistory} years, ahead ${this.queryFuture}`],
+      ["Layout", `${this.horizontal ? "horizontal" : "vertical"}, ${this.cardWidth}px wide`],
+      ["Items", `${this.summary?.total ?? 0} on ${(this.summary?.days ?? []).length} days`],
+      ["Problems", (this.summary?.problems ?? []).map((p) => `${p.source}: ${p.kind}`).join("; ") || "none"],
+      ["Warnings", (this.summary?.warnings ?? []).join("; ") || "none"],
+      [
+        "Time zone",
+        browserZone && browserZone !== USER_TIME_ZONE
+          ? `${USER_TIME_ZONE} in Salesforce, ${browserZone} on this computer (days follow Salesforce's)`
+          : USER_TIME_ZONE
+      ],
+      ["Locale", USER_LOCALE],
+      ["Overdue check", this.overdueState],
+      ["Sources from", sourcesFrom ?? "trace a load to see"]
+    ].map(([label, value]) => ({ label, value: String(value ?? "") }));
+  }
+  get diagHasTrace() {
+    return this.diagTraces.length > 0;
+  }
+  // Each traced request: its summary line, then what each source did.
+  get diagTraceBlocks() {
+    return this.diagTraces.map((entry) => {
+      const t = entry.trace;
+      const parts = [`${t.serverMs} ms on the server`];
+      if (t.failedKind) parts.push(`failed: ${t.failedKind}`);
+      if (t.full) parts.push(`CPU ${t.cpuMs} of ${t.cpuLimit} ms`, `${t.queries} of ${t.queryLimit} queries`);
+      else parts.push("SOQL, errors and limits: for admins, or Login As");
+      return {
+        key: entry.key,
+        heading: `${entry.at} · ${entry.label}`,
+        summary: parts.join(" · "),
+        lines: (t.lines ?? []).map((l, i) => ({
+          key: `${entry.key}-${i}`,
+          source: l.source,
+          kind: l.kind,
+          rows: l.rows == null ? "" : `${l.rows} rows`,
+          times: l.times > 1 ? `×${l.times}` : "",
+          soql: l.soql,
+          error: l.error
+        }))
+      };
+    });
+  }
+  // Everything in the drawer, as text for a support ticket.
+  get diagText() {
+    const out = ["Time Drive diagnostics", new Date().toISOString(), ""];
+    this.diagView.forEach((r) => out.push(`${r.label}: ${r.value}`));
+    out.push("", "Requests:");
+    this.diagRequests.forEach((r) =>
+      out.push(`  ${r.at}  ${r.kind}  ${r.ms} ms  ${r.result}${r.detail ? "  " + r.detail : ""}`)
+    );
+    this.diagTraceBlocks.forEach((b) => {
+      out.push("", `Trace ${b.heading}: ${b.summary}`);
+      b.lines.forEach((l) => {
+        out.push(`  ${l.source} · ${l.kind}${l.rows ? " · " + l.rows : ""}${l.times ? " " + l.times : ""}`);
+        if (l.soql) out.push(`    ${l.soql}`);
+        if (l.error) out.push(`    ${l.error}`);
+      });
+    });
+    return out.join("\n");
+  }
+  handleDiagCopy() {
+    const text = this.diagText;
+    const done = () =>
+      this.dispatchEvent(
+        new ShowToastEvent({
+          title: "Diagnostics copied",
+          message: "Paste them into your support request.",
+          variant: "success"
+        })
+      );
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).then(done, () => this.selectDiagText());
+    } else {
+      this.selectDiagText();
+    }
+  }
+  // Where the clipboard can't be written: the text, selected, to copy by hand.
+  selectDiagText() {
+    this.diagShowText = true;
+    // eslint-disable-next-line @lwc/lwc/no-async-operation
+    requestAnimationFrame(() => this.template.querySelector(".diag-text")?.select());
+  }
+
   handleRefresh() {
     if (this.refreshing) {
       this._refreshAgain = true;
       return;
     }
     const failed = Boolean(this.error);
+    this._overdueStale = true;
     // Across, the skeleton replaces the track (and its scroll): remember the
     // day at the view's left edge, and how far into it, to come back to.
     this._restoreAcross = failed ? null : this.placeAcross();
@@ -2120,6 +2388,8 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     this._keepStale = true;
     this.refreshing = true;
     this.updating = true;
+    // A saved task may have been the last overdue one, or a new one.
+    this._overdueStale = true;
     this.requestTimeline(true).finally(() => {
       this.refreshing = false;
       this.updating = false;
@@ -2454,6 +2724,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   // The types pill's x: every type again.
   handleTypesRemove() {
     this.hiddenTypes = new Set();
+    this.rememberLensTypes();
     this.applyQueryChange();
   }
   get typesHidden() {
@@ -2476,10 +2747,6 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   // With a pill in it, the summary lines its text up with the pill.
   get summaryClass() {
     return this.activeRange || this.typesHidden ? "summary summary_pills" : "summary";
-  }
-  // Full: the same summary on the tools' line.
-  get summaryToolsClass() {
-    return `${this.summaryClass} summary_tools`;
   }
   showMore() {
     const from = this.windowFrom + this.visibleDays;

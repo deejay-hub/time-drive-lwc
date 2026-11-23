@@ -29,14 +29,6 @@ jest.mock(
   }
 );
 jest.mock("@salesforce/apex/TimeDriveController.getPageDays", () => ({ default: jest.fn() }), { virtual: true });
-jest.mock(
-  "@salesforce/apex/TimeDriveController.getActivityActions",
-  () => {
-    const { createApexTestWireAdapter } = require("@salesforce/sfdx-lwc-jest");
-    return { default: createApexTestWireAdapter(jest.fn()) };
-  },
-  { virtual: true }
-);
 
 const today = new Intl.DateTimeFormat("en-CA", {
   timeZone: TIME_ZONE,
@@ -45,7 +37,7 @@ const today = new Intl.DateTimeFormat("en-CA", {
   day: "2-digit"
 }).format(new Date());
 
-const settle = async () => {
+const flush = async () => {
   for (let i = 0; i < 6; i++) {
     await new Promise((resolve) => setTimeout(resolve, 0));
   }
@@ -87,7 +79,7 @@ describe("c-time-drive on a phone", () => {
     element.recordId = "003000000000001AAA";
     Object.assign(element, props);
     document.body.appendChild(element);
-    await settle();
+    await flush();
     return element;
   };
 
@@ -103,21 +95,22 @@ describe("c-time-drive on a phone", () => {
     expect(root.querySelectorAll(".event-time")).toHaveLength(0);
   });
 
-  it("has a one-line header: Today and Filters, with the rest behind a menu, and no activity buttons", async () => {
-    const element = await mount({ activityActionsMode: "Full" });
+  it("has a two-row header: Today on the lens's row, Filters on the row below, the rest behind a menu", async () => {
+    const element = await mount();
     const root = element.shadowRoot;
+    expect(root.querySelector(".nav .today-button")).not.toBeNull();
+    expect(root.querySelector(".toolbar .filter-button")).not.toBeNull();
+    expect(root.querySelector(".toolbar .header-menu-button")).not.toBeNull();
     expect(root.querySelector(".lite-button")).toBeNull();
     expect(root.querySelector(".expand-button")).toBeNull();
     expect(root.querySelector('lightning-button-icon[title="Refresh"]')).toBeNull();
-    expect(root.querySelector(".actions-group")).toBeNull();
-    expect(root.querySelector(".actions-menu")).toBeNull();
     root.querySelector(".header-menu-button").click();
-    await settle();
+    await flush();
     const items = [...root.querySelectorAll(".row-popover-item")];
     expect(items.map((i) => i.textContent.trim())).toEqual(["Refresh", "Expand all", "Show times and dates"]);
     // Choosing the Lite switch brings the times back.
     items[2].click();
-    await settle();
+    await flush();
     expect(root.querySelector(".row-popover")).toBeNull();
     expect(root.querySelectorAll(".event-time").length).toBeGreaterThan(0);
   });

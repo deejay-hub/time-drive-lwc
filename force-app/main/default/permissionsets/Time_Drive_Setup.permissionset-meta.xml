@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
     <label>Time Drive Setup</label>
-    <description>The Time Drive Setup tab, for admins who manage Time Drive's sources. Saving sources also needs Customize Application.</description>
+    <description>For admins who manage Time Drive: the Time Drive Setup tab (sources, lenses, problems), and the timeline itself, so this set alone is enough.</description>
     <hasActivationRequired>false</hasActivationRequired>
+    <classAccesses>
+        <apexClass>TimeDriveController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <classAccesses>
         <apexClass>TimeDriveSetupController</apexClass>
         <enabled>true</enabled>
@@ -11,6 +15,16 @@
         <apexClass>TimeDriveLensPicklist</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>Event.Overdue__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>Task.Overdue__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
         <field>Time_Drive_Record__c.Active__c</field>
@@ -123,11 +137,6 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>Time_Drive_Record__c.Highlight_Values__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
         <field>Time_Drive_Record__c.History_Months__c</field>
         <readable>true</readable>
     </fieldPermissions>
@@ -228,6 +237,11 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
+        <field>Time_Drive_Setup__c.Hidden_Views__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
         <field>Time_Drive_Setup__c.Org_Check_Report__c</field>
         <readable>true</readable>
     </fieldPermissions>
@@ -267,15 +281,6 @@
         <modifyAllRecords>false</modifyAllRecords>
         <object>Time_Drive__c</object>
         <viewAllRecords>true</viewAllRecords>
-    </objectPermissions>
-    <objectPermissions>
-        <allowCreate>false</allowCreate>
-        <allowDelete>false</allowDelete>
-        <allowEdit>false</allowEdit>
-        <allowRead>true</allowRead>
-        <modifyAllRecords>false</modifyAllRecords>
-        <object>Time_Drive_Setup_Result__e</object>
-        <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
     <tabSettings>
         <tab>Time_Drive_Setup</tab>

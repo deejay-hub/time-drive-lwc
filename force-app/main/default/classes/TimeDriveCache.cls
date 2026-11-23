@@ -4,8 +4,14 @@
  * each page doesn't repeat them. With no capacity allocated, or no
  * partition, nothing is kept and every lookup runs as before.
  */
-public with sharing class TimeDriveCache {
-  public static final String PARTITION = 'local.TimeDrive';
+// Global: the Config Guide tells Apex sources to keep callout results here.
+global with sharing class TimeDriveCache {
+  // By the package's own namespace (drvrckt.TimeDrive): installed, 'local'
+  // isn't the package's, so a partition named that way is never found and
+  // nothing is kept. Unpackaged, 'local' is this org's.
+  public static final String PARTITION = (String.isBlank(TimeDriveConfig.NAMESPACE)
+    ? 'local'
+    : TimeDriveConfig.NAMESPACE) + '.TimeDrive';
   // How long an entry is kept, in seconds.
   public static final Integer TTL = 900;
 
@@ -19,7 +25,7 @@ public with sharing class TimeDriveCache {
    * @param key the cache key
    * @return the value, or null when none is kept
    */
-  public static Object get(String key) {
+  global static Object get(String key) {
     if (testStore != null) {
       return testStore.get(key);
     }
@@ -36,7 +42,7 @@ public with sharing class TimeDriveCache {
    * @param key the cache key
    * @param value the value to keep
    */
-  public static void put(String key, Object value) {
+  global static void put(String key, Object value) {
     if (testStore != null) {
       testStore.put(key, value);
       return;
@@ -45,7 +51,6 @@ public with sharing class TimeDriveCache {
       Cache.Org.getPartition(PARTITION).put(key, value, TTL);
     } catch (Exception e) {
       // No partition, or no room: not kept.
-      System.debug(LoggingLevel.FINE, 'Time Drive cache: not kept. ' + e.getMessage());
     }
   }
 
@@ -55,7 +60,7 @@ public with sharing class TimeDriveCache {
    * @param parts the parts to build the key from
    * @return the key
    */
-  public static String key(List<String> parts) {
+  global static String key(List<String> parts) {
     List<String> named = new List<String>();
     for (String part : parts) {
       named.add(part == null ? '' : part);

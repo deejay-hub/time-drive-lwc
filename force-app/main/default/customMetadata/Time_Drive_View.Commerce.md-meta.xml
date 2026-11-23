@@ -3,10 +3,6 @@
     <label>Commerce</label>
     <protected>false</protected>
     <values>
-        <field>Active__c</field>
-        <value xsi:type="xsd:boolean">true</value>
-    </values>
-    <values>
         <field>Menu_Label__c</field>
         <value xsi:type="xsd:string">$Label.Time_Drive_View_Commerce</value>
     </values>

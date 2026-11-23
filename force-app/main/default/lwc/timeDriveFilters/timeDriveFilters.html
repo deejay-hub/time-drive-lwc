@@ -1,6 +1,6 @@
 <template>
-  <!-- The date range and event types panel, under the toolbar's end;
-       nothing applies until Apply. -->
+  <!-- The date range and event types panel, a sheet inside the card under
+       its header; nothing applies until Apply. -->
   <template lwc:if={isOpen}>
     <div
       class={panelClass}
@@ -18,7 +18,9 @@
           <lightning-button variant="brand" label={labels.filtersApply} onclick={apply}></lightning-button>
         </template>
         <template lwc:else>
-          <h3 class="filter-title">{labels.filters}</h3>
+          <h3 class="filter-title">
+            {labels.filters}<span lwc:if={lensLabel} class="filter-lens"> · {lensLabel}</span>
+          </h3>
           <lightning-button-icon
             class="filter-close"
             icon-name="utility:close"
@@ -36,42 +38,57 @@
           <fieldset class="range-choices">
             <legend class="filter-heading">{labels.rangeHeading}</legend>
             <div class="range-sides">
-              <label class="range-side">
-                <span class="range-label">{labels.rangeBack}</span>
-                <select class="slds-select range-back" onchange={handleBack}>
-                  <template for:each={backChoices} for:item="o">
-                    <option key={o.value} value={o.value} selected={o.selected}>{o.label}</option>
-                  </template>
-                </select>
-              </label>
-              <label class="range-side">
-                <span class="range-label">{labels.rangeAhead}</span>
-                <select class="slds-select range-ahead" onchange={handleAhead}>
-                  <template for:each={aheadChoices} for:item="o">
-                    <option key={o.value} value={o.value} selected={o.selected}>{o.label}</option>
-                  </template>
-                </select>
-              </label>
+              <lightning-select
+                class="range-back"
+                label={labels.rangeBack}
+                options={backChoices}
+                value={draftBack}
+                onchange={handleBack}
+              ></lightning-select>
+              <lightning-select
+                class="range-ahead"
+                label={labels.rangeAhead}
+                options={aheadChoices}
+                value={draftAhead}
+                onchange={handleAhead}
+              ></lightning-select>
             </div>
           </fieldset>
         </template>
         <template lwc:if={hasChoices}>
-          <p class="filter-heading">{labels.filtersEventTypes}</p>
-          <lightning-input
-            class="all-types"
-            type="checkbox"
-            label={labels.typesAll}
-            checked={allChecked}
-            onchange={toggleAll}
-          ></lightning-input>
-          <lightning-checkbox-group
-            name="filter-types"
-            label={labels.filtersEventTypes}
-            variant="label-hidden"
-            options={choices}
-            value={draft}
-            onchange={handleChange}
-          ></lightning-checkbox-group>
+          <!-- Each type its own checkbox (base components), laid out in a
+               grid: two columns on a wide card, one on a narrow one. -->
+          <fieldset class="type-choices">
+            <legend class="filter-heading">{labels.filtersEventTypes}</legend>
+            <lightning-input
+              class="all-types"
+              type="checkbox"
+              label={labels.typesAll}
+              checked={allChecked}
+              onchange={toggleAll}
+            ></lightning-input>
+            <div class="type-grid">
+              <!-- The checkbox keeps its label for screen readers; the name
+                   beside it stays on one line, cut with an ellipsis (the
+                   whole name on hover), and ticks the box when clicked. -->
+              <template for:each={choices} for:item="o">
+                <div key={o.value} class="type-row">
+                  <lightning-input
+                    class="type-choice"
+                    type="checkbox"
+                    variant="label-hidden"
+                    label={o.label}
+                    checked={o.checked}
+                    data-value={o.value}
+                    onchange={handleChange}
+                  ></lightning-input>
+                  <span class="type-name" title={o.label} aria-hidden="true" data-value={o.value} onclick={toggleNamed}
+                    >{o.label}</span
+                  >
+                </div>
+              </template>
+            </div>
+          </fieldset>
         </template>
         <template lwc:else>
           <p class="filter-none">{noneText}</p>

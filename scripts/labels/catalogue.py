@@ -8,11 +8,6 @@
 LABELS = [
     # ---- the timeline: header, menus, buttons
     ("Menu_Views", "Timeline header · lens menu's name, read by screen readers only", "Views", "Vistas", "طرق العرض"),
-    ("Menu_New_Activity", "Timeline header · the + button (Activity Actions: One button): name, tooltip", "New activity", "Nueva actividad", "نشاط جديد"),
-    ("Action_New_Task", "Timeline header · activity action button: New Task", "New Task", "Nueva tarea", "مهمة جديدة"),
-    ("Action_New_Event", "Timeline header · activity action button: New Event", "New Event", "Nuevo evento", "حدث جديد"),
-    ("Action_Log_Call", "Timeline header · activity action button: Log a Call", "Log a Call", "Registrar una llamada", "تسجيل مكالمة"),
-    ("Action_Email", "Timeline header · activity action button: Email", "Email", "Correo electrónico", "بريد إلكتروني"),
     ("Row_Actions", "Item menu · the button that opens Edit and Delete on an item", "Item actions", "Acciones", "إجراءات العنصر"),
     ("Row_Checking", "Item menu · spinner while it checks what the user may do (screen readers)", "Checking what you can do…", "Comprobando lo que puedes hacer…", "جارٍ التحقق مما يمكنك فعله…"),
     ("Row_No_Actions", "Item menu · shown when the user can neither edit nor delete the item", "You can't edit or delete this item.", "No puedes editar ni eliminar este elemento.", "لا يمكنك تعديل هذا العنصر أو حذفه."),
@@ -48,6 +43,11 @@ LABELS = [
     ("Server_No_Identity_Link", "Timeline warning · no identity link object, so only one Individual is read", "No identity link object ({0}): showing engagement for the Contact’s own Individual only.", "No hay objeto de vínculo de identidad ({0}): solo se muestra la interacción del propio individuo del contacto.", "لا يوجد كائن ربط للهوية ({0}): يتم عرض تفاعل الفرد الخاص بجهة الاتصال فقط."),
     ("Server_No_Object", "Timeline warning · a source's object doesn't exist or can't be read", "{0}: there is no object called {1}.", "{0}: no existe ningún objeto llamado {1}.", "{0}: لا يوجد كائن باسم {1}."),
     ("Server_No_Field", "Timeline warning · a source's date field doesn't exist or can't be read", "{0}: {1} has no field {2}.", "{0}: {1} no tiene el campo {2}.", "{0}: لا يحتوي {1} على الحقل {2}."),
+    ("View_Overdue", "Lens name · the Overdue lens: items past their due date", "Overdue", "Vencidos", "متأخرة"),
+    ("Legend_Overdue_Tasks", "Legend and filters · open tasks past their due date", "Overdue tasks", "Tareas vencidas", "مهام متأخرة"),
+    ("Button_Overdue", "Timeline header · shown while something is overdue: opens the Overdue lens", "Overdue", "Vencidos", "متأخرة"),
+    ("Button_Overdue_Title", "Timeline header · the Overdue button's tooltip", "Show overdue items", "Mostrar elementos vencidos", "إظهار العناصر المتأخرة"),
+    ("Server_Unreadable_Dates", "Timeline warning · some of a source's items have dates that can't be read", "{0}: {1} items have a date Time Drive can’t read, so they aren’t shown.", "{0}: {1} elementos tienen una fecha que Time Drive no puede leer, así que no se muestran.", "{0}: يحتوي {1} من العناصر على تاريخ لا يستطيع Time Drive قراءته، لذا لا تُعرض."),
     ("Server_No_Link", "Timeline warning · a source has no Parent Field or junction to the page", "{0}: set a Parent Field or a Junction Object to link records to the page.", "{0}: indique un campo principal o un objeto de unión para vincular los registros con la página.", "{0}: حدّد حقلًا أصليًا أو كائن ربط لربط السجلات بالصفحة."),
     ("Server_Sent_To", "Email message item · subtitle naming its one recipient", "Sent to: {0}", "Enviado a: {0}", "أُرسل إلى: {0}"),
     ("Server_Sent_To_One_Other", "Email message item · subtitle: first recipient and one other", "Sent to: {0} and 1 other", "Enviado a: {0} y 1 más", "أُرسل إلى: {0} وشخص آخر"),
@@ -68,7 +68,6 @@ LABELS = [
     # ---- errors on the page
     ("Error_Load_Title", "Timeline error state · heading when it couldn't load", "The timeline couldn't load", "No se pudo cargar la cronología", "تعذّر تحميل الجدول الزمني"),
     ("Error_Read_Title", "Timeline error state · heading when no source could be read", "The timeline couldn't be read", "No se pudo leer la cronología", "تعذّرت قراءة الجدول الزمني"),
-    ("Error_Partial_Title", "Timeline notice · heading when some sources couldn't be read", "Some items couldn't be shown", "No se pudieron mostrar algunos elementos", "تعذّر عرض بعض العناصر"),
     # ---- email tracking
     ("Email_Opened", "Email message item · status after its title: opened", "Opened", "Abierto", "تم الفتح"),
     ("Email_Unopened", "Email message item · status after its title: not opened", "Unopened", "Sin abrir", "لم يُفتح"),

@@ -7,22 +7,18 @@
  * The Filters button stays in the timeline's button group; it calls
  * toggle(), notePress() and close(), and hears openchange.
  *
- * The panel floats over the page, fixed to the button (toggle() is given
- * where it is), so the card's clipped corners don't cut a long list short:
- * below the button, or above it when there's more room there, no taller than
- * the room, its list scrolling inside. It follows the button as the page
- * scrolls.
+ * The panel is a sheet inside the card, under its header and down to its
+ * foot: on a wide card at the card's end, the types in as many columns as fit
+ * (up to three); on a
+ * narrow one over the whole timeline, in one. It uses the card's height,
+ * scrolling only when the types are longer than that, and says how tall it
+ * would like to be (panelsize) so a short timeline can make room for it.
  */
 import { LightningElement, api } from "lwc";
 import { LABELS } from "c/timeDriveLabels";
 
-// Room kept between the panel and the button, and the window's edges (px).
-const GAP = 6;
-const MARGIN = 8;
-// Less room than this below the button, and more above: the panel opens up.
-const ENOUGH_BELOW = 240;
-// The panel's widest (18rem).
-const WIDTH = 288;
+// The most room the panel asks a short timeline for (px); past that its list scrolls.
+const MOST_ROOM = 480;
 
 export default class TimeDriveFilters extends LightningElement {
   labels = LABELS;
@@ -36,8 +32,11 @@ export default class TimeDriveFilters extends LightningElement {
   @api ahead = "";
   // What to say when there are no types to offer.
   @api noneText = "";
-  // SLDS 1's corners on the panel.
-  @api slds1 = false;
+  // The lens being filtered: each lens keeps its own filter, so the title names it.
+  @api lensLabel = "";
+  // A wide card: the panel sits at its end, the types in up to three columns; narrow,
+  // it covers the timeline, in one.
+  @api wide = false;
 
   isOpen = false;
   draft = [];
@@ -47,11 +46,8 @@ export default class TimeDriveFilters extends LightningElement {
   // draft differs from it.
   opened = [];
 
-  // anchor: where the Filters button is now (a function returning its
-  // rectangle); without one the panel sits where the page puts it.
   @api
-  toggle(anchor) {
-    this._anchor = typeof anchor === "function" ? anchor : null;
+  toggle() {
     if (this.isOpen) this.close(true);
     else this.open();
   }
@@ -60,7 +56,8 @@ export default class TimeDriveFilters extends LightningElement {
   close(returnFocus = false) {
     if (!this.isOpen) return;
     this.isOpen = false;
-    this.unfollow();
+    this._room = 0;
+    this.dispatchEvent(new CustomEvent("panelsize", { detail: { height: 0 } }));
     this.dispatchEvent(new CustomEvent("openchange", { detail: { open: false, returnFocus } }));
   }
 
@@ -77,7 +74,6 @@ export default class TimeDriveFilters extends LightningElement {
     this.draftAhead = String(this.ahead ?? "");
     this.isOpen = true;
     this._focusFirst = true;
-    this.follow();
     this.dispatchEvent(new CustomEvent("openchange", { detail: { open: true } }));
   }
 
@@ -95,66 +91,22 @@ export default class TimeDriveFilters extends LightningElement {
 
   disconnectedCallback() {
     document.removeEventListener("pointerdown", this._onDocumentPointer);
-    this.unfollow();
   }
 
-  // While open, the panel keeps to the button as the page scrolls (any
-  // scrolling box: captured) or the window changes size.
-  follow() {
-    if (this._onMove || !this._anchor) return;
-    this._onMove = () => {
-      if (this._moveFrame) return;
-      // eslint-disable-next-line @lwc/lwc/no-async-operation
-      this._moveFrame = requestAnimationFrame(() => {
-        this._moveFrame = null;
-        this.place();
-      });
-    };
-    window.addEventListener("scroll", this._onMove, true);
-    window.addEventListener("resize", this._onMove);
-  }
-  unfollow() {
-    if (!this._onMove) return;
-    window.removeEventListener("scroll", this._onMove, true);
-    window.removeEventListener("resize", this._onMove);
-    if (this._moveFrame) cancelAnimationFrame(this._moveFrame);
-    this._onMove = null;
-    this._moveFrame = null;
-  }
-
-  // Puts the panel by the button: its end edge under the button's end (start
-  // to start right to left), below it or above, inside the window.
-  place() {
+  // How tall the panel would be with nothing scrolling (its head, padding and
+  // the whole list), up to MOST_ROOM: the timeline gives it at least that.
+  measure() {
     const panel = this.template.querySelector(".filter-panel");
-    const button = this._anchor?.();
-    if (!panel || !button || !button.width) return;
-    const width = Math.min(WIDTH, window.innerWidth - 2 * MARGIN);
-    const below = window.innerHeight - button.bottom - GAP - MARGIN;
-    const above = button.top - GAP - MARGIN;
-    const up = below < ENOUGH_BELOW && above > below;
-    panel.style.width = `${width}px`;
-    panel.style.maxHeight = `${Math.max(120, up ? above : below)}px`;
-    const rtl = getComputedStyle(panel).direction === "rtl";
-    const left = Math.min(
-      Math.max(MARGIN, rtl ? button.left : button.right - width),
-      window.innerWidth - width - MARGIN
-    );
-    const top = up ? button.top - GAP - panel.offsetHeight : button.bottom + GAP;
-    panel.style.left = `${left}px`;
-    panel.style.top = `${top}px`;
-    // A transformed parent moves "fixed" off the window: put it right.
-    const at = panel.getBoundingClientRect();
-    const dx = left - at.left;
-    const dy = top - at.top;
-    if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
-      panel.style.left = `${left + dx}px`;
-      panel.style.top = `${top + dy}px`;
-    }
+    const body = this.template.querySelector(".filter-body");
+    if (!panel || !body) return;
+    const room = Math.min(MOST_ROOM, Math.ceil(panel.offsetHeight - body.clientHeight + body.scrollHeight));
+    if (room === this._room) return;
+    this._room = room;
+    this.dispatchEvent(new CustomEvent("panelsize", { detail: { height: room } }));
   }
 
   renderedCallback() {
-    // Placed before it's painted, and again as it grows or shrinks.
-    if (this.isOpen) this.place();
+    if (this.isOpen) this.measure();
     if (this._focusFirst) {
       this._focusFirst = false;
       (this.template.querySelector(".range-back") ?? this.template.querySelector(".all-types"))?.focus();
@@ -162,10 +114,11 @@ export default class TimeDriveFilters extends LightningElement {
   }
 
   get panelClass() {
-    return `filter-panel${this.slds1 ? " filter-panel_slds1" : ""}`;
+    return `filter-panel ${this.wide ? "filter-panel_wide" : "filter-panel_narrow"}`;
   }
   get choices() {
-    return (this.options ?? []).map((o) => ({ label: o.label, value: o.value }));
+    const draft = new Set(this.draft);
+    return (this.options ?? []).map((o) => ({ label: o.label, value: o.value, checked: draft.has(o.value) }));
   }
   get hasChoices() {
     return this.choices.length > 0;
@@ -174,12 +127,12 @@ export default class TimeDriveFilters extends LightningElement {
   get hasRanges() {
     return (this.backOptions ?? []).length > 1 || (this.aheadOptions ?? []).length > 1;
   }
-  // The lengths, the one picked marked selected (native selects).
+  // The lengths, for the Back and Ahead selects (the one in use is their value).
   get backChoices() {
-    return (this.backOptions ?? []).map((o) => ({ ...o, selected: o.value === this.draftBack }));
+    return (this.backOptions ?? []).map((o) => ({ label: o.label, value: o.value }));
   }
   get aheadChoices() {
-    return (this.aheadOptions ?? []).map((o) => ({ ...o, selected: o.value === this.draftAhead }));
+    return (this.aheadOptions ?? []).map((o) => ({ label: o.label, value: o.value }));
   }
   // Something was ticked or cleared, or the range changed, since the panel opened.
   get changed() {
@@ -209,14 +162,26 @@ export default class TimeDriveFilters extends LightningElement {
   toggleAll(event) {
     this.draft = event.target.checked ? this.choices.map((o) => o.value) : [];
   }
+  // One type ticked or cleared; the draft keeps the types' own order.
   handleChange(event) {
-    this.draft = event.detail.value;
+    this.setType(event.target.dataset.value, event.target.checked);
+  }
+  // A type's name clicked: as its label would, it ticks or clears the box.
+  toggleNamed(event) {
+    const value = event.currentTarget.dataset.value;
+    this.setType(value, !this.draft.includes(value));
+  }
+  setType(value, shown) {
+    const on = new Set(this.draft);
+    if (shown) on.add(value);
+    else on.delete(value);
+    this.draft = (this.options ?? []).map((o) => o.value).filter((v) => on.has(v));
   }
   handleBack(event) {
-    this.draftBack = event.target.value;
+    this.draftBack = String(event.detail?.value ?? event.target.value);
   }
   handleAhead(event) {
-    this.draftAhead = event.target.value;
+    this.draftAhead = String(event.detail?.value ?? event.target.value);
   }
   apply() {
     const shown = [...this.draft];

@@ -50,24 +50,89 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
    * @param context the request context
    * @return the rows read
    */
+  // Why this user can't see the source at all, or null when they can: its
+  // object, its date field, or a field its filter uses that they can't read.
+  // One they can't see reads as empty: it's their access working as set, not
+  // an error.
+  private static String hiddenReason(Time_Drive_Source__mdt s) {
+    if (s == null) {
+      return null;
+    }
+    // Once a request for each source (rows, counts and the Overdue check all
+    // ask): keyed by what decides it, so a draft being edited asks afresh.
+    String key = String.join(
+      new List<String>{ UserInfo.getUserId(), s.DeveloperName, s.Object_Name__c, s.Date_Field__c, s.Filter__c },
+      '|'
+    );
+    if (!hiddenBySource.containsKey(key)) {
+      hiddenBySource.put(key, findHiddenReason(s));
+    }
+    return hiddenBySource.get(key);
+  }
+
+  // Why each source is hidden from the user (null: it isn't), this request.
+  private static Map<String, String> hiddenBySource = new Map<String, String>();
+
+  private static String findHiddenReason(Time_Drive_Source__mdt s) {
+    if (!TimeDriveConfig.canRead(s.Object_Name__c)) {
+      return s.Object_Name__c;
+    }
+    if (!TimeDriveConfig.canRead(s.Object_Name__c, s.Date_Field__c)) {
+      return s.Object_Name__c + '.' + s.Date_Field__c;
+    }
+    if (String.isNotBlank(s.Filter__c)) {
+      // Without that part of the filter they'd see the wrong items.
+      List<String> filtered = new List<String>();
+      prefixed(s.Filter__c, s.Object_Name__c, '', filtered);
+      for (String field : filtered) {
+        if (!TimeDriveConfig.canRead(s.Object_Name__c, field)) {
+          return s.Object_Name__c + '.' + field;
+        }
+      }
+    }
+    return null;
+  }
+
+  // Whether the user can see the source at all.
+  private static Boolean visibleTo(Time_Drive_Source__mdt s) {
+    String reason = hiddenReason(s);
+    if (reason != null) {
+      TimeDriveQueries.record(s.DeveloperName, TimeDriveQueries.LEFT_OUT, 'can\'t read ' + reason);
+    }
+    return s != null && reason == null;
+  }
+
   public List<TimeDriveRow> getRows(TimeDriveContext context) {
     Time_Drive_Source__mdt s = context.source;
     List<TimeDriveRow> events = new List<TimeDriveRow>();
+    if (!visibleTo(s)) {
+      return events;
+    }
     Query q = new Query(context);
     if (q.link == null) {
       return events;
     }
 
     Set<String> fields = new Set<String>{ 'Id', s.Date_Field__c };
-    fields.addAll(TimeDrivePlotter.tokens(s.Title__c));
-    fields.addAll(TimeDrivePlotter.tokens(s.Subtitle__c));
+    // Each way an item can be dated, and what decides which applies.
+    fields.addAll(q.caseFields(q.datePrefix));
+    // What's shown (title, subtitle, details, highlights): only the fields
+    // this user can read; the rest show blank.
+    Set<String> shown = new Set<String>();
+    shown.addAll(TimeDrivePlotter.tokens(s.Title__c));
+    shown.addAll(TimeDrivePlotter.tokens(s.Subtitle__c));
     for (String extra : new List<String>{ s.Id_Field__c, s.Record_Id_Field__c }) {
       if (String.isNotBlank(extra)) {
         fields.add(extra);
       }
     }
     for (Time_Drive_Detail_Field__mdt d : context.detailFields()) {
-      fields.add(d.Field__c);
+      shown.add(d.Field__c);
+      // The record a detail through a lookup names, for the card to link to.
+      String link = TimeDrivePlotter.linkPathOf(s.Object_Name__c, d.Field__c);
+      if (link != null) {
+        shown.add(link);
+      }
     }
     // Where the org has several currencies, each record's own, so its money shows in it.
     if (
@@ -77,17 +142,34 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
       fields.add('CurrencyIsoCode');
     }
     // What the highlights read.
-    fields.addAll(TimeDriveHighlights.fieldsOf(context.highlightRules()));
+    shown.addAll(TimeDriveHighlights.fieldsOf(context.highlightRules()));
+    // Left out: the rows say blank for these without asking the record.
+    Set<String> leftOut = new Set<String>();
+    for (String field : shown) {
+      if (String.isBlank(field)) {
+        continue;
+      }
+      if (TimeDriveConfig.canRead(s.Object_Name__c, field)) {
+        fields.add(field);
+      } else {
+        leftOut.add(field.toLowerCase());
+      }
+    }
     // Events say whether they're all day (shown instead of a time).
     if (TimeDriveConfig.dateOwner(s) == 'Event') {
       fields.add(TimeDriveConfig.datePrefix(s) + 'IsAllDayEvent');
     }
 
-    String conditions = q.conditions(context.spans());
     // A page (View all): newest first by date then Id, after the last one
     // shown, so a page never skips or repeats an item, however many share
     // a moment.
     Boolean paging = context.pageSize != null;
+    // A source dated more than one way (open and completed tasks): one keyset
+    // query for each way, merged by the moment each item plots at.
+    if (paging && q.cases.size() > 1) {
+      return pagedByCase(context, q, fields, leftOut);
+    }
+    String conditions = q.conditions(context.spans());
     if (paging && context.pageAt != null) {
       q.binds.put('pageAt', q.dateOnly ? (Object) context.pageAt.date() : context.pageAt);
       q.binds.put('pageId', context.pageId);
@@ -111,16 +193,250 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
     List<SObject> rows;
     try {
       rows = Database.queryWithBinds(soql, q.binds, AccessLevel.USER_MODE);
-      TimeDriveQueries.record(s.DeveloperName, paging ? 'rows (page)' : 'rows', soql);
+      TimeDriveQueries.record(s.DeveloperName, paging ? 'rows (page)' : 'rows', soql, rows.size());
     } catch (Exception e) {
       TimeDriveQueries.record(s.DeveloperName, 'rows', soql);
       context.fail(s.Label, e);
       return events;
     }
     for (SObject row : rows) {
-      events.add(new TimeDriveRow(row));
+      events.add(new TimeDriveRow(row).leaveOut(leftOut));
     }
+    q.plotDates(events, context);
     return events;
+  }
+
+  // One page of a source with several date cases: each case read by its own
+  // keyset (its date, then Id, after the cursor), the reads merged newest
+  // first (by the moment each plots at, then Id) and cut to the page.
+  // The names are checked field paths; values are bound; user mode.
+  @SuppressWarnings('PMD.ApexSOQLInjection')
+  private List<TimeDriveRow> pagedByCase(TimeDriveContext context, Query q, Set<String> fields, Set<String> leftOut) {
+    Time_Drive_Source__mdt s = context.source;
+    List<RowOrder> merged = new List<RowOrder>();
+    for (Integer k = 0; k < q.cases.size(); k++) {
+      DateCase dc = q.cases[k];
+      String ref = q.datePrefix + dc.field;
+      String soql =
+        'SELECT ' +
+        String.join(unique(fields), ', ') +
+        ' FROM ' +
+        s.Object_Name__c +
+        ' WHERE ' +
+        q.conditions(context.spans(), false, k) +
+        q.pageAfter(dc, ref, context) +
+        ' ORDER BY ' +
+        ref +
+        ' DESC NULLS LAST, Id DESC LIMIT ' +
+        context.pageSize +
+        q.allRows();
+      List<SObject> read;
+      try {
+        read = Database.queryWithBinds(soql, q.binds, AccessLevel.USER_MODE);
+        TimeDriveQueries.record(s.DeveloperName, 'rows (page)', soql, read.size());
+      } catch (Exception e) {
+        TimeDriveQueries.record(s.DeveloperName, 'rows (page)', soql);
+        context.fail(s.Label, e);
+        return new List<TimeDriveRow>();
+      }
+      List<TimeDriveRow> rows = new List<TimeDriveRow>();
+      for (SObject row : read) {
+        rows.add(new TimeDriveRow(row).leaveOut(leftOut));
+      }
+      q.plotDates(rows, context);
+      for (TimeDriveRow row : rows) {
+        merged.add(new RowOrder(row, TimeDrivePlotter.instant(row.get(PLOT_KEY)), String.valueOf(row.get('Id'))));
+      }
+    }
+    merged.sort();
+    List<TimeDriveRow> out = new List<TimeDriveRow>();
+    for (Integer i = 0; i < merged.size() && i < context.pageSize; i++) {
+      out.add(merged[i].row);
+    }
+    return out;
+  }
+
+  // Rows newest first by the moment they plot at, then by Id (the keyset's order).
+  private class RowOrder implements Comparable {
+    TimeDriveRow row;
+    Datetime at;
+    String id;
+
+    RowOrder(TimeDriveRow row, Datetime at, String id) {
+      this.row = row;
+      this.at = at;
+      this.id = id;
+    }
+
+    public Integer compareTo(Object other) {
+      RowOrder that = (RowOrder) other;
+      if (at != that.at) {
+        return at == null ? 1 : (that.at == null ? -1 : (at > that.at ? -1 : 1));
+      }
+      return id == that.id ? 0 : (id > that.id ? -1 : 1);
+    }
+  }
+
+  // The key each row's date is given to the plotter under, when the source
+  // has several date cases (not a field name, so it can't clash with one).
+  @TestVisible
+  private static final String PLOT_KEY = 'timedrive:when';
+
+  /**
+   * One way a source's items are dated: a field, and when it applies (a flag,
+   * and whether another field is set). Event has two: a timed event by its
+   * start and an all-day one by its date (its start is midnight GMT, the day
+   * before west of it). A task is always dated by its due date (ActivityDate),
+   * open or done: when it was completed is only when it was saved so, which
+   * for logged or imported history is the day it was entered.
+   * Rows, counts and pages all use the same cases, so a count and its items
+   * always fall on the same day.
+   */
+  @TestVisible
+  private class DateCase {
+    String field;
+    Boolean dateOnly;
+    Boolean nullable;
+    String flag;
+    Boolean flagIs;
+    String present;
+    Boolean presentIs;
+
+    DateCase(String field, Boolean dateOnly, Boolean nullable) {
+      this.field = field;
+      this.dateOnly = dateOnly;
+      this.nullable = nullable;
+    }
+
+    DateCase onlyWhen(String flag, Boolean flagIs) {
+      this.flag = flag;
+      this.flagIs = flagIs;
+      return this;
+    }
+
+    DateCase onlyIfSet(String present, Boolean presentIs) {
+      this.present = present;
+      this.presentIs = presentIs;
+      return this;
+    }
+
+    // The case's own condition, its fields under the prefix; blank when it
+    // has none (a source dated one way, whose field can't be empty).
+    String clause(String prefix) {
+      List<String> parts = new List<String>();
+      if (flag != null) {
+        parts.add(prefix + flag + ' = ' + flagIs);
+      }
+      if (present != null) {
+        parts.add(prefix + present + (presentIs ? ' != null' : ' = null'));
+      }
+      if (nullable) {
+        parts.add(prefix + field + ' != null');
+      }
+      return String.join(parts, ' AND ');
+    }
+
+    // Whether a row read is this case's (the same test as the clause).
+    Boolean matches(TimeDriveRow row, String prefix) {
+      if (flag != null && (row.get(prefix + flag) == true) != flagIs) {
+        return false;
+      }
+      return present == null || (row.get(prefix + present) != null) == presentIs;
+    }
+  }
+
+  /**
+   * How a source's items are dated, by its date field and the object it
+   * belongs to: Event StartDateTime (or ActivityDateTime) has its own cases
+   * (see DateCase); any other field is just itself.
+   */
+  @TestVisible
+  private static List<DateCase> dateCases(String dateOwner, String ownField, Boolean dateOnly, Boolean nullable) {
+    String f = ownField.toLowerCase();
+    if (dateOwner == 'Event' && (f == 'startdatetime' || f == 'activitydatetime')) {
+      return new List<DateCase>{
+        new DateCase(ownField, false, nullable).onlyWhen('IsAllDayEvent', false),
+        new DateCase('ActivityDate', true, true).onlyWhen('IsAllDayEvent', true)
+      };
+    }
+    return new List<DateCase>{ new DateCase(ownField, dateOnly, nullable) };
+  }
+
+  /**
+   * Whether any of these sources has an item in its context's window, for a
+   * button that only needs yes or no. Sources on the same object are asked in
+   * one query (their conditions joined with OR, LIMIT 1), each object in turn,
+   * stopping at the first that has one: one query per object, except that a
+   * source linked through a junction (Id IN (SELECT ...)) is asked on its own,
+   * as SOQL allows no sub-select inside OR.
+   *
+   * @param contexts the sources' contexts
+   * @return true when one has an item
+   */
+  // The names are checked field paths and object names; values are bound
+  // (each source's binds renamed apart); the query runs in user mode.
+  @SuppressWarnings('PMD.ApexSOQLInjection, PMD.OperationWithLimitsInLoop')
+  public static Boolean anyOf(List<TimeDriveContext> contexts) {
+    Map<String, List<String>> conditions = new Map<String, List<String>>();
+    Map<String, String> objects = new Map<String, String>();
+    Map<String, String> endings = new Map<String, String>();
+    Map<String, Object> binds = new Map<String, Object>();
+    Integer k = 0;
+    for (TimeDriveContext context : contexts) {
+      // One source that can't be asked (its junction isn't in this org, a
+      // field gone) leaves the others to answer.
+      Query q;
+      String condition;
+      try {
+        if (!visibleTo(context.source)) {
+          continue;
+        }
+        q = new Query(context);
+        if (q.link == null) {
+          continue;
+        }
+        condition = q.conditions(context.spans());
+      } catch (Exception e) {
+        continue;
+      }
+      // Each source's binds under a name of its own (s0_parentId, s1_since0 ...).
+      String prefix = 's' + k + '_';
+      for (String key : q.binds.keySet()) {
+        condition = condition.replaceAll(':' + key + '\\b', ':' + prefix + key);
+        binds.put(prefix + key, q.binds.get(key));
+      }
+      String objectName = context.source.Object_Name__c;
+      // A sub-select can't sit inside OR: that source is a query of its own.
+      Boolean alone = condition.containsIgnoreCase('(SELECT ');
+      String bucket = objectName + q.allRows() + (alone ? '#' + k : '');
+      if (!conditions.containsKey(bucket)) {
+        conditions.put(bucket, new List<String>());
+        objects.put(bucket, objectName);
+        endings.put(bucket, q.allRows());
+      }
+      conditions.get(bucket).add(condition);
+      k++;
+    }
+    for (String bucket : conditions.keySet()) {
+      String soql =
+        'SELECT Id FROM ' +
+        objects.get(bucket) +
+        ' WHERE (' +
+        String.join(conditions.get(bucket), ') OR (') +
+        ') LIMIT 1' +
+        endings.get(bucket);
+      try {
+        List<SObject> found = Database.queryWithBinds(soql, binds, AccessLevel.USER_MODE);
+        TimeDriveQueries.record(objects.get(bucket), 'any', soql);
+        if (!found.isEmpty()) {
+          return true;
+        }
+      } catch (Exception e) {
+        // One object that can't be asked doesn't stop the others.
+        TimeDriveQueries.record(objects.get(bucket), 'any', soql);
+      }
+    }
+    return false;
   }
 
   /**
@@ -132,13 +448,20 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
    * @return the count for each period that has records
    */
   public List<TimeDriveContext.DayCount> countDays(TimeDriveContext context, String unit) {
+    if (!visibleTo(context.source)) {
+      return new List<TimeDriveContext.DayCount>();
+    }
     Query q = new Query(context);
     if (q.link == null) {
       return new List<TimeDriveContext.DayCount>();
     }
     Time_Drive_Source__mdt s = context.source;
+    // Dated more than one way: each case counted by its own date, added up.
+    if (q.cases.size() > 1) {
+      return countByCase(context, q, unit);
+    }
     // Through the junction when the source has one (see Query.countsViaJunction).
-    SourceCount counted = new SourceCount(q);
+    SourceCount counted = new SourceCount(q, null);
     counted.label = s.Label;
     counted.sourceName = s.DeveloperName;
     counted.objectName = q.countsViaJunction ? q.countObject : s.Object_Name__c;
@@ -178,20 +501,57 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
      * @param spans the spans to count in
      * @return the condition, without WHERE
      */
-    public abstract String conditions(List<TimeDriveController.TimeWindow> spans);
+    public abstract String conditions(List<TimeDriveContext.Span> spans);
   }
 
-  // A source's own query, through its junction when it counts through one.
+  // A source's own query, through its junction when it counts through one;
+  // one of its date cases only, when caseIndex is set.
   private class SourceCount extends CountedQuery {
     private Query q;
+    private Integer caseIndex;
 
-    SourceCount(Query q) {
+    SourceCount(Query q, Integer caseIndex) {
       this.q = q;
+      this.caseIndex = caseIndex;
     }
 
-    public override String conditions(List<TimeDriveController.TimeWindow> spans) {
-      return q.conditions(spans, q.countsViaJunction);
+    public override String conditions(List<TimeDriveContext.Span> spans) {
+      return q.conditions(spans, q.countsViaJunction, caseIndex);
     }
+  }
+
+  // A source dated more than one way, counted case by case and added up by
+  // period, so each item is counted on the day it plots on.
+  private List<TimeDriveContext.DayCount> countByCase(TimeDriveContext context, Query q, String unit) {
+    Time_Drive_Source__mdt s = context.source;
+    String owner = TimeDriveConfig.dateOwner(s);
+    Map<String, TimeDriveContext.DayCount> byPeriod = new Map<String, TimeDriveContext.DayCount>();
+    for (Integer k = 0; k < q.cases.size(); k++) {
+      DateCase dc = q.cases[k];
+      SourceCount counted = new SourceCount(q, k);
+      counted.label = s.Label;
+      counted.sourceName = s.DeveloperName;
+      counted.objectName = q.countsViaJunction ? q.countObject : s.Object_Name__c;
+      counted.dateRef = (q.countsViaJunction ? q.countPrefix : '') + q.datePrefix + dc.field;
+      counted.dateOnly = dc.dateOnly;
+      counted.groupsByPeriod =
+        !dc.dateOnly ||
+        unit == TimeDriveContext.UNIT_DAY ||
+        unit == TimeDriveContext.UNIT_HOUR ||
+        acceptsDateFunctions(s.Object_Name__c, q.datePrefix + dc.field, owner);
+      counted.binds = q.binds;
+      counted.allRows = q.allRows();
+      for (TimeDriveContext.DayCount c : countGrouped(counted, context.spans(), unit)) {
+        String key = c.dayKey + '|' + c.hour;
+        TimeDriveContext.DayCount same = byPeriod.get(key);
+        if (same == null) {
+          byPeriod.put(key, c);
+        } else {
+          same.count += c.count;
+        }
+      }
+    }
+    return byPeriod.values();
   }
 
   /**
@@ -213,7 +573,7 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
   @SuppressWarnings('PMD.OperationWithLimitsInLoop, PMD.ApexSOQLInjection')
   public static List<TimeDriveContext.DayCount> countGrouped(
     CountedQuery q,
-    List<TimeDriveController.TimeWindow> spans,
+    List<TimeDriveContext.Span> spans,
     String unit
   ) {
     List<TimeDriveContext.DayCount> counts = new List<TimeDriveContext.DayCount>();
@@ -241,10 +601,10 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
       selected.add(groups[i] + ' g' + i);
     }
 
-    for (List<TimeDriveController.TimeWindow> batch : batches(spans, daysPerBatch(grain))) {
+    for (List<TimeDriveContext.Span> batch : batches(spans, daysPerBatch(grain))) {
       String conditions = q.conditions(batch);
       Integer most = 0;
-      for (TimeDriveController.TimeWindow span : batch) {
+      for (TimeDriveContext.Span span : batch) {
         most += TimeDriveContext.periods(span.since.date(), lastDay(span), grain);
       }
       if (Limits.getQueryRows() + most > Limits.getLimitQueryRows()) {
@@ -378,26 +738,23 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
     return MAX_GROUPS;
   }
 
-  private static Date lastDay(TimeDriveController.TimeWindow span) {
+  private static Date lastDay(TimeDriveContext.Span span) {
     return span.until == null ? Date.today() : span.until.date();
   }
 
   // Spans in batches of at most maxDays days, long spans split to fit.
   @TestVisible
-  private static List<List<TimeDriveController.TimeWindow>> batches(
-    List<TimeDriveController.TimeWindow> spans,
-    Integer maxDays
-  ) {
-    List<List<TimeDriveController.TimeWindow>> result = new List<List<TimeDriveController.TimeWindow>>();
-    List<TimeDriveController.TimeWindow> batch = new List<TimeDriveController.TimeWindow>();
+  private static List<List<TimeDriveContext.Span>> batches(List<TimeDriveContext.Span> spans, Integer maxDays) {
+    List<List<TimeDriveContext.Span>> result = new List<List<TimeDriveContext.Span>>();
+    List<TimeDriveContext.Span> batch = new List<TimeDriveContext.Span>();
     Integer used = 0;
-    for (TimeDriveController.TimeWindow span : spans) {
+    for (TimeDriveContext.Span span : spans) {
       Date first = span.since.date();
       Date last = span.until == null ? Date.today() : span.until.date();
       while (first <= last) {
         if (used >= maxDays) {
           result.add(batch);
-          batch = new List<TimeDriveController.TimeWindow>();
+          batch = new List<TimeDriveContext.Span>();
           used = 0;
         }
         Date stop = first.addDays(maxDays - used - 1);
@@ -405,7 +762,7 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
           stop = last;
         }
         batch.add(
-          new TimeDriveController.TimeWindow(
+          new TimeDriveContext.Span(
             first == span.since.date() ? span.since : Datetime.newInstance(first, Time.newInstance(0, 0, 0, 0)),
             stop == last ? span.until : Datetime.newInstance(stop, Time.newInstance(23, 59, 59, 999))
           )
@@ -436,6 +793,11 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
    */
   @TestVisible
   private static String prefixed(String filter, String objectName, String prefix) {
+    return prefixed(filter, objectName, prefix, null);
+  }
+
+  // As above, adding each field the filter names to found (when given).
+  private static String prefixed(String filter, String objectName, String prefix, List<String> found) {
     String out = '';
     Integer i = 0;
     Integer n = filter.length();
@@ -485,6 +847,9 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
           out += word;
         } else if (TimeDriveConfig.pathField(objectName, word) != null) {
           out += prefix + word;
+          if (found != null) {
+            found.add(word);
+          }
         } else if (
           word == word.toUpperCase() &&
           (lower.startsWith('last_') ||
@@ -571,6 +936,8 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
     Boolean countsViaJunction = false;
     String link;
     Map<String, Object> binds = new Map<String, Object>();
+    // How its items are dated (see DateCase): one case for most sources.
+    List<DateCase> cases = new List<DateCase>();
 
     Query(TimeDriveContext context) {
       s = context.source;
@@ -597,6 +964,9 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
       datePrefix = TimeDriveConfig.datePrefix(s);
       archivable = ARCHIVED_OBJECTS.contains(dateOwner);
       ownDeletable = TimeDriveConfig.fieldMap(s.Object_Name__c).containsKey('isdeleted');
+      // The date's own name on its object (Task.ActivityDate is ActivityDate on Task).
+      String ownField = s.Date_Field__c.contains('.') ? s.Date_Field__c.substringAfterLast('.') : s.Date_Field__c;
+      cases = dateCases(dateOwner, ownField, dateOnly, dateNullable);
 
       Schema.DescribeFieldResult linkField;
       if (!useJunction(s) && String.isNotBlank(s.Parent_Field__c)) {
@@ -674,24 +1044,37 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
 
     // The link, the dates (any of the spans) and the Filter, binding each
     // span's ends as since0/until0, since1/until1 ...
-    String conditions(List<TimeDriveController.TimeWindow> spans) {
+    String conditions(List<TimeDriveContext.Span> spans) {
       return conditions(spans, false);
     }
 
     // The same written for the junction (see countsViaJunction) when asked.
-    String conditions(List<TimeDriveController.TimeWindow> spans, Boolean viaJunction) {
+    String conditions(List<TimeDriveContext.Span> spans, Boolean viaJunction) {
+      return conditions(spans, viaJunction, null);
+    }
+
+    // Every date case's dates (any of them), or just one case's when only is set.
+    String conditions(List<TimeDriveContext.Span> spans, Boolean viaJunction, Integer only) {
       String p = viaJunction ? countPrefix : '';
-      String dateRef = p + s.Date_Field__c;
+      String base = p + datePrefix;
       List<String> dates = new List<String>();
-      for (TimeDriveController.TimeWindow span : spans) {
-        Integer i = binds.size();
-        String clause = dateRef + ' >= :since' + i;
-        binds.put('since' + i, dateOnly ? (Object) span.since.date() : span.since);
-        if (span.until != null) {
-          clause += ' AND ' + dateRef + ' <= :until' + i;
-          binds.put('until' + i, dateOnly ? (Object) span.until.date() : span.until);
+      for (Integer k = 0; k < cases.size(); k++) {
+        if (only != null && only != k) {
+          continue;
         }
-        dates.add('(' + clause + ')');
+        DateCase dc = cases[k];
+        String dateRef = base + dc.field;
+        String own = dc.clause(base);
+        for (TimeDriveContext.Span span : spans) {
+          Integer i = binds.size();
+          String clause = dateRef + ' >= :since' + i;
+          binds.put('since' + i, dc.dateOnly ? (Object) span.since.date() : span.since);
+          if (span.until != null) {
+            clause += ' AND ' + dateRef + ' <= :until' + i;
+            binds.put('until' + i, dc.dateOnly ? (Object) span.until.date() : span.until);
+          }
+          dates.add('(' + (String.isBlank(own) ? '' : own + ' AND ') + clause + ')');
+        }
       }
       String deleted = '';
       if (archivable) {
@@ -704,14 +1087,69 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
           datePrefix +
           'IsDeleted = false AND ';
       }
+      // Only what has a date: each case leaves out the empty ones (see DateCase.clause).
       return deleted +
         (viaJunction ? countLink : link) +
-        // Only what has a date: the metadata says which fields can be empty.
-        (dateNullable ? ' AND ' + dateRef + ' != null' : '') +
         ' AND (' +
         String.join(dates, ' OR ') +
         ')' +
         (String.isBlank(s.Filter__c) ? '' : ' AND (' + (viaJunction ? countFilter : s.Filter__c) + ')');
+    }
+
+    // What the date cases read: their dates, and the flags that choose between them.
+    Set<String> caseFields(String prefix) {
+      Set<String> out = new Set<String>();
+      for (DateCase dc : cases) {
+        out.add(prefix + dc.field);
+        if (dc.flag != null) {
+          out.add(prefix + dc.flag);
+        }
+        if (dc.present != null) {
+          out.add(prefix + dc.present);
+        }
+      }
+      return out;
+    }
+
+    // Each row's date, from the case it falls in, for the plotter (a source
+    // dated one way plots by its field, as it always has).
+    void plotDates(List<TimeDriveRow> rows, TimeDriveContext context) {
+      if (cases.size() < 2) {
+        return;
+      }
+      context.plotDateKey = PLOT_KEY;
+      for (TimeDriveRow row : rows) {
+        for (DateCase dc : cases) {
+          if (dc.matches(row, datePrefix)) {
+            row.put(PLOT_KEY, row.get(datePrefix + dc.field));
+            break;
+          }
+        }
+      }
+    }
+
+    // After a View all page's cursor, for one date case: items that plot
+    // before it, or at it with a smaller Id. A date-only case plots at midday
+    // on its day, so its whole day is before, after or at the cursor.
+    String pageAfter(DateCase dc, String ref, TimeDriveContext context) {
+      if (context.pageAt == null) {
+        return '';
+      }
+      binds.put('pageId', context.pageId);
+      if (!dc.dateOnly) {
+        binds.put('pageAt', context.pageAt);
+        return ' AND (' + ref + ' < :pageAt OR (' + ref + ' = :pageAt AND Id < :pageId))';
+      }
+      Date day = context.pageAt.date();
+      Datetime midday = Datetime.newInstance(day, Time.newInstance(12, 0, 0, 0));
+      binds.put('pageDay', day);
+      if (context.pageAt > midday) {
+        return ' AND ' + ref + ' <= :pageDay';
+      }
+      if (context.pageAt < midday) {
+        return ' AND ' + ref + ' < :pageDay';
+      }
+      return ' AND (' + ref + ' < :pageDay OR (' + ref + ' = :pageDay AND Id < :pageId))';
     }
   }
 }

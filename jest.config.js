@@ -7,9 +7,9 @@ module.exports = {
   moduleNameMapper: {
     ...jestConfig.moduleNameMapper,
     // Lightning modules sfdx-lwc-jest doesn't stub.
-    "^lightning/uiLayoutApi$": "<rootDir>/jest-mocks/lightning/uiLayoutApi",
     "^lightning/modal$": "<rootDir>/jest-mocks/lightning/modal",
-    "^lightning/illustration$": "<rootDir>/jest-mocks/lightning/illustration"
+    "^lightning/illustration$": "<rootDir>/jest-mocks/lightning/illustration",
+    "^lightning/select$": "<rootDir>/jest-mocks/lightning/select"
   },
   modulePathIgnorePatterns: ["<rootDir>/.localdevserver"]
 };

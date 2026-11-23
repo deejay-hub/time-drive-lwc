@@ -245,112 +245,6 @@
   gap: 0.25rem;
 }
 
-/* The record's activity actions: separate buttons, a little apart (each
-   makes a different record), before the timeline's own tools. */
-.actions {
-  display: flex;
-  flex-shrink: 0;
-  gap: 0.25rem;
-}
-
-/* Full: a button group (and an overflow menu at its end), at the
-   end of the view's line; the tools wrap to the line below, at its end. */
-.actions-group {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: 0.25rem;
-  margin-inline-start: auto;
-  height: 2rem;
-  /* Never narrower than the group (the title row wraps instead); a hairline
-     of room so its end border isn't cut. */
-  padding-inline-end: 1px;
-}
-
-.actions-group_skeleton {
-  gap: 0.5rem;
-}
-
-/* Full: the view and the actions, then (after the break) the filter summary
-   on the left and the tools on the right, wrapping if they can't share. */
-.row-break {
-  flex: 0 0 100%;
-  height: 0;
-}
-
-.title-row_actions .summary_tools {
-  flex: 1 1 10rem;
-  min-width: 0;
-}
-
-.title-row_actions .toolbar {
-  margin-inline-start: auto;
-}
-
-.skeleton_pill_wide {
-  display: block;
-  width: 6.5rem;
-  height: 2rem;
-  border-radius: 9999px;
-}
-
-/* An action: a bordered button, as the base button icons beside it,
-   holding the action's coloured circle with a white icon. */
-.action-circle {
-  display: grid;
-  flex-shrink: 0;
-  place-items: center;
-  width: 2rem;
-  height: 2rem;
-  padding: 0;
-  border: 1px solid var(--slds-g-color-border-2, #c9c9c9);
-  border-radius: var(--slds-g-radius-border-circle, 9999px);
-  background: transparent;
-  cursor: pointer;
-  /* SLDS 2's button motion: lifts on hover, settles in when pressed. */
-  transition:
-    transform 0.15s ease-in-out,
-    box-shadow 0.15s ease-in-out;
-}
-
-.action-circle:hover {
-  transform: translateY(-1.5px);
-  box-shadow: 0 1.5px 0 0 var(--time-drive-press-edge, #2e2e2e);
-}
-
-.action-circle:active {
-  transform: none;
-  box-shadow:
-    inset 2px 2px 5px 0 rgb(0 0 0 / 0.08),
-    inset 0 0.5px 2px 0 rgb(0 0 0 / 0.35),
-    inset 0 1px 0 0 rgb(0 0 0 / 0.15);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .action-circle {
-    transition: none;
-  }
-
-  .action-circle:hover {
-    transform: none;
-  }
-}
-
-.action-circle:focus-visible {
-  outline: 2px solid var(--slds-g-color-accent-2, #0b5cab);
-  outline-offset: 2px;
-}
-
-/* The circle nearly fills the button: a hairline of space inside the border. */
-.action-circle-disc {
-  display: grid;
-  place-items: center;
-  width: calc(100% - 2px);
-  height: calc(100% - 2px);
-  border-radius: 9999px;
-  background: var(--action);
-}
-
 /* Today's day (week, month), whether it has items or is the placeholder:
    it stands out in green (SLDS's success green), on the canvas and on the
    heatmaps. */
@@ -429,7 +323,6 @@
 .card.card_slds1,
 .card_slds1 .view-menu,
 .card_slds1 .event_open,
-.card_slds1 .issue,
 .card_slds1 .warning,
 .card_slds1 .scrub-bubble,
 .card_slds1 .seek-bubble {
@@ -441,18 +334,47 @@
 .card_slds1 .skeleton_node {
   border-radius: 0.25rem;
 }
-.card_slds1 .action-circle {
-  border-radius: 0.25rem;
+
+/* Today and Overdue: at the end of the lens's line, a little apart. */
+.nav {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.25rem;
+  margin-inline-start: auto;
 }
-.card_slds1 .action-circle-disc {
-  border-radius: 0.1875rem;
+.nav:empty {
+  display: none;
 }
 
-.action-circle-disc lightning-icon {
+/* Overdue: SLDS's neutral button in its warning colours: something to look
+   at, not an error or a delete (red is theirs). Text at least 4.5:1 on its
+   fill; pressed, on the Overdue lens, filled. */
+.overdue-button {
+  border-color: light-dark(#dd7a01, #fe9339);
+  background: light-dark(#fdf3e7, #3d2a12);
+  color: light-dark(#8c4b02, #ffba90);
+  --slds-c-icon-color-foreground-default: currentColor;
+  --slds-c-icon-color-foreground: currentColor;
+}
+.overdue-button:hover {
+  border-color: light-dark(#a96404, #ffba90);
+  background: light-dark(#fbe7cf, #4d3518);
+  color: light-dark(#5f3e02, #ffd4b8);
+}
+.overdue-button_on,
+.overdue-button_on:hover {
+  border-color: light-dark(#a96404, #fe9339);
+  background: light-dark(#a96404, #fe9339);
+  color: light-dark(#fff, #1f1200);
+}
+.overdue-button:focus-visible {
+  outline: 2px solid var(--slds-g-color-accent-2, #0b5cab);
+  outline-offset: 2px;
+}
+.overdue-icon {
   display: flex;
   line-height: 0;
-  --slds-c-icon-color-foreground-default: #fff;
-  --slds-c-icon-color-foreground: #fff;
 }
 
 .summary-row {
@@ -924,6 +846,22 @@
   overflow-wrap: break-word;
 }
 
+/* A detail naming a record: Salesforce's link blue, as the title. */
+.fact-link {
+  color: light-dark(#0250d9, #7cb1fe);
+  text-decoration: none;
+}
+.fact-link:hover {
+  color: light-dark(#022ac0, #a8cbff);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.fact-link:focus-visible {
+  border-radius: 0.125rem;
+  outline: 2px solid var(--time-drive-paprika);
+  outline-offset: 1px;
+}
+
 .event-source {
   display: flex;
   flex-wrap: wrap;
@@ -1036,45 +974,6 @@
 
 .empty .more-button {
   margin-top: calc(0.75 * var(--time-drive-space));
-}
-
-/* Some sources couldn't be read: one notice, the error illustration small. */
-.issue {
-  display: flex;
-  align-items: flex-start;
-  gap: calc(0.75 * var(--time-drive-space));
-  margin-bottom: calc(0.5 * var(--time-drive-space));
-  padding: calc(0.625 * var(--time-drive-space)) calc(0.75 * var(--time-drive-space));
-  border-radius: 0.5rem;
-  background: var(--time-drive-cream);
-  font-size: 0.75rem;
-  line-height: 1rem;
-}
-
-.issue-illustration {
-  display: flex;
-  flex: 0 0 4rem;
-  align-items: center;
-  justify-content: center;
-  width: 4rem;
-  height: 4rem;
-}
-
-.issue-illustration lightning-illustration {
-  display: block;
-  width: 100%;
-}
-
-.issue-text {
-  display: grid;
-  gap: 0.125rem;
-  min-width: 0;
-  color: var(--time-drive-muted);
-}
-
-.issue-title {
-  color: var(--time-drive-ink);
-  font-weight: 700;
 }
 
 .warnings {
@@ -2397,4 +2296,109 @@
   position: relative;
   min-width: 7rem;
   height: 2.25rem;
+}
+
+/* ---- diagnostics (Ctrl+Alt+Shift+D) ---------------------------------------- */
+
+/* Over the timeline's foot, above the Filters sheet (10), under its menus. */
+.diag {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 12;
+  max-height: min(70%, 28rem);
+  overflow: auto;
+  padding: calc(0.75 * var(--time-drive-space)) var(--side);
+  border-top: 1px solid var(--time-drive-rule);
+  background: var(--surface);
+  box-shadow: 0 -8px 24px -16px color-mix(in srgb, var(--shade) 40%, transparent);
+  font-size: 0.75rem;
+  line-height: 1.125rem;
+}
+
+.diag-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(0.5 * var(--time-drive-space));
+}
+
+.diag-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.diag-actions {
+  display: flex;
+  align-items: center;
+  gap: calc(0.25 * var(--time-drive-space));
+}
+
+.diag-sub {
+  margin-top: calc(0.5 * var(--time-drive-space));
+  font-weight: 700;
+}
+
+.diag-list {
+  display: grid;
+  gap: 0.125rem;
+  margin-top: calc(0.5 * var(--time-drive-space));
+}
+
+.diag-row {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  gap: calc(0.5 * var(--time-drive-space));
+}
+
+.diag-row dt {
+  color: var(--time-drive-muted);
+}
+
+.diag-row dd {
+  overflow-wrap: anywhere;
+}
+
+.diag-lines li {
+  padding-block: 0.125rem;
+}
+
+.diag-source {
+  font-weight: 700;
+}
+
+.diag-note {
+  color: var(--time-drive-muted);
+}
+
+.diag-soql {
+  display: block;
+  margin-top: 0.125rem;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.6875rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--time-drive-muted);
+}
+
+.diag-text {
+  width: 100%;
+  min-height: 8rem;
+  margin-top: calc(0.5 * var(--time-drive-space));
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.6875rem;
+}
+
+.diag-block {
+  margin-top: calc(0.375 * var(--time-drive-space));
+  padding-top: calc(0.375 * var(--time-drive-space));
+  border-top: 1px solid var(--time-drive-rule);
+}
+
+.diag-block-head {
+  font-weight: 700;
+}
+
+.diag-error {
+  color: var(--time-drive-ink);
 }

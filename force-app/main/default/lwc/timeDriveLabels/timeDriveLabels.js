@@ -2,11 +2,6 @@
 // Every end-user string of the timeline components, as a custom label (in
 // the viewer's language, where it is translated).
 import menuViews from "@salesforce/label/c.Time_Drive_Menu_Views";
-import menuNewActivity from "@salesforce/label/c.Time_Drive_Menu_New_Activity";
-import actionNewTask from "@salesforce/label/c.Time_Drive_Action_New_Task";
-import actionNewEvent from "@salesforce/label/c.Time_Drive_Action_New_Event";
-import actionLogCall from "@salesforce/label/c.Time_Drive_Action_Log_Call";
-import actionEmail from "@salesforce/label/c.Time_Drive_Action_Email";
 import rowActions from "@salesforce/label/c.Time_Drive_Row_Actions";
 import rowChecking from "@salesforce/label/c.Time_Drive_Row_Checking";
 import rowNoActions from "@salesforce/label/c.Time_Drive_Row_No_Actions";
@@ -31,6 +26,9 @@ import filters from "@salesforce/label/c.Time_Drive_Filters";
 import filtersActive from "@salesforce/label/c.Time_Drive_Filters_Active";
 import typesAll from "@salesforce/label/c.Time_Drive_Types_All";
 import typesSome from "@salesforce/label/c.Time_Drive_Types_Some";
+import legendOverdueTasks from "@salesforce/label/c.Time_Drive_Legend_Overdue_Tasks";
+import buttonOverdue from "@salesforce/label/c.Time_Drive_Button_Overdue";
+import buttonOverdueTitle from "@salesforce/label/c.Time_Drive_Button_Overdue_Title";
 import serverSentTo from "@salesforce/label/c.Time_Drive_Server_Sent_To";
 import serverSentToOneOther from "@salesforce/label/c.Time_Drive_Server_Sent_To_One_Other";
 import serverSentToOthers from "@salesforce/label/c.Time_Drive_Server_Sent_To_Others";
@@ -45,7 +43,6 @@ import allDay from "@salesforce/label/c.Time_Drive_All_Day";
 import noTitle from "@salesforce/label/c.Time_Drive_No_Title";
 import errorLoadTitle from "@salesforce/label/c.Time_Drive_Error_Load_Title";
 import errorReadTitle from "@salesforce/label/c.Time_Drive_Error_Read_Title";
-import errorPartialTitle from "@salesforce/label/c.Time_Drive_Error_Partial_Title";
 import emailOpened from "@salesforce/label/c.Time_Drive_Email_Opened";
 import emailUnopened from "@salesforce/label/c.Time_Drive_Email_Unopened";
 import emailBounced from "@salesforce/label/c.Time_Drive_Email_Bounced";
@@ -132,11 +129,6 @@ import groupShown from "@salesforce/label/c.Time_Drive_Group_Shown";
 
 export const LABELS = Object.freeze({
   menuViews,
-  menuNewActivity,
-  actionNewTask,
-  actionNewEvent,
-  actionLogCall,
-  actionEmail,
   rowActions,
   rowChecking,
   rowNoActions,
@@ -161,6 +153,9 @@ export const LABELS = Object.freeze({
   filtersActive,
   typesAll,
   typesSome,
+  legendOverdueTasks,
+  buttonOverdue,
+  buttonOverdueTitle,
   serverSentTo,
   serverSentToOneOther,
   serverSentToOthers,
@@ -175,7 +170,6 @@ export const LABELS = Object.freeze({
   noTitle,
   errorLoadTitle,
   errorReadTitle,
-  errorPartialTitle,
   emailOpened,
   emailUnopened,
   emailBounced,
@@ -265,11 +259,6 @@ export const LABELS = Object.freeze({
 // source's): the card shows its own copy, translated even before Apex's is.
 const BY_NAME = Object.freeze({
   Time_Drive_Menu_Views: menuViews,
-  Time_Drive_Menu_New_Activity: menuNewActivity,
-  Time_Drive_Action_New_Task: actionNewTask,
-  Time_Drive_Action_New_Event: actionNewEvent,
-  Time_Drive_Action_Log_Call: actionLogCall,
-  Time_Drive_Action_Email: actionEmail,
   Time_Drive_Row_Actions: rowActions,
   Time_Drive_Row_Checking: rowChecking,
   Time_Drive_Row_No_Actions: rowNoActions,
@@ -294,6 +283,9 @@ const BY_NAME = Object.freeze({
   Time_Drive_Filters_Active: filtersActive,
   Time_Drive_Types_All: typesAll,
   Time_Drive_Types_Some: typesSome,
+  Time_Drive_Legend_Overdue_Tasks: legendOverdueTasks,
+  Time_Drive_Button_Overdue: buttonOverdue,
+  Time_Drive_Button_Overdue_Title: buttonOverdueTitle,
   Time_Drive_Server_Sent_To: serverSentTo,
   Time_Drive_Server_Sent_To_One_Other: serverSentToOneOther,
   Time_Drive_Server_Sent_To_Others: serverSentToOthers,
@@ -308,7 +300,6 @@ const BY_NAME = Object.freeze({
   Time_Drive_No_Title: noTitle,
   Time_Drive_Error_Load_Title: errorLoadTitle,
   Time_Drive_Error_Read_Title: errorReadTitle,
-  Time_Drive_Error_Partial_Title: errorPartialTitle,
   Time_Drive_Email_Opened: emailOpened,
   Time_Drive_Email_Unopened: emailUnopened,
   Time_Drive_Email_Bounced: emailBounced,

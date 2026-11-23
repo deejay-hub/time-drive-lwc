@@ -16,4 +16,38 @@ private class TimeDriveData360SqlRunnerTest {
       Assert.isNotNull(e.getMessage());
     }
   }
+
+  // The rows of every batch come back together, in order, until Data 360
+  // says it's done.
+  @IsTest
+  static void readsEveryBatch() {
+    TimeDriveData360SqlRunner.testBatches = new List<ConnectApi.CdpQueryOutputV2>{
+      batch(new List<Object>{ '2026-11-01', 3 }, false, 'b2'),
+      batch(new List<Object>{ '2026-11-02', 5 }, true, null)
+    };
+    List<List<Object>> rows = new TimeDriveData360SqlRunner().run('SELECT day, n FROM x', 'default');
+    Assert.areEqual(2, rows.size());
+    Assert.areEqual('2026-11-01', rows[0][0]);
+    Assert.areEqual(5, rows[1][1]);
+    Assert.isTrue(TimeDriveData360SqlRunner.testBatches.isEmpty(), 'both batches read');
+  }
+
+  // A batch with no data adds no rows.
+  @IsTest
+  static void anEmptyResultHasNoRows() {
+    ConnectApi.CdpQueryOutputV2 empty = new ConnectApi.CdpQueryOutputV2();
+    empty.done = true;
+    TimeDriveData360SqlRunner.testBatches = new List<ConnectApi.CdpQueryOutputV2>{ empty };
+    Assert.isTrue(new TimeDriveData360SqlRunner().run('SELECT 1', null).isEmpty());
+  }
+
+  private static ConnectApi.CdpQueryOutputV2 batch(List<Object> values, Boolean done, String nextBatchId) {
+    ConnectApi.CdpQueryV2Row row = new ConnectApi.CdpQueryV2Row();
+    row.rowData = values;
+    ConnectApi.CdpQueryOutputV2 output = new ConnectApi.CdpQueryOutputV2();
+    output.data = new List<ConnectApi.CdpQueryV2Row>{ row };
+    output.done = done;
+    output.nextBatchId = nextBatchId;
+    return output;
+  }
 }

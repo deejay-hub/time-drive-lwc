@@ -10,9 +10,10 @@
 @IsTest
 public class TimeDriveTestData {
   /**
-   * Inserts a test's records, unless the org's own automation won't take
-   * them (a flow, process or validation rule an org adds, such as one that
-   * needs a setting tests can't see). Then nothing is kept and the answer is
+   * Inserts a test's records, unless the org won't take them: its own
+   * automation (a flow, process or validation rule an org adds, such as one
+   * that needs a setting tests can't see), or a user who may not make them
+   * (Campaigns need Marketing User). Then nothing is kept and the answer is
    * false: a test that needs those records has nothing of ours to test there.
    *
    * @param records the records to insert
@@ -24,10 +25,16 @@ public class TimeDriveTestData {
       insert records;
       return true;
     } catch (DmlException e) {
-      Database.rollback(before);
-      System.debug(LoggingLevel.WARN, 'Time Drive test: this org won\'t take the records. ' + e.getMessage());
-      return false;
+      return refused(before, e);
+    } catch (TypeException e) {
+      // DML operation INSERT not allowed on Campaign: the user isn't a Marketing User.
+      return refused(before, e);
     }
+  }
+
+  private static Boolean refused(Savepoint before, Exception e) {
+    Database.rollback(before);
+    return false;
   }
 
   /**
@@ -460,5 +467,64 @@ public class TimeDriveTestData {
       out.put(source, new List<Time_Drive_Detail_Field__mdt>());
     }
     out.get(source).add(field);
+  }
+
+  private static User setupAdmin;
+
+  /**
+   * A Time Drive admin, as Setup expects one: the running user's profile (so
+   * no profile name is assumed) and the Time Drive Setup permission set. Setup
+   * reads and writes its records as the user, and a fresh org (a package
+   * build, a customer's) gives no one those fields until the permission set
+   * does, so tests that use Setup run as this user. One a transaction.
+   *
+   * @return the admin
+   */
+  public static User setupAdmin() {
+    if (setupAdmin == null) {
+      setupAdmin = adminIn('America/Los_Angeles');
+    }
+    return setupAdmin;
+  }
+
+  /**
+   * A Time Drive admin (as setupAdmin) in a time zone, for what depends on the
+   * user's day: Pacific/Tongatapu is UTC+13, America/Los_Angeles UTC-8.
+   *
+   * @param timeZone the user's time zone
+   * @return the admin, a new one each call
+   */
+  public static User adminIn(String timeZone) {
+    String name = 'tdadmin' + System.currentTimeMillis() + Math.abs(Crypto.getRandomInteger());
+    // As the running user can: Campaigns need Marketing User.
+    Boolean marketing = [SELECT UserPermissionsMarketingUser FROM User WHERE Id = :UserInfo.getUserId()]
+    .UserPermissionsMarketingUser;
+    User u = new User(
+      UserPermissionsMarketingUser = marketing,
+      Alias = 'tdadmin',
+      Email = name + '@example.com',
+      EmailEncodingKey = 'UTF-8',
+      LastName = 'Time Drive Admin',
+      LanguageLocaleKey = 'en_US',
+      LocaleSidKey = 'en_US',
+      ProfileId = UserInfo.getProfileId(),
+      TimeZoneSidKey = timeZone,
+      Username = name + '@example.com'
+    );
+    // Setup objects apart from the test's own records (no mixed DML).
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      insert u;
+      insert new PermissionSetAssignment(
+        AssigneeId = u.Id,
+        PermissionSetId = [
+          SELECT Id
+          FROM PermissionSet
+          WHERE Name = 'Time_Drive_Setup' AND NamespacePrefix = :TimeDriveConfig.NAMESPACE
+          LIMIT 1
+        ]
+        .Id
+      );
+    }
+    return u;
   }
 }

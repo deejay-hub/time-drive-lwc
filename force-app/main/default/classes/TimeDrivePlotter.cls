@@ -19,6 +19,13 @@ public with sharing class TimeDrivePlotter {
   private static final Pattern TOKEN = Pattern.compile('\\{([A-Za-z0-9_.]+)\\}');
   public static final String SEPARATOR = ' · ';
   private static final Integer MAX_PLACES = 6;
+  // How much text a line (title, subtitle) and a detail show: a long text
+  // area (a task's Description holds 32,000 characters) is cut, with an
+  // ellipsis, so the timeline's response stays small.
+  @TestVisible
+  private static final Integer MAX_LINE = 150;
+  @TestVisible
+  private static final Integer MAX_DETAIL = 500;
   // Each picklist's labels by value, in the user's language, once a request.
   private static Map<Schema.SObjectField, Map<String, String>> picklistLabels = new Map<Schema.SObjectField, Map<String, String>>();
 
@@ -44,11 +51,25 @@ public with sharing class TimeDrivePlotter {
     Time_Drive_Source__mdt s = context.source;
     List<Time_Drive_Detail_Field__mdt> detailFields = context.detailFields();
     List<TimeDriveController.EngagementEvent> events = new List<TimeDriveController.EngagementEvent>();
+    Integer unreadable = 0;
     for (TimeDriveRow row : rows == null ? new List<TimeDriveRow>() : rows) {
-      Datetime occurredAt = instant(row.get(context.dateField()));
+      // The date the source's provider chose for the row (a Task's due date
+      // or completion), else its date field.
+      Object dated = row.get(String.isNotBlank(context.plotDateKey) ? context.plotDateKey : context.dateField());
+      // Text, as a service's JSON gives dates: read as a Date or a moment.
+      if (dated instanceof String) {
+        Object read = parsed((String) dated);
+        if (read == null) {
+          unreadable++;
+          continue;
+        }
+        dated = read;
+      }
+      Datetime occurredAt = instant(dated);
       // Items with no date are left out quietly, so a few gaps in the data
-      // don't put a warning over the rest.
+      // don't put a warning over the rest; a date that isn't one is counted.
       if (occurredAt == null) {
+        unreadable += dated == null ? 0 : 1;
         continue;
       }
       Object key = row.get(context.idField());
@@ -56,21 +77,32 @@ public with sharing class TimeDrivePlotter {
           (key == null ? String.valueOf(events.size()) : String.valueOf(key)) + '-' + s.DeveloperName,
           s.Event_Type__c,
           TimeDriveConfig.lensKey(s),
-          String.isBlank(s.Title__c) ? s.Label : title(s.Title__c, row),
-          fill(s.Subtitle__c, row),
+          shorten(String.isBlank(s.Title__c) ? s.Label : title(s.Title__c, row), MAX_LINE),
+          shorten(fill(s.Subtitle__c, row), MAX_LINE),
           occurredAt
         )
         .source(context.sourceObject, context.sourceLabel)
         .record(salesforceId(row.get(context.recordIdField())));
       for (Time_Drive_Detail_Field__mdt d : detailFields) {
-        e.detail(detailOf(d, row));
+        e.detail(detailOf(d, row, context.detailLinks));
       }
       if (TimeDriveConfig.dateOwner(s) == 'Event' && row.get(TimeDriveConfig.datePrefix(s) + 'IsAllDayEvent') == true) {
         e.allDay = true;
       }
+      // A Date (checked as one: Apex counts a Date as a Datetime too) has no time.
+      e.dateOnly = dated instanceof Date;
       e.flags = TimeDriveHighlights.flagsFor(context.highlightRules(), row);
       context.styled(e);
       events.add(e);
+    }
+    // Items whose date isn't one (text that isn't ISO, a number): said, not hidden.
+    if (unreadable > 0) {
+      context.warn(
+        String.format(
+          Label.Time_Drive_Server_Unreadable_Dates,
+          new List<String>{ s.Label ?? '', String.valueOf(unreadable) }
+        )
+      );
     }
     // Enhanced Email's messages say who they went to and whether they were opened.
     if (s.Object_Name__c == 'EmailMessage') {
@@ -159,11 +191,12 @@ public with sharing class TimeDrivePlotter {
     if (value == null) {
       return '';
     }
-    if (value instanceof Datetime) {
-      return format == 'Date' ? ((Datetime) value).date().format() : ((Datetime) value).format();
-    }
+    // A Date first: Apex counts a Date as a Datetime too (but not the reverse).
     if (value instanceof Date) {
       return ((Date) value).format();
+    }
+    if (value instanceof Datetime) {
+      return format == 'Date' ? ((Datetime) value).date().format() : ((Datetime) value).format();
     }
     if (value instanceof Boolean) {
       return (Boolean) value ? Label.Time_Drive_Server_Yes : Label.Time_Drive_Server_No;
@@ -176,6 +209,10 @@ public with sharing class TimeDrivePlotter {
       return isMoney(format, field) ? currencyOf(row) + ' ' + money(amount) : plain(amount, field);
     }
     if (value instanceof String && field != null) {
+      // Rich text arrives as HTML: shown as its words.
+      if (field.isHtmlFormatted()) {
+        return ((String) value).stripHtmlTags();
+      }
       return picklistLabel((String) value, field);
     }
     return String.valueOf(value);
@@ -191,10 +228,98 @@ public with sharing class TimeDrivePlotter {
    */
   @TestVisible
   private static TimeDriveController.Detail detailOf(Time_Drive_Detail_Field__mdt d, TimeDriveRow row) {
+    return detailOf(d, row, null);
+  }
+
+  /**
+   * A detail field's label, value and the record it names, for the card to
+   * link to: an Apex source's own key for it (see Plot.links), else the
+   * lookup the path goes through (What.Name: What.Id), else the field's own
+   * value when it's an Id (a lookup chosen as itself).
+   *
+   * @param d the detail field
+   * @param row the row
+   * @param links an Apex source's record Id keys, by detail key (lower case); may be null
+   * @return the detail
+   */
+  @TestVisible
+  private static TimeDriveController.Detail detailOf(
+    Time_Drive_Detail_Field__mdt d,
+    TimeDriveRow row,
+    Map<String, String> links
+  ) {
+    TimeDriveController.Detail detail = valueOf(d, row);
+    String field = String.valueOf(d.Field__c);
+    String own = links == null || String.isBlank(field) ? null : links.get(field.toLowerCase());
+    detail.recordId = String.isNotBlank(own) ? idAt(row, own) : idAt(row, namedLinkOf(row, field));
+    // A lookup chosen as itself holds an Id (text that only looks like one doesn't count).
+    if (detail.recordId == null && String.isBlank(own)) {
+      Object value = valueAt(row, field);
+      detail.recordId = value instanceof Id ? (Id) value : null;
+    }
+    return detail;
+  }
+
+  /**
+   * The path to the record a detail names, when it ends at that record's
+   * name: What.Name is What.Id, Case.CaseNumber is Case.Id. A path ending at
+   * another field (Account.Industry) names no record, and one ending at a
+   * lookup (Account.ParentId) links by its own value instead; a field of the
+   * row's own (no dot) names none either.
+   *
+   * @param objectName the source's object, to tell its related objects' name fields (may be blank)
+   * @param path a detail field's path
+   * @return the Id's path, or null
+   */
+  public static String linkPathOf(String objectName, String path) {
+    if (String.isBlank(path) || !path.contains('.')) {
+      return null;
+    }
+    Boolean named = path.substringAfterLast('.').equalsIgnoreCase('Name');
+    if (!named && String.isNotBlank(objectName)) {
+      named = TimeDriveConfig.fieldDescribe(objectName, path)?.isNameField() == true;
+    }
+    return named ? path.substringBeforeLast('.') + '.Id' : null;
+  }
+
+  // As linkPathOf, telling the name field from the row's own describe.
+  private static String namedLinkOf(TimeDriveRow row, String path) {
+    if (String.isBlank(path) || !path.contains('.')) {
+      return null;
+    }
+    Boolean named = path.substringAfterLast('.').equalsIgnoreCase('Name');
+    if (!named) {
+      try {
+        named = row?.describe(path)?.isNameField() == true;
+      } catch (Exception e) {
+        named = false;
+      }
+    }
+    return named ? path.substringBeforeLast('.') + '.Id' : null;
+  }
+
+  // A Salesforce Id at a key, or null: not there, not queried (an Apex
+  // source's own query may leave it out), or not an Id.
+  private static Id idAt(TimeDriveRow row, String key) {
+    return salesforceId(valueAt(row, key));
+  }
+
+  private static Object valueAt(TimeDriveRow row, String key) {
+    if (row == null || String.isBlank(key)) {
+      return null;
+    }
+    try {
+      return row.get(key);
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  private static TimeDriveController.Detail valueOf(Time_Drive_Detail_Field__mdt d, TimeDriveRow row) {
     Object value = row.get(d.Field__c);
     TimeDriveController.Detail detail = new TimeDriveController.Detail(
       detailLabel(d, row),
-      format(value, d.Format__c, row, d.Field__c)
+      shorten(format(value, d.Format__c, row, d.Field__c), MAX_DETAIL)
     );
     detail.amount = amountOf(value);
     if (detail.amount != null && isMoney(d.Format__c, row.describe(d.Field__c))) {
@@ -280,13 +405,54 @@ public with sharing class TimeDrivePlotter {
     return text.length() - at == 2 ? text + '0' : text;
   }
 
-  // Dates plot at midday, so they land on their own day in any time zone.
-  private static Datetime instant(Object value) {
-    if (value instanceof Datetime) {
-      return (Datetime) value;
+  /**
+   * Text as a date: 2026-11-12 is a day (a Date); 2026-11-12T09:00:00Z or with
+   * an offset (+11:00) is that moment; without a zone, the user's own time.
+   * Null when it's neither, so the item is counted as unreadable.
+   *
+   * @param text the text
+   * @return a Date, a Datetime, or null
+   */
+  @TestVisible
+  private static Object parsed(String text) {
+    String t = text == null ? '' : text.trim();
+    try {
+      if (Pattern.matches('\\d{4}-\\d{2}-\\d{2}', t)) {
+        return Date.valueOf(t);
+      }
+      Matcher m = Pattern.compile(
+          '(\\d{4}-\\d{2}-\\d{2})[T ](\\d{2}:\\d{2})(:\\d{2})?(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})?'
+        )
+        .matcher(t);
+      if (!m.matches()) {
+        return null;
+      }
+      String seconds = m.group(3) == null ? ':00' : m.group(3);
+      if (m.group(5) == null) {
+        // No zone: the user's wall clock.
+        return Datetime.valueOf(m.group(1) + ' ' + m.group(2) + seconds);
+      }
+      Datetime gmt = Datetime.valueOfGmt(m.group(1) + ' ' + m.group(2) + seconds);
+      if (m.group(5) == 'Z') {
+        return gmt;
+      }
+      String zone = m.group(5).remove(':');
+      Integer minutes = Integer.valueOf(zone.substring(1, 3)) * 60 + Integer.valueOf(zone.substring(3, 5));
+      return gmt.addMinutes(zone.startsWith('+') ? -minutes : minutes);
+    } catch (Exception e) {
+      return null;
     }
+  }
+
+  // Dates plot at midday, so they land on their own day in any time zone.
+  // A Date first: Apex counts a Date as a Datetime too (but not the reverse),
+  // and as one it would be midnight GMT, the day before west of Greenwich.
+  public static Datetime instant(Object value) {
     if (value instanceof Date) {
       return Datetime.newInstance((Date) value, Time.newInstance(12, 0, 0, 0));
+    }
+    if (value instanceof Datetime) {
+      return (Datetime) value;
     }
     return null;
   }
@@ -315,5 +481,26 @@ public with sharing class TimeDrivePlotter {
       return d.Label;
     }
     return row.labelOf(d.Field__c);
+  }
+
+  /**
+   * Text cut to at most max characters, an ellipsis at the end when it was
+   * longer (and at a word's end where one is near).
+   *
+   * @param text the text
+   * @param max the most characters to keep
+   * @return the text, shortened
+   */
+  @TestVisible
+  private static String shorten(String text, Integer max) {
+    if (text == null || text.length() <= max) {
+      return text;
+    }
+    String cut = text.left(max - 1);
+    Integer space = cut.lastIndexOf(' ');
+    if (space > max * 0.8) {
+      cut = cut.left(space);
+    }
+    return cut.trim() + '…';
   }
 }

@@ -43,7 +43,7 @@ A Lightning web component for **Contact**, **Account**, person account and **Lea
 - **Built to scale.** The summary counts each source instead of reading it, rows load only for the days on screen, and busy days fold into one grouped row with View all.
 - **Vertical and horizontal layouts.** A scrub tab or seek bar over the whole history, up to ten years each way, and a phone layout in the Salesforce mobile app.
 - **Guided setup.** Time Drive Setup adds sources step by step, fits the timeline to your org, and has lenses and detail fields.
-- **Multi language support.** Every string is a custom label (English, Spanish, Arabic, Danish, Finnish, French, German, Japanese, Korean, Swedish, Yiddish, and Chinese Simplified and Traditional); dates, numbers and money follow the user's locale and time zone; right-to-left languages mirror the card.
+- **Multi language support.** Every string is a custom label (English, Spanish, Arabic, Danish, Finnish, French, German, Japanese, Korean, Swedish, and Chinese Simplified and Traditional); dates, numbers and money follow the user's locale and time zone; right-to-left languages mirror the card.
 - **Console ready.** Records open in a workspace tab in Console apps.
 
 ## Installation Instructions
@@ -82,7 +82,7 @@ sf org create scratch -d -f config/project-scratch-def.json -a time-drive -y 30
 sf project deploy start --source-dir force-app
 ```
 
-6. Optional, for orgs with Data 360 only: deploy the Data 360 counting class (it calls `ConnectApi.CdpQuery`, so it only compiles where Data 360 is provisioned):
+6. Optional, for orgs with Data 360 only: deploy `force-app-data360`, the source of the **Time Drive Data Extension** package (it calls `ConnectApi.CdpQuery`, so it only compiles where Data 360 is provisioned). Customers install the package instead:
 
 ```
 sf project deploy start --source-dir force-app-data360
@@ -125,7 +125,7 @@ It's built for long, busy histories. The summary counts each source rather than 
 The [Config Guide](docs/config-guide.md) covers it all. Time Drive Setup's Docs page links to it here.
 
 - [Add the timeline to a page](docs/config-guide.md#add-the-timeline-to-a-page): the App Builder properties
-- [Add a source](docs/config-guide.md#add-a-source), [Fit to your org](docs/config-guide.md#fit-to-your-org) and [Lenses](docs/config-guide.md#lenses)
+- [Add a source](docs/config-guide.md#add-a-source), [Check your org](docs/config-guide.md#check-your-org) and [Lenses](docs/config-guide.md#lenses)
 - [Source fields](docs/config-guide.md#source-fields) and [Expanding records](docs/config-guide.md#expanding-records)
 - [Data 360 sources](docs/config-guide.md#data-360-sources)
 - [Apex sources](docs/config-guide.md#apex-sources): records further away, or data from another system

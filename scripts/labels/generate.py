@@ -4,7 +4,7 @@ Writes, from catalogue.py:
   - force-app/main/default/labels/CustomLabels.labels-meta.xml (the catalogue's
     labels; any others already in the file are kept as they are)
   - force-app/main/default/translations/<lang>.translation-meta.xml: es and ar from
-    the catalogue; da, de, fi, fr, ja, ko, sv, yi, zh_CN and zh_TW from their own files (fr.py ...)
+    the catalogue; da, de, fi, fr, ja, ko, sv, zh_CN and zh_TW from their own files (fr.py ...)
   - force-app/main/default/lwc/timeDriveLabels/timeDriveLabels.js (one import
     per label, and format() to fill in {0}, {1} ...)
 
@@ -52,7 +52,10 @@ assert not too_long, f"descriptions over 80 characters: {too_long}"
 # so the card shows its own copy of the source names ($Label.Time_Drive_Legend_...)
 # and email subtitles the server sends (see labelNamed).
 CLIENT_TOO = {"Server_Sent_To", "Server_Sent_To_One_Other", "Server_Sent_To_Others"}
-js_entries = [e for e in entries if not e[0].startswith("Server_") or e[0] in CLIENT_TOO]
+# Lens names (View_*) are the timeline model's own (VIEW_LABELS in timeDriveModel.js).
+js_entries = [
+    e for e in entries if (not e[0].startswith("Server_") or e[0] in CLIENT_TOO) and not e[0].startswith("View_")
+]
 js_names = [camel(k) for k, *_ in js_entries]
 assert len(set(js_names)) == len(js_names), "two keys give the same JS name"
 
@@ -114,7 +117,7 @@ translations("ar", 4)
 # catalogue key, with the same {0}, {1} ... as its English.
 import importlib  # noqa: E402
 
-MORE_LANGUAGES = ["da", "de", "fi", "fr", "ja", "ko", "sv", "yi", "zh_CN", "zh_TW"]
+MORE_LANGUAGES = ["da", "de", "fi", "fr", "ja", "ko", "sv", "zh_CN", "zh_TW"]
 english = {k: en for k, _what, en, *_ in entries}
 for lang in MORE_LANGUAGES:
     module = importlib.import_module(lang)

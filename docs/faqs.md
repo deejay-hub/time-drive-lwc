@@ -14,11 +14,11 @@ Contact, Account and Lead record pages, person accounts included. A person accou
 
 ### Who can use Time Drive Setup?
 
-Admins with the **Customize Application** permission and the `Time Drive Setup` permission set. Everyone else sees the timeline on record pages.
+Admins with the `Time Drive Setup` permission set (it includes the timeline too), or the **Customize Application** permission. Everyone else, with the `Time Drive` permission set, sees the timeline on record pages.
 
 ### How do I put the timeline on a record page?
 
-Open a record, choose **Edit Page**, and drag **Time Drive** (under custom components) onto the page. Its properties in Lightning App Builder set the layout, the lens it opens on, how far back and ahead it looks, and the activity actions it shows. See [Add the timeline to a page](config-guide.md#add-the-timeline-to-a-page).
+Open a record, choose **Edit Page**, and drag **Time Drive** (under custom components) onto the page. Its properties in Lightning App Builder set the layout, the lens it opens on, and how far back and ahead it looks. Log a Call, New Task and the record's other activity actions stay on the page's own action bar, and Time Drive refreshes when one is saved. See [Add the timeline to a page](config-guide.md#add-the-timeline-to-a-page).
 
 ### Can I put more than one timeline on a page?
 
@@ -50,9 +50,21 @@ Yes. Choose **A custom object** on the wizard's first step. Any custom object wi
 
 On the wizard's **Interactions** step: add the fields, in order, and how each is formatted. They're saved as **Time Drive Detail Field** records. Time Drive doesn't use compact layouts. See [Expanding records](config-guide.md#expanding-records).
 
-### What does Check your org (Fit to your org) do?
+### Why does a timeline show an error, or miss items for some people?
 
-It checks how your org works (Shared Activities, contacts to multiple accounts, person accounts, Enhanced Email, Data 360) and switches on the shipped sources that suit it. Alternatives share a group, and only one in a group is ever active, so running it again never plots the same record twice. See [Fit to your org](config-guide.md#fit-to-your-org).
+- **An error page** means a source couldn't be read. Usually it's setup: a source that needs an org feature the org doesn't use (Shared Activities, Enhanced Email, person accounts), or a field that's gone. The page names the source; switch it off or fix it in **Time Drive Setup**.
+- **Missing items for some people** means they can't read something a source needs: its object, its date field, or a field its filter uses. The source is left out of their timeline. That's their access working as set, not a fault; give them access if they should see those items.
+- **A blank field** on an item means the person can't read that field.
+
+### How do I see what the timeline did, for a support request?
+
+Press **Ctrl+Alt+Shift+D** (**Ctrl+Option+Shift+D** on a Mac) on a record page. The **Diagnostics** drawer opens over the timeline: how the view is set (lens, hidden types, date range, the time zone in Salesforce and on this computer, locale), whether the Overdue check ran, the requests the timeline made, how long they took and any error's own words, and, after **Trace**, what each source did (its rows, left out and why, or failed). While the drawer is open every request is traced, including the days you scroll to, and a load that fails keeps its trace. **Copy** puts it all on the clipboard for a support request. Press the keys again, Escape, or the close button to hide it.
+
+Admins with **Time Drive Setup**, and anyone in a **Login As** session, also see each source's SOQL, the exception behind a failure (its type and message), whether the sources came from Platform Cache, and the request's CPU time and queries against their limits. So an admin who logs in as the person with the problem sees exactly what their timeline did, with their access. Nothing in the drawer holds record values: queries pass them as binds (`:parentId`).
+
+### What does Check your org do?
+
+It checks how your org works (Shared Activities, contacts to multiple accounts, person accounts, Enhanced Email) and switches on the shipped sources that suit it. Alternatives share a group, and only one in a group is ever active, so running it again never plots the same record twice. See [Check your org](config-guide.md#check-your-org).
 
 ### Why don't an account's shared activities show?
 
@@ -64,7 +76,7 @@ A lens narrows the timeline to one area, such as Sales or Service. Each source i
 
 ### Can I move sources from a sandbox to production?
 
-Yes. Sources, their detail fields and lenses are custom metadata records (`Time_Drive_Source__mdt`, `Time_Drive_Detail_Field__mdt`, `Time_Drive_View__mdt`), so they deploy with change sets, the Salesforce CLI or your pipeline like any other metadata.
+Yes, but as data, not metadata. What you set up in Time Drive Setup is kept in records: each page's Time Drive (`Time_Drive__c`), its sources with their detail fields and lenses (`Time_Drive_Record__c`), and which lenses the picker offers (`Time_Drive_Setup__c`). Move them with Data Loader or the Salesforce CLI's data commands (`sf data export tree` and `sf data import tree`), Time Drives before their sources. The templates and lenses Time Drive ships with come with the package, so they're already in every org.
 
 ## Using the timeline
 
@@ -92,7 +104,7 @@ Yes. Files linked to the record (ContentDocumentLink) can be a source, and a cli
 
 ### Which languages does it come in?
 
-English, Spanish, Arabic, Danish, Finnish, French, German, Japanese, Korean, Swedish, Yiddish, and Chinese Simplified and Traditional. Dates, times and numbers follow each person's locale and time zone, and right-to-left languages mirror the card. Setup's own text is English for now. The translations are drafts: have a native speaker review them. See [Translations](config-guide.md#translations).
+English, Spanish, Arabic, Danish, Finnish, French, German, Japanese, Korean, Swedish, and Chinese Simplified and Traditional. Dates, times and numbers follow each person's locale and time zone, and right-to-left languages mirror the card. Setup's own text is English for now. The translations are drafts: have a native speaker review them. See [Translations](config-guide.md#translations).
 
 ### Why are some names still in English?
 
@@ -112,15 +124,19 @@ No. The timeline counts each source first, with an aggregate query, and reads on
 
 That source is read rather than counted, and it reached its Max Records (1,000 by default). Salesforce and Data 360 sources count. An Apex source counts when its class implements `counts`.
 
+### Do I need Platform Cache?
+
+It's optional, but allocate some. Time Drive installs a **TimeDrive** partition with no capacity; give it 1 MB of org cache (Setup > Platform Cache) and it keeps its sources between page views instead of querying them on every load. Without it everything still works. See [Allocate Platform Cache](config-guide.md#allocate-platform-cache).
+
 ### Why is a timeline slow?
 
-Look first at sources that are read rather than counted: an Apex source without `counts`, or a Data 360 source whose filter only SOQL understands. Each is read over the whole window on every load. A long History or Future, or many sources on one page, add up too. Narrowing the date range (Filters > Back and Ahead) makes a busy record faster. See [Scale](config-guide.md#scale).
+Look first at sources that are read rather than counted: an Apex source without `counts`, or a Data 360 source whose filter only SOQL understands. Each is read over the whole window on every load. A long History or Future, or many sources on one page, add up too. So does a **TimeDrive** Platform Cache partition with no capacity. Narrowing the date range (Filters > Back and Ahead) makes a busy record faster. See [Scale](config-guide.md#scale).
 
 ## Data 360
 
 ### Does it support Data 360?
 
-Yes, in orgs with Data 360. Each engagement DMO is its own source, matched to the person through identity resolution: Time Drive finds the Contact's unified profile, then reads the engagement of every individual in it. Set the identity link object in **Time Drive Setting > Default**, and deploy `force-app-data360` too, so DMOs are counted rather than read. See [Data 360 sources](config-guide.md#data-360-sources).
+Yes, in orgs with Data 360. Each engagement DMO is its own source, matched to the person through identity resolution: Time Drive finds the Contact's unified profile, then reads the engagement of every individual in it. Set the identity link object in **Time Drive Setting > Default**, and install the **Time Drive Data Extension** package too, which brings Data 360 sources to Setup and counts DMOs rather than reading them. See [Data 360 sources](config-guide.md#data-360-sources).
 
 ## For developers
 

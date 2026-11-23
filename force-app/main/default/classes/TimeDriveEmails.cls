@@ -63,7 +63,6 @@ public with sharing class TimeDriveEmails {
       }
     } catch (Exception e) {
       // Email fields this user can't read: the items show without them.
-      System.debug(LoggingLevel.WARN, 'Time Drive: email details unavailable. ' + e.getMessage());
     }
   }
 

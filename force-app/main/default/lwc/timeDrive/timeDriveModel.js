@@ -9,6 +9,7 @@ import VIEW_COMMERCE from "@salesforce/label/c.Time_Drive_View_Commerce";
 import VIEW_DIGITAL from "@salesforce/label/c.Time_Drive_View_Digital";
 import VIEW_SERVICE from "@salesforce/label/c.Time_Drive_View_Service";
 import VIEW_SALES from "@salesforce/label/c.Time_Drive_View_Sales";
+import VIEW_OVERDUE from "@salesforce/label/c.Time_Drive_View_Overdue";
 
 /**
  * Event types, timeline views and date ranges for Time Drive, and the pure
@@ -63,7 +64,8 @@ export const VIEW_LABELS = Object.freeze({
   Time_Drive_View_Commerce: VIEW_COMMERCE,
   Time_Drive_View_Digital: VIEW_DIGITAL,
   Time_Drive_View_Service: VIEW_SERVICE,
-  Time_Drive_View_Sales: VIEW_SALES
+  Time_Drive_View_Sales: VIEW_SALES,
+  Time_Drive_View_Overdue: VIEW_OVERDUE
 });
 
 export function viewFor(value) {
@@ -132,6 +134,26 @@ function dayKey(date) {
   const parts = {};
   for (const p of DAY_PARTS.formatToParts(date)) parts[p.type] = Number(p.value);
   return new Date(parts.year, parts.month - 1, parts.day).getTime();
+}
+
+/** An instant's date in Salesforce's time zone, as yyyy-mm-dd (a Date-only item's datetime). */
+export function isoDate(date) {
+  const parts = {};
+  for (const p of DAY_PARTS.formatToParts(date)) parts[p.type] = p.value;
+  return `${parts.year}-${parts.month.padStart(2, "0")}-${parts.day.padStart(2, "0")}`;
+}
+
+/**
+ * The order of a period's items: by day, newest first; within a day, those
+ * with no time first (a Date field's, an all-day event's), then by time,
+ * newest first. A day's list is one day; a week's or month's keeps its days apart.
+ */
+export function itemOrder(a, b) {
+  const day = dayKey(new Date(b.at)) - dayKey(new Date(a.at));
+  if (day) return day;
+  // Negative puts a first: an untimed a before a timed b.
+  const untimed = Number(Boolean(b.dateOnly || b.allDay)) - Number(Boolean(a.dateOnly || a.allDay));
+  return untimed || b.at - a.at;
 }
 
 /** Today's day key (local midnight of today in Salesforce's time zone). */

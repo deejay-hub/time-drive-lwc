@@ -39,19 +39,27 @@ and data360. The GitHub repo was renamed to `deejay-hub/time-drive-lwc` on
 - Because every API name is new, deploying to an org that has the Pronto
   version installs a separate app with empty configuration.
 
-## State when this folder was created
+## Repository and working state
 
-- Not a git repo yet: the user wants to check the structure first.
-  Then `git init`, and work on branches (never push straight to main).
-- Nothing deployed from here. Run `npm install` before Jest/ESLint.
-- Jest: 9 suites, 114 tests pass. One timeline test can fail now and then
-  under a full parallel run (timing); it passes alone and on rerun.
-- ESLint: one known `no-await-in-loop` in the setup tests (also in the
-  original). Prettier flags a few files for line wrapping only.
-- Docs and scripts mention org aliases `time-shift-person` and
-  `time-shift-scratch`; they don't exist yet (the original used
-  `pronto-person` / `pronto-scratch`). Map one with
-  `sf alias set time-shift-person=<username>`.
+- This folder is the git clone of GitHub `deejay-hub/time-drive-lwc`: on
+  2026-11-19 the `.git` moved here from `../time-shift-lwc` (the old main-line
+  folder, kept without git). Work on branches; never push straight to main.
+  The current branch is `remove-setup-result-event`.
+- Backups of both folders from that day: `../backups/time-shift-lwc-20261119-150554.tgz`
+  and `../backups/time-drive-lwc-20261119-150554.tgz`.
+- `blog/` (draft posts) and `manifest/` (local deploy manifests) aren't tracked.
+- Run `npm install` before Jest/ESLint. Jest: 14 suites, 200 tests, steady in
+  parallel. Apex: 149 tests pass in the namespaced scratch org `time-drive-issues`.
+- Packages: 2GP managed, namespace `drvrckt`, both in Dev Hub `d360-hub` (a
+  Developer Edition with Data Cloud, so the Data 360 package can be built):
+  Time Drive (force-app) and Time Drive Data Extension (force-app-data360). Re-created
+  there on 2026-11-20; the betas 0.1.0-1 to -7 were in `bumpy-rckt`'s old Time
+  Drive package (never released). Betas are built with
+  `config/project-scratch-def.json` (the Translation Workbench).
+- Version names (`versionName` in `sfdx-project.json`): Time Drive uses
+  terms from quantum physics (Boson from 2026-11-20), the Data Extension
+  capital cities of the world (Canberra from 2026-11-20). Pick a new one
+  when the version number moves on, not for each beta.
 - The setup page's Docs links point at GitHub `deejay-hub/time-drive-lwc`
   (private for now, so the links need a GitHub login until it's public).
 
@@ -95,7 +103,7 @@ and data360. The GitHub repo was renamed to `deejay-hub/time-drive-lwc` on
 
 ## Labels and translations
 
-- The timeline components' text is custom labels (`Time_Drive_*`) in en/es/ar/da/de/fi/fr/ja/ko/sv/yi/zh_CN/zh_TW, generated from
+- The timeline components' text is custom labels (`Time_Drive_*`) in en/es/ar/da/de/fi/fr/ja/ko/sv/zh_CN/zh_TW, generated from
   `scripts/labels/catalogue.py` (en/es/ar) and `scripts/labels/<lang>.py` (the rest) by
   `scripts/labels/generate.py` (also the `c/timeDriveLabels`
   module). Setup's own text is still English; it is the next pass.

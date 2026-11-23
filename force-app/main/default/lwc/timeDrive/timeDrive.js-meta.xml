@@ -39,21 +39,18 @@
         default="All"
       />
             <property
+        name="lenses"
+        label="Lenses"
+        description="The lenses this page offers, by API name, separated by commas (Sales, Service). Blank offers every lens. All items and Overdue are always offered."
+        type="String"
+      />
+            <property
         name="openAt"
         label="Open At"
         description="Where the timeline opens: Today (today's slot, with a placeholder when it has nothing), its earliest item or its latest. Vertical lists the newest at the top; horizontal runs earliest to latest."
         type="String"
         datasource="Today,Earliest item,Latest item"
         default="Today"
-        required="true"
-      />
-            <property
-        name="activityActionsMode"
-        label="Activity Actions"
-        description="The record's activity actions (New Task, New Event, Log a Call, Email), as the page layout's Activity composer offers them. None shows nothing; One button folds them into a + menu; Inline shows a button each among the filter buttons; Full shows a button each with its name, on a line above the header (beside the buttons in a wide horizontal card)."
-        type="String"
-        datasource="None,One button,Inline,Full"
-        default="Full"
         required="true"
       />
             <property

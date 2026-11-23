@@ -57,46 +57,6 @@
         <value>Views</value>
     </labels>
     <labels>
-        <fullName>Time_Drive_Menu_New_Activity</fullName>
-        <categories>Time Drive</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Timeline header · the + button (Activity Actions: One button): name, tooltip</shortDescription>
-        <value>New activity</value>
-    </labels>
-    <labels>
-        <fullName>Time_Drive_Action_New_Task</fullName>
-        <categories>Time Drive</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Timeline header · activity action button: New Task</shortDescription>
-        <value>New Task</value>
-    </labels>
-    <labels>
-        <fullName>Time_Drive_Action_New_Event</fullName>
-        <categories>Time Drive</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Timeline header · activity action button: New Event</shortDescription>
-        <value>New Event</value>
-    </labels>
-    <labels>
-        <fullName>Time_Drive_Action_Log_Call</fullName>
-        <categories>Time Drive</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Timeline header · activity action button: Log a Call</shortDescription>
-        <value>Log a Call</value>
-    </labels>
-    <labels>
-        <fullName>Time_Drive_Action_Email</fullName>
-        <categories>Time Drive</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Timeline header · activity action button: Email</shortDescription>
-        <value>Email</value>
-    </labels>
-    <labels>
         <fullName>Time_Drive_Row_Actions</fullName>
         <categories>Time Drive</categories>
         <language>en_US</language>
@@ -361,6 +321,46 @@
         <value>{0}: {1} has no field {2}.</value>
     </labels>
     <labels>
+        <fullName>Time_Drive_View_Overdue</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Lens name · the Overdue lens: items past their due date</shortDescription>
+        <value>Overdue</value>
+    </labels>
+    <labels>
+        <fullName>Time_Drive_Legend_Overdue_Tasks</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Legend and filters · open tasks past their due date</shortDescription>
+        <value>Overdue tasks</value>
+    </labels>
+    <labels>
+        <fullName>Time_Drive_Button_Overdue</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timeline header · shown while something is overdue: opens the Overdue lens</shortDescription>
+        <value>Overdue</value>
+    </labels>
+    <labels>
+        <fullName>Time_Drive_Button_Overdue_Title</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timeline header · the Overdue button's tooltip</shortDescription>
+        <value>Show overdue items</value>
+    </labels>
+    <labels>
+        <fullName>Time_Drive_Server_Unreadable_Dates</fullName>
+        <categories>Time Drive</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timeline warning · some of a source's items have dates that can't be read</shortDescription>
+        <value>{0}: {1} items have a date Time Drive can’t read, so they aren’t shown.</value>
+    </labels>
+    <labels>
         <fullName>Time_Drive_Server_No_Link</fullName>
         <categories>Time Drive</categories>
         <language>en_US</language>
@@ -503,14 +503,6 @@
         <protected>false</protected>
         <shortDescription>Timeline error state · heading when no source could be read</shortDescription>
         <value>The timeline couldn't be read</value>
-    </labels>
-    <labels>
-        <fullName>Time_Drive_Error_Partial_Title</fullName>
-        <categories>Time Drive</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Timeline notice · heading when some sources couldn't be read</shortDescription>
-        <value>Some items couldn't be shown</value>
     </labels>
     <labels>
         <fullName>Time_Drive_Email_Opened</fullName>

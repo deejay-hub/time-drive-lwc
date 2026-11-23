@@ -42,4 +42,21 @@ private class TimeDriveData360CatalogTest {
       Assert.isNotNull(e.getMessage());
     }
   }
+
+  // The metadata is asked for once per data space; blank means the default.
+  @IsTest
+  static void listsADataSpacesObjectsAndItsProfileObjects() {
+    TimeDriveData360Catalog.metadataBySpace.put(
+      'default',
+      new List<Object>{
+        '{fields=[], name=ssot__Individual__dlm, category=Profile}',
+        '{fields=[], name=ssot__EmailEngagement__dlm, category=Engagement}'
+      }
+    );
+    TimeDriveData360Catalog catalog = new TimeDriveData360Catalog();
+    List<String> names = catalog.dmoNames(null);
+    names.sort();
+    Assert.areEqual(new List<String>{ 'ssot__EmailEngagement__dlm', 'ssot__Individual__dlm' }, names);
+    Assert.areEqual(new Set<String>{ 'ssot__Individual__dlm' }, catalog.profileDmoNames(''));
+  }
 }

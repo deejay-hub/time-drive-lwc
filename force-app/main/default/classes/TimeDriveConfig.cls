@@ -20,6 +20,8 @@ public with sharing class TimeDriveConfig {
   // ---- the timeline's views ------------------------------------------------
 
   public static final String ALL_VIEW = 'All';
+  // The Overdue lens, by its API name (its label can be translated or renamed).
+  public static final String OVERDUE_VIEW = 'Overdue';
   @TestVisible
   private static List<Time_Drive_View__mdt> testViews;
 
@@ -53,6 +55,46 @@ public with sharing class TimeDriveConfig {
   private static Map<String, Time_Drive_Source__mdt> driveSources;
   private static Map<String, List<Time_Drive_Detail_Field__mdt>> driveDetails;
   private static Map<String, List<Time_Drive_Highlight__mdt>> driveHighlights;
+
+  // The package's namespace prefix on Time Drive's own fields (ns__), or ''
+  // unpackaged: read off an object of the package, so it's never typed in.
+  private static final String FIELD_PREFIX = String.valueOf(Time_Drive_Record__c.SObjectType)
+    .removeEnd('Time_Drive_Record__c');
+
+  /**
+   * One of Time Drive's own fields by its full name, for get and put by name:
+   * Kind__c reads ns__Kind__c once packaged. Field maps and populated-field
+   * maps key packaged fields by their full names.
+   *
+   * @param name the field's name without a namespace, such as Kind__c
+   * @return the name with the package's prefix, if it has one
+   */
+  public static String field(String name) {
+    return FIELD_PREFIX + name;
+  }
+
+  /** The package's namespace, or null unpackaged. */
+  public static final String NAMESPACE = String.isBlank(FIELD_PREFIX) ? null : FIELD_PREFIX.removeEnd('__');
+
+  /**
+   * An Apex source's class by the name Setup keeps: the org's own class
+   * first (it has no namespace), else Time Drive's (TimeDriveOpportunityProducts).
+   * A name with a namespace (acme.LoyaltySource) is found as given.
+   *
+   * @param name the class name
+   * @return the class's type, or null when there's none by that name
+   */
+  public static Type apexType(String name) {
+    if (String.isBlank(name)) {
+      return null;
+    }
+    String trimmed = name.trim();
+    if (trimmed.contains('.')) {
+      return Type.forName(trimmed);
+    }
+    Type own = Type.forName('', trimmed);
+    return own != null ? own : Type.forName(trimmed);
+  }
 
   private static final List<String> SOURCE_COPIED = new List<String>{
     'Kind__c',
@@ -129,7 +171,7 @@ public with sharing class TimeDriveConfig {
       }
       return new TimeDriveSoqlProvider();
     }
-    Type providerType = Type.forName(source.Provider_Class__c);
+    Type providerType = apexType(source.Provider_Class__c);
     Object instance = providerType == null ? null : providerType.newInstance();
     if (instance instanceof TimeDriveApexSource) {
       return (TimeDriveApexSource) instance;
@@ -141,7 +183,8 @@ public with sharing class TimeDriveConfig {
   }
 
   /**
-   * The views, All first, then by Sequence.
+   * The views, All first, then Overdue, then in alphabetical order of the label people see
+   * (their language's, when it's a custom label).
    *
    * @return the views in display order
    */
@@ -175,13 +218,69 @@ public with sharing class TimeDriveConfig {
   }
 
   /**
+   * Whether the picker offers a lens, by its API name (DeveloperName).
+   *
+   * @param key the lens's DeveloperName
+   * @return true when it exists and is switched on
+   */
+  public static Boolean isOffered(String key) {
+    for (Time_Drive_View__mdt v : views()) {
+      if (v.DeveloperName == key) {
+        return isActive(v);
+      }
+    }
+    return false;
+  }
+
+  /**
    * Whether a view is offered: All always; others unless made inactive.
    *
    * @param v the view to check
    * @return true when the view is offered
    */
   public static Boolean isActive(Time_Drive_View__mdt v) {
-    return v.DeveloperName == ALL_VIEW || v.getPopulatedFieldsAsMap().get('Active__c') != false;
+    return v.DeveloperName == ALL_VIEW || !hiddenViews().contains(v.DeveloperName);
+  }
+
+  private static Set<String> hiddenViews;
+
+  /**
+   * The lenses that start switched off: until Setup first saves the org's
+   * choices (Get started writes these), the picker doesn't offer them.
+   */
+  public static final List<String> OFF_BY_DEFAULT = new List<String>{ 'Commerce', 'Digital' };
+
+  /**
+   * The views Setup has switched off, kept on the org's Time_Drive_Setup__c
+   * record (read once a transaction); before there is one, OFF_BY_DEFAULT.
+   *
+   * @return the developer names of the views the picker doesn't offer
+   */
+  public static Set<String> hiddenViews() {
+    if (hiddenViews == null) {
+      hiddenViews = new Set<String>();
+      // The org's own Setup record: read for everyone who opens a timeline.
+      List<Time_Drive_Setup__c> rows = [
+        SELECT Hidden_Views__c
+        FROM Time_Drive_Setup__c
+        WITH SYSTEM_MODE
+        ORDER BY CreatedDate
+        LIMIT 1
+      ];
+      // No Setup record yet: the lenses that start switched off.
+      String raw = rows.isEmpty() ? String.join(OFF_BY_DEFAULT, ',') : rows[0].Hidden_Views__c;
+      for (String name : String.isBlank(raw) ? new List<String>() : raw.split(',')) {
+        if (String.isNotBlank(name)) {
+          hiddenViews.add(name.trim());
+        }
+      }
+    }
+    return hiddenViews;
+  }
+
+  /** Reads the switched-off views again on next use (after Setup saves them). */
+  public static void forgetHiddenViews() {
+    hiddenViews = null;
   }
 
   /**
@@ -214,22 +313,28 @@ public with sharing class TimeDriveConfig {
 
   private class ViewOrder implements Comparable {
     Time_Drive_View__mdt view;
+    // The label people see, lower-cased: the alphabetical order ignores case.
+    String key;
     ViewOrder(Time_Drive_View__mdt view) {
       this.view = view;
-    }
-    Decimal rank() {
-      return view.DeveloperName == ALL_VIEW ? -1 : (view.Sequence__c == null ? 1000 : view.Sequence__c);
+      this.key = viewLabel(view).toLowerCase();
     }
     /**
-     * Orders views by rank, then by label.
+     * Orders views All first, then Overdue, then alphabetically by the label people see.
      *
      * @param other the ViewOrder to compare with
      * @return a negative, zero or positive number
      */
     public Integer compareTo(Object other) {
-      Decimal a = rank();
-      Decimal b = ((ViewOrder) other).rank();
-      return a == b ? view.Label.compareTo(((ViewOrder) other).view.Label) : (a < b ? -1 : 1);
+      ViewOrder that = (ViewOrder) other;
+      if (place() != that.place()) {
+        return place() - that.place();
+      }
+      return key == that.key ? view.DeveloperName.compareTo(that.view.DeveloperName) : key.compareTo(that.key);
+    }
+    // All first, then Overdue (a lens of its own kind), then the rest.
+    Integer place() {
+      return view.DeveloperName == ALL_VIEW ? 0 : (view.DeveloperName == OVERDUE_VIEW ? 1 : 2);
     }
   }
 
@@ -254,7 +359,7 @@ public with sharing class TimeDriveConfig {
     if (s == null) {
       return null;
     }
-    String raw = s.getPopulatedFieldsAsMap().containsKey('Event_Label__c') ? s.Event_Label__c?.trim() : null;
+    String raw = s.isSet(Time_Drive_Source__mdt.Event_Label__c) ? s.Event_Label__c?.trim() : null;
     if (String.isNotBlank(raw)) {
       return raw.startsWith(LABEL_PREFIX) ? raw.substring(LABEL_PREFIX.length()).trim() : null;
     }
@@ -271,7 +376,7 @@ public with sharing class TimeDriveConfig {
     if (s == null) {
       return null;
     }
-    String raw = s.getPopulatedFieldsAsMap().containsKey('Event_Label__c') ? s.Event_Label__c?.trim() : null;
+    String raw = s.isSet(Time_Drive_Source__mdt.Event_Label__c) ? s.Event_Label__c?.trim() : null;
     String key = s.DeveloperName + '|' + raw + '|' + s.Object_Name__c;
     if (legendLabels.containsKey(key)) {
       return legendLabels.get(key);
@@ -301,6 +406,8 @@ public with sharing class TimeDriveConfig {
 
   /**
    * A custom label in the viewer's language, or null when there's none by that name.
+   * Time Drive's own labels come first (null is the package's namespace once it's
+   * packaged), then the org's own ('' is the org's namespace). Unpackaged, they're one.
    *
    * @param name the custom label's name
    * @return the label text, or null when there is no such label
@@ -309,11 +416,15 @@ public with sharing class TimeDriveConfig {
     if (String.isBlank(name)) {
       return null;
     }
-    try {
-      return System.Label.get('', name.trim());
-    } catch (Exception e) {
-      return null;
+    String key = name.trim();
+    for (String namespace : new List<String>{ null, '' }) {
+      try {
+        return System.Label.get(namespace, key);
+      } catch (Exception e) {
+        // Not a label in that namespace: try the next.
+      }
     }
+    return null;
   }
 
   private static String objectPlural(String objectName) {
@@ -381,7 +492,7 @@ public with sharing class TimeDriveConfig {
     String key = (objectName + '.' + fieldName).toLowerCase();
     Schema.DescribeFieldResult found = fieldDescribes.get(key);
     if (found == null) {
-      Schema.SObjectField f = fieldMap(objectName).get(fieldName.toLowerCase());
+      Schema.SObjectField f = ownField(fieldMap(objectName), fieldName);
       if (f == null) {
         return null;
       }
@@ -389,6 +500,104 @@ public with sharing class TimeDriveConfig {
       fieldDescribes.put(key, found);
     }
     return found;
+  }
+
+  /**
+   * Whether the user can read an object: a source on one they can't is
+   * simply not theirs to see (no error). An object that doesn't exist is
+   * left to the query to report.
+   *
+   * @param objectName the object's API name
+   * @return false only when it exists and the user can't read it
+   */
+  public static Boolean canRead(String objectName) {
+    if (String.isBlank(objectName)) {
+      return true;
+    }
+    String key = readKey(objectName, null);
+    Boolean known = readable.get(key);
+    if (known == null) {
+      try {
+        Schema.DescribeSObjectResult d = describeObject(objectName);
+        known = d == null || d.isAccessible();
+      } catch (Exception e) {
+        known = true;
+      }
+      readable.put(key, known);
+    }
+    return known;
+  }
+
+  // What this request has found the user can read (canRead), by user, object
+  // and path: access doesn't change within a request, and every read of every
+  // source asks again. The user is in the key because tests switch users.
+  private static Map<String, Boolean> readable = new Map<String, Boolean>();
+
+  private static String readKey(String objectName, String path) {
+    return (UserInfo.getUserId() + '|' + objectName + '|' + (path ?? '')).toLowerCase();
+  }
+
+  /**
+   * Whether the user can read a field, or a path through lookups (each lookup
+   * and the field at its end): one they can't is left out of the query and
+   * shows blank. A path through a polymorphic lookup (What.Name), or a field
+   * that doesn't exist, is left to the query.
+   *
+   * @param objectName the object the path starts from
+   * @param path the field or path
+   * @return false only when a step exists and the user can't read it
+   */
+  public static Boolean canRead(String objectName, String path) {
+    if (String.isBlank(objectName) || String.isBlank(path)) {
+      return true;
+    }
+    String key = readKey(objectName, path);
+    Boolean known = readable.get(key);
+    if (known == null) {
+      known = readsPath(objectName, path);
+      readable.put(key, known);
+    }
+    return known;
+  }
+
+  private static Boolean readsPath(String objectName, String path) {
+    try {
+      List<String> steps = path.split('\\.');
+      String current = describeObject(objectName).getName();
+      for (Integer i = 0; i < steps.size() - 1; i++) {
+        Schema.DescribeFieldResult lookup = lookupNamed(current, steps[i]);
+        if (lookup == null) {
+          return true;
+        }
+        if (!lookup.isAccessible()) {
+          return false;
+        }
+        if (lookup.getReferenceTo().size() != 1) {
+          return true;
+        }
+        Schema.DescribeSObjectResult target = describeType(lookup.getReferenceTo()[0]);
+        if (!target.isAccessible()) {
+          return false;
+        }
+        current = target.getName();
+      }
+      Schema.DescribeFieldResult last = fieldDescribe(current, steps[steps.size() - 1]);
+      return last == null || last.isAccessible();
+    } catch (Exception e) {
+      return true;
+    }
+  }
+
+  // A field by name, or Time Drive's own by its short name: installed, the
+  // describe lists Overdue__c as drvrckt__Overdue__c, while queries and
+  // record reads take either.
+  private static Schema.SObjectField ownField(Map<String, Schema.SObjectField> fields, String name) {
+    String key = name.toLowerCase();
+    Schema.SObjectField f = fields.get(key);
+    if (f == null && FIELD_PREFIX != null && key.endsWith('__c') && key.countMatches('__') == 1) {
+      f = fields.get(FIELD_PREFIX.toLowerCase() + key);
+    }
+    return f;
   }
 
   /**
@@ -436,7 +645,7 @@ public with sharing class TimeDriveConfig {
       }
       if (out != null) {
         String last = steps[steps.size() - 1].toLowerCase();
-        Schema.SObjectField f = fieldMap(current).get(last);
+        Schema.SObjectField f = ownField(fieldMap(current), last);
         if (f == null) {
           out = null;
         } else {
@@ -451,10 +660,27 @@ public with sharing class TimeDriveConfig {
     return out;
   }
 
-  // The lookup field on an object whose relationship has this name: found by
-  // the usual names first (Task is TaskId, Campaign__r is Campaign__c), else
-  // by looking through the object's lookups.
-  private static Schema.DescribeFieldResult lookupNamed(String objectName, String relationship) {
+  // The lookups found (or not, as null) this request, by object and relationship.
+  private static Map<String, Schema.DescribeFieldResult> lookups = new Map<String, Schema.DescribeFieldResult>();
+
+  /**
+   * The lookup field on an object whose relationship has this name, kept for
+   * the request: the usual field name first (AccountId, Campaign__c), else a
+   * look through the object's fields.
+   *
+   * @param objectName the object
+   * @param relationship the relationship name (Account, Campaign__r)
+   * @return the lookup's describe, or null
+   */
+  public static Schema.DescribeFieldResult lookupNamed(String objectName, String relationship) {
+    String key = (objectName + '|' + relationship).toLowerCase();
+    if (!lookups.containsKey(key)) {
+      lookups.put(key, findLookup(objectName, relationship));
+    }
+    return lookups.get(key);
+  }
+
+  private static Schema.DescribeFieldResult findLookup(String objectName, String relationship) {
     Map<String, Schema.SObjectField> fields = fieldMap(objectName);
     for (String guess : new List<String>{ relationship + 'Id', relationship.replaceAll('(?i)__r$', '__c') }) {
       Schema.SObjectField f = fields.get(guess.toLowerCase());
@@ -568,7 +794,6 @@ public with sharing class TimeDriveConfig {
       }
     } catch (Exception e) {
       // Nothing kept to forget.
-      System.debug(LoggingLevel.FINE, 'Time Drive: cache not cleared. ' + e.getMessage());
     }
     driveSources = null;
     driveDetails = null;
@@ -587,9 +812,12 @@ public with sharing class TimeDriveConfig {
     }
   }
 
+  /** Where this request's sources came from (cache or query), for diagnostics. */
+  public static String sourcesFrom;
+
   private static Cache.OrgPartition partition() {
     try {
-      return Test.isRunningTest() ? null : Cache.Org.getPartition('local.TimeDrive');
+      return Test.isRunningTest() ? null : Cache.Org.getPartition(TimeDriveCache.PARTITION);
     } catch (Exception e) {
       return null;
     }
@@ -601,11 +829,14 @@ public with sharing class TimeDriveConfig {
     Cache.OrgPartition cache = partition();
     try {
       if (cache != null && cache.contains(CACHE_KEY)) {
+        sourcesFrom = 'cache';
         return (List<Time_Drive_Record__c>) cache.get(CACHE_KEY);
       }
+      sourcesFrom = cache == null
+        ? 'query (no Time Drive cache partition)'
+        : 'query (not cached yet, or the partition has no capacity)';
     } catch (Exception e) {
       // Not readable: read the records.
-      System.debug(LoggingLevel.FINE, 'Time Drive: cache not read. ' + e.getMessage());
     }
     List<Time_Drive_Record__c> found = queryDriveRecords();
     try {
@@ -614,7 +845,6 @@ public with sharing class TimeDriveConfig {
       }
     } catch (Exception e) {
       // No room to keep them: every request reads them.
-      System.debug(LoggingLevel.FINE, 'Time Drive: cache not kept. ' + e.getMessage());
     }
     return found;
   }
@@ -666,7 +896,6 @@ public with sharing class TimeDriveConfig {
         Detail_4_Label__c,
         Detail_4_Format__c,
         Highlight_Field__c,
-        Highlight_Values__c,
         Highlight_Icon__c,
         Highlight_Colour__c,
         Time_Drive__r.Parent_Object__c,
@@ -684,23 +913,23 @@ public with sharing class TimeDriveConfig {
       DeveloperName = key,
       Label = r.Name,
       Active__c = r.Active__c == true && r.Time_Drive__r.Active__c == true,
-      Parent_Object__c = r.Time_Drive__r.Parent_Object__c,
-      Source_Mode__c = 'Always'
+      Parent_Object__c = r.Time_Drive__r.Parent_Object__c
     );
-    for (String field : SOURCE_COPIED) {
-      if (r.get(field) != null) {
-        s.put(field, r.get(field));
+    for (String name : SOURCE_COPIED) {
+      Object value = r.get(field(name));
+      if (value != null) {
+        s.put(field(name), value);
       }
     }
     driveSources.put(key, s);
     List<Time_Drive_Detail_Field__mdt> details = new List<Time_Drive_Detail_Field__mdt>();
     for (Integer n = 1; n <= 4; n++) {
-      String field = (String) r.get('Detail_' + n + '_Field__c');
+      String field = (String) r.get(field('Detail_' + n + '_Field__c'));
       if (String.isBlank(field)) {
         continue;
       }
-      String label = (String) r.get('Detail_' + n + '_Label__c');
-      String format = (String) r.get('Detail_' + n + '_Format__c');
+      String label = (String) r.get(field('Detail_' + n + '_Label__c'));
+      String format = (String) r.get(field('Detail_' + n + '_Format__c'));
       details.add(
         new Time_Drive_Detail_Field__mdt(
           DeveloperName = key.left(34) + '_D' + n,
@@ -720,7 +949,6 @@ public with sharing class TimeDriveConfig {
             DeveloperName = key.left(34) + '_H1',
             Label = r.Highlight_Field__c.left(40),
             Field__c = r.Highlight_Field__c,
-            Values__c = r.Highlight_Values__c,
             Icon__c = r.Highlight_Icon__c,
             Colour__c = r.Highlight_Colour__c,
             Sequence__c = 10
@@ -741,7 +969,7 @@ public with sharing class TimeDriveConfig {
     if (s == null) {
       return out;
     }
-    String raw = (String) s.getPopulatedFieldsAsMap().get('Lenses__c');
+    String raw = s.isSet(Time_Drive_Source__mdt.Lenses__c) ? s.Lenses__c : null;
     if (String.isBlank(raw)) {
       raw = s.Category__c;
     }
@@ -774,6 +1002,7 @@ public with sharing class TimeDriveConfig {
       loadDrives();
       return driveSources;
     }
+    sourcesFrom = 'a test\'s sources';
     Map<String, Time_Drive_Source__mdt> out = new Map<String, Time_Drive_Source__mdt>();
     for (Time_Drive_Source__mdt s : testSources) {
       out.put(s.DeveloperName, s);

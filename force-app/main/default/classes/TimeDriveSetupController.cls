@@ -3,8 +3,8 @@
  * words, answers the setup wizard's questions from the org's own schema
  * (objects, how they link to the page's record, their fields), previews a
  * draft source against a real record, and saves sources (new, changed or
- * switched off) through the Metadata API. Saving is asynchronous: the
- * deployment's result arrives as a Time_Drive_Setup_Result__e event.
+ * switched off) as Time_Drive_Record__c records. Every save is done when
+ * its call returns.
  */
 // The branching follows the platform's cases and the plot's rules; splitting it up would only scatter them.
 // Size, parameter lists and field counts follow the platform's entry points, its cases and the data the components exchange;
@@ -13,6 +13,8 @@
   'PMD.CyclomaticComplexity, PMD.CognitiveComplexity, PMD.AvoidBooleanMethodParameters, PMD.ExcessiveParameterList, PMD.ExcessivePublicCount, PMD.NcssCount, PMD.TooManyFields'
 )
 public with sharing class TimeDriveSetupController {
+  // A subtitle's fields: up to two, read with a dot between them.
+  private static final Integer MAX_SUBTITLE_FIELDS = 2;
   private static final Integer MAX_DETAILS = 4;
   // Contact points (email, phone, address) are how to reach someone, not what they did, whatever
   // category Data 360 files them under.
@@ -138,9 +140,9 @@ public with sharing class TimeDriveSetupController {
   public static final String MATCH_ALL = 'all';
   public static final String MATCH_ANY = 'any';
 
-  // ---- fit the timeline to the org ------------------------------------------
+  // ---- Check your org ---------------------------------------------------------
 
-  // The org features org-fitted sources can need, and how Setup names them.
+  // The org features shipped sources can need, and how Setup names them.
   private static final Map<String, String> FEATURE_LABELS = new Map<String, String>{
     'SharedActivities' => 'Shared Activities',
     'PersonAccounts' => 'Person Accounts',
@@ -175,7 +177,6 @@ public with sharing class TimeDriveSetupController {
     'ContactsToMultipleAccounts',
     'PersonAccounts',
     'EnhancedEmail',
-    'Data360',
     'ActivityCapture'
   };
 
@@ -184,7 +185,6 @@ public with sharing class TimeDriveSetupController {
     'ContactsToMultipleAccounts' => 'Contacts to Multiple Accounts',
     'PersonAccounts' => 'Person Accounts',
     'EnhancedEmail' => 'Enhanced Email',
-    'Data360' => 'Data 360',
     'ActivityCapture' => 'Einstein Activity Capture'
   };
 
@@ -206,10 +206,6 @@ public with sharing class TimeDriveSetupController {
     'EnhancedEmail' => new List<String>{
       'Enhanced Email (emails saved as Email Messages with their activity)',
       'Setup › Enhanced Email'
-    },
-    'Data360' => new List<String>{
-      'Data 360 connected, with the Time Drive Data 360 add-on installed',
-      'Setup › Data 360 Setup, and the add-on package'
     },
     'ActivityCapture' => new List<String>{
       'Einstein Activity Capture licences assigned to users',
@@ -302,7 +298,7 @@ public with sharing class TimeDriveSetupController {
     }
     Time_Drive_Record__c row = copyOf(t);
     write(new List<Time_Drive_Record__c>{ row });
-    return new SaveTicket(null, row.Key__c);
+    return new SaveTicket(row.Key__c);
   }
 
   /**
@@ -451,7 +447,7 @@ public with sharing class TimeDriveSetupController {
       Boolean onPage =
         String.isBlank(parentObject) ||
         (String.isBlank(t.Parent_Object__c) ? 'Contact' : t.Parent_Object__c) == parentObject;
-      if (onPage && t.Removed__c != true && (!fit.containsKey(t.DeveloperName) || fit.get(t.DeveloperName))) {
+      if (onPage && (!fit.containsKey(t.DeveloperName) || fit.get(t.DeveloperName))) {
         out.add(t);
       }
     }
@@ -468,7 +464,10 @@ public with sharing class TimeDriveSetupController {
     d.developerName = TimeDriveConfig.source(t.DeveloperName) == null ? t.DeveloperName : uniqueName(t.Label);
     d.active = true;
     // All is a lens like the others: a template's copy starts in it, as well as its own.
-    List<String> lenses = new List<String>{ TimeDriveConfig.ALL_VIEW };
+    // (An Overdue template's copy is in Overdue only: its items are already in All as tasks.)
+    List<String> lenses = d.lenses != null && d.lenses.contains(TimeDriveConfig.OVERDUE_VIEW)
+      ? new List<String>()
+      : new List<String>{ TimeDriveConfig.ALL_VIEW };
     for (String lens : d.lenses == null ? new List<String>() : d.lenses) {
       if (!lenses.contains(lens)) {
         lenses.add(lens);
@@ -515,8 +514,8 @@ public with sharing class TimeDriveSetupController {
      * @return A negative number when a comes first, zero when they tie, a positive number when b comes first.
      */
     public Integer compare(SObject a, SObject b) {
-      Decimal sa = (Decimal) a.get('Sequence__c');
-      Decimal sb = (Decimal) b.get('Sequence__c');
+      Decimal sa = (Decimal) a.get(TimeDriveConfig.field('Sequence__c'));
+      Decimal sb = (Decimal) b.get(TimeDriveConfig.field('Sequence__c'));
       return sa == sb ? 0 : (sa == null ? 1 : (sb == null ? -1 : (sa < sb ? -1 : 1)));
     }
   }
@@ -666,9 +665,9 @@ public with sharing class TimeDriveSetupController {
     requireSetupAccess();
     List<Option> out = new List<Option>();
     for (ApexClass c : [
-      SELECT Name
+      SELECT Name, NamespacePrefix
       FROM ApexClass
-      WHERE NamespacePrefix = NULL AND Status = 'Active'
+      WHERE (NamespacePrefix = NULL OR NamespacePrefix = :TimeDriveConfig.NAMESPACE) AND Status = 'Active'
       ORDER BY Name
       LIMIT 2000
     ]) {
@@ -677,9 +676,11 @@ public with sharing class TimeDriveSetupController {
       }
       // A class that no longer compiles (or can't be made) is skipped, so one
       // broken class never empties the list.
+      // The org's own classes by name; Time Drive's own, once packaged, with its namespace.
+      String value = c.NamespacePrefix == null ? c.Name : c.NamespacePrefix + '.' + c.Name;
       Object instance;
       try {
-        Type t = Type.forName(c.Name);
+        Type t = TimeDriveConfig.apexType(value);
         if (t == null) {
           continue;
         }
@@ -688,7 +689,7 @@ public with sharing class TimeDriveSetupController {
         continue;
       }
       if (instance instanceof TimeDriveApexSource) {
-        out.add(new Option(c.Name, c.Name, null));
+        out.add(new Option(value, c.Name, null));
       }
     }
     return out;
@@ -1100,7 +1101,15 @@ public with sharing class TimeDriveSetupController {
     for (Schema.SObjectField f : describe(objectName).fields.getMap().values()) {
       Schema.DescribeFieldResult fd = f.getDescribe();
       if (fd.isAccessible()) {
-        out.add(new FieldInfo(fd));
+        FieldInfo info = new FieldInfo(fd);
+        // The Name object is reached through a lookup to many (What.Name): a
+        // query can go no further, so its own lookups are plain fields here.
+        if (objectName == 'Name') {
+          info.referenceTo = null;
+          info.relationshipName = null;
+          info.polymorphic = false;
+        }
+        out.add(info);
       }
     }
     out.sort();
@@ -1135,7 +1144,7 @@ public with sharing class TimeDriveSetupController {
         out.add(new Option(String.isBlank(apiName) ? name : apiName, name, (String) ds.get('DataSpaceApiName')));
       }
     } catch (Exception e) {
-      System.debug(LoggingLevel.WARN, 'Time Drive Setup: no data spaces read. ' + e.getMessage());
+      // No Data 360 here, or no access to its data spaces: none to offer.
     }
     return out;
   }
@@ -1159,7 +1168,7 @@ public with sharing class TimeDriveSetupController {
     // DataSpace exists only in orgs with Data 360.
     return TimeDriveConfig.sObjectType('DataSpace') == null
       ? new Data360Status(false, 'This org doesn\'t have Data 360.')
-      : new Data360Status(false, 'Install the Time Drive Data 360 add-on package to use Data 360.');
+      : new Data360Status(false, 'Install the Time Drive Data Extension package to use Data 360.');
   }
 
   /** Whether the Data 360 add-on is ready, and the reason when it is not. */
@@ -1259,7 +1268,7 @@ public with sharing class TimeDriveSetupController {
         AggregateResult a = (AggregateResult) Database.query(q, AccessLevel.USER_MODE)[0];
         v.parents = (Integer) a.get('n');
       } catch (Exception e) {
-        System.debug(LoggingLevel.WARN, 'Time Drive Setup: parents not counted. ' + e.getMessage());
+        // Parents that can't be counted: the volume shows without them.
       }
     }
     return v;
@@ -1275,7 +1284,6 @@ public with sharing class TimeDriveSetupController {
         (archived ? ' ALL ROWS' : '');
       return Database.countQueryWithBinds(q, binds, AccessLevel.USER_MODE);
     } catch (Exception e) {
-      System.debug(LoggingLevel.WARN, 'Time Drive Setup: not counted. ' + e.getMessage());
       return null;
     }
   }
@@ -1332,11 +1340,9 @@ public with sharing class TimeDriveSetupController {
   // ---- saving --------------------------------------------------------------
 
   /**
-   * Saves a source (new or changed) and its detail fields. Returns the
-   * deployment's id and the source's name; the result arrives as a
-   * Time_Drive_Setup_Result__e.
+   * Saves a source (new or changed) and its detail fields.
    * @param draftJson The source draft, as JSON.
-   * @return A ticket with the deployment's id and the source's name.
+   * @return A ticket with the source's name.
    */
   @AuraEnabled
   public static SaveTicket save(String draftJson) {
@@ -1365,7 +1371,7 @@ public with sharing class TimeDriveSetupController {
     }
     rows.put(d.developerName, driveRecord(d));
     write(rows.values());
-    return new SaveTicket(null, d.developerName);
+    return new SaveTicket(d.developerName);
   }
 
   /**
@@ -1426,58 +1432,49 @@ public with sharing class TimeDriveSetupController {
   }
 
   /**
-   * Saves which views the picker offers, in one deployment. All is always
-   * offered. Names come from custom labels, so a view is renamed by
-   * changing its label's translation, not here.
+   * Saves which views the picker offers: the ones switched off are kept on
+   * the org's Time_Drive_Setup__c record. All is always offered. Names come
+   * from custom labels, so a view is renamed by changing its label's
+   * translation, not here.
    * @param viewsJson The views as JSON, each with the Active flag to save.
-   * @return A ticket for the deployment; it has no job when nothing changed.
+   * @return A ticket naming what was saved (Views).
    */
   @AuraEnabled
   public static SaveTicket saveViews(String viewsJson) {
     requireSetupAccess();
     List<ViewDraft> drafts = (List<ViewDraft>) JSON.deserialize(viewsJson, List<ViewDraft>.class);
-    Map<String, Time_Drive_View__mdt> existing = new Map<String, Time_Drive_View__mdt>();
+    Set<String> known = new Set<String>();
     for (Time_Drive_View__mdt v : TimeDriveConfig.views()) {
-      existing.put(v.DeveloperName, v);
+      known.add(v.DeveloperName);
     }
-    Metadata.DeployContainer container = new Metadata.DeployContainer();
-    Integer changed = 0;
+    Set<String> hidden = new Set<String>(TimeDriveConfig.hiddenViews());
     for (ViewDraft d : drafts) {
-      Time_Drive_View__mdt v = existing.get(d.developerName);
-      if (v == null) {
+      if (!known.contains(d.developerName)) {
         throw failure('There is no view called ' + d.developerName + '.');
       }
       Boolean active = d.active != false;
-      if (v.DeveloperName == TimeDriveConfig.ALL_VIEW && !active) {
+      if (d.developerName == TimeDriveConfig.ALL_VIEW && !active) {
         throw failure('All items is always offered.');
       }
-      if (active == TimeDriveConfig.isActive(v)) {
-        continue;
+      if (active) {
+        hidden.remove(d.developerName);
+      } else {
+        hidden.add(d.developerName);
       }
-      container.addMetadata(viewMetadata(v, active));
-      changed++;
     }
-    return changed == 0 ? new SaveTicket(null, 'Views') : new SaveTicket(deploy(container, 'Views'), 'Views');
-  }
-
-  // A view's record as it is, but for Active (a deploy replaces it whole).
-  @TestVisible
-  private static Metadata.CustomMetadata viewMetadata(Time_Drive_View__mdt v, Boolean active) {
-    Metadata.CustomMetadata m = new Metadata.CustomMetadata();
-    m.fullName = 'Time_Drive_View.' + v.DeveloperName;
-    m.label = v.Label;
-    Map<String, Object> values = new Map<String, Object>{
-      'Active__c' => active,
-      'Menu_Label__c' => v.Menu_Label__c,
-      'Sequence__c' => v.Sequence__c
-    };
-    for (String field : values.keySet()) {
-      Metadata.CustomMetadataValue value = new Metadata.CustomMetadataValue();
-      value.field = field;
-      value.value = values.get(field);
-      m.values.add(value);
+    // Views that no longer exist drop out of the list.
+    hidden.retainAll(known);
+    Time_Drive_Setup__c row = progressRow();
+    if (row == null) {
+      row = new Time_Drive_Setup__c(Name = 'Org');
     }
-    return m;
+    List<String> names = new List<String>(hidden);
+    names.sort();
+    row.Hidden_Views__c = names.isEmpty() ? null : String.join(names, ',');
+    // Setup access was checked above; the record is the org's, not each admin's.
+    Database.upsert(row, AccessLevel.SYSTEM_MODE);
+    TimeDriveConfig.forgetHiddenViews();
+    return new SaveTicket('Views');
   }
 
   /** A timeline view as Setup lists and saves it. */
@@ -1535,7 +1532,6 @@ public with sharing class TimeDriveSetupController {
       }
     } catch (Exception e) {
       // No access to Email Messages: not something to fit to.
-      System.debug(LoggingLevel.FINE, 'Time Drive: Email Messages not read. ' + e.getMessage());
     }
     return enabled;
   }
@@ -1569,7 +1565,8 @@ public with sharing class TimeDriveSetupController {
     requireSetupAccess();
     Time_Drive_Setup__c row = progressRow();
     if (row == null) {
-      row = new Time_Drive_Setup__c(Name = 'Org');
+      // The org's first Setup record: the lenses that start switched off stay off.
+      row = new Time_Drive_Setup__c(Name = 'Org', Hidden_Views__c = String.join(TimeDriveConfig.OFF_BY_DEFAULT, ','));
     }
     if (steps != null) {
       row.Steps_Done__c = String.join(steps, ',').left(255);
@@ -1583,7 +1580,7 @@ public with sharing class TimeDriveSetupController {
 
   private static Time_Drive_Setup__c progressRow() {
     List<Time_Drive_Setup__c> rows = [
-      SELECT Id, Steps_Done__c, Org_Check_Report__c
+      SELECT Id, Steps_Done__c, Org_Check_Report__c, Hidden_Views__c
       FROM Time_Drive_Setup__c
       WITH SYSTEM_MODE
       ORDER BY CreatedDate
@@ -1640,8 +1637,6 @@ public with sharing class TimeDriveSetupController {
           }
         }
         check.adds.sort();
-      } else if (key == 'Data360') {
-        check.present = getData360Status().ready == true;
       } else {
         check.present = activityCapture().inUse == true;
       }
@@ -1659,9 +1654,6 @@ public with sharing class TimeDriveSetupController {
     }
     if (key == 'ActivityCapture') {
       return check.present ? 'In use' : 'Not in use';
-    }
-    if (key == 'Data360') {
-      return check.present ? 'Connected' : 'Not available';
     }
     return check.present ? 'On' : 'Off';
   }
@@ -1690,11 +1682,6 @@ public with sharing class TimeDriveSetupController {
       return has
         ? 'Emails are saved as Email Messages, so the timeline reads Email Messages instead of email tasks.'
         : 'Emails are logged as tasks, so the timeline reads email tasks.';
-    }
-    if (key == 'Data360') {
-      return has
-        ? 'Data 360 is connected, so you can plot engagement from it alongside your Salesforce records.'
-        : 'Data 360 isn\'t set up here, so only Salesforce records are plotted.';
     }
     return has
       ? 'Einstein Activity Capture is in use. Its emails reach the timeline only when Sync Email as Salesforce Activity is on: please check that setting.'
@@ -1736,7 +1723,7 @@ public with sharing class TimeDriveSetupController {
   }
 
   /**
-   * Which org-fitted sources tied to a setting should be active, given the
+   * Which shipped sources tied to a setting should be active, given the
    * settings used: in a group, the one needing the most of them (and nothing
    * else); alone, one whose needs are all used. Sources tied to no setting
    * aren't in the map, so fitting never touches them.
@@ -1802,7 +1789,6 @@ public with sharing class TimeDriveSetupController {
       }
     } catch (Exception e) {
       // Licences this admin can't read: nothing to warn about.
-      System.debug(LoggingLevel.FINE, 'Time Drive: licences not read. ' + e.getMessage());
     }
     found.inUse = found.users > 0;
     return found;
@@ -1837,10 +1823,10 @@ public with sharing class TimeDriveSetupController {
 
   private static List<Time_Drive_Source__mdt> fittedSources() {
     List<SourceOrder> ordered = new List<SourceOrder>();
+    // Every shipped source: Check your org only switches the ones tied to a
+    // setting (Requires) or in a group of alternatives (Variant Group).
     for (Time_Drive_Source__mdt s : TimeDriveConfig.templates().values()) {
-      if (s.getPopulatedFieldsAsMap().get('Org_Fit__c') == true && s.Removed__c != true) {
-        ordered.add(new SourceOrder(s));
-      }
+      ordered.add(new SourceOrder(s));
     }
     ordered.sort();
     List<Time_Drive_Source__mdt> out = new List<Time_Drive_Source__mdt>();
@@ -1852,8 +1838,8 @@ public with sharing class TimeDriveSetupController {
 
   private static List<String> needs(Time_Drive_Source__mdt s) {
     List<String> out = new List<String>();
-    Object raw = s.getPopulatedFieldsAsMap().get('Requires__c');
-    for (String part : raw == null ? new List<String>() : String.valueOf(raw).split(';')) {
+    String raw = s.isSet(Time_Drive_Source__mdt.Requires__c) ? s.Requires__c : null;
+    for (String part : String.isBlank(raw) ? new List<String>() : raw.split(';')) {
       if (String.isNotBlank(part)) {
         out.add(part.trim());
       }
@@ -1903,7 +1889,7 @@ public with sharing class TimeDriveSetupController {
     write(
       new List<Time_Drive_Record__c>{ new Time_Drive_Record__c(Key__c = developerName, Active__c = active == true) }
     );
-    return new SaveTicket(null, developerName);
+    return new SaveTicket(developerName);
   }
 
   /**
@@ -1937,7 +1923,7 @@ public with sharing class TimeDriveSetupController {
     // Its single Category is superseded by the lenses.
     row.Category__c = null;
     write(new List<Time_Drive_Record__c>{ row });
-    return new SaveTicket(null, developerName);
+    return new SaveTicket(developerName);
   }
 
   /**
@@ -1955,7 +1941,7 @@ public with sharing class TimeDriveSetupController {
       throw failure('The source couldn\'t be removed. ' + e.getDmlMessage(0));
     }
     TimeDriveConfig.reset();
-    return new SaveTicket(null, developerName);
+    return new SaveTicket(developerName);
   }
 
   private static void requireSource(String developerName) {
@@ -1993,19 +1979,6 @@ public with sharing class TimeDriveSetupController {
     Time_Drive__c made = new Time_Drive__c(Name = page + ' Time Drive', Parent_Object__c = page, Active__c = true);
     insert as user made;
     return made.Id;
-  }
-
-  @TestVisible
-  private static String deploy(Metadata.DeployContainer container, String developerName) {
-    if (Test.isRunningTest()) {
-      return 'test-job';
-    }
-    try {
-      return Metadata.Operations.enqueueDeployment(container, new SaveResult(developerName));
-    } catch (Exception e) {
-      System.debug(LoggingLevel.ERROR, 'Time Drive Setup: save failed. ' + e.getMessage());
-      throw failure('The source couldn\'t be saved. You need permission to customise the application.');
-    }
   }
 
   private static void validate(SourceDraft d) {
@@ -2080,7 +2053,7 @@ public with sharing class TimeDriveSetupController {
       Event_Type__c = String.isBlank(d.eventType) ? d.developerName.toLowerCase().left(80) : d.eventType,
       Event_Label__c = d.eventLabel,
       Title__c = oneField(d.title),
-      Subtitle__c = oneField(d.subtitle),
+      Subtitle__c = subtitleFields(d.subtitle),
       Icon__c = d.icon,
       Icon_Colour__c = d.iconColour,
       Record_Id_Field__c = d.recordIdFieldOrRelated(),
@@ -2102,25 +2075,29 @@ public with sharing class TimeDriveSetupController {
     for (DetailDraft detail : d.details == null ? new List<DetailDraft>() : d.details) {
       if (String.isNotBlank(detail.field) && n < MAX_DETAILS) {
         n++;
-        r.put('Detail_' + n + '_Field__c', detail.field);
-        r.put('Detail_' + n + '_Label__c', String.isBlank(detail.label) ? null : detail.label.left(80));
-        r.put('Detail_' + n + '_Format__c', String.isBlank(detail.format) ? 'Text' : detail.format);
+        r.put(TimeDriveConfig.field('Detail_' + n + '_Field__c'), detail.field);
+        r.put(
+          TimeDriveConfig.field('Detail_' + n + '_Label__c'),
+          String.isBlank(detail.label) ? null : detail.label.left(80)
+        );
+        r.put(
+          TimeDriveConfig.field('Detail_' + n + '_Format__c'),
+          String.isBlank(detail.format) ? 'Text' : detail.format
+        );
       }
     }
     // The record is upserted: a detail or highlight taken out must be cleared, or its old field stays.
     for (Integer i = n + 1; i <= MAX_DETAILS; i++) {
-      r.put('Detail_' + i + '_Field__c', null);
-      r.put('Detail_' + i + '_Label__c', null);
-      r.put('Detail_' + i + '_Format__c', null);
+      r.put(TimeDriveConfig.field('Detail_' + i + '_Field__c'), null);
+      r.put(TimeDriveConfig.field('Detail_' + i + '_Label__c'), null);
+      r.put(TimeDriveConfig.field('Detail_' + i + '_Format__c'), null);
     }
     r.Highlight_Field__c = null;
-    r.Highlight_Values__c = null;
     r.Highlight_Icon__c = null;
     r.Highlight_Colour__c = null;
     for (HighlightDraft h : d.highlights == null ? new List<HighlightDraft>() : d.highlights) {
       if (String.isNotBlank(h.field)) {
         r.Highlight_Field__c = h.field;
-        r.Highlight_Values__c = 'true';
         r.Highlight_Icon__c = h.icon;
         r.Highlight_Colour__c = h.colour;
         break;
@@ -2141,6 +2118,21 @@ public with sharing class TimeDriveSetupController {
   private static String oneField(String text) {
     Matcher m = Pattern.compile('\\{[^}]+\\}').matcher(text == null ? '' : text);
     return m.find() ? m.group() : null;
+  }
+
+  /**
+   * A subtitle as up to two fields with a dot between them ({Owner.Name} · {What.Name}); none when it has none.
+   * @param text The subtitle as drafted.
+   * @return Its first two {Field}s, joined by the timeline's separator, or null.
+   */
+  @TestVisible
+  private static String subtitleFields(String text) {
+    Matcher m = Pattern.compile('\\{[^}]+\\}').matcher(text == null ? '' : text);
+    List<String> fields = new List<String>();
+    while (m.find() && fields.size() < MAX_SUBTITLE_FIELDS) {
+      fields.add(m.group());
+    }
+    return fields.isEmpty() ? null : String.join(fields, TimeDrivePlotter.SEPARATOR);
   }
 
   /** Sources are records only admins write: it needs the Setup permission set's access, or Customize Application. */
@@ -2168,60 +2160,18 @@ public with sharing class TimeDriveSetupController {
     return e;
   }
 
-  // ---- the deployment's result --------------------------------------------
-
-  /** Publishes the deployment's outcome for the page to show. */
-  public class SaveResult implements Metadata.DeployCallback {
-    private String developerName;
-
-    /**
-     * Remembers the source the deployment saves.
-     * @param developerName The source's developer name.
-     */
-    public SaveResult(String developerName) {
-      this.developerName = developerName;
-    }
-
-    /**
-     * Publishes a Time_Drive_Setup_Result__e with the deployment's status and any failure messages.
-     * @param result The deployment's result.
-     * @param context The callback context.
-     */
-    public void handleResult(Metadata.DeployResult result, Metadata.DeployCallbackContext context) {
-      String message = '';
-      if (result.status != Metadata.DeployStatus.Succeeded && result.details != null) {
-        for (Metadata.DeployMessage m : result.details.componentFailures) {
-          message += m.fullName + ': ' + m.problem + ' ';
-        }
-        System.debug(LoggingLevel.ERROR, 'Time Drive Setup: ' + developerName + ' failed. ' + message);
-      }
-      EventBus.publish(
-        new Time_Drive_Setup_Result__e(
-          Job_Id__c = result.id,
-          Source__c = developerName,
-          Status__c = String.valueOf(result.status),
-          Message__c = message.left(255)
-        )
-      );
-    }
-  }
-
   // ---- shapes the page reads and sends ------------------------------------
 
-  /** A save under way: the deployment to wait for, and the source it saves. */
+  /** A save that's done: the source (or Views) it saved. */
   public class SaveTicket {
-    @AuraEnabled
-    public String jobId;
     @AuraEnabled
     public String developerName;
 
     /**
      * Builds the ticket.
-     * @param jobId The deployment's id, or null when nothing was deployed.
      * @param developerName The source's developer name.
      */
-    public SaveTicket(String jobId, String developerName) {
-      this.jobId = jobId;
+    public SaveTicket(String developerName) {
       this.developerName = developerName;
     }
   }
@@ -2594,9 +2544,6 @@ public with sharing class TimeDriveSetupController {
     /** How many months back to read. */
     @AuraEnabled
     public Decimal historyMonths { get; set; }
-    /** Whether the source is marked as removed. */
-    @AuraEnabled
-    public Boolean removed { get; set; }
     /** The event type key. */
     @AuraEnabled
     public String eventType { get; set; }
@@ -2624,13 +2571,10 @@ public with sharing class TimeDriveSetupController {
     /** Where a click goes (blank: the item's own record). */
     @AuraEnabled
     public String recordIdField { get; set; }
-    /** Whether the source is fitted to the org; kept as shipped through edits and switches. */
-    @AuraEnabled
-    public Boolean orgFit { get; set; }
-    /** The org settings an org-fitted source needs, separated by semicolons. */
+    /** The org settings a shipped source needs, separated by semicolons. */
     @AuraEnabled
     public String requires { get; set; }
-    /** The group of variants an org-fitted source belongs to. */
+    /** The group of variants a shipped source belongs to. */
     @AuraEnabled
     public String variantGroup { get; set; }
     /** The Apex class that supplies the events. */
@@ -2689,7 +2633,6 @@ public with sharing class TimeDriveSetupController {
       }
       maxRecords = s.Max_Records__c;
       historyMonths = s.History_Months__c;
-      removed = s.Removed__c;
       eventType = s.Event_Type__c;
       eventLabel = s.Event_Label__c;
       List<String> inLenses = TimeDriveConfig.lensesOf(s);
@@ -2700,10 +2643,9 @@ public with sharing class TimeDriveSetupController {
       icon = s.Icon__c;
       iconColour = s.Icon_Colour__c;
       recordIdField = s.Record_Id_Field__c;
-      Map<String, Object> populated = s.getPopulatedFieldsAsMap();
-      orgFit = populated.get('Org_Fit__c') == true;
-      requires = (String) populated.get('Requires__c');
-      variantGroup = (String) populated.get('Variant_Group__c');
+      // Read only when set: a source queried without these fields has none.
+      requires = s.isSet(Time_Drive_Source__mdt.Requires__c) ? s.Requires__c : null;
+      variantGroup = s.isSet(Time_Drive_Source__mdt.Variant_Group__c) ? s.Variant_Group__c : null;
       providerClass = s.Provider_Class__c;
       sequence = s.Sequence__c;
     }
@@ -2760,7 +2702,6 @@ public with sharing class TimeDriveSetupController {
         Label = String.isBlank(label) ? 'Preview' : label,
         Active__c = true,
         Kind__c = kind,
-        Source_Mode__c = 'Always',
         Parent_Object__c = parentObject,
         Object_Name__c = objectName,
         Parent_Field__c = parentField,
@@ -2786,7 +2727,7 @@ public with sharing class TimeDriveSetupController {
     }
 
     /**
-     * The highlights as records, for the preview (at most the two a source keeps).
+     * The highlights as records, for the preview (at most the one a source keeps, TimeDriveHighlights.MAX_RULES).
      * @return The highlight records.
      */
     public List<Time_Drive_Highlight__mdt> highlightRecords() {
@@ -2797,7 +2738,6 @@ public with sharing class TimeDriveSetupController {
             new Time_Drive_Highlight__mdt(
               Label = h.field,
               Field__c = h.field,
-              Values__c = 'true',
               Icon__c = h.icon,
               Colour__c = h.colour,
               Sequence__c = (out.size() + 1) * 10
@@ -3136,6 +3076,12 @@ public with sharing class TimeDriveSetupController {
     public String type;
     @AuraEnabled
     public Boolean filterable;
+    // Its most characters (a long text area's 32,000), and whether it's rich
+    // text: the timeline shortens long text and shows rich text as words.
+    @AuraEnabled
+    public Integer length;
+    @AuraEnabled
+    public Boolean html;
     @AuraEnabled
     public List<Option> values = new List<Option>();
     // A lookup: the object it points to and the name to reach through it
@@ -3145,6 +3091,11 @@ public with sharing class TimeDriveSetupController {
     public String referenceTo;
     @AuraEnabled
     public String relationshipName;
+    // A lookup to more than one object (a task's Related To, its Name, its
+    // Assigned To): it leads to the Name object's fields, which a query
+    // reads through any of them (What.Name).
+    @AuraEnabled
+    public Boolean polymorphic = false;
     // That object's names, for a source named after it (a TaskRelation
     // source reading "Tasks").
     @AuraEnabled
@@ -3161,12 +3112,17 @@ public with sharing class TimeDriveSetupController {
       label = fd.getLabel();
       type = String.valueOf(fd.getType()).toLowerCase();
       filterable = fd.isFilterable();
+      length = fd.getLength();
+      html = fd.isHtmlFormatted();
       List<Schema.SObjectType> targets = fd.getReferenceTo();
       if (targets.size() == 1 && String.isNotBlank(fd.getRelationshipName())) {
         Schema.DescribeSObjectResult target = targets[0].getDescribe(SObjectDescribeOptions.DEFERRED);
         referenceTo = target.getName();
         referenceLabel = target.getLabel();
         referencePlural = target.getLabelPlural();
+        relationshipName = fd.getRelationshipName();
+      } else if (targets.size() > 1 && String.isNotBlank(fd.getRelationshipName())) {
+        polymorphic = true;
         relationshipName = fd.getRelationshipName();
       }
       if (fd.getType() == Schema.DisplayType.PICKLIST || fd.getType() == Schema.DisplayType.MULTIPICKLIST) {

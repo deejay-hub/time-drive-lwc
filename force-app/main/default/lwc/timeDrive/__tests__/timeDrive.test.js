@@ -1,14 +1,19 @@
 import { createElement } from "lwc";
+import { itemOrder, isoDate } from "../timeDriveModel";
 import TIME_ZONE from "@salesforce/i18n/timeZone";
 import { setup as setupAccessibility } from "@sa11y/jest";
 import TimeDrive from "c/timeDrive";
 import getTimeline from "@salesforce/apex/TimeDriveController.getTimeline";
+import getTimelineTrace from "@salesforce/apex/TimeDriveController.getTimelineTrace";
+import getPageDaysTrace from "@salesforce/apex/TimeDriveController.getPageDaysTrace";
+import getViews from "@salesforce/apex/TimeDriveController.getViews";
+import getOverdue from "@salesforce/apex/TimeDriveController.getOverdue";
 import getDays from "@salesforce/apex/TimeDriveController.getPageDays";
 import getRights from "@salesforce/apex/TimeDriveController.getRights";
 import getPreference from "@salesforce/apex/TimeDriveController.getPreference";
 import savePreference from "@salesforce/apex/TimeDriveController.savePreference";
 import saveDateRange from "@salesforce/apex/TimeDriveController.saveDateRange";
-import getActivityActions from "@salesforce/apex/TimeDriveController.getActivityActions";
+import saveLensFilters from "@salesforce/apex/TimeDriveController.saveLensFilters";
 import TimeDriveConfirm from "c/timeDriveConfirm";
 import { deleteRecord } from "lightning/uiRecordApi";
 import { registerRefreshHandler } from "lightning/refresh";
@@ -26,7 +31,32 @@ import {
   windowEnds,
   windowRange
 } from "../timeDriveModel";
-import { describeError } from "c/timeDriveErrors";
+
+// The tests' events are dated from NOW, so the component reads the same clock:
+// only Date is faked (and still ticks), so setTimeout, requestAnimationFrame
+// and the promise flushes stay real. Each test starts at NOW again.
+const NOW = new Date(2026, 9, 18, 12, 0).getTime();
+jest.useFakeTimers({
+  now: NOW,
+  advanceTimers: true,
+  doNotFake: [
+    "hrtime",
+    "nextTick",
+    "performance",
+    "queueMicrotask",
+    "requestAnimationFrame",
+    "cancelAnimationFrame",
+    "requestIdleCallback",
+    "cancelIdleCallback",
+    "setImmediate",
+    "clearImmediate",
+    "setInterval",
+    "clearInterval",
+    "setTimeout",
+    "clearTimeout"
+  ]
+});
+beforeEach(() => jest.setSystemTime(NOW));
 
 jest.mock(
   "@salesforce/apex/TimeDriveController.getPreference",
@@ -45,7 +75,38 @@ jest.mock(
 jest.mock("@salesforce/apex/TimeDriveController.saveDateRange", () => ({ default: jest.fn(() => Promise.resolve()) }), {
   virtual: true
 });
+jest.mock(
+  "@salesforce/apex/TimeDriveController.saveLensFilters",
+  () => ({ default: jest.fn(() => Promise.resolve()) }),
+  {
+    virtual: true
+  }
+);
 jest.mock("@salesforce/apex/TimeDriveController.getTimeline", () => ({ default: jest.fn() }), { virtual: true });
+jest.mock("@salesforce/apex/TimeDriveController.getTimelineTrace", () => ({ default: jest.fn() }), {
+  virtual: true
+});
+jest.mock("@salesforce/apex/TimeDriveController.getPageDaysTrace", () => ({ default: jest.fn() }), {
+  virtual: true
+});
+// The lenses and the Overdue check, as wires a test can answer (left unanswered,
+// the card uses its own lenses and shows no Overdue button).
+jest.mock(
+  "@salesforce/apex/TimeDriveController.getViews",
+  () => {
+    const { createApexTestWireAdapter } = require("@salesforce/sfdx-lwc-jest");
+    return { default: createApexTestWireAdapter(jest.fn()) };
+  },
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex/TimeDriveController.getOverdue",
+  () => {
+    const { createApexTestWireAdapter } = require("@salesforce/sfdx-lwc-jest");
+    return { default: createApexTestWireAdapter(jest.fn()) };
+  },
+  { virtual: true }
+);
 // The window most tests were written for: half a year back, nothing ahead.
 // The defaults (a year back, half a year ahead) have their own test.
 const createTimeline = () => {
@@ -84,14 +145,6 @@ jest.mock("lightning/navigation", () => {
   NavigationMixin.GenerateUrl = GenerateUrl;
   return { NavigationMixin, navigated: record };
 });
-jest.mock(
-  "@salesforce/apex/TimeDriveController.getActivityActions",
-  () => {
-    const { createApexTestWireAdapter } = require("@salesforce/sfdx-lwc-jest");
-    return { default: createApexTestWireAdapter(jest.fn()) };
-  },
-  { virtual: true }
-);
 
 // The summary half of getTimeline, answered like the wire it replaced: the
 // calls waiting for an answer are kept, and emit/error settle them.
@@ -116,6 +169,20 @@ const refresh = async (element) => {
 
 // The Filters panel lives in its own component, inside the timeline.
 const filtersRoot = (root) => root.querySelector("c-time-drive-filters").shadowRoot;
+// The types ticked in the open Filters panel, and ticking exactly these.
+const checkedTypes = (root) =>
+  [...filtersRoot(root).querySelectorAll("lightning-input.type-choice")]
+    .filter((i) => i.checked)
+    .map((i) => i.dataset.value);
+const pickTypes = (root, values) => {
+  for (const input of filtersRoot(root).querySelectorAll("lightning-input.type-choice")) {
+    const want = values.includes(input.dataset.value);
+    if (input.checked !== want) {
+      input.checked = want;
+      input.dispatchEvent(new CustomEvent("change"));
+    }
+  }
+};
 
 // ---- a small fake server: the summary and day pages, filtered like Apex ----
 
@@ -286,7 +353,6 @@ const scrollList = async (root, edge) => {
   await flush();
 };
 
-const NOW = new Date(2026, 9, 18, 12, 0).getTime();
 const at = (daysAgo, hour = 12) => new Date(new Date(NOW).setHours(hour, 0, 0, 0) - daysAgo * 86400000).toISOString();
 
 const EVENTS = [
@@ -352,6 +418,8 @@ describe("c-time-drive", () => {
   };
 
   it("shows every event, grouped by day", async () => {
+    // A few days on, so today has nothing of its own.
+    jest.setSystemTime(NOW + 3 * 86400000);
     const element = await render();
     expect(element.shadowRoot.querySelectorAll(".event")).toHaveLength(4);
     // Three days with items, and today (with none) as a placeholder first.
@@ -359,8 +427,14 @@ describe("c-time-drive", () => {
     const days = element.shadowRoot.querySelectorAll(".day");
     expect(days).toHaveLength(5);
     // From History's start to the earliest item.
+    const earliest = new Intl.DateTimeFormat("en-US", {
+      timeZone: TIME_ZONE,
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    }).format(new Date(at(40)));
     expect(days[4].querySelector(".nothing-now-text").textContent).toMatch(
-      /^Nothing between \w{3} \d+, \d{4} and Sep 7, 2026$/
+      new RegExp(`^Nothing between \\w{3} \\d+, \\d{4} and ${earliest}$`)
     );
     expect(days[0].querySelector(".nothing-now-text").textContent).toBe("Nothing today");
     expect(days[0].querySelector(".day-meta").textContent).toBe("");
@@ -478,7 +552,7 @@ describe("c-time-drive", () => {
     expect(flags[1].querySelector("lightning-icon")).toBeNull();
   });
 
-  it("switches to titles only with the button after Today, and keeps it as the user's own", async () => {
+  it("switches to titles only with the toolbar's Lite button, and keeps it as the user's own", async () => {
     savePreference.mockClear();
     const element = await render();
     const root = element.shadowRoot;
@@ -705,10 +779,19 @@ describe("c-time-drive", () => {
   });
 
   it("asks only for the summary when it refreshes, and then for the days it is on", async () => {
+    getDays.mockClear();
     const element = await render();
+    const daysAsked = () => [...new Set(getDays.mock.calls.flatMap(([params]) => params.dayKeys))].sort();
+    const shown = daysAsked();
+    expect(shown.length).toBeGreaterThan(0);
     getDays.mockClear();
     await refresh(element);
     expect(getSummary.getLastConfig()).toMatchObject({ count: 0 });
+    expect(getDays).not.toHaveBeenCalled();
+    answer();
+    await flush();
+    // Then the days it was on, read again.
+    expect(daysAsked()).toEqual(shown);
   });
 
   it("uses the horizontal layout when asked", async () => {
@@ -797,27 +880,29 @@ describe("c-time-drive", () => {
     );
     // Vertical, the empty state is as tall as it needs.
     expect(element.shadowRoot.querySelector(".empty").style.height).toBe("");
-    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
-    await refresh(element);
-    getSummary.error({
-      message: "System.QueryException: No such column 'Secret__c' on entity 'Invoice__c'",
-      stackTrace: "Class.TimeDriveSoqlProvider.getRows: line 84, column 1"
-    });
-    await flush();
-    const state = element.shadowRoot.querySelector(".empty_error");
-    expect(state.getAttribute("role")).toBe("alert");
-    // A missing column is for an admin to set up: the setup illustration.
-    expect(state.querySelector("lightning-illustration").illustrationName).toBe("access:request");
-    expect(state.textContent).toContain("isn't set up in this org");
-    expect(state.textContent).not.toContain("Possible cause");
-    // Never the raw message or the stack trace.
-    expect(state.textContent).not.toMatch(/QueryException|Secret__c|line 84/);
-    // The technical summary goes to the console, without the stack trace.
-    expect(warn.mock.calls[0][1]).toContain("No such column");
-    expect(warn.mock.calls[0][1]).not.toContain("line 84");
-    // The error state, too.
-    expect(state.style.height).toBe("");
-    warn.mockRestore();
+    const warn = jest.spyOn(console, "warn");
+    try {
+      await refresh(element);
+      getSummary.error({
+        message: "System.QueryException: No such column 'Secret__c' on entity 'Invoice__c'",
+        stackTrace: "Class.TimeDriveSoqlProvider.getRows: line 84, column 1"
+      });
+      await flush();
+      const state = element.shadowRoot.querySelector(".empty_error");
+      expect(state.getAttribute("role")).toBe("alert");
+      // A missing column is for an admin to set up: the setup illustration.
+      expect(state.querySelector("lightning-illustration").illustrationName).toBe("access:request");
+      expect(state.textContent).toContain("isn't set up in this org");
+      expect(state.textContent).not.toContain("Possible cause");
+      // Never the raw message or the stack trace.
+      expect(state.textContent).not.toMatch(/QueryException|Secret__c|line 84/);
+      // Nothing goes to the browser's console.
+      expect(warn).not.toHaveBeenCalled();
+      // The error state, too.
+      expect(state.style.height).toBe("");
+    } finally {
+      warn.mockRestore();
+    }
   });
 });
 
@@ -840,56 +925,49 @@ describe("c-time-drive sources that couldn't be read", () => {
     return element.shadowRoot;
   };
 
-  it("names them in one notice, above what did load", async () => {
+  it("shows the error page, naming them, even when other sources loaded", async () => {
     const root = await mountWith(EVENTS);
-    const notice = root.querySelector(".issue");
-    expect(notice.textContent).toContain("Order placed, Order delivered, and Order canceled couldn't be read.");
-    expect(notice.textContent).not.toMatch(/Possible cause|To fix/);
-    expect(root.querySelectorAll(".warning")).toHaveLength(0);
-    expect(root.querySelectorAll(".event").length).toBeGreaterThan(0);
+    const state = root.querySelector(".empty_error");
+    expect(state.textContent).toContain("Order placed, Order delivered, and Order canceled couldn't be read.");
+    expect(state.textContent).not.toMatch(/Possible cause|To fix/);
+    expect(state.querySelector("button").textContent).toBe("Try again");
+    // In place of the timeline: none of what did load, and no Today or Expand all.
+    expect(root.querySelectorAll(".event")).toHaveLength(0);
+    expect(root.querySelector(".today-button")).toBeNull();
+  });
+
+  it("keeps the height the timeline had with items when it turns to the error page", async () => {
+    // jsdom lays nothing out: the timeline's frame says it was 300px tall.
+    const proto = Element.prototype;
+    const saved = proto.getBoundingClientRect;
+    proto.getBoundingClientRect = function () {
+      if (this.classList?.contains("frame"))
+        return { top: 100, bottom: 400, left: 0, right: 600, width: 600, height: 300 };
+      return saved.call(this);
+    };
+    try {
+      const element = createTimeline();
+      element.recordId = "003000000000001AAA";
+      element.layout = "Vertical";
+      document.body.appendChild(element);
+      emitEvents({ events: EVENTS, warnings: [] });
+      await flush();
+      expect(element.shadowRoot.querySelector(".frame")).not.toBeNull();
+      await refresh(element);
+      emitEvents({ events: EVENTS, warnings: [], problems });
+      await flush();
+      expect(element.shadowRoot.querySelector(".empty_error").style.minHeight).toBe("300px");
+    } finally {
+      proto.getBoundingClientRect = saved;
+    }
   });
 
   it("fills the canvas with the error when nothing could be read", async () => {
     const root = await mountWith([]);
-    expect(root.querySelector(".issue")).toBeNull();
     const state = root.querySelector(".empty_error");
     expect(state.textContent).toContain("The timeline couldn't be read");
     expect(state.textContent).toContain("Order canceled couldn't be read.");
     expect(state.querySelector("button").textContent).toBe("Try again");
-  });
-});
-
-describe("describeError", () => {
-  it("says what went wrong and why, never the raw message", () => {
-    // A GraphQL error: a field the user can't filter on.
-    const graphql = describeError([
-      {
-        message:
-          "Validation error (WrongType@[uiapi/query/Survey__c]) : argument 'where' contains a field not in 'Survey__c_Filter': 'Customer__c'"
-      }
-    ]);
-    expect(graphql.kind).toBe("access");
-    expect(graphql.message).not.toContain("Survey__c");
-    expect(
-      describeError({
-        status: 500,
-        body: { message: "Operation failed due to fields being inaccessible on Sobject Invoice__c" }
-      }).kind
-    ).toBe("access");
-    expect(
-      describeError({
-        status: 404,
-        body: [{ errorCode: "NOT_FOUND", message: "The requested resource does not exist" }]
-      }).kind
-    ).toBe("notFound");
-    expect(describeError({ status: 0, body: { message: "Failed to fetch" } }).kind).toBe("offline");
-    expect(describeError({ status: 500, body: { message: "Apex CPU time limit exceeded" } }).kind).toBe("busy");
-    expect(describeError(new Error("Invalid type: Location__c")).kind).toBe("setup");
-    // The timeline's server names the kind outright.
-    expect(describeError({ status: 500, body: { message: "timedrive:access" } }).kind).toBe("access");
-    const unknown = describeError({ body: { message: "Boom", stackTrace: "Class.X: line 1" } });
-    expect(unknown).toMatchObject({ kind: "unknown", message: "Something went wrong." });
-    expect(unknown.detail).toBe("Boom");
   });
 });
 
@@ -952,8 +1030,7 @@ describe("c-time-drive delight", () => {
     emitEvents({ events: EVENTS, warnings: [] });
     await flush();
     const root = element.shadowRoot;
-    // No search box; the card is named by its Title, the heading by the view.
-    expect(root.querySelector("lightning-input[type='search']")).toBeNull();
+    // The card is named by its Title, the heading by the view.
     expect(root.querySelector("article").getAttribute("aria-label")).toBe("Time Drive");
     const button = root.querySelector("h2 .view-button");
     expect(button.textContent).toContain("All items");
@@ -1127,7 +1204,7 @@ describe("c-time-drive summary query", () => {
     while (document.body.firstChild) document.body.removeChild(document.body.firstChild);
   });
 
-  it("sends every parameter defined, so the wire service makes the request", async () => {
+  it("asks for the timeline with every parameter defined", async () => {
     const element = createTimeline();
     element.recordId = "003000000000001AAA";
     document.body.appendChild(element);
@@ -1291,9 +1368,7 @@ describe("c-time-drive filters panel", () => {
     const root = element.shadowRoot;
     const panel = await open(root);
     expect(panel).not.toBeNull();
-    panel
-      .querySelector("lightning-checkbox-group")
-      .dispatchEvent(new CustomEvent("change", { detail: { value: ["purchase"] } }));
+    pickTypes(root, ["purchase"]);
     await flush();
     buttonByLabel(filtersRoot(root).querySelector(".filter-panel"), "Cancel").click();
     await flush();
@@ -1311,9 +1386,8 @@ describe("c-time-drive filters panel", () => {
     expect(buttonByLabel(panel, "Cancel")).toBeUndefined();
     // A small close icon at the end of the header.
     expect(panel.querySelector("lightning-button-icon.filter-close").iconName).toBe("utility:close");
-    const group = () => filtersRoot(root).querySelector("lightning-checkbox-group");
-    const current = group().value;
-    group().dispatchEvent(new CustomEvent("change", { detail: { value: ["purchase"] } }));
+    const current = checkedTypes(root);
+    pickTypes(root, ["purchase"]);
     await flush();
     const changed = filtersRoot(root).querySelector(".filter-panel");
     expect(changed.querySelector(".filter-title")).toBeNull();
@@ -1324,49 +1398,76 @@ describe("c-time-drive filters panel", () => {
     expect(buttonByLabel(changed, "Apply")).toBeDefined();
     expect(buttonByLabel(changed, "Cancel")).toBeDefined();
     // Put back as it was: nothing to apply, so the title returns.
-    group().dispatchEvent(new CustomEvent("change", { detail: { value: [...current] } }));
+    pickTypes(root, current);
     await flush();
     const same = filtersRoot(root).querySelector(".filter-panel");
     expect(same.querySelector(".filter-title")).not.toBeNull();
     expect(buttonByLabel(same, "Apply")).toBeUndefined();
   });
 
-  it("floats by the Filters button, above it when the room is there, and follows the page", async () => {
-    const element = await mount();
-    const root = element.shadowRoot;
-    // jsdom lays nothing out: the button where the test says, the panel where its style puts it.
-    let button = { top: 100, bottom: 132, left: 900, right: 932, width: 32, height: 32 };
-    const proto = Element.prototype;
-    const saved = proto.getBoundingClientRect;
-    proto.getBoundingClientRect = function () {
-      if (this.classList?.contains("filter-button")) return button;
-      if (this.classList?.contains("filter-panel")) {
-        return { left: parseFloat(this.style.left) || 0, top: parseFloat(this.style.top) || 0, width: 288, height: 0 };
+  it("is a sheet at a wide card's end with two columns, and covers a narrow card", async () => {
+    let resize;
+    global.ResizeObserver = class {
+      constructor(callback) {
+        resize = callback;
       }
-      return saved.call(this);
+      observe() {}
+      disconnect() {}
     };
     try {
+      const element = await mount();
+      const root = element.shadowRoot;
+      // Inside the card, under its header: not in the header's toolbar.
+      expect(root.querySelector(".below-header > c-time-drive-filters")).not.toBeNull();
+      expect(root.querySelector("header c-time-drive-filters")).toBeNull();
       const panel = await open(root);
-      // Under the button, its end edge under the button's, as tall as the room below.
-      expect(panel.style.top).toBe("138px");
-      expect(panel.style.left).toBe(`${932 - 288}px`);
-      expect(panel.style.maxHeight).toBe(`${window.innerHeight - 132 - 6 - 8}px`);
-      // The page scrolls the button near the window's foot: the panel goes above it.
-      button = {
-        top: window.innerHeight - 68,
-        bottom: window.innerHeight - 36,
-        left: 900,
-        right: 932,
-        width: 32,
-        height: 32
-      };
-      window.dispatchEvent(new CustomEvent("scroll"));
-      await new Promise((resolve) => requestAnimationFrame(resolve));
-      expect(panel.style.maxHeight).toBe(`${window.innerHeight - 68 - 6 - 8}px`);
-      expect(panel.style.top).toBe(`${window.innerHeight - 68 - 6}px`);
+      expect(panel.classList.contains("filter-panel_wide")).toBe(true);
+      // Each type is its own checkbox, in the types' own order.
+      const types = [...panel.querySelectorAll("lightning-input.type-choice")];
+      expect(types.length).toBeGreaterThan(1);
+      expect(panel.querySelector("fieldset.type-choices legend").textContent).toBe("Event types");
+      filtersRoot(root).querySelector("lightning-button-icon.filter-close").click();
+      await flush();
+      resize([{ contentRect: { width: 360 } }]);
+      await flush();
+      expect((await open(root)).classList.contains("filter-panel_narrow")).toBe(true);
     } finally {
-      proto.getBoundingClientRect = saved;
+      delete global.ResizeObserver;
     }
+  });
+
+  it("keeps each type's name on one line, named in full for hover and screen readers, and ticks it on a click", async () => {
+    const element = await mount();
+    const root = element.shadowRoot;
+    const panel = await open(root);
+    const input = panel.querySelector("lightning-input.type-choice");
+    const name = panel.querySelector(".type-name");
+    expect(input.variant).toBe("label-hidden");
+    expect(input.label).toBe(name.textContent);
+    expect(name.title).toBe(name.textContent);
+    expect(name.getAttribute("aria-hidden")).toBe("true");
+    const value = name.dataset.value;
+    const was = checkedTypes(root).includes(value);
+    name.click();
+    await flush();
+    expect(checkedTypes(root).includes(value)).toBe(!was);
+  });
+
+  it("asks a short timeline for the room its list needs while it's open", async () => {
+    const element = await mount();
+    const root = element.shadowRoot;
+    const below = root.querySelector(".below-header");
+    await open(root);
+    const filters = root.querySelector("c-time-drive-filters");
+    filters.dispatchEvent(new CustomEvent("panelsize", { detail: { height: 420 } }));
+    expect(below.style.minHeight).toBe("420px");
+    // A timeline already that tall, give or take a pixel's rounding, keeps its own height.
+    below.getBoundingClientRect = () => ({ height: 419.5, width: 600, top: 0, left: 0, right: 600, bottom: 419.5 });
+    filters.dispatchEvent(new CustomEvent("panelsize", { detail: { height: 420 } }));
+    expect(below.style.minHeight).toBe("");
+    filtersRoot(root).querySelector("lightning-button-icon.filter-close").click();
+    await flush();
+    expect(below.style.minHeight).toBe("");
   });
 
   it("closes from the icon on the title, without applying", async () => {
@@ -1384,10 +1485,8 @@ describe("c-time-drive filters panel", () => {
     const root = element.shadowRoot;
     const panel = await open(root);
     // The date range starts on the page's own.
-    expect(panel.querySelector("select.range-back").value).toBe("6");
-    panel
-      .querySelector("lightning-checkbox-group")
-      .dispatchEvent(new CustomEvent("change", { detail: { value: ["purchase", "web"] } }));
+    expect(panel.querySelector("lightning-select.range-back").value).toBe("6");
+    pickTypes(root, ["purchase", "web"]);
     await flush();
     buttonByLabel(filtersRoot(root).querySelector(".filter-panel"), "Apply").click();
     // Apply goes out after the panel is painted (a frame, then a task).
@@ -1407,14 +1506,16 @@ describe("c-time-drive filters panel", () => {
     const root = element.shadowRoot;
     expect(root.querySelector(".range-pill")).toBeNull();
     const panel = await open(root);
-    const back = panel.querySelector("select.range-back");
-    const ahead = panel.querySelector("select.range-ahead");
+    // Base components: lightning-select, labelled Back and Ahead.
+    const back = panel.querySelector("lightning-select.range-back");
+    const ahead = panel.querySelector("lightning-select.range-ahead");
+    expect(back.label).toBe("Back");
+    expect(ahead.label).toBe("Ahead");
     // Half a year back and nothing ahead: up to that, starting on it.
-    expect([...back.options].map((o) => o.textContent)).toEqual(["None", "1 month", "3 months", "6 months"]);
-    expect([...ahead.options].map((o) => o.textContent)).toEqual(["None"]);
+    expect(back.options.map((o) => o.label)).toEqual(["None", "1 month", "3 months", "6 months"]);
+    expect(ahead.options.map((o) => o.label)).toEqual(["None"]);
     expect(back.value).toBe("6");
-    back.value = "3";
-    back.dispatchEvent(new CustomEvent("change"));
+    back.dispatchEvent(new CustomEvent("change", { detail: { value: "3" } }));
     await flush();
     buttonByLabel(filtersRoot(root).querySelector(".filter-panel"), "Apply").click();
     await settle();
@@ -1426,7 +1527,7 @@ describe("c-time-drive filters panel", () => {
     expect(root.querySelector(".summary").textContent).not.toContain(windowRange("0.5", "None"));
     expect(root.querySelector(".filter-button").getAttribute("aria-label")).toBe("Filters, 1 active");
     // The panel opens on the range in use.
-    expect((await open(root)).querySelector("select.range-back").value).toBe("3");
+    expect((await open(root)).querySelector("lightning-select.range-back").value).toBe("3");
     filtersRoot(root).querySelector("lightning-button-icon.filter-close").click();
     await flush();
     // The chip's x: the page's own range again.
@@ -1456,7 +1557,7 @@ describe("c-time-drive filters panel", () => {
     await flush();
     const panel = await open(element.shadowRoot);
     expect(panel.querySelector(".range-choices")).toBeNull();
-    expect(panel.querySelector("lightning-checkbox-group")).not.toBeNull();
+    expect(panel.querySelector("lightning-input.type-choice")).not.toBeNull();
   });
 
   it("opens on the user's saved range, trimmed to what the page allows", async () => {
@@ -1501,15 +1602,52 @@ describe("c-time-drive filters panel", () => {
     expect(past.shadowRoot.querySelector(".range-pill")).toBeNull();
   });
 
+  it("keeps each lens's own filter: back on a lens, its hidden types come back", async () => {
+    const element = await mount();
+    const root = element.shadowRoot;
+    saveLensFilters.mockClear();
+    await open(root);
+    // The panel names the lens it filters.
+    expect(filtersRoot(root).querySelector(".filter-lens").textContent).toContain("All items");
+    pickTypes(root, ["purchase", "web"]);
+    await flush();
+    buttonByLabel(filtersRoot(root).querySelector(".filter-panel"), "Apply").click();
+    await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
+    await flush();
+    const hidden = [...getSummary.getLastConfig().hiddenTypes].sort();
+    expect(hidden.length).toBeGreaterThan(0);
+    // Kept for this person, against the lens: "All=type,type".
+    const kept = saveLensFilters.mock.calls.at(-1)[0].lensFilters;
+    expect(kept.startsWith("All=")).toBe(true);
+    expect(kept.slice(4).split(",").sort()).toEqual(hidden);
+    // Another lens starts with its own (none), then All gets its own back.
+    root.querySelector("h2 .view-button").click();
+    await flush();
+    [...root.querySelectorAll(".view-option")].find((i) => i.dataset.value === "Service").click();
+    await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
+    await flush();
+    expect(getSummary.getLastConfig().hiddenTypes).toEqual([]);
+    root.querySelector("h2 .view-button").click();
+    await flush();
+    [...root.querySelectorAll(".view-option")].find((i) => i.dataset.value === "All").click();
+    await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
+    await flush();
+    expect([...getSummary.getLastConfig().hiddenTypes].sort()).toEqual(hidden);
+  });
+
+  it("opens a lens with the types they hid in it last time", async () => {
+    getPreference.mockResolvedValueOnce({ lens: "Service", lensFilters: "Service=case;All=web" });
+    await mount();
+    expect(getSummary.getLastConfig()).toMatchObject({ categories: ["Service"], hiddenTypes: ["case"] });
+  });
+
   it("shows a skeleton for the types and count until a filter's counts land", async () => {
     const element = await mount();
     const root = element.shadowRoot;
     const summary = () => root.querySelector(".summary");
     expect(summary().querySelector(".skeleton_summary")).toBeNull();
-    const panel = await open(root);
-    panel
-      .querySelector("lightning-checkbox-group")
-      .dispatchEvent(new CustomEvent("change", { detail: { value: ["purchase", "web"] } }));
+    await open(root);
+    pickTypes(root, ["purchase", "web"]);
     await flush();
     buttonByLabel(filtersRoot(root).querySelector(".filter-panel"), "Apply").click();
     await Promise.resolve();
@@ -1630,6 +1768,31 @@ describe("c-time-drive a file", () => {
     expect(navigated).not.toHaveBeenCalled();
   });
 
+  it("links a detail that names a record, opening it as the title does", async () => {
+    const task = {
+      ...EVENTS[0],
+      id: "t1",
+      details: [
+        { label: "Related To", value: "Acme Ltd", recordId: "001000000000001AAA" },
+        { label: "Status", value: "Open" }
+      ]
+    };
+    const root = await mountWith([task]);
+    root.querySelector('.chevron-button[data-id="t1"]').click();
+    await flush();
+    const links = root.querySelectorAll(".fact-link");
+    // Only the one with a record: Status stays words.
+    expect(links).toHaveLength(1);
+    expect(links[0].textContent).toBe("Acme Ltd");
+    expect(links[0].getAttribute("href")).toBe("/lightning/r/001000000000001AAA/view");
+    navigated.mockClear();
+    links[0].click();
+    expect(navigated).toHaveBeenLastCalledWith({
+      type: "standard__recordPage",
+      attributes: { recordId: "001000000000001AAA", actionName: "view" }
+    });
+  });
+
   it("leaves every other record going to its page", async () => {
     const root = await mountWith([EVENTS[0]]);
     root.querySelector(".event-link").click();
@@ -1669,9 +1832,7 @@ describe("c-time-drive a new filter", () => {
   const applyTypes = async (root, value) => {
     root.querySelector(".filter-button").click();
     await flush();
-    filtersRoot(root)
-      .querySelector("lightning-checkbox-group")
-      .dispatchEvent(new CustomEvent("change", { detail: { value } }));
+    pickTypes(root, value);
     await flush();
     buttonByLabel(filtersRoot(root).querySelector(".filter-panel"), "Apply").click();
     // Apply goes out after the panel is painted (a frame, then a task).
@@ -1701,25 +1862,6 @@ describe("c-time-drive a new filter", () => {
     expect(root.querySelector(".skeleton-frame")).toBeNull();
     expect([...root.querySelectorAll(".chevron-button")].map((r) => r.dataset.id)).toEqual(["o1", "w1"]);
   });
-
-  it("shows nothing new when Apply changes nothing", async () => {
-    const element = createTimeline();
-    element.recordId = "003000000000001AAA";
-    element.layout = "Vertical";
-    document.body.appendChild(element);
-    emitEvents({ events: EVENTS, warnings: [] });
-    await flush();
-    const root = element.shadowRoot;
-    root.querySelector(".filter-button").click();
-    await flush();
-    const all = filtersRoot(root)
-      .querySelector("lightning-checkbox-group")
-      .options.map((o) => o.value);
-    // The same types back again: the panel offers nothing to apply, and the days stay.
-    expect(buttonByLabel(filtersRoot(root).querySelector(".filter-panel"), "Apply")).toBeUndefined();
-    expect(all.length).toBeGreaterThan(0);
-    expect(root.querySelector(".skeleton-frame")).toBeNull();
-  });
 });
 
 describe("c-time-drive all types", () => {
@@ -1738,17 +1880,16 @@ describe("c-time-drive all types", () => {
     root.querySelector(".filter-button").click();
     await flush();
     const all = filtersRoot(root).querySelector(".all-types");
-    const group = () => filtersRoot(root).querySelector("lightning-checkbox-group");
     expect(all.checked).toBe(true);
     all.checked = false;
     all.dispatchEvent(new CustomEvent("change"));
     await flush();
-    expect(group().value).toEqual([]);
+    expect(checkedTypes(root)).toEqual([]);
     expect(filtersRoot(root).querySelector(".all-types").checked).toBe(false);
     all.checked = true;
     all.dispatchEvent(new CustomEvent("change"));
     await flush();
-    expect(group().value).toHaveLength(4);
+    expect(checkedTypes(root)).toHaveLength(4);
   });
 });
 
@@ -1786,14 +1927,16 @@ describe("c-time-drive drawing less", () => {
   afterEach(() => {
     while (document.body.firstChild) document.body.removeChild(document.body.firstChild);
   });
-  // One event a day for 20 days.
+  // One event a day for 20 days, each at midday on its own day: whole days
+  // back from now would put two on one day across a clock change, late at night.
+  const today = new Date();
   const DAYS = Array.from({ length: 20 }, (_, d) => ({
     id: `d${d}`,
     type: "web",
     category: "Digital",
     title: "Page view",
     subtitle: `Day ${d}`,
-    occurredAt: new Date(Date.now() - d * 86400000).toISOString(),
+    occurredAt: new Date(today.getFullYear(), today.getMonth(), today.getDate() - d, 12).toISOString(),
     details: []
   }));
   // jsdom lays nothing out: horizontally, the columns report themselves
@@ -1882,6 +2025,52 @@ describe("c-time-drive drawing less", () => {
     expect(times.find(([title]) => title === "Standup")[1]).not.toBe("All-Day");
   });
 
+  it("shows -- for an item dated by a Date field, and puts it first in its day", async () => {
+    const day = new Date(Date.now() - 2 * 3600000).toISOString();
+    const earlier = new Date(Date.parse(day) - 60000).toISOString();
+    const root = (
+      await mount("Vertical", [
+        { id: "a", type: "event", category: "Sales", title: "Standup", occurredAt: day, details: [] },
+        {
+          id: "b",
+          type: "call",
+          category: "Sales",
+          title: "Rang Bob",
+          occurredAt: earlier,
+          dateOnly: true,
+          details: []
+        }
+      ])
+    ).shadowRoot;
+    const rows = [...root.querySelectorAll(".event")].map((e) => [
+      e.querySelector(".event-title").textContent,
+      e.querySelector(".event-time")?.textContent ?? null
+    ]);
+    // No time at all (not even a placeholder), and first in the day though plotted earlier.
+    expect(rows.map(([title]) => title)).toEqual(["Rang Bob", "Standup"]);
+    expect(rows[0][1]).toBeNull();
+    expect(rows[1][1]).toMatch(/\d/);
+  });
+
+  it("orders a day's untimed items first, then by time, and keeps days apart", () => {
+    const when = (iso) => Date.parse(iso);
+    const items = [
+      { id: "earlier", at: when("2026-11-12T11:40:00Z") },
+      { id: "dateOnly", at: when("2026-11-12T12:00:00Z"), dateOnly: true },
+      { id: "later", at: when("2026-11-12T12:20:00Z") },
+      { id: "allDay", at: when("2026-11-12T12:10:00Z"), allDay: true },
+      { id: "dayBefore", at: when("2026-11-11T12:00:00Z"), dateOnly: true }
+    ];
+    expect([...items].sort(itemOrder).map((i) => i.id)).toEqual([
+      "allDay",
+      "dateOnly",
+      "later",
+      "earlier",
+      "dayBefore"
+    ]);
+    expect(isoDate(new Date("2026-11-12T12:00:00Z"))).toBe("2026-11-12");
+  });
+
   it("marks an email opened, unopened or bounced with an icon after its title", async () => {
     const sentAt = new Date(Date.now() - 3600000).toISOString();
     const email = (id, emailState, extra = {}) => ({
@@ -1966,8 +2155,8 @@ describe("c-time-drive drawing less", () => {
       const root = element.shadowRoot;
       const shown = [...root.querySelectorAll(".day")].map((d) => Number(d.dataset.index));
       last = root.querySelectorAll(".scrub-heat .heat").length - 1;
-      const today = root.querySelector(".day_today");
-      const result = { shown, today: today ? Number(today.dataset.index) : null, root };
+      const todayDay = root.querySelector(".day_today");
+      const result = { shown, today: todayDay ? Number(todayDay.dataset.index) : null, root };
       document.body.removeChild(element);
       return result;
     };
@@ -2093,7 +2282,6 @@ describe("c-time-drive drawing less", () => {
   it("lists newest first vertically, earliest first horizontally, with no sort button", async () => {
     let root = (await mount("Vertical")).shadowRoot;
     expect(root.querySelector(".day-label").textContent).toContain("Today");
-    expect(root.querySelector('lightning-button-icon[title*="first"]')).toBeNull();
     // Today's cell is ringed on the scrub strip.
     expect(root.querySelectorAll(".scrub-heat .heat_today")).toHaveLength(1);
     document.body.removeChild(root.host);
@@ -2160,7 +2348,6 @@ describe("c-time-drive drawing less", () => {
     root.querySelector(".scrub-rail").dispatchEvent(new KeyboardEvent("keydown", { key: "Home" }));
     await settle();
     expect(root.querySelector(".day").dataset.index).toBe("0");
-    expect(root.querySelector(".more_top")).toBeNull();
   });
 
   it("jumps once held keys pause, not on every press", async () => {
@@ -2168,7 +2355,9 @@ describe("c-time-drive drawing less", () => {
     const rail = root.querySelector(".scrub-rail");
     const fetches = getDays.mock.calls.length;
     for (let i = 0; i < 12; i++) rail.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown" }));
-    await flush();
+    // Microtasks only, so the pause (a real timer) can't have run out yet
+    // however slow the machine.
+    for (let i = 0; i < 10; i++) await Promise.resolve();
     // Still on the first week: nothing jumped or fetched yet.
     expect(root.querySelector(".track .day").dataset.index).toBe("0");
     expect(getDays.mock.calls.length).toBe(fetches);
@@ -2325,10 +2514,10 @@ describe("c-time-drive drawing less", () => {
   const openingLoad = (config, days) => {
     const summary = summarise(config);
     const real = new Set(summary.days.map((d) => d.key));
-    const today = DAY_KEY.format(new Date());
-    const all = new Set([...real, today, windowEnds(config.historyYears, config.futureYears, "day").start.key]);
+    const todayDay = DAY_KEY.format(new Date());
+    const all = new Set([...real, todayDay, windowEnds(config.historyYears, config.futureYears, "day").start.key]);
     const ordered = [...all].sort();
-    const index = ordered.indexOf(today);
+    const index = ordered.indexOf(todayDay);
     const startAt = Math.max(0, Math.min(index - 6, ordered.length - 12));
     const keys = ordered.slice(startAt, startAt + 12).filter((k) => real.has(k));
     const events = groupBusyDays(
@@ -2686,9 +2875,7 @@ describe("c-time-drive configured sources", () => {
     const root = await mount();
     root.querySelector(".filter-button").click();
     await flush();
-    const options = filtersRoot(root)
-      .querySelector("lightning-checkbox-group")
-      .options.map((o) => o.label);
+    const options = [...filtersRoot(root).querySelectorAll("lightning-input.type-choice")].map((i) => i.label);
     // With each type's total from the summary.
     expect(options).toEqual(["Case updates", "Loyalty points"]);
   });
@@ -2729,6 +2916,8 @@ describe("c-time-drive accessibility", () => {
   afterEach(() => {
     while (document.body.firstChild) document.body.removeChild(document.body.firstChild);
   });
+  // Each at midday on its own day (see DAYS above).
+  const today = new Date();
   const LONG = Array.from({ length: 20 }, (_, d) => ({
     id: `a${d}`,
     recordId: d % 3 === 0 ? `a0100000000000${String(d).padStart(2, "0")}AA` : undefined,
@@ -2737,7 +2926,7 @@ describe("c-time-drive accessibility", () => {
     category: d % 3 === 0 ? "Commerce" : "Digital",
     title: d % 3 === 0 ? "Order placed" : "Page view",
     subtitle: `Day ${d}`,
-    occurredAt: new Date(Date.now() - d * 86400000).toISOString(),
+    occurredAt: new Date(today.getFullYear(), today.getMonth(), today.getDate() - d, 12).toISOString(),
     details: [{ label: "Order", value: `O-${d}` }]
   }));
   const mount = async (layout, events = LONG) => {
@@ -2801,7 +2990,6 @@ describe("c-time-drive accessibility", () => {
   it("empty and error states", async () => {
     const element = await mount("Vertical", []);
     await expect(element).toBeAccessible();
-    jest.spyOn(console, "warn").mockImplementation(() => {});
     getSummary.error({ message: "Boom" });
     await flush();
     await expect(element).toBeAccessible();
@@ -2859,231 +3047,6 @@ describe("periods on long windows", () => {
   });
 });
 
-describe("activity actions", () => {
-  afterEach(() => {
-    while (document.body.firstChild) document.body.removeChild(document.body.firstChild);
-  });
-
-  it("offers the record's activity actions and opens one as Salesforce does", async () => {
-    const element = createTimeline();
-    element.recordId = "003000000000001AAA";
-    element.activityActionsMode = "Inline";
-    document.body.appendChild(element);
-    getActivityActions.emit([
-      { apiName: "Global.NewTask", label: "New Task", icon: "action:new_task", colour: "#3BA755" },
-      { apiName: "Global.LogACall", label: "Log a Call", icon: "action:log_a_call", colour: "#06A59A" }
-    ]);
-    await Promise.resolve();
-    // While the timeline first loads the header is placeholders: no buttons yet.
-    expect(element.shadowRoot.querySelector(".tools_skeleton")).not.toBeNull();
-    expect(element.shadowRoot.querySelector(".view-button")).toBeNull();
-    expect(element.shadowRoot.querySelectorAll(".action-circle")).toHaveLength(0);
-    emitEvents({ events: EVENTS, warnings: [] });
-    await flush();
-    expect(element.shadowRoot.querySelector(".tools_skeleton")).toBeNull();
-    // Each action its own button, in its own colour's circle.
-    const buttons = [...element.shadowRoot.querySelectorAll(".action-circle")];
-    expect(buttons.map((b) => b.getAttribute("aria-label"))).toEqual(["New Task", "Log a Call"]);
-    expect(buttons.map((b) => b.getAttribute("style"))).toEqual(["--action: #3BA755", "--action: #06A59A"]);
-    expect(buttons.map((b) => b.querySelector("lightning-icon").iconName)).toEqual(["utility:task", "utility:call"]);
-    buttons[1].click();
-    expect(navigated).toHaveBeenLastCalledWith({
-      type: "standard__quickAction",
-      attributes: { apiName: "Global.LogACall" },
-      state: { recordId: "003000000000001AAA" }
-    });
-  });
-
-  const ACTIONS = [
-    { apiName: "Global.NewTask", label: "New Task", icon: "action:new_task" },
-    { apiName: "Global.NewEvent", label: "New Event", icon: "action:new_event" }
-  ];
-  const withActions = async (mode, layout) => {
-    const element = createTimeline();
-    element.recordId = "003000000000001AAA";
-    if (mode) element.activityActionsMode = mode;
-    if (layout) element.layout = layout;
-    document.body.appendChild(element);
-    getActivityActions.emit(ACTIONS);
-    emitEvents({ events: EVENTS, warnings: [] });
-    await flush();
-    return element;
-  };
-
-  it("names the standard actions with its own labels, and others as Salesforce does", async () => {
-    const element = createTimeline();
-    element.recordId = "003000000000001AAA";
-    element.activityActionsMode = "Inline";
-    document.body.appendChild(element);
-    getActivityActions.emit([
-      { apiName: "Global.NewTask", label: "Create a task", icon: "action:new_task" },
-      { apiName: "Global.SendEmail", label: "Send mail", icon: "action:email" },
-      { apiName: "Global.NewCase", label: "Open a case", icon: "action:new_case" }
-    ]);
-    emitEvents({ events: EVENTS, warnings: [] });
-    await flush();
-    const labels = [...element.shadowRoot.querySelectorAll(".action-circle")].map((b) => b.getAttribute("aria-label"));
-    expect(labels).toEqual(["New Task", "Email", "Open a case"]);
-  });
-
-  it("shows one Full action in a narrow card and puts the rest in a menu", async () => {
-    let resize;
-    global.ResizeObserver = class {
-      constructor(callback) {
-        resize = callback;
-      }
-      observe() {}
-      disconnect() {}
-    };
-    try {
-      const element = createTimeline();
-      element.recordId = "003000000000001AAA";
-      element.activityActionsMode = "Full";
-      element.layout = "Vertical";
-      document.body.appendChild(element);
-      getActivityActions.emit([
-        { apiName: "Global.NewTask", label: "New Task", icon: "action:new_task" },
-        { apiName: "Global.LogACall", label: "Log a Call", icon: "action:log_a_call" },
-        { apiName: "Global.NewEvent", label: "New Event", icon: "action:new_event" },
-        { apiName: "Global.SendEmail", label: "Email", icon: "action:email" }
-      ]);
-      emitEvents({ events: EVENTS, warnings: [] });
-      await flush();
-      resize([{ contentRect: { width: 360 } }]);
-      await flush();
-      const root = element.shadowRoot;
-      expect(root.querySelectorAll(".actions-group lightning-button-group lightning-button")).toHaveLength(1);
-      expect(root.querySelectorAll(".actions-group lightning-menu-item")).toHaveLength(3);
-      // Log a Call stays on show; the rest are behind the menu.
-      expect(
-        [...root.querySelectorAll(".actions-group lightning-button-group lightning-button")].map((b) => b.label)
-      ).toEqual(["Log a Call"]);
-      expect([...root.querySelectorAll(".actions-group lightning-menu-item")].map((m) => m.label)).toEqual([
-        "New Task",
-        "New Event",
-        "Email"
-      ]);
-    } finally {
-      delete global.ResizeObserver;
-    }
-  });
-
-  it("shows four Full actions in a wide card and puts any more in a menu", async () => {
-    const element = createTimeline();
-    element.recordId = "003000000000001AAA";
-    element.activityActionsMode = "Full";
-    document.body.appendChild(element);
-    getActivityActions.emit(
-      ["NewTask", "LogACall", "NewEvent", "SendEmail", "NewCase", "NewNote"].map((name, i) => ({
-        apiName: `Global.${name}`,
-        label: `Action ${i + 1}`,
-        icon: "action:new_task"
-      }))
-    );
-    emitEvents({ events: EVENTS, warnings: [] });
-    await flush();
-    const root = element.shadowRoot;
-    expect(root.querySelectorAll(".actions-group lightning-button-group lightning-button")).toHaveLength(4);
-    expect(root.querySelectorAll(".actions-group lightning-menu-item")).toHaveLength(2);
-  });
-
-  it("moves Full actions into the menu until the rest fit their row (long translated labels)", async () => {
-    // 600px of buttons on a 400px row, however many there are (jsdom doesn't
-    // lay out): one at a time they go in the menu, down to one.
-    const rect = jest.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function () {
-      const wide = this.classList?.contains("actions-group") ? 600 : 960;
-      return { width: wide, height: 32, top: 0, left: 0, right: wide, bottom: 32, x: 0, y: 0 };
-    });
-    const room = jest.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(function () {
-      return this.classList?.contains("title-row") ? 400 : 960;
-    });
-    try {
-      const element = createTimeline();
-      element.recordId = "003000000000001AAA";
-      element.activityActionsMode = "Full";
-      document.body.appendChild(element);
-      getActivityActions.emit(
-        ["NewTask", "LogACall", "NewEvent", "SendEmail"].map((name, i) => ({
-          apiName: `Global.${name}`,
-          label: `Registrar una acción ${i + 1}`,
-          icon: "action:new_task"
-        }))
-      );
-      emitEvents({ events: EVENTS, warnings: [] });
-      await flush();
-      const root = element.shadowRoot;
-      expect(root.querySelectorAll(".actions-group lightning-button-group lightning-button")).toHaveLength(1);
-      expect(root.querySelectorAll(".actions-group lightning-menu-item")).toHaveLength(3);
-    } finally {
-      rect.mockRestore();
-      room.mockRestore();
-    }
-  });
-
-  it("shows none when App Builder says None", async () => {
-    const element = await withActions("None");
-    expect(element.shadowRoot.querySelector(".actions")).toBeNull();
-    expect(element.shadowRoot.querySelector(".action-circle")).toBeNull();
-  });
-
-  it("folds them into one + menu for One button", async () => {
-    const element = await withActions("One button");
-    expect(element.shadowRoot.querySelector(".actions-menu")).not.toBeNull();
-    expect(element.shadowRoot.querySelector(".action-circle")).toBeNull();
-  });
-
-  it("shows a round button each among the tools for Inline, and Full by default", async () => {
-    const element = await withActions("Inline");
-    expect(element.shadowRoot.querySelectorAll(".action-circle")).toHaveLength(2);
-    const standard = await withActions(undefined);
-    expect(standard.shadowRoot.querySelector(".action-circle")).toBeNull();
-    const group = standard.shadowRoot.querySelector(".actions-group lightning-button-group");
-    expect([...group.querySelectorAll("lightning-button")].map((b) => b.label)).toEqual(["New Task", "New Event"]);
-  });
-
-  it("shows the filter pills on Full's summary line too", async () => {
-    const element = await withActions("Full", "Vertical");
-    const root = element.shadowRoot;
-    root.querySelector(".filter-button").click();
-    await flush();
-    const panel = filtersRoot(root).querySelector(".filter-panel");
-    panel
-      .querySelector("lightning-checkbox-group")
-      .dispatchEvent(new CustomEvent("change", { detail: { value: ["purchase", "web"] } }));
-    await flush();
-    [...filtersRoot(root).querySelectorAll(".filter-head lightning-button")].find((b) => b.label === "Apply").click();
-    await settle();
-    const summary = root.querySelector(".summary_tools");
-    expect(summary.querySelector(".types-pill .slds-pill__label").textContent).toMatch(/^2 of \d+ types$/);
-    summary.querySelector(".types-pill .pill-remove").click();
-    await flush();
-    expect(root.querySelector(".summary_tools .summary-pill")).toBeNull();
-  });
-
-  it("shows Full as a button group with the overflow menu at its end, on the view's line", async () => {
-    const element = await withActions("Full", "Vertical");
-    const group = element.shadowRoot.querySelector(".actions-group lightning-button-group");
-    const buttons = [...group.querySelectorAll("lightning-button")];
-    expect(buttons.map((b) => b.label)).toEqual(["New Task", "New Event"]);
-    // Words only: icons take too much room in a group.
-    expect(buttons[0].iconName).toBeUndefined();
-    expect(element.shadowRoot.querySelector(".action-circle")).toBeNull();
-    // On the view's line, before the tools (which wrap to the line below).
-    const row = group.closest(".actions-group");
-    expect(row.parentElement.classList.contains("title-row_actions")).toBe(true);
-    const summary = row.parentElement.querySelector(".summary_tools");
-    expect(summary.nextElementSibling.classList.contains("toolbar")).toBe(true);
-    expect(element.shadowRoot.querySelectorAll(".summary")).toHaveLength(1);
-    // Choosing one opens it.
-    buttons[1].click();
-    expect(navigated).toHaveBeenLastCalledWith({
-      type: "standard__quickAction",
-      attributes: { apiName: "Global.NewEvent" },
-      state: { recordId: "003000000000001AAA" }
-    });
-  });
-});
-
 describe("display density", () => {
   afterEach(() => {
     while (document.body.firstChild) document.body.removeChild(document.body.firstChild);
@@ -3138,11 +3101,326 @@ describe("display density", () => {
   });
 
   it("lets the page's Display Density override the page's styles", async () => {
+    // The page's spacing says Comfy; the component's own setting wins.
+    const restore = withHooks({ "--slds-g-spacing-var-4": "1rem", "--lwc-varSpacingMedium": "1rem" });
+    try {
+      const element = createTimeline();
+      element.density = "Compact";
+      document.body.appendChild(element);
+      await flush();
+      expect(element.classList.contains("density_compact")).toBe(true);
+      expect(element.classList.contains("density_comfy")).toBe(false);
+    } finally {
+      restore();
+    }
+  });
+});
+
+describe("the Overdue button", () => {
+  afterEach(() => {
+    while (document.body.firstChild) document.body.removeChild(document.body.firstChild);
+  });
+  const LENSES = [
+    { value: "All", label: "All items", labelName: "Time_Drive_View_All" },
+    { value: "Sales", label: "Sales", labelName: "Time_Drive_View_Sales" },
+    // Renamed by the admin: the button goes by the API name, not the words.
+    { value: "Overdue", label: "Late stuff", labelName: null }
+  ];
+  const open = async ({ lenses = LENSES, overdue = true } = {}) => {
     const element = createTimeline();
-    element.density = "Compact";
+    element.recordId = "003000000000001AAA";
     document.body.appendChild(element);
+    getViews.emit(lenses);
+    emitEvents({ warnings: [], events: EVENTS });
     await flush();
-    expect(element.classList.contains("density_compact")).toBe(true);
-    expect(element.classList.contains("density_comfy")).toBe(false);
+    getOverdue.emit(overdue);
+    await flush();
+    return element;
+  };
+  const button = (element) => element.shadowRoot.querySelector(".overdue-button");
+
+  it("shows in the header when the Overdue lens has items, opens it, and goes back", async () => {
+    const element = await open();
+    expect(button(element)).not.toBeNull();
+    expect(button(element).textContent).toContain("Overdue");
+    expect(button(element).getAttribute("aria-pressed")).toBe("false");
+    // Beside Today, on the lens's line.
+    expect(button(element).closest(".nav")).not.toBeNull();
+    const asked = getTimeline.mock.calls.length;
+    button(element).click();
+    await flush();
+    // The Overdue lens runs, by its API name.
+    expect(getTimeline.mock.calls.length).toBeGreaterThan(asked);
+    expect(getTimeline.mock.calls.at(-1)[0].categories).toEqual(["Overdue"]);
+    // On it, the button stays, pressed, and says where it goes back to.
+    expect(button(element).getAttribute("aria-pressed")).toBe("true");
+    expect(button(element).className).toContain("overdue-button_on");
+    expect(button(element).title).toBe("Back to All items");
+    button(element).click();
+    await flush();
+    expect(getTimeline.mock.calls.at(-1)[0].categories).toEqual(["All"]);
+    expect(button(element).getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("says Overdue in words on a wide card and with an icon alone on a narrow one", async () => {
+    let resize;
+    global.ResizeObserver = class {
+      constructor(callback) {
+        resize = callback;
+      }
+      observe() {}
+      disconnect() {}
+    };
+    try {
+      const element = await open();
+      expect(button(element).textContent.trim()).toBe("Overdue");
+      expect(button(element).querySelector("lightning-icon")).toBeNull();
+      resize([{ contentRect: { width: 360 } }]);
+      await flush();
+      expect(button(element).querySelector("lightning-icon").iconName).toBe("utility:clock");
+      // Named for screen readers, and by its tooltip.
+      expect(button(element).querySelector(".assistive-text").textContent).toBe("Overdue");
+      expect(button(element).title).toBe("Show overdue items");
+    } finally {
+      delete global.ResizeObserver;
+    }
+  });
+
+  it("shows nothing when nothing is overdue", async () => {
+    const element = await open({ overdue: false });
+    expect(button(element)).toBeNull();
+  });
+
+  it("asks nothing, and shows nothing, when the Overdue lens is switched off", async () => {
+    const element = await open({ lenses: LENSES.filter((l) => l.value !== "Overdue") });
+    expect(button(element)).toBeNull();
+    // No check at all: the wire never gets a record to ask about.
+    expect(getOverdue.getLastConfig()?.recordId).toBeUndefined();
+  });
+
+  it("asks once the lenses are in, when they arrive after the timeline", async () => {
+    const element = createTimeline();
+    element.recordId = "003000000000001AAA";
+    document.body.appendChild(element);
+    emitEvents({ warnings: [], events: EVENTS });
+    await flush();
+    // Loaded, but not yet known whether Overdue is offered: not asked.
+    expect(getOverdue.getLastConfig()?.recordId).toBeUndefined();
+    getViews.emit(LENSES);
+    await flush();
+    expect(getOverdue.getLastConfig().recordId).toBe("003000000000001AAA");
+  });
+
+  it("asks only once the timeline has loaded", async () => {
+    const element = createTimeline();
+    element.recordId = "003000000000001AAA";
+    document.body.appendChild(element);
+    // Before the first answer: no record to ask about yet.
+    expect(getOverdue.getLastConfig()?.recordId).toBeUndefined();
+    getViews.emit(LENSES);
+    emitEvents({ warnings: [], events: EVENTS });
+    await flush();
+    expect(getOverdue.getLastConfig().recordId).toBe("003000000000001AAA");
+  });
+});
+
+describe("the page's Lenses property", () => {
+  afterEach(() => {
+    while (document.body.firstChild) document.body.removeChild(document.body.firstChild);
+  });
+  const LENSES = [
+    { value: "All", label: "All items", labelName: "Time_Drive_View_All" },
+    { value: "Sales", label: "Sales", labelName: "Time_Drive_View_Sales" },
+    { value: "Service", label: "Service", labelName: "Time_Drive_View_Service" },
+    { value: "Overdue", label: "Overdue", labelName: "Time_Drive_View_Overdue" }
+  ];
+  const open = async (props = {}) => {
+    const element = createTimeline();
+    element.recordId = "003000000000001AAA";
+    Object.assign(element, props);
+    document.body.appendChild(element);
+    getViews.emit(LENSES);
+    emitEvents({ warnings: [], events: EVENTS });
+    await flush();
+    return element;
+  };
+  const offered = async (element) => {
+    element.shadowRoot.querySelector("h2 .view-button").click();
+    await flush();
+    return [...element.shadowRoot.querySelectorAll(".view-option")].map((o) => o.dataset.value);
+  };
+
+  it("offers every lens when it's blank", async () => {
+    expect(await offered(await open())).toEqual(["All", "Overdue", "Sales", "Service"]);
+  });
+
+  it("offers only the lenses it names, by API name in any case, with All and Overdue always", async () => {
+    expect(await offered(await open({ lenses: " sales , Missing" }))).toEqual(["All", "Overdue", "Sales"]);
+  });
+
+  it("opens on All when the Default Lens or the lens they last used isn't one it offers", async () => {
+    const element = await open({ lenses: "Sales", defaultLens: "Service" });
+    expect(element.shadowRoot.querySelector(".view-button").textContent).toContain("All items");
+    getPreference.mockResolvedValueOnce({ lens: "Service" });
+    const again = await open({ lenses: "Sales" });
+    expect(again.shadowRoot.querySelector(".view-button").textContent).toContain("All items");
+    // One it does offer is kept.
+    getPreference.mockResolvedValueOnce({ lens: "Sales" });
+    const kept = await open({ lenses: "Sales" });
+    expect(kept.shadowRoot.querySelector(".view-button").textContent).toContain("Sales");
+  });
+});
+
+describe("diagnostics", () => {
+  afterEach(() => {
+    while (document.body.firstChild) document.body.removeChild(document.body.firstChild);
+  });
+  const mount = async () => {
+    const element = createTimeline();
+    element.recordId = "003000000000001AAA";
+    element.layout = "Vertical";
+    document.body.appendChild(element);
+    emitEvents({ events: EVENTS, warnings: [] });
+    await flush();
+    return element;
+  };
+  const press = () =>
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        ctrlKey: true,
+        altKey: true,
+        shiftKey: true,
+        code: "KeyD",
+        key: "∂",
+        bubbles: true
+      })
+    );
+  const traced = (full) => ({
+    full,
+    serverMs: 120,
+    cpuMs: full ? 340 : null,
+    cpuLimit: full ? 10000 : null,
+    queries: full ? 6 : null,
+    queryLimit: full ? 100 : null,
+    lines: [
+      {
+        source: "Contact_Tasks",
+        kind: "rows",
+        soql: full ? "SELECT Id FROM Task WHERE WhoId = :parentId" : null,
+        rows: 12,
+        times: 1
+      },
+      { source: "Contact_Cases", kind: "left out", soql: "can't read Case", rows: null, times: 1 }
+    ]
+  });
+
+  it("opens on Ctrl+Alt+Shift+D, says how the view is set and what it asked, and closes", async () => {
+    const element = await mount();
+    const root = element.shadowRoot;
+    expect(root.querySelector(".diag")).toBeNull();
+    press();
+    await flush();
+    const drawer = root.querySelector(".diag");
+    expect(drawer).not.toBeNull();
+    expect(drawer.textContent).toContain("003000000000001AAA");
+    expect(drawer.textContent).toContain("Lens");
+    // The first load is in the list of requests.
+    expect([...drawer.querySelectorAll(".diag-lines li")].some((li) => li.textContent.includes("timeline"))).toBe(true);
+    expect(drawer.textContent).toContain("Trace to see what each source did.");
+    drawer.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    await flush();
+    expect(root.querySelector(".diag")).toBeNull();
+    // The shortcut again shows it again.
+    press();
+    await flush();
+    expect(root.querySelector(".diag")).not.toBeNull();
+  });
+
+  beforeEach(() => {
+    getPageDaysTrace.mockImplementation(() =>
+      Promise.resolve({ events: [], trace: { full: false, serverMs: 5, lines: [], sourcesFrom: "cache" } })
+    );
+  });
+
+  it("traces a load: every source's outcome, the SOQL only when the server says full", async () => {
+    getTimelineTrace.mockImplementation((params) =>
+      Promise.resolve({ summary: summarise(params), keys: [], events: [], trace: traced(false) })
+    );
+    const element = await mount();
+    const root = element.shadowRoot;
+    press();
+    await flush();
+    [...root.querySelectorAll(".diag lightning-button")].find((b) => b.label === "Trace").click();
+    await flush();
+    expect(getTimelineTrace).toHaveBeenCalled();
+    const drawer = root.querySelector(".diag");
+    expect(drawer.textContent).toContain("Contact_Tasks");
+    expect(drawer.textContent).toContain("12 rows");
+    expect(drawer.textContent).toContain("can't read Case");
+    expect(drawer.querySelector(".diag-soql")?.textContent).toBe("can't read Case");
+    expect(drawer.textContent).toContain("SOQL, errors and limits: for admins, or Login As");
+
+    getTimelineTrace.mockImplementation((params) =>
+      Promise.resolve({ summary: summarise(params), keys: [], events: [], trace: traced(true) })
+    );
+    [...root.querySelectorAll(".diag lightning-button")].find((b) => b.label === "Trace").click();
+    await flush();
+    const full = root.querySelector(".diag");
+    expect(full.textContent).toContain("SELECT Id FROM Task WHERE WhoId = :parentId");
+    expect(full.textContent).toContain("CPU 340 of 10000 ms");
+  });
+
+  it("keeps the trace of a load that failed, and still shows the error page", async () => {
+    getTimelineTrace.mockImplementation(() =>
+      Promise.resolve({
+        keys: [],
+        events: [],
+        trace: {
+          full: true,
+          failedKind: "access",
+          serverMs: 40,
+          cpuMs: 30,
+          cpuLimit: 10000,
+          queries: 2,
+          queryLimit: 100,
+          lines: [
+            {
+              source: "(request)",
+              kind: "failed",
+              soql: "access",
+              times: 1,
+              error: "System.QueryException: sObject type 'TaskRelation' is not supported."
+            }
+          ]
+        }
+      })
+    );
+    const element = await mount();
+    const root = element.shadowRoot;
+    press();
+    await flush();
+    [...root.querySelectorAll(".diag lightning-button")].find((b) => b.label === "Trace").click();
+    await flush();
+    // The card shows its error page as for any failed load ...
+    expect(root.querySelector(".empty_error")).not.toBeNull();
+    // ... and the drawer says what really went wrong.
+    const drawer = root.querySelector(".diag");
+    expect(drawer.textContent).toContain("failed: access");
+    expect(drawer.querySelector(".diag-error").textContent).toContain("TaskRelation");
+  });
+
+  it("lists a request's own error text, and both time zones", async () => {
+    const element = await mount();
+    const root = element.shadowRoot;
+    press();
+    await flush();
+    // A limit Apex can't catch reaches the card as Salesforce's own words.
+    getTimelineTrace.mockImplementation(() => Promise.reject({ body: { message: "Apex CPU time limit exceeded" } }));
+    [...root.querySelectorAll(".diag lightning-button")].find((b) => b.label === "Trace").click();
+    await flush();
+    const drawer = root.querySelector(".diag");
+    expect(drawer.textContent).toContain("Apex CPU time limit exceeded");
+    expect(drawer.textContent).toContain("Time zone");
+    expect(drawer.textContent).toContain("Overdue check");
   });
 });

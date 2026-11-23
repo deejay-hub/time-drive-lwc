@@ -6,9 +6,10 @@
 // The branching follows the platform's cases and the plot's rules; splitting it up would only scatter them.
 // Size, parameter lists and field counts follow the platform's entry points, its cases and the data the components exchange;
 // splitting them up would only scatter what belongs together.
-@SuppressWarnings('PMD.CyclomaticComplexity, PMD.CognitiveComplexity, PMD.AvoidBooleanMethodParameters, PMD.ExcessiveParameterList, PMD.ExcessivePublicCount, PMD.NcssCount, PMD.TooManyFields')
+@SuppressWarnings(
+  'PMD.CyclomaticComplexity, PMD.CognitiveComplexity, PMD.AvoidBooleanMethodParameters, PMD.ExcessiveParameterList, PMD.ExcessivePublicCount, PMD.NcssCount, PMD.TooManyFields'
+)
 public with sharing class TimeDriveController {
-
   // How far back and forward the timeline reaches, in years: the App Builder's
   // History and Future. Only these values; anything else falls back to the
   // default with a warning.
@@ -148,7 +149,11 @@ public with sharing class TimeDriveController {
     // Every source in the view is offered, found nothing or not, so the
     // filter panel always lists what the timeline looks for.
     for (Time_Drive_Source__mdt s : run.sources) {
-      if (String.isBlank(s.Event_Type__c) || typeCounts.containsKey(s.Event_Type__c) || !filters.inView(TimeDriveConfig.lensKey(s))) {
+      if (
+        String.isBlank(s.Event_Type__c) ||
+        typeCounts.containsKey(s.Event_Type__c) ||
+        !filters.inView(TimeDriveConfig.lensKey(s))
+      ) {
         continue;
       }
       TypeCount none = new TypeCount(s.Event_Type__c, 0);
@@ -182,6 +187,44 @@ public with sharing class TimeDriveController {
     public List<String> keys = new List<String>();
     @AuraEnabled
     public List<EngagementEvent> events = new List<EngagementEvent>();
+    // What the load did, source by source: only when traced (getTimelineTrace).
+    @AuraEnabled
+    public Trace trace;
+  }
+
+  /**
+   * What a traced load did, for the timeline's diagnostics drawer: each
+   * source's queries and the rows they returned, the sources left out for the
+   * user and why, and the ones that failed. The SOQL and the request's limits
+   * only when full (an admin with Time Drive Setup, or a Login As session):
+   * everyone else sees what happened, not how it was set up. Never record
+   * values: queries pass them as binds.
+   */
+  public class Trace {
+    /** Whether the SOQL and limits are included. */
+    @AuraEnabled
+    public Boolean full = false;
+    /** What each source did. */
+    @AuraEnabled
+    public List<TimeDriveQueries.Ran> lines = new List<TimeDriveQueries.Ran>();
+    /** The request's time on the server, in ms. */
+    @AuraEnabled
+    public Long serverMs;
+    /** The kind of failure, when the request failed as a whole (else null). */
+    @AuraEnabled
+    public String failedKind;
+    /** Where the request's sources came from: cache, or query (and why). */
+    @AuraEnabled
+    public String sourcesFrom;
+    /** Full only: CPU time and SOQL queries used, and their limits. */
+    @AuraEnabled
+    public Integer cpuMs;
+    @AuraEnabled
+    public Integer cpuLimit;
+    @AuraEnabled
+    public Integer queries;
+    @AuraEnabled
+    public Integer queryLimit;
   }
 
   /**
@@ -216,7 +259,203 @@ public with sharing class TimeDriveController {
     Boolean centred,
     Integer count
   ) {
-    return loadTimeline(contactId, categories, hiddenTypes, historyYears, futureYears, focus, newestFirst, centred, count);
+    return loadTimeline(
+      contactId,
+      categories,
+      hiddenTypes,
+      historyYears,
+      futureYears,
+      focus,
+      newestFirst,
+      centred,
+      count
+    );
+  }
+
+  /**
+   * getTimeline, traced: the same load, with what it did source by source
+   * (TimelineLoad.trace). For the timeline's diagnostics drawer, when someone
+   * asks to trace a load.
+   * @param contactId the record whose timeline is shown
+   * @param categories the lenses shown, or null for every source
+   * @param hiddenTypes the event types filtered out
+   * @param historyYears how far back (App Builder or the user's range)
+   * @param futureYears how far ahead
+   * @param focus where the card opens (Today, Earliest item, Latest item)
+   * @param newestFirst whether the newest periods come first
+   * @param centred whether the opening periods sit either side of the focus
+   * @param count how many periods to read for the opening view
+   * @return the summary, the events of the opening periods, and the trace
+   */
+  @AuraEnabled
+  public static TimelineLoad getTimelineTrace(
+    Id contactId,
+    List<String> categories,
+    List<String> hiddenTypes,
+    String historyYears,
+    String futureYears,
+    String focus,
+    Boolean newestFirst,
+    Boolean centred,
+    Integer count
+  ) {
+    Long started = System.currentTimeMillis();
+    TimeDriveQueries.tracing = true;
+    TimelineLoad out = new TimelineLoad();
+    String failed;
+    // Never thrown: the trace is wanted most when the load fails, and a thrown
+    // error would lose it. The card still shows its error page (failedKind).
+    try {
+      out = loadTimeline(
+        contactId,
+        categories,
+        hiddenTypes,
+        historyYears,
+        futureYears,
+        focus,
+        newestFirst,
+        centred,
+        count
+      );
+    } catch (Exception e) {
+      failed = failureKind(e);
+    }
+    out.trace = traceOf(started, failed);
+    return out;
+  }
+
+  /** getPageDays' answer, traced: the events and what reading them did. */
+  public class DaysLoad {
+    @AuraEnabled
+    public List<EngagementEvent> events = new List<EngagementEvent>();
+    @AuraEnabled
+    public Trace trace;
+  }
+
+  /**
+   * getPageDays, traced: for the days read while the diagnostics drawer is
+   * open (as someone scrolls), so a failure on one day shows which source and
+   * why. Never thrown, as getTimelineTrace.
+   * @param contactId the record whose timeline is shown
+   * @param categories the lenses shown, or null for every source
+   * @param hiddenTypes the event types filtered out
+   * @param historyYears how far back
+   * @param futureYears how far ahead
+   * @param dayKeys the periods to read
+   * @param busyKeys the periods the summary found busy
+   * @param emptySources the sources the summary found empty there
+   * @param busyCounts the summary's counts for the busy periods
+   * @param runs the periods that follow one another
+   * @return the events and the trace
+   */
+  @AuraEnabled
+  public static DaysLoad getPageDaysTrace(
+    Id contactId,
+    List<String> categories,
+    List<String> hiddenTypes,
+    String historyYears,
+    String futureYears,
+    List<String> dayKeys,
+    List<String> busyKeys,
+    List<String> emptySources,
+    List<BusyCount> busyCounts,
+    List<String> runs
+  ) {
+    Long started = System.currentTimeMillis();
+    TimeDriveQueries.tracing = true;
+    DaysLoad out = new DaysLoad();
+    String failed;
+    try {
+      out.events = getPageDays(
+        contactId,
+        categories,
+        hiddenTypes,
+        historyYears,
+        futureYears,
+        dayKeys,
+        busyKeys,
+        emptySources,
+        busyCounts,
+        runs
+      );
+    } catch (Exception e) {
+      failed = failureKind(e);
+    }
+    out.trace = traceOf(started, failed);
+    return out;
+  }
+
+  // The kind a failure is, as the card's error codes say it (timedrive:access).
+  private static String failureKind(Exception e) {
+    String message = String.valueOf(e.getMessage());
+    if (message.startsWith('timedrive:')) {
+      return message.substringAfter('timedrive:');
+    }
+    TimeDriveQueries.recordFailure('(request)', kindOf(e), e);
+    return kindOf(e);
+  }
+
+  // What this request recorded, as the drawer shows it: the SOQL, the errors'
+  // own words and the limits only when full.
+  private static Trace traceOf(Long started, String failedKind) {
+    Trace t = new Trace();
+    t.full = fullTrace();
+    t.failedKind = failedKind;
+    t.sourcesFrom = TimeDriveConfig.sourcesFrom;
+    t.serverMs = System.currentTimeMillis() - started;
+    for (TimeDriveQueries.Ran line : TimeDriveQueries.lines()) {
+      // Reasons and failure kinds are for everyone (they say why items are
+      // missing, not how it's set up); a query's SOQL and an error's own
+      // words only for a full trace.
+      Boolean isQuery = line.kind != TimeDriveQueries.LEFT_OUT && line.kind != TimeDriveQueries.FAILED;
+      if (!t.full) {
+        if (isQuery) {
+          line.soql = null;
+        }
+        line.error = null;
+      }
+      t.lines.add(line);
+    }
+    if (t.full) {
+      t.cpuMs = Limits.getCpuTime();
+      t.cpuLimit = Limits.getLimitCpuTime();
+      t.queries = Limits.getQueries();
+      t.queryLimit = Limits.getLimitQueries();
+    }
+    return t;
+  }
+
+  // Whether a trace shows the SOQL and limits: for admins with Time Drive Setup
+  // (who can manage sources), and for a Login As session, so an admin seeing
+  // the timeline as someone else gets the whole picture, with that user's
+  // access. Anyone else sees what happened, not how it was set up.
+  @TestVisible
+  private static Boolean fullTrace() {
+    if (Schema.sObjectType.Time_Drive_Record__c.isCreateable()) {
+      return true;
+    }
+    return loggedInAs();
+  }
+
+  @TestVisible
+  private static Boolean loggedInAsForTest;
+
+  // A Login As session: Salesforce marks it SubstituteUser. Only asked in a
+  // user's own request: without a session (tests, async work) the platform
+  // throws an error Apex can't catch, so a test says instead.
+  private static Boolean loggedInAs() {
+    if (loggedInAsForTest != null) {
+      return loggedInAsForTest;
+    }
+    if (Test.isRunningTest() || System.isBatch() || System.isFuture() || System.isQueueable() || System.isScheduled()) {
+      return false;
+    }
+    try {
+      Map<String, String> session = Auth.SessionManagement.getCurrentSession();
+      return session != null && session.get('SessionType') == 'SubstituteUser';
+    } catch (Exception e) {
+      return false;
+    }
   }
 
   private static TimelineLoad loadTimeline(
@@ -275,7 +514,8 @@ public with sharing class TimeDriveController {
       emptySourcesFor(out.summary, wanted),
       busyCountsFor(out.summary, wanted),
       runsOf(out.summary, wanted, new Set<String>(busy)),
-      summaryRun.isEmpty() ? null : summaryRun[0]
+      summaryRun.isEmpty() ? null : summaryRun[0],
+      out.summary.problems
     );
     return out;
   }
@@ -306,17 +546,6 @@ public with sharing class TimeDriveController {
       runs.add(String.join(current, ','));
     }
     return runs;
-  }
-
-  /**
-   * Public entry to runsOf, for the tests.
-   * @param summary the timeline summary listing every period with items
-   * @param keys the period keys asked for
-   * @param busy the period keys that are counted, not read
-   * @return each run of consecutive wanted periods as keys joined by commas
-   */
-  public static List<String> runsFor(TimelineSummary summary, List<String> keys, List<String> busy) {
-    return runsOf(summary, new Set<String>(keys), new Set<String>(busy));
   }
 
   // The counted sources the summary found nothing in, over these periods.
@@ -377,7 +606,7 @@ public with sharing class TimeDriveController {
   @TestVisible
   private static List<String> openingKeys(
     TimelineSummary summary,
-    TimeWindow window,
+    TimeDriveContext.Span window,
     String focus,
     Boolean newestFirst,
     Boolean centred,
@@ -497,6 +726,7 @@ public with sharing class TimeDriveController {
       emptySources,
       busyCounts,
       runs,
+      null,
       null
     );
   }
@@ -523,13 +753,16 @@ public with sharing class TimeDriveController {
     List<String> emptySources,
     List<BusyCount> busyCounts,
     List<String> runs,
-    Run reuse
+    Run reuse,
+    List<Problem> said
   ) {
     if (contactId == null || dayKeys == null || dayKeys.isEmpty()) {
       return new List<EngagementEvent>();
     }
-    // What failed was already said with the summary.
+    // Warnings were already said with the summary.
     List<String> warnings = new List<String>();
+    List<EngagementEvent> events;
+    List<Problem> failed;
     try {
       Map<String, Map<String, Integer>> counted = countsByPeriod(busyKeys, busyCounts);
       Run run = reuse;
@@ -542,7 +775,7 @@ public with sharing class TimeDriveController {
         run.problems = new List<Problem>();
         run.only = null;
       }
-      List<EngagementEvent> events = run
+      events = run
         .days(
           new Set<String>(dayKeys),
           new Filters(categories, hiddenTypes),
@@ -553,20 +786,36 @@ public with sharing class TimeDriveController {
           parsedRuns(runs)
         );
       markRights(events);
-      return events;
+      failed = run.problems;
     } catch (Exception e) {
       throw safeFailure(e);
     }
+    // A source that counted but whose rows couldn't be read: with the summary,
+    // it joins the summary's problems (the timeline shows its error page,
+    // naming it); on its own (a page of days), the request fails, so the
+    // page shows the error rather than a gap.
+    if (!failed.isEmpty()) {
+      if (said == null) {
+        throw coded(failed[0].kind);
+      }
+      for (Problem p : failed) {
+        Boolean known = false;
+        for (Problem q : said) {
+          known = known || q.source == p.source;
+        }
+        if (!known) {
+          said.add(p);
+        }
+      }
+    }
+    return events;
   }
 
   // The summary's counts for the busy periods, by period then source; null
   // (count them here) when they don't cover every busy period: a period
   // left without counts would come back empty.
   @TestVisible
-  private static Map<String, Map<String, Integer>> countsByPeriod(
-    List<String> busyKeys,
-    List<BusyCount> busyCounts
-  ) {
+  private static Map<String, Map<String, Integer>> countsByPeriod(List<String> busyKeys, List<BusyCount> busyCounts) {
     if (busyCounts == null) {
       return null;
     }
@@ -624,7 +873,7 @@ public with sharing class TimeDriveController {
       // Whole days (the user's): a grouped row stands for every item of its
       // type in its day, week or month, and date-only items' span is an
       // instant (midday).
-      TimeWindow days = new TimeWindow(
+      TimeDriveContext.Span days = new TimeDriveContext.Span(
         Datetime.newInstance(fromAt.date(), Time.newInstance(0, 0, 0, 0)),
         Datetime.newInstance(toAt.date(), Time.newInstance(23, 59, 59, 999))
       );
@@ -643,7 +892,9 @@ public with sharing class TimeDriveController {
   private static String nameOf(Id recordId) {
     try {
       List<SObject> rows = Database.queryWithBinds(
-        'SELECT Name FROM ' + TimeDriveConfig.describeType(recordId.getSObjectType()).getName() + ' WHERE Id = :recordId',
+        'SELECT Name FROM ' +
+          TimeDriveConfig.describeType(recordId.getSObjectType()).getName() +
+          ' WHERE Id = :recordId',
         new Map<String, Object>{ 'recordId' => recordId },
         AccessLevel.USER_MODE
       );
@@ -692,7 +943,7 @@ public with sharing class TimeDriveController {
     if (contactId == null) {
       return result;
     }
-    result.events = collect(contactId, result.warnings, result.problems, new TimeWindow());
+    result.events = collect(contactId, result.warnings, result.problems, new TimeDriveContext.Span());
     return result;
   }
 
@@ -772,43 +1023,30 @@ public with sharing class TimeDriveController {
     return e.grouped && e.groupCount != null ? e.groupCount : 1;
   }
 
-  // Every configured source's events (Time Drive Source records, in
-  // sequence), newest first, each with its day key in the user's time zone.
-  @TestVisible
   /**
-   * The record's activity actions (New Task, Log a Call, Email, New Event ...),
-   * as the standard Activity component shows them: the quick actions in its
-   * layout's Activity composer that this user can use, in order, each with
-   * its SLDS icon and colour. The timeline opens them as Salesforce does.
+   * Whether the Overdue lens (by its API name) has anything for this record,
+   * for the Overdue button in the header. Asked after the timeline has loaded,
+   * as a call of its own: its Salesforce sources are checked once per object
+   * (their conditions joined, LIMIT 1), stopping at the first that has an
+   * item. False when the lens isn't offered or the check fails.
    * @param recordId the Id of the record the timeline is on
-   * @return the quick actions the user can use, in order
+   * @param historyYears how many years back the timeline looks
+   * @param futureYears how many years ahead it looks, or blank for up to today
+   * @return true when the Overdue lens has at least one item
    */
-  // PlatformAction lists what the running user's page layout offers; it has no object permission to check.
-  @SuppressWarnings('PMD.ApexCRUDViolation')
   @AuraEnabled(cacheable=true)
-  public static List<ActivityAction> getActivityActions(Id recordId) {
-    List<ActivityAction> out = new List<ActivityAction>();
-    if (recordId == null) {
-      return out;
+  public static Boolean getOverdue(Id recordId, String historyYears, String futureYears) {
+    if (recordId == null || !TimeDriveConfig.isOffered(TimeDriveConfig.OVERDUE_VIEW)) {
+      return false;
     }
     try {
-      for (PlatformAction a : [
-        SELECT ApiName, Label, IconUrl, PrimaryColor
-        FROM PlatformAction
-        WHERE
-          ActionListContext = 'Record'
-          AND SourceEntity = :recordId
-          AND DeviceFormat = 'Desktop'
-          AND Section = 'ActivityComposer'
-          AND Type = 'QuickAction'
-      ]) {
-        out.add(new ActivityAction(a.ApiName, a.Label, iconName(a.IconUrl), a.PrimaryColor));
-      }
+      List<String> unused = new List<String>();
+      Run run = new Run(recordId, unused, new List<Problem>(), windowFor(historyYears, futureYears, unused));
+      return run.anyIn(TimeDriveConfig.OVERDUE_VIEW);
     } catch (Exception e) {
-      // No actions to offer: the timeline shows none.
-      System.debug(LoggingLevel.FINE, 'Time Drive: no activity actions. ' + e.getMessage());
+      // No button: the lens itself still says what's wrong when opened.
+      return false;
     }
-    return out;
   }
 
   /**
@@ -887,13 +1125,6 @@ public with sharing class TimeDriveController {
     return out;
   }
 
-  // ".../img/icon/t4v35/action/new_task_120.png" -> "action:new_task".
-  @TestVisible
-  private static String iconName(String url) {
-    Matcher m = Pattern.compile('/icon/t4v35/(action|standard|custom|utility)/([a-z0-9_]+?)(?:_\\d+)?(?:\\.\\w+)?$').matcher(url ?? '');
-    return m.find() ? m.group(1) + ':' + m.group(2) : 'utility:add';
-  }
-
   /** A highlight on an item: an icon (or a dot), its colour and what it says. */
   public class Flag {
     @AuraEnabled
@@ -913,32 +1144,6 @@ public with sharing class TimeDriveController {
       this.icon = icon;
       this.colour = colour;
       this.text = text;
-    }
-  }
-
-  /** A quick action offered on the record page, with its icon and colour. */
-  public class ActivityAction {
-    @AuraEnabled
-    public String apiName;
-    @AuraEnabled
-    public String label;
-    @AuraEnabled
-    public String icon;
-    @AuraEnabled
-    public String colour;
-
-    /**
-     * Builds an action, giving the colour a leading #.
-     * @param apiName the quick action's API name
-     * @param label the action's label
-     * @param icon the SLDS icon name
-     * @param colour the colour, with or without a leading #
-     */
-    public ActivityAction(String apiName, String label, String icon, String colour) {
-      this.apiName = apiName;
-      this.label = label;
-      this.icon = icon;
-      this.colour = String.isBlank(colour) ? null : '#' + colour.removeStart('#');
     }
   }
 
@@ -969,8 +1174,35 @@ public with sharing class TimeDriveController {
       out.lens = mine.Last_Lens__c;
       out.itemDetail = mine.Item_Detail__c;
       out.dateRange = mine.Date_Range__c;
+      out.lensFilters = mine.Lens_Filters__c;
     }
     return out;
+  }
+
+  /**
+   * Keeps the event types this person hid in each lens (Sales=call,email;Service=case),
+   * so each lens keeps its own filter; blank for none. The timeline fits it to the field,
+   * the lens in use first.
+   * @param lensFilters each lens's hidden types, or blank for none
+   */
+  @SuppressWarnings('PMD.ApexCRUDViolation')
+  @AuraEnabled
+  public static void saveLensFilters(String lensFilters) {
+    String kept = String.isBlank(lensFilters) ? null : lensFilters.trim().left(255);
+    Time_Drive_Preference__c mine = own();
+    if (mine == null && kept == null) {
+      return;
+    }
+    // Written as the system, as savePreference explains.
+    if (mine == null) {
+      Database.insert(
+        new Time_Drive_Preference__c(SetupOwnerId = UserInfo.getUserId(), Lens_Filters__c = kept),
+        AccessLevel.SYSTEM_MODE
+      );
+    } else {
+      mine.Lens_Filters__c = kept;
+      Database.update(mine, AccessLevel.SYSTEM_MODE);
+    }
   }
 
   /**
@@ -1035,7 +1267,7 @@ public with sharing class TimeDriveController {
     return row != null && row.Id != null && row.SetupOwnerId == UserInfo.getUserId() ? row : null;
   }
 
-  /** The user's saved choices: the lens, the label choice and the date range. */
+  /** The user's saved choices: the lens, the label choice, the date range and each lens's hidden types. */
   public class Preference {
     @AuraEnabled
     public String lens;
@@ -1043,6 +1275,8 @@ public with sharing class TimeDriveController {
     public String itemDetail;
     @AuraEnabled
     public String dateRange;
+    @AuraEnabled
+    public String lensFilters;
   }
 
   /** A view for the picker: the key sources use and its label. */
@@ -1105,42 +1339,18 @@ public with sharing class TimeDriveController {
         return (Id) rows[0].get('PersonContactId');
       }
     } catch (Exception e) {
-      System.debug(
-        LoggingLevel.WARN,
-        'Time Drive: couldn\'t tell whether ' + recordId + ' is a person account.'
-      );
+      // The Account can't be read as this user: the page's own Id is used.
     }
     return null;
-  }
-
-  private static List<EngagementEvent> collect(Id contactId, List<String> warnings) {
-    return collect(contactId, warnings, new List<Problem>(), new TimeWindow());
   }
 
   private static List<EngagementEvent> collect(
     Id contactId,
     List<String> warnings,
     List<Problem> problems,
-    TimeWindow window
+    TimeDriveContext.Span window
   ) {
     return new Run(contactId, warnings, problems, window).events();
-  }
-
-  // The timeline's filters: view categories and hidden types.
-  @TestVisible
-  private static List<EngagementEvent> filter(
-    List<EngagementEvent> events,
-    List<String> categories,
-    List<String> hiddenTypes
-  ) {
-    Filters filters = new Filters(categories, hiddenTypes);
-    List<EngagementEvent> kept = new List<EngagementEvent>();
-    for (EngagementEvent e : events) {
-      if (filters.shows(e)) {
-        kept.add(e);
-      }
-    }
-    return kept;
   }
 
   /**
@@ -1154,7 +1364,7 @@ public with sharing class TimeDriveController {
     String parentObject;
     List<String> warnings;
     List<Problem> problems;
-    TimeWindow window;
+    TimeDriveContext.Span window;
     List<Time_Drive_Source__mdt> sources;
     List<TimeDriveRowProvider> providers = new List<TimeDriveRowProvider>();
     Boolean counting = false;
@@ -1176,7 +1386,7 @@ public with sharing class TimeDriveController {
     // A person account's own Contact, when the page is one.
     Id personContactId;
 
-    Run(Id recordId, List<String> warnings, List<Problem> problems, TimeWindow window) {
+    Run(Id recordId, List<String> warnings, List<Problem> problems, TimeDriveContext.Span window) {
       this.recordId = recordId;
       this.parentObject = TimeDriveConfig.describeType(recordId.getSObjectType()).getName();
       // A person account has its own sources (Person Account in setup).
@@ -1191,6 +1401,18 @@ public with sharing class TimeDriveController {
       for (Time_Drive_Source__mdt config : sources) {
         providers.add(TimeDriveConfig.providerFor(config, warnings));
       }
+    }
+
+    // Whether any of the lens's Salesforce sources has an item in the window
+    // (see TimeDriveSoqlProvider.anyOf). Data 360 and Apex sources aren't asked.
+    Boolean anyIn(String lens) {
+      List<TimeDriveContext> asked = new List<TimeDriveContext>();
+      for (Integer i = 0; i < sources.size(); i++) {
+        if (providers[i] instanceof TimeDriveSoqlProvider && TimeDriveConfig.lensesOf(sources[i]).contains(lens)) {
+          asked.add(context(i));
+        }
+      }
+      return TimeDriveSoqlProvider.anyOf(asked);
     }
 
     // Every source's events, newest first.
@@ -1250,9 +1472,7 @@ public with sharing class TimeDriveController {
         }
       }
       for (String candidate : new List<String>{ TimeDriveContext.UNIT_DAY, TimeDriveContext.UNIT_WEEK }) {
-        if (
-          queried * TimeDriveContext.periods(window.since.date(), window.until.date(), candidate) <= COUNT_ROWS
-        ) {
+        if (queried * TimeDriveContext.periods(window.since.date(), window.until.date(), candidate) <= COUNT_ROWS) {
           return candidate;
         }
       }
@@ -1286,16 +1506,13 @@ public with sharing class TimeDriveController {
 
     // A period (its key, yyyy-MM-dd) as the part of the window it covers;
     // null outside it.
-    TimeWindow periodIn(String key) {
+    TimeDriveContext.Span periodIn(String key) {
       Date first = Date.valueOf(key);
       Datetime since = Datetime.newInstance(first, Time.newInstance(0, 0, 0, 0));
-      Datetime until = Datetime.newInstance(
-        TimeDriveContext.periodEnd(first, unit),
-        Time.newInstance(23, 59, 59, 999)
-      );
+      Datetime until = Datetime.newInstance(TimeDriveContext.periodEnd(first, unit), Time.newInstance(23, 59, 59, 999));
       since = since < window.since ? window.since : since;
       until = until > window.until ? window.until : until;
-      return since > until ? null : new TimeWindow(since, until);
+      return since > until ? null : new TimeDriveContext.Span(since, until);
     }
 
     /**
@@ -1347,23 +1564,21 @@ public with sharing class TimeDriveController {
       this.runs = runs;
       counting = true;
       unit = unitFor();
-      String grain = unit == TimeDriveContext.UNIT_DAY
-        ? TimeDriveContext.UNIT_HOUR
-        : TimeDriveContext.UNIT_DAY;
+      String grain = unit == TimeDriveContext.UNIT_DAY ? TimeDriveContext.UNIT_HOUR : TimeDriveContext.UNIT_DAY;
       List<String> keys = new List<String>(wanted);
       keys.sort();
-      List<TimeWindow> periods = new List<TimeWindow>();
+      List<TimeDriveContext.Span> periods = new List<TimeDriveContext.Span>();
       for (String key : keys) {
-        TimeWindow w = periodIn(key);
+        TimeDriveContext.Span w = periodIn(key);
         if (w != null) {
           periods.add(w);
         }
       }
-      List<TimeWindow> toCount = periods;
+      List<TimeDriveContext.Span> toCount = periods;
       if (busyHint != null) {
-        toCount = new List<TimeWindow>();
+        toCount = new List<TimeDriveContext.Span>();
         for (String key : keys) {
-          TimeWindow w = busyHint.contains(key) ? periodIn(key) : null;
+          TimeDriveContext.Span w = busyHint.contains(key) ? periodIn(key) : null;
           if (w != null) {
             toCount.add(w);
           }
@@ -1391,7 +1606,8 @@ public with sharing class TimeDriveController {
             continue;
           }
           context.ranges = toCount;
-          List<TimeDriveContext.DayCount> found = busyCounts == null || busyHint == null
+          List<TimeDriveContext.DayCount> found = busyCounts == null ||
+            busyHint == null
             ? count(i, context, grain)
             : knownCounts(sources[i].DeveloperName, busyHint, busyCounts);
           if (found != null) {
@@ -1424,7 +1640,7 @@ public with sharing class TimeDriveController {
       // A period not counted (the summary found it quiet) is read as rows.
       for (Integer i : counted.keySet()) {
         Map<String, List<TimeDriveContext.DayCount>> byPeriod = counted.get(i);
-        List<TimeWindow> quiet = new List<TimeWindow>();
+        List<TimeDriveContext.Span> quiet = new List<TimeDriveContext.Span>();
         Set<String> readKeys = new Set<String>();
         for (String key : keys) {
           Boolean uncounted = busyHint != null && !busyHint.contains(key);
@@ -1434,7 +1650,7 @@ public with sharing class TimeDriveController {
           if (byPeriod.containsKey(key) && busy.contains(key)) {
             page.add(grouped(contexts.get(i), key, byPeriod.get(key), grain));
           } else {
-            TimeWindow w = periodIn(key);
+            TimeDriveContext.Span w = periodIn(key);
             if (w != null) {
               quiet.add(w);
               readKeys.add(key);
@@ -1502,7 +1718,7 @@ public with sharing class TimeDriveController {
         // A source already read to its end has a null cursor.
         if (!cursors.containsKey(name) || cursors.get(name) != null) {
           TimeDriveContext context = context(i);
-          context.ranges = new List<TimeWindow>{ window };
+          context.ranges = new List<TimeDriveContext.Span>{ window };
           context.pageSize = size + 1;
           List<String> after = cursors.get(name);
           if (after != null) {
@@ -1523,7 +1739,8 @@ public with sharing class TimeDriveController {
         for (Integer k = 0; k < reads.size(); k++) {
           if (
             next[k] < reads[k].size() &&
-            (best == -1 || reads[k][next[k]].occurredAt > reads[best][next[best]].occurredAt)
+            (best == -1 ||
+            reads[k][next[k]].occurredAt > reads[best][next[best]].occurredAt)
           ) {
             best = k;
           }
@@ -1647,14 +1864,14 @@ public with sharing class TimeDriveController {
     // summary is one span (a query with one range reads far faster than one
     // with a range per day, and nothing with items lies between them); any
     // other period is a span of its own.
-    List<TimeWindow> windowsFor(List<String> periodKeys) {
-      List<TimeWindow> out = new List<TimeWindow>();
+    List<TimeDriveContext.Span> windowsFor(List<String> periodKeys) {
+      List<TimeDriveContext.Span> out = new List<TimeDriveContext.Span>();
       Set<String> pending = new Set<String>(periodKeys);
       Set<String> placed = new Set<String>();
       for (List<String> run : runs ?? new List<List<String>>()) {
-        TimeWindow span;
+        TimeDriveContext.Span span;
         for (String key : run) {
-          TimeWindow w = pending.contains(key) ? periodIn(key) : null;
+          TimeDriveContext.Span w = pending.contains(key) ? periodIn(key) : null;
           if (w == null) {
             // A period not wanted now ends the span.
             if (span != null) {
@@ -1667,7 +1884,7 @@ public with sharing class TimeDriveController {
           if (span == null) {
             span = w;
           } else {
-            span = new TimeWindow(
+            span = new TimeDriveContext.Span(
               span.since < w.since ? span.since : w.since,
               span.until > w.until ? span.until : w.until
             );
@@ -1679,7 +1896,7 @@ public with sharing class TimeDriveController {
       }
       for (String key : periodKeys) {
         if (!placed.contains(key)) {
-          TimeWindow w = periodIn(key);
+          TimeDriveContext.Span w = periodIn(key);
           if (w != null) {
             out.add(w);
           }
@@ -1760,9 +1977,7 @@ public with sharing class TimeDriveController {
           : Datetime.newInstance(day, Time.newInstance(grain == TimeDriveContext.UNIT_HOUR ? 12 : 0, 0, 0, 0));
         Datetime toAt = c.hour != null
           ? Datetime.newInstance(day, Time.newInstance(c.hour, 59, 59, 0))
-          : (grain == TimeDriveContext.UNIT_HOUR
-              ? fromAt
-              : Datetime.newInstance(day, Time.newInstance(23, 59, 59, 0)));
+          : (grain == TimeDriveContext.UNIT_HOUR ? fromAt : Datetime.newInstance(day, Time.newInstance(23, 59, 59, 0)));
         first = first == null || fromAt < first ? fromAt : first;
         last = last == null || toAt > last ? toAt : last;
       }
@@ -1792,14 +2007,7 @@ public with sharing class TimeDriveController {
     }
 
     TimeDriveContext context(Integer i) {
-      TimeDriveContext context = new TimeDriveContext(
-        recordId,
-        parentObject,
-        window.since,
-        sources[i],
-        null,
-        warnings
-      );
+      TimeDriveContext context = new TimeDriveContext(recordId, parentObject, window.since, sources[i], null, warnings);
       context.problems = problems;
       context.personContactId = personContactId;
       context.until = window.until;
@@ -1819,15 +2027,6 @@ public with sharing class TimeDriveController {
         }
         return found;
       } catch (Exception e) {
-        System.debug(
-          LoggingLevel.WARN,
-          'Time Drive: ' +
-            sources[i].Label +
-            ' couldn\'t be counted, so it\'s read as rows. ' +
-            e.getTypeName() +
-            ': ' +
-            e.getMessage()
-        );
         uncounted.add(i);
         return null;
       }
@@ -1842,7 +2041,10 @@ public with sharing class TimeDriveController {
         // when Max Records cut it short.
         if (!counts(i) && providers[i] != null && events.size() >= context.maxRecords()) {
           context.warn(
-            String.format(Label.Time_Drive_Server_Max_Records, new List<String>{ sources[i].Label, String.valueOf(context.maxRecords()) })
+            String.format(
+              Label.Time_Drive_Server_Max_Records,
+              new List<String>{ sources[i].Label, String.valueOf(context.maxRecords()) }
+            )
           );
         }
         rowsBySource.put(i, events);
@@ -1865,7 +2067,10 @@ public with sharing class TimeDriveController {
       List<EngagementEvent> events = read(i, context);
       if (providers[i] != null && events.size() >= context.maxRecords()) {
         context.warn(
-          String.format(Label.Time_Drive_Server_Max_Records, new List<String>{ sources[i].Label, String.valueOf(context.maxRecords()) })
+          String.format(
+            Label.Time_Drive_Server_Max_Records,
+            new List<String>{ sources[i].Label, String.valueOf(context.maxRecords()) }
+          )
         );
       }
       return events;
@@ -1989,7 +2194,9 @@ public with sharing class TimeDriveController {
       if (inView == null) {
         return true;
       }
-      for (String lens : String.isBlank(category) ? new List<String>{ TimeDriveConfig.ALL_VIEW } : category.split(';')) {
+      for (
+        String lens : String.isBlank(category) ? new List<String>{ TimeDriveConfig.ALL_VIEW } : category.split(';')
+      ) {
         if (inView.contains(lens)) {
           return true;
         }
@@ -2044,14 +2251,19 @@ public with sharing class TimeDriveController {
   }
 
   // An unexpected failure, as the client sees it: only the kind, never the
-  // message or stack trace (those go to the debug log).
+  // message or stack trace.
   @TestVisible
   private static AuraHandledException safeFailure(Exception e) {
-    System.debug(
-      LoggingLevel.ERROR,
-      'Time Drive failed. ' + e.getTypeName() + ': ' + e.getMessage() + '\n' + e.getStackTraceString()
-    );
-    String code = 'timedrive:' + kindOf(e);
+    String kind = kindOf(e);
+    // A traced request keeps what really went wrong (the card gets the code).
+    TimeDriveQueries.recordFailure('(request)', kind, e);
+    return coded(kind);
+  }
+
+  // The card's error for a kind of failure ("timedrive:access"): the code alone,
+  // never the raw message.
+  private static AuraHandledException coded(String kind) {
+    String code = 'timedrive:' + kind;
     AuraHandledException failure = new AuraHandledException(code);
     failure.setMessage(code);
     return failure;
@@ -2205,72 +2417,21 @@ public with sharing class TimeDriveController {
    * One timeline event. `type` drives the icon and colour in the component;
    * `category` groups types into the timeline views.
    */
-  /**
-   * The dates the timeline covers: from the start of the day History years
-   * ago to the end of the day Future years ahead (today, with no Future), in
-   * the user's time zone.
-   */
-  public class TimeWindow {
-    public Datetime since;
-    public Datetime until;
-
-    /** Builds the default window: the default history up to today. */
-    public TimeWindow() {
-      this(DEFAULT_HISTORY_YEARS, null);
-    }
-
-    /**
-     * Builds a window from two dates.
-     * @param since the start of the window
-     * @param until the end of the window
-     */
-    public TimeWindow(Datetime since, Datetime until) {
-      this.since = since;
-      this.until = until;
-    }
-
-    /**
-     * Builds a window from years of history and future.
-     * @param historyYears how many years back to start
-     * @param futureYears how many years ahead to end, or null for today
-     */
-    public TimeWindow(Decimal historyYears, Decimal futureYears) {
-      Date today = Date.today();
-      since = Datetime.newInstance(today.addMonths(-monthsIn(historyYears)), Time.newInstance(0, 0, 0, 0));
-      Date last = futureYears == null ? today : today.addMonths(monthsIn(futureYears));
-      until = Datetime.newInstance(last, Time.newInstance(23, 59, 59, 999));
-    }
-
-    /**
-     * Keeps the events whose time lies in the window.
-     * @param events the events to filter, or null
-     * @return the events inside the window
-     */
-    public List<EngagementEvent> within(List<EngagementEvent> events) {
-      List<EngagementEvent> kept = new List<EngagementEvent>();
-      for (EngagementEvent e : events == null ? new List<EngagementEvent>() : events) {
-        if (e.occurredAt != null && e.occurredAt >= since && e.occurredAt <= until) {
-          kept.add(e);
-        }
-      }
-      return kept;
-    }
-  }
 
   // 0.25 years -> 3 months.
-  private static Integer monthsIn(Decimal years) {
+  public static Integer monthsIn(Decimal years) {
     return (years * 12).round(System.RoundingMode.HALF_UP).intValue();
   }
 
   // The App Builder's History and Future, in years. A value not on the list
   // falls back (History to half a year, Future to none) with a warning.
   @TestVisible
-  private static TimeWindow windowFor(String historyYears, String futureYears, List<String> warnings) {
+  private static TimeDriveContext.Span windowFor(String historyYears, String futureYears, List<String> warnings) {
     Decimal history = String.isNotBlank(historyYears) && historyYears.trim() == '0'
       ? 0
       : yearsFrom(historyYears, 'History', warnings);
     Decimal future = yearsFrom(futureYears, 'Future', warnings);
-    return new TimeWindow(history == null ? DEFAULT_HISTORY_YEARS : history, future);
+    return new TimeDriveContext.Span(history == null ? DEFAULT_HISTORY_YEARS : history, future);
   }
 
   private static Decimal yearsFrom(String value, String name, List<String> warnings) {
@@ -2351,6 +2512,10 @@ public with sharing class TimeDriveController {
     // An all-day event: the timeline says All-Day instead of a time.
     @AuraEnabled
     public Boolean allDay = false;
+    // Dated by a Date field (a Task's Activity Date): it has a day but no time,
+    // so the timeline shows none and puts it first in its day.
+    @AuraEnabled
+    public Boolean dateOnly = false;
     @AuraEnabled
     public String emailState;
     // Email Messages: who it went to (the first To recipient, by name where
@@ -2438,12 +2603,17 @@ public with sharing class TimeDriveController {
     }
 
     /**
-     * Adds a detail already built (an amount, say), unless it has nothing to show.
+     * Adds one of the source's detail fields. One with no value is still shown,
+     * its label with a blank value: a missing line reads as a fault, a blank one
+     * as nothing entered (or a field the user can't read).
      * @param d the detail
      * @return this event
      */
     public EngagementEvent detail(Detail d) {
-      if (d != null && String.isNotBlank(d.value)) {
+      if (d != null && String.isNotBlank(d.label)) {
+        if (d.value == null) {
+          d.value = '';
+        }
         details.add(d);
       }
       return this;
@@ -2482,6 +2652,10 @@ public with sharing class TimeDriveController {
     // The amount's currency (ISO code), when it's money.
     @AuraEnabled
     public String currencyCode;
+    // The record the value names (an Account's name, a task's Related To),
+    // which the card links to; null when there's none to open.
+    @AuraEnabled
+    public Id recordId;
 
     /**
      * Builds a detail.

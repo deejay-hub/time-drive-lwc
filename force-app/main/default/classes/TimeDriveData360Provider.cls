@@ -23,6 +23,8 @@
 // The branching follows the platform's cases and the plot's rules; splitting it up would only scatter them.
 // Size, parameter lists and field counts follow the platform's entry points, its cases and the data the components exchange;
 // splitting them up would only scatter what belongs together.
+// Namespace accessible: the Data 360 package (the same namespace) implements SqlRunner and Catalog.
+@NamespaceAccessible
 @SuppressWarnings('PMD.CyclomaticComplexity, PMD.CognitiveComplexity, PMD.ExcessiveParameterList, PMD.NcssCount')
 public with sharing class TimeDriveData360Provider implements TimeDriveRowProvider, TimeDriveCountProvider {
   // A DMO query returning more rows than this fails ("too many rows for
@@ -100,7 +102,7 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
       fields.add(d.Field__c);
     }
 
-    List<TimeDriveController.TimeWindow> spans = context.spans();
+    List<TimeDriveContext.Span> spans = context.spans();
     if (spans.isEmpty()) {
       return rows;
     }
@@ -125,7 +127,7 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
       Math.min(context.maxRecords(), MAX_DMO_ROWS);
     try {
       List<SObject> found = Database.queryWithBinds(soql, binds, AccessLevel.USER_MODE);
-      TimeDriveQueries.record(s.DeveloperName, 'rows', soql);
+      TimeDriveQueries.record(s.DeveloperName, 'rows', soql, found.size());
       for (SObject row : found) {
         rows.add(new TimeDriveRow(row));
       }
@@ -197,7 +199,7 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
       ids.add(quoted(id));
     }
     List<String> dates = new List<String>();
-    for (TimeDriveController.TimeWindow span : context.spans()) {
+    for (TimeDriveContext.Span span : context.spans()) {
       dates.add(
         '(' +
           dateField +
@@ -254,7 +256,8 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
       named.add(f.toLowerCase());
     }
     if (String.isNotBlank(filter)) {
-      Matcher m = Pattern.compile('[A-Za-z][A-Za-z0-9_]*').matcher(filter.replaceAll('\'(?:[^\'\\\\]|\\\\.)*\'', '\'\''));
+      Matcher m = Pattern.compile('[A-Za-z][A-Za-z0-9_]*')
+        .matcher(filter.replaceAll('\'(?:[^\'\\\\]|\\\\.)*\'', '\'\''));
       while (m.find()) {
         named.add(m.group().toLowerCase());
       }
@@ -381,6 +384,7 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
    * Runs Data 360 SQL; each row is its columns' values, in order. The org's
    * runner is TimeDriveData360SqlRunner (force-app-data360), found by name.
    */
+  @NamespaceAccessible
   public interface SqlRunner {
     /**
      * Runs a Data 360 SQL query.
@@ -397,6 +401,7 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
    * list them in every org; TimeDriveData360Catalog (force-app-data360) asks
    * Data 360, found by name.
    */
+  @NamespaceAccessible
   public interface Catalog {
     /**
      * Lists the DMOs in a data space.
@@ -446,7 +451,6 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
       }
     } catch (Exception e) {
       // Data 360 couldn't be asked.
-      System.debug(LoggingLevel.FINE, 'Time Drive: Data 360 not asked. ' + e.getMessage());
     }
     return new List<String>();
   }
@@ -469,14 +473,14 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
         return catalog.profileDmoNames(dataSpace);
       }
     } catch (Exception e) {
-      System.debug(LoggingLevel.FINE, 'Time Drive: Data 360 not asked. ' + e.getMessage());
+      // Data 360 couldn't be asked.
     }
     return new Set<String>();
   }
 
   // TimeDriveData360Catalog, where force-app-data360 is deployed.
   private static Catalog catalog() {
-    Type catalogType = Type.forName('TimeDriveData360Catalog');
+    Type catalogType = Type.forName(TimeDriveConfig.NAMESPACE, 'TimeDriveData360Catalog');
     Object found = catalogType == null ? null : catalogType.newInstance();
     return found instanceof Catalog ? (Catalog) found : null;
   }
@@ -520,8 +524,8 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
       return true;
     }
     try {
-      Type runnerType = Type.forName(SQL_RUNNER_CLASS);
-      Type catalogType = Type.forName('TimeDriveData360Catalog');
+      Type runnerType = Type.forName(TimeDriveConfig.NAMESPACE, SQL_RUNNER_CLASS);
+      Type catalogType = Type.forName(TimeDriveConfig.NAMESPACE, 'TimeDriveData360Catalog');
       return runnerType != null &&
         catalogType != null &&
         runnerType.newInstance() instanceof SqlRunner &&
@@ -533,7 +537,7 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
 
   private static SqlRunner runner() {
     if (sqlRunner == null) {
-      Type runnerType = Type.forName(SQL_RUNNER_CLASS);
+      Type runnerType = Type.forName(TimeDriveConfig.NAMESPACE, SQL_RUNNER_CLASS);
       Object instance = runnerType == null ? null : runnerType.newInstance();
       if (!(instance instanceof SqlRunner)) {
         throw new CountException(SQL_RUNNER_CLASS + ' isn\'t deployed (force-app-data360).');

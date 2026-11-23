@@ -10,33 +10,38 @@
 @SuppressWarnings(
   'PMD.CyclomaticComplexity, PMD.CognitiveComplexity, PMD.ExcessiveParameterList, PMD.ExcessivePublicCount, PMD.TooManyFields'
 )
-public with sharing class TimeDriveContext {
+// Global: customers' own Apex sources (TimeDriveApexSource) are handed one. Only what the
+// Config Guide documents for them is global; everything else stays the package's own.
+global with sharing class TimeDriveContext {
   public static final Integer DEFAULT_MAX_RECORDS = 1000;
   public static final String KIND_SALESFORCE = 'Salesforce';
   public static final String KIND_DATA_360 = 'Data 360';
   public static final String KIND_APEX = 'Apex';
   // What a count is per: an hour of a day, a day, a week (from 1 January:
   // the 1st-7th, 8th-14th ... as SOQL's WEEK_IN_YEAR) or a calendar month.
-  public static final String UNIT_HOUR = 'hour';
-  public static final String UNIT_DAY = 'day';
-  public static final String UNIT_WEEK = 'week';
-  public static final String UNIT_MONTH = 'month';
+  global static final String UNIT_HOUR = 'hour';
+  global static final String UNIT_DAY = 'day';
+  global static final String UNIT_WEEK = 'week';
+  global static final String UNIT_MONTH = 'month';
   // A field a source names, as a field path and nothing else.
   private static final Pattern FIELD_PATH = Pattern.compile('[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)*');
 
-  public Id recordId;
+  global Id recordId;
   public String parentObject;
-  public Datetime since;
+  global Datetime since;
   // The end of the timeline's window, or null for up to now. Events after it
   // are dropped anyway; queries can skip them.
-  public Datetime until;
+  global Datetime until;
   // Just these spans of the window, when set: the days on screen.
-  public List<TimeDriveController.TimeWindow> ranges;
+  public List<Span> ranges;
   public Time_Drive_Source__mdt source;
   // A page of the source's items (View all), when set: at most pageSize,
   // newest first, after pageAt (and, at that same moment, before pageId).
   public Integer pageSize;
   public Datetime pageAt;
+  // The key each row's date is under when the provider chose it (a Task's due
+  // date or completion, an all-day event's date); blank for the date field.
+  public String plotDateKey;
   public Id pageId;
   /** The earlier sources' events, loaded on the first read. */
   public List<TimeDriveController.EngagementEvent> priorEvents {
@@ -53,7 +58,7 @@ public with sharing class TimeDriveContext {
   public PriorEvents priorLoader;
   public List<String> warnings;
   // Sources that couldn't be read, by name and kind of failure (shared by
-  // every source's context; the raw exception goes to the debug log only).
+  // every source's context; never the raw exception, which can carry query text).
   public List<TimeDriveController.Problem> problems = new List<TimeDriveController.Problem>();
   // A person account's own Contact: links to Contact (Task.WhoId,
   // Case.ContactId) match it, links to Account match the account.
@@ -119,40 +124,61 @@ public with sharing class TimeDriveContext {
     this.parentObject = parentObject;
     // A source can look back less far than the timeline does (read only
     // when set: a source queried without the field has none).
-    Object months = source?.getPopulatedFieldsAsMap().get('History_Months__c');
+    Decimal months = source != null && source.isSet(Time_Drive_Source__mdt.History_Months__c)
+      ? source.History_Months__c
+      : null;
     Datetime own = months == null
       ? null
-      : Datetime.newInstance(Date.today().addMonths(-((Decimal) months).intValue()), Time.newInstance(0, 0, 0, 0));
+      : Datetime.newInstance(Date.today().addMonths(-months.intValue()), Time.newInstance(0, 0, 0, 0));
     this.since = since != null && own != null && own > since ? own : since;
     this.source = source;
     this.priorEvents = priorEvents == null ? new List<TimeDriveController.EngagementEvent>() : priorEvents;
     this.warnings = warnings == null ? new List<String>() : warnings;
     this.sourceObject = source?.Object_Name__c;
-    this.sourceLabel = source?.Label;
+    // Where an opened item says it's from: Salesforce and Data 360 sources set
+    // theirs (with the object's label); an Apex source shows its own name.
+    this.sourceLabel = source != null &&
+      kind() == KIND_APEX
+      ? KIND_APEX + TimeDrivePlotter.SEPARATOR + source.Label
+      : source?.Label;
+  }
+
+  /**
+   * A context for testing an Apex source: the record, and the window the
+   * timeline asks for. It has no source record, so the source's caps and
+   * fields are the defaults.
+   * @param recordId the record the timeline is on
+   * @param since the start of the window, or null
+   * @param until the end of the window, or null for up to now
+   */
+  global TimeDriveContext(Id recordId, Datetime since, Datetime until) {
+    this(
+      recordId,
+      recordId == null ? null : String.valueOf(recordId.getSObjectType()),
+      since,
+      new Time_Drive_Source__mdt(Kind__c = KIND_APEX),
+      null,
+      null
+    );
+    this.until = until;
   }
 
   /**
    * The windows a provider should read: its ranges, or the whole window.
    * @return the time windows to read
    */
-  public List<TimeDriveController.TimeWindow> spans() {
+  global List<Span> spans() {
     if (ranges != null) {
       // Clipped to the source's own history, when it has one.
-      List<TimeDriveController.TimeWindow> out = new List<TimeDriveController.TimeWindow>();
-      for (TimeDriveController.TimeWindow r : ranges) {
+      List<Span> out = new List<Span>();
+      for (Span r : ranges) {
         if (since == null || r.until == null || r.until >= since) {
-          out.add(
-            r.since == null ||
-              since == null ||
-              r.since >= since
-              ? r
-              : new TimeDriveController.TimeWindow(since, r.until)
-          );
+          out.add(r.since == null || since == null || r.since >= since ? r : new Span(since, r.until));
         }
       }
       return out;
     }
-    return new List<TimeDriveController.TimeWindow>{ new TimeDriveController.TimeWindow(since, until) };
+    return new List<Span>{ new Span(since, until) };
   }
 
   /**
@@ -170,7 +196,7 @@ public with sharing class TimeDriveContext {
    * The source's record cap, newest first.
    * @return the most records to read
    */
-  public Integer maxRecords() {
+  global Integer maxRecords() {
     return source?.Max_Records__c == null ? DEFAULT_MAX_RECORDS : source.Max_Records__c.intValue();
   }
 
@@ -224,6 +250,9 @@ public with sharing class TimeDriveContext {
 
   // ---- for Apex sources ------------------------------------------------------
 
+  // An Apex source's keys holding the records its details name (Plot.links), by detail key.
+  public Map<String, String> detailLinks = new Map<String, String>();
+
   /**
    * How an Apex source's rows are plotted, said in getRows before anything
    * else (Setup asks an Apex source for none of it): the row key holding each
@@ -234,7 +263,7 @@ public with sharing class TimeDriveContext {
    * @param dateKey the key holding each item's Date or Datetime
    * @return the plot, to add its title, subtitle and click to
    */
-  public Plot plotBy(String dateKey) {
+  global Plot plotBy(String dateKey) {
     source = source == null ? new Time_Drive_Source__mdt() : source.clone(true);
     if (String.isBlank(source.Date_Field__c)) {
       source.Date_Field__c = dateKey;
@@ -243,7 +272,7 @@ public with sharing class TimeDriveContext {
   }
 
   /** The rest of how an Apex source's rows are plotted (see plotBy). */
-  public class Plot {
+  global class Plot {
     private TimeDriveContext context;
 
     private Plot(TimeDriveContext context) {
@@ -255,7 +284,7 @@ public with sharing class TimeDriveContext {
      * @param template the title
      * @return this plot
      */
-    public Plot title(String template) {
+    global Plot title(String template) {
       if (String.isBlank(context.source.Title__c)) {
         context.source.Title__c = template;
       }
@@ -267,7 +296,7 @@ public with sharing class TimeDriveContext {
      * @param template the subtitle
      * @return this plot
      */
-    public Plot subtitle(String template) {
+    global Plot subtitle(String template) {
       if (String.isBlank(context.source.Subtitle__c)) {
         context.source.Subtitle__c = template;
       }
@@ -280,9 +309,26 @@ public with sharing class TimeDriveContext {
      * @param recordIdKey the key holding a Salesforce Id
      * @return this plot
      */
-    public Plot opens(String recordIdKey) {
+    global Plot opens(String recordIdKey) {
       if (String.isBlank(context.source.Record_Id_Field__c)) {
         context.source.Record_Id_Field__c = recordIdKey;
+      }
+      return this;
+    }
+
+    /**
+     * The key holding the Salesforce record a detail names, so the opened
+     * item links it: links('Account', 'AccountId') for a row whose Account
+     * key is a name. Record rows don't need it for a path through a lookup
+     * (Product2.Name links to Product2.Id by itself, as fieldsToQuery asks
+     * for it).
+     * @param detailKey the detail field's key, as chosen in Setup
+     * @param recordIdKey the key holding that record's Salesforce Id
+     * @return this plot
+     */
+    global Plot links(String detailKey, String recordIdKey) {
+      if (String.isNotBlank(detailKey) && String.isNotBlank(recordIdKey)) {
+        context.detailLinks.put(detailKey.toLowerCase(), recordIdKey);
       }
       return this;
     }
@@ -298,11 +344,11 @@ public with sharing class TimeDriveContext {
    * @param binds the query's binds, which the bounds are added to
    * @return the condition to append after WHERE ..., or blank
    */
-  public String dateCondition(Schema.SObjectType objectType, String field, Map<String, Object> binds) {
+  global String dateCondition(Schema.SObjectType objectType, String field, Map<String, Object> binds) {
     Schema.DescribeFieldResult d = TimeDriveConfig.fieldDescribe(String.valueOf(objectType), field);
     Boolean byDay = d?.getType() == Schema.DisplayType.DATE;
     List<String> out = new List<String>();
-    List<TimeDriveController.TimeWindow> windows = spans();
+    List<Span> windows = spans();
     for (Integer i = 0; i < windows.size(); i++) {
       List<String> bounds = new List<String>();
       if (windows[i].since != null) {
@@ -335,7 +381,7 @@ public with sharing class TimeDriveContext {
    * @param unit the period asked for (counts' unit)
    * @return the counts
    */
-  public List<DayCount> countBy(
+  global List<DayCount> countBy(
     Schema.SObjectType objectType,
     String field,
     String condition,
@@ -375,9 +421,9 @@ public with sharing class TimeDriveContext {
       this.field = field;
     }
 
-    public override String conditions(List<TimeDriveController.TimeWindow> spans) {
+    public override String conditions(List<Span> spans) {
       List<String> dates = new List<String>();
-      for (TimeDriveController.TimeWindow span : spans) {
+      for (Span span : spans) {
         String clause = field + ' >= :timeDriveSince' + bound;
         binds.put('timeDriveSince' + bound, dateOnly ? (Object) span.since.date() : span.since);
         if (span.until != null) {
@@ -398,12 +444,12 @@ public with sharing class TimeDriveContext {
    * @param unit the period asked for (counts' unit)
    * @return an empty counter
    */
-  public Counter counter(String unit) {
+  global Counter counter(String unit) {
     return new Counter(this, unit);
   }
 
   /** Items added up by day (and hour, when counted by hour), in the user's time zone. */
-  public class Counter {
+  global class Counter {
     private TimeDriveContext context;
     private String unit;
     private Map<String, DayCount> byDay = new Map<String, DayCount>();
@@ -418,7 +464,7 @@ public with sharing class TimeDriveContext {
      * @param at the item's date and time
      * @return this counter
      */
-    public Counter add(Datetime at) {
+    global Counter add(Datetime at) {
       if (context.wants(at)) {
         tally(at.date(), unit == UNIT_HOUR ? at.hour() : null, 1);
       }
@@ -431,7 +477,7 @@ public with sharing class TimeDriveContext {
      * @param count how many items it has
      * @return this counter
      */
-    public Counter add(Date day, Integer count) {
+    global Counter add(Date day, Integer count) {
       if (count != null && count > 0 && context.wants(day)) {
         tally(day, null, count);
       }
@@ -442,7 +488,7 @@ public with sharing class TimeDriveContext {
      * The counts so far.
      * @return a count for each day (or hour) with items
      */
-    public List<DayCount> counts() {
+    global List<DayCount> counts() {
       return byDay.values();
     }
 
@@ -464,11 +510,11 @@ public with sharing class TimeDriveContext {
    * @param at the item's date and time
    * @return true when it falls in a span asked for
    */
-  public Boolean wants(Datetime at) {
+  global Boolean wants(Datetime at) {
     if (at == null) {
       return false;
     }
-    for (TimeDriveController.TimeWindow w : spans()) {
+    for (Span w : spans()) {
       if ((w.since == null || at >= w.since) && (w.until == null || at <= w.until)) {
         return true;
       }
@@ -481,13 +527,13 @@ public with sharing class TimeDriveContext {
    * @param day the item's day
    * @return true when the day overlaps a span asked for
    */
-  public Boolean wants(Date day) {
+  global Boolean wants(Date day) {
     if (day == null) {
       return false;
     }
     Datetime starts = Datetime.newInstance(day, Time.newInstance(0, 0, 0, 0));
     Datetime ends = Datetime.newInstance(day, Time.newInstance(23, 59, 59, 999));
-    for (TimeDriveController.TimeWindow w : spans()) {
+    for (Span w : spans()) {
       if ((w.since == null || ends >= w.since) && (w.until == null || starts <= w.until)) {
         return true;
       }
@@ -497,17 +543,49 @@ public with sharing class TimeDriveContext {
 
   /**
    * For record rows: the fields to SELECT, those given then those the
-   * source's title, subtitle and detail fields name, each once and only if
-   * it's a field path (so a source can't put anything else into the query).
-   * @param always the fields every row needs (its Id, the date)
+   * source's title, subtitle, detail and highlight fields name, each once and
+   * only if it's a field path (so a source can't put anything else into the
+   * query). Where the source names its object (Object Name), fields the user
+   * can't read are left out: they show blank, rather than the query failing.
+   * @param always the fields every row needs (its Id, the date), always kept
    * @return the fields to SELECT
    */
-  public List<String> fieldsToQuery(List<String> always) {
-    List<String> wanted = new List<String>(always);
-    wanted.addAll(TimeDrivePlotter.tokens(source?.Title__c));
-    wanted.addAll(TimeDrivePlotter.tokens(source?.Subtitle__c));
+  global List<String> fieldsToQuery(List<String> always) {
+    return fieldsFor(source?.Object_Name__c, always);
+  }
+
+  /**
+   * As fieldsToQuery(always), for the object the query reads: fields the user
+   * can't read are left out, so they show blank rather than the query failing.
+   * @param objectType the object the source queries
+   * @param always the fields every row needs (its Id, the date), always kept
+   * @return the fields to SELECT
+   */
+  global List<String> fieldsToQuery(Schema.SObjectType objectType, List<String> always) {
+    return fieldsFor(
+      objectType == null ? source?.Object_Name__c : TimeDriveConfig.describeType(objectType).getName(),
+      always
+    );
+  }
+
+  private List<String> fieldsFor(String objectName, List<String> always) {
+    List<String> shown = new List<String>();
+    shown.addAll(TimeDrivePlotter.tokens(source?.Title__c));
+    shown.addAll(TimeDrivePlotter.tokens(source?.Subtitle__c));
     for (Time_Drive_Detail_Field__mdt d : detailFields()) {
-      wanted.add(d.Field__c);
+      shown.add(d.Field__c);
+      // The record a detail ending at a related record's name names (Product2.Name: Product2.Id), for its link.
+      shown.add(TimeDrivePlotter.linkPathOf(objectName, d.Field__c));
+    }
+    // What the highlight reads (a checkbox, as a field path).
+    for (TimeDriveHighlights.Rule r : highlightRules()) {
+      shown.add(r.field);
+    }
+    List<String> wanted = new List<String>(always ?? new List<String>());
+    for (String name : shown) {
+      if (String.isNotBlank(name) && TimeDriveConfig.canRead(objectName, name)) {
+        wanted.add(name);
+      }
     }
     Set<String> seen = new Set<String>();
     List<String> out = new List<String>();
@@ -523,14 +601,17 @@ public with sharing class TimeDriveContext {
    * The highlight rules in use (Salesforce sources whose fields the user can read).
    * @return the rules, possibly empty
    */
+  private List<Time_Drive_Highlight__mdt> storedHighlights() {
+    return draftHighlights != null ? draftHighlights : TimeDriveConfig.highlights(source?.DeveloperName);
+  }
+
   public List<TimeDriveHighlights.Rule> highlightRules() {
     if (highlightRulesCache == null) {
       highlightRulesCache = new List<TimeDriveHighlights.Rule>();
       if (source != null && kind() == KIND_SALESFORCE) {
-        highlightRulesCache = TimeDriveHighlights.rulesFor(
-          source.Object_Name__c,
-          draftHighlights != null ? draftHighlights : TimeDriveConfig.highlights(source.DeveloperName)
-        );
+        highlightRulesCache = TimeDriveHighlights.rulesFor(source.Object_Name__c, storedHighlights());
+      } else if (source != null && kind() == KIND_APEX) {
+        highlightRulesCache = TimeDriveHighlights.rulesForRows(storedHighlights());
       }
     }
     return highlightRulesCache;
@@ -538,16 +619,12 @@ public with sharing class TimeDriveContext {
 
   /**
    * Records a source that couldn't be read: its name and the kind of failure for the user, never
-   * the exception's message (it can carry query text and field names); that goes to the debug log
-   * for an admin.
+   * the exception's message (it can carry query text and field names).
    * @param what the source's name
    * @param e the exception raised
    */
   public void fail(String what, Exception e) {
-    System.debug(
-      LoggingLevel.WARN,
-      'Time Drive: ' + what + ' couldn\'t be read. ' + e.getTypeName() + ': ' + e.getMessage()
-    );
+    TimeDriveQueries.recordFailure(source?.DeveloperName ?? what, TimeDriveController.kindOf(e), e);
     for (TimeDriveController.Problem p : problems) {
       if (p.source == what) {
         return;
@@ -560,7 +637,7 @@ public with sharing class TimeDriveContext {
    * Adds a warning, once, however many sources run into it.
    * @param message the warning text
    */
-  public void warn(String message) {
+  global void warn(String message) {
     if (!warnings.contains(message)) {
       warnings.add(message);
     }
@@ -597,12 +674,74 @@ public with sharing class TimeDriveContext {
     List<TimeDriveController.EngagementEvent> load();
   }
 
+  /**
+   * A span of time, from since to until: one of the periods a context asks
+   * for (spans()), or the timeline's whole window, from the start of the day
+   * History years ago to the end of the day Future years ahead (today, with
+   * no Future), in the user's time zone.
+   */
+  global class Span {
+    global Datetime since;
+    global Datetime until;
+
+    /** Builds the default window: the default history up to today. */
+    public Span() {
+      this(TimeDriveController.DEFAULT_HISTORY_YEARS, null);
+    }
+
+    /**
+     * Builds a window from two dates.
+     * @param since the start of the window
+     * @param until the end of the window
+     */
+    public Span(Datetime since, Datetime until) {
+      this.since = since;
+      this.until = until;
+    }
+
+    /**
+     * Builds a window from years of history and future.
+     * @param historyYears how many years back to start
+     * @param futureYears how many years ahead to end, or null for today
+     */
+    public Span(Decimal historyYears, Decimal futureYears) {
+      Date today = Date.today();
+      since = Datetime.newInstance(
+        today.addMonths(-TimeDriveController.monthsIn(historyYears)),
+        Time.newInstance(0, 0, 0, 0)
+      );
+      Date last = futureYears == null ? today : today.addMonths(TimeDriveController.monthsIn(futureYears));
+      until = Datetime.newInstance(last, Time.newInstance(23, 59, 59, 999));
+    }
+
+    /**
+     * Keeps the events whose time lies in the window.
+     * @param events the events to filter, or null
+     * @return the events inside the window
+     */
+    public List<TimeDriveController.EngagementEvent> within(List<TimeDriveController.EngagementEvent> events) {
+      List<TimeDriveController.EngagementEvent> kept = new List<TimeDriveController.EngagementEvent>();
+      for (
+        TimeDriveController.EngagementEvent e : events == null
+          ? new List<TimeDriveController.EngagementEvent>()
+          : events
+      ) {
+        if (e.occurredAt != null && e.occurredAt >= since && e.occurredAt <= until) {
+          kept.add(e);
+        }
+      }
+      return kept;
+    }
+  }
+
   /** A count provider's items on one day (and hour, when asked by hour). */
-  public class DayCount {
-    public String dayKey;
+  global class DayCount {
+    // Read by an Apex source's own tests: the period's first day (yyyy-MM-dd),
+    // its hour, and how many items it has.
+    global String dayKey;
     // 0-23 in the user's time zone; null for date-only fields, or by day.
-    public Integer hour;
-    public Integer count;
+    global Integer hour;
+    global Integer count;
     // Counted for the whole period (from the summary's counts), not by hour.
     public Boolean whole = false;
 

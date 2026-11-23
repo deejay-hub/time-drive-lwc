@@ -3,7 +3,6 @@ import { getObjectInfo } from "lightning/uiObjectInfoApi";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
 import TimeDriveConfirm from "c/timeDriveConfirm";
 import TimeDriveOrgCheck from "c/timeDriveOrgCheck";
-import { subscribe, unsubscribe, onError } from "lightning/empApi";
 import { loadStyle } from "lightning/platformResourceLoader";
 import FONTS from "@salesforce/resourceUrl/timeDriveSetupFonts";
 import ASSETS from "@salesforce/resourceUrl/timeDriveAssets";
@@ -28,7 +27,7 @@ import setSourceActive from "@salesforce/apex/TimeDriveSetupController.setActive
 import removeSource from "@salesforce/apex/TimeDriveSetupController.remove";
 import setSourceLenses from "@salesforce/apex/TimeDriveSetupController.setLenses";
 import { describeError, fitIllustrations, illustrationName } from "c/timeDriveErrors";
-import { lookupLabel } from "c/timeDriveFieldPicker";
+import { lookupLabel, lookupTarget } from "c/timeDriveFieldPicker";
 import { ICON_SETS } from "./iconCatalog";
 import { PALETTE } from "./colourPalette";
 
@@ -80,13 +79,8 @@ const SAMPLE_NAMES = {
 };
 // WCAG 2.2 non-text contrast (1.4.11): the white icon on its colour.
 const MIN_CONTRAST = 3;
-const RESULT_CHANNEL = "/event/Time_Drive_Setup_Result__e";
-// How long to wait for a save's result before saying it's taking a while.
-const SAVE_PATIENCE = 90000;
 // How long reading an object (its fields and links) may take before the step says so.
 const SCHEMA_PATIENCE = 20000;
-// The job id of a save that needed no deployment.
-const DONE = "done";
 // Results a search list renders at once; typing narrows the rest.
 const RESULTS_SHOWN = 50;
 
@@ -107,7 +101,7 @@ const KINDS = [
   },
   {
     value: "dmo",
-    label: "Data 360 DMO",
+    label: "A Data 360 DMO",
     slot: "a Data 360 DMO",
     detail: "Engagement from a Data 360 data model object (DMO), like email opens or website visits.",
     icon: "utility:data_cloud"
@@ -140,7 +134,7 @@ const PARENTS = [
     value: "PersonAccount",
     label: "Person Account",
     detail: "The timeline on person account pages. Records link by the Account or its Contact.",
-    icon: "utility:person_account"
+    icon: "utility:user"
   },
   {
     value: "Lead",
@@ -184,7 +178,7 @@ const GUIDED_STEPS = [
     auto: true,
     title: "Check your org",
     text: "Time Drive looks at how your org works, tells you what it found and adds the sources that suit.",
-    what: "Runs a few quick checks: Shared Activities, Contacts to Multiple Accounts, Person Accounts, Enhanced Email, Data 360 and Einstein Activity Capture. It explains what each means for the timeline, then adds the recommended sources.",
+    what: "Runs a few quick checks: Shared Activities, Contacts to Multiple Accounts, Person Accounts, Enhanced Email and Einstein Activity Capture. It explains what each means for the timeline, then adds the recommended sources.",
     why: "The right sources depend on how your org works. With Shared Activities on, a task belongs to every contact on it, so the timeline needs the sources that follow that. The other pages open once this is done."
   },
   {
@@ -221,14 +215,6 @@ const GUIDED_STEPS = [
     why: "The timeline comes with a source or two. Knowing what's there tells you what to add, change or make inactive."
   },
   {
-    key: "source",
-    manual: true,
-    title: "Add your sources",
-    text: "Choose the records each timeline should plot: Cases, Opportunities, Data 360 engagement or your own.",
-    what: "Opens the setup wizard: where the records come from, how they link to the record page, which date places them, and how they look.",
-    why: "A source is what puts records on the timeline. Each one is a kind of item people will see, newest first."
-  },
-  {
     key: "users",
     manual: true,
     title: "Check your users can read the records",
@@ -248,11 +234,6 @@ const GUIDED_STEPS = [
 // An Email Message's subtitle, as the timeline writes it: the format, and a sample.
 const EMAIL_SUBTITLE = "Sent to: first recipient and N others";
 const EMAIL_SAMPLE_SUBTITLE = "Sent to: Ada Park and 1 other";
-
-// The shipped sources: adding your own is what ticks "Add your sources".
-const SHIPPED_SOURCES = new Set(["Tasks", "Calls", "Emails"]);
-// The shipped sources for each org setting (see Fit the timeline) are named Fit_.
-const isShipped = (src) => SHIPPED_SOURCES.has(src.developerName) || src.developerName?.startsWith("Fit_");
 
 // The Docs live in the GitHub repo: the Docs page links to them there (a new
 // tab), so nothing is fetched into the org. Change the repo here.
@@ -621,6 +602,16 @@ const HIGHLIGHT_COLOURS = [
   { value: "#747474", label: "Grey" }
 ];
 
+// What the timeline shows of a line (title, subtitle) and of a detail
+// (TimeDrivePlotter.MAX_LINE, MAX_DETAIL): longer text is cut.
+const LINE_CHARS = 150;
+const DETAIL_CHARS = 500;
+
+// A subtitle's fields: up to two, with the timeline's dot between them
+// (TimeDrivePlotter.SEPARATOR, which drops out around an empty one).
+const MAX_SUBTITLE_FIELDS = 2;
+const SUBTITLE_SEPARATOR = " · ";
+
 // Fields an item can show when opened, besides its title and subtitle.
 const MAX_DETAILS = 4;
 
@@ -641,9 +632,7 @@ function plainError(error) {
   if (body?.message && (body.isUserDefinedException || !body.stackTrace)) {
     return { message: body.message, cause: "" };
   }
-  const described = describeError(error);
-  console.error("Time Drive Setup:", described.detail);
-  return described;
+  return describeError(error);
 }
 
 export default class TimeDriveSetup extends LightningElement {
@@ -715,7 +704,6 @@ export default class TimeDriveSetup extends LightningElement {
   saving;
   saved = false;
   saveError;
-  subscription;
 
   connectedCallback() {
     this.dataSpacesReady = this.loadDataSpaces();
@@ -732,7 +720,6 @@ export default class TimeDriveSetup extends LightningElement {
     window.addEventListener("scroll", this._onScroll, { passive: true });
     this.progressLoaded = this.loadProgress();
     this.loadSources();
-    this.listen();
   }
 
   renderedCallback() {
@@ -802,76 +789,30 @@ export default class TimeDriveSetup extends LightningElement {
   disconnectedCallback() {
     window.removeEventListener("resize", this._onResize);
     window.removeEventListener("scroll", this._onScroll);
-    clearTimeout(this.saving?.timer);
-    if (this.subscription) unsubscribe(this.subscription, () => {});
   }
 
   // ---- saving results ------------------------------------------------------
 
-  async listen() {
-    onError((error) => console.warn("Time Drive Setup: streaming error", JSON.stringify(error)));
-    try {
-      this.subscription = await subscribe(RESULT_CHANNEL, -1, (message) => this.handleResult(message));
-    } catch (e) {
-      console.warn("Time Drive Setup: can't listen for save results", e);
-    }
+  // A source's row while its change is saved: "Making active…", "Removing…".
+  pend(name, change) {
+    this.pending = { ...this.pending, [name]: change };
   }
 
-  // A save written straight to records has no deployment to wait for (its
-  // ticket has no job): it is done as soon as it returns.
-  settleIfDone(ticket) {
-    if (!ticket.jobId) this.handleResult({ data: { payload: { Job_Id__c: DONE, Status__c: "Succeeded" } } });
-  }
-
-  handleResult(message) {
-    const payload = message?.data?.payload ?? {};
-    const job = (payload.Job_Id__c ?? "").slice(0, 15);
-    const succeeded = payload.Status__c === "Succeeded";
-    if (this.viewSaving && this.viewSaving.jobId.slice(0, 15) === job) {
-      clearTimeout(this.viewSaving.timer);
-      this.viewSaving = undefined;
-      if (succeeded) {
-        this.viewEdits = {};
-        this.guidedMark("views");
-        this.toast("success", "Views saved", "The timeline's picker offers the views you chose.");
-        this.loadViews();
-      } else {
-        this.toast("error", "The views couldn't be saved", payload.Message__c || "Try again in a moment.");
-      }
-      return;
-    }
-    if (this.saving && this.saving.jobId.slice(0, 15) === job) {
-      clearTimeout(this.saving.timer);
-      this.saving = undefined;
-      if (succeeded) {
-        this.finishSave();
-      } else {
-        this.saveError = {
-          message: "Salesforce couldn't save the source.",
-          cause: payload.Message__c || "The deployment didn't succeed. Try again in a moment."
-        };
-      }
-      return;
-    }
-    const name = Object.keys(this.pending).find((n) => this.pending[n].jobId.slice(0, 15) === job);
-    if (!name) return;
-    const { label, active, removing } = this.pending[name];
-    clearTimeout(this.pending[name].timer);
+  unpend(name) {
     const pending = { ...this.pending };
     delete pending[name];
     this.pending = pending;
-    // Show the outcome now, so the row doesn't fall back to its old state
-    // while the list is read again.
-    if (succeeded && removing) this.sources = this.sources.filter((s) => s.developerName !== name);
-    else if (succeeded) this.sources = this.sources.map((s) => (s.developerName === name ? { ...s, active } : s));
-    if (succeeded && removing) {
+  }
+
+  // A source switched on or off, or removed: shown at once, then the list is
+  // read again.
+  sourceChanged(name, label, { active, removing }) {
+    if (removing) {
+      this.sources = this.sources.filter((s) => s.developerName !== name);
       this.toast("success", `${label} removed`, "It's off the timeline.");
-    } else if (succeeded) {
-      this.toast("success", active ? `${label} is active` : `${label} is inactive`, "");
-    } else if (removing) {
-      this.toast("error", `${label} couldn't be removed`, payload.Message__c || "");
     } else {
-      this.toast("error", `${label} couldn't be made ${active ? "active" : "inactive"}`, payload.Message__c || "");
+      this.sources = this.sources.map((s) => (s.developerName === name ? { ...s, active } : s));
+      this.toast("success", active ? `${label} is active` : `${label} is inactive`, "");
     }
     this.loadSources();
   }
@@ -1142,25 +1083,26 @@ export default class TimeDriveSetup extends LightningElement {
     });
   }
 
+  // One save at a time: a switch flipped while one saves goes in the next.
   async saveViewChoices() {
+    const sent = { ...this.viewEdits };
     const views = this.viewRows.map((r) => ({ developerName: r.key, active: r.active }));
+    this.viewSaving = true;
     try {
-      const ticket = await saveViews({ viewsJson: JSON.stringify(views) });
-      if (!ticket.jobId) {
-        this.viewEdits = {};
-        this.guidedMark("views");
-        this.toast("success", "Views kept", "The picker offers the same views.");
-        return;
-      }
-      // eslint-disable-next-line @lwc/lwc/no-async-operation
-      const timer = setTimeout(() => {
-        this.viewSaving = undefined;
-        this.toast("info", "Still saving", "Salesforce is taking a while. Check back in a moment.");
-      }, SAVE_PATIENCE);
-      this.viewSaving = { jobId: ticket.jobId, timer };
+      await saveViews({ viewsJson: JSON.stringify(views) });
+      this.viewDrafts = this.viewDrafts.map((d) => {
+        return d.developerName in sent ? { ...d, active: sent[d.developerName] } : d;
+      });
+      this.viewEdits = Object.fromEntries(Object.entries(this.viewEdits).filter(([key, on]) => sent[key] !== on));
+      this.guidedMark("views");
+      this.toast("success", "Views saved", "The timeline's picker offers the views you chose.");
     } catch (e) {
+      this.viewEdits = {};
       this.toast("error", "The views couldn't be saved", plainError(e).message);
+    } finally {
+      this.viewSaving = false;
     }
+    if (Object.keys(this.viewEdits).length) this.saveViewChoices();
   }
 
   guidedMark(key) {
@@ -1207,10 +1149,6 @@ export default class TimeDriveSetup extends LightningElement {
 
   get logoUrl() {
     return `${ASSETS}/logo/time-drive.svg`;
-  }
-
-  get isDashboard() {
-    return this.view === "dashboard";
   }
 
   get isSetupPage() {
@@ -1279,7 +1217,7 @@ export default class TimeDriveSetup extends LightningElement {
 
   // The menu's own pages need no breadcrumb.
   get showCrumbs() {
-    return !["welcome", "dashboard", "setup", "pages", "lenses", "docs"].includes(this.view);
+    return !["welcome", "setup", "pages", "lenses", "docs"].includes(this.view);
   }
 
   // A new page starts at the top, with focus on its heading.
@@ -1418,113 +1356,6 @@ export default class TimeDriveSetup extends LightningElement {
     return this.guidedDone.has("orgcheck");
   }
 
-  // ---- the home page's dashboard ------------------------------------------
-
-  get sourceTotal() {
-    return String(this.sources.length);
-  }
-
-  get onCount() {
-    return String(this.sources.filter((s) => s.active).length);
-  }
-
-  get meterStyle() {
-    const total = this.sources.length;
-    const on = this.sources.filter((s) => s.active).length;
-    return `width: ${total ? Math.round((on / total) * 100) : 0}%`;
-  }
-
-  get offNote() {
-    const off = this.sources.length - this.sources.filter((s) => s.active).length;
-    if (!this.sources.length) return "No sources yet: Add a source to start a timeline.";
-    return off ? `${off} inactive. They stay set up; make them active any time.` : "Every source is active.";
-  }
-
-  // Each kind of source, as a share of them all.
-  get kindBars() {
-    const total = Math.max(1, this.sources.length);
-    return TYPES.map((t) => {
-      const n = this.sources.filter((src) => (src.type || "standard") === t.value).length;
-      return { key: t.value, label: t.label, count: String(n), style: `width: ${Math.round((n / total) * 100)}%` };
-    });
-  }
-
-  // Each record page and how many of its sources are on.
-  get glanceRows() {
-    return this.parentCards.map((p) => {
-      const mine = this.sources.filter((s) => (s.parentObject || "Contact") === p.value);
-      const on = mine.filter((s) => s.active).length;
-      return {
-        key: p.value,
-        value: p.value,
-        label: p.label,
-        openLabel: p.openLabel,
-        detail: mine.length ? `${mine.length} ${mine.length === 1 ? "source" : "sources"}` : "No sources yet",
-        pill: mine.length ? `${on} active` : "Empty",
-        pillClass: `pill${on ? " pill_ok" : ""}`
-      };
-    });
-  }
-
-  // The dashboard's table: a column per record page, its active sources
-  // down it in legend order. Rows run as deep as the longest column.
-  get activeColumns() {
-    return this.parentCards.map((p) => ({
-      key: p.value,
-      value: p.value,
-      label: p.label,
-      openLabel: `${p.label}: customize`,
-      sources: this.sources
-        .filter((s) => s.active && (s.parentObject || "Contact") === p.value)
-        .sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0) || a.label.localeCompare(b.label))
-    }));
-  }
-
-  get activeTableRows() {
-    const columns = this.activeColumns;
-    const depth = Math.max(1, ...columns.map((c) => c.sources.length));
-    return Array.from({ length: depth }, (_, i) => ({
-      key: `row-${i}`,
-      cells: columns.map((c) => {
-        const s = c.sources[i];
-        return {
-          key: `${c.key}-${i}`,
-          has: Boolean(s),
-          label: s?.label ?? (i === 0 ? "None active" : ""),
-          iconName: s?.icon || "utility:record",
-          chipStyle: `--chip: ${s?.iconColour || "var(--setup-chip)"}`,
-          className: `kd-cell${s ? "" : " kd-cell_empty"}`
-        };
-      })
-    }));
-  }
-
-  get offSources() {
-    return this.sources
-      .filter((s) => !s.active)
-      .map((s) => ({
-        developerName: s.developerName,
-        label: s.label,
-        where: `${PARENTS.find((p) => p.value === (s.parentObject || "Contact"))?.label ?? s.parentObject} · ${
-          this.lensNames(s).join(", ") || "No view"
-        }`,
-        openLabel: `${s.label}: open`,
-        iconName: s.icon || "utility:record",
-        chipStyle: `--chip: ${s.iconColour || "var(--setup-chip)"}`
-      }));
-  }
-
-  get hasOffSources() {
-    return this.offSources.length > 0;
-  }
-
-  // An off source, opened on its own page (under its record page).
-  handleOpenSource(event) {
-    const source = this.sources.find((s) => s.developerName === event.currentTarget.dataset.name);
-    this.selectedParent = source?.parentObject || PARENTS[0].value;
-    this.handleViewSource(event);
-  }
-
   handleWatchVideo() {
     if (HOW_TO_VIDEO_URL) {
       window.open(HOW_TO_VIDEO_URL, "_blank", "noopener");
@@ -1547,7 +1378,6 @@ export default class TimeDriveSetup extends LightningElement {
 
   // What Setup can see for itself about each step.
   guidedState(step) {
-    const mine = this.sources.filter((src) => !isShipped(src));
     const ticked = this.guidedDone.has(step.key);
     switch (step.kind ?? step.key) {
       case "orgcheck":
@@ -1562,10 +1392,6 @@ export default class TimeDriveSetup extends LightningElement {
           done: ticked,
           status: `${this.sources.length} ${this.sources.length === 1 ? "source" : "sources"} set up, ${this.sources.filter((src) => src.active).length} active`
         };
-      case "source":
-        return mine.length
-          ? { done: true, auto: true, status: `${mine.length} ${mine.length === 1 ? "source" : "sources"} of your own` }
-          : { done: ticked, status: "" };
       case "users": {
         const objects = [
           ...new Set(this.sources.filter((src) => src.active).map((src) => src.objectLabel || src.objectName))
@@ -1611,8 +1437,6 @@ export default class TimeDriveSetup extends LightningElement {
         return [{ label: done ? "Check again" : "Check my org", handler: "check", primary: !done }];
       case "review":
         return [{ label: "Open Customize", handler: "customize", primary: !done }];
-      case "source":
-        return [{ label: done ? "Add another" : "Add a source", handler: "add", primary: !done }];
       case "users":
         return [{ label: "Open permission sets", href: "/lightning/setup/PermSets/home" }];
       case "page": {
@@ -1704,7 +1528,7 @@ export default class TimeDriveSetup extends LightningElement {
   // Anywhere on a step shows its help, done or not; its action and its
   // checkbox keep their own clicks.
   handleGuidedRow(event) {
-    if (event.target.closest(".guided-act, .guided-check, .guided-choices, .view-names")) return;
+    if (event.target.closest(".guided-act, .guided-check, .guided-choices")) return;
     this.guidedSelected = event.currentTarget.dataset.key;
   }
 
@@ -1722,10 +1546,6 @@ export default class TimeDriveSetup extends LightningElement {
     else if (handler === "lenses") this.show("lenses");
     else if (handler === "video") this.handleWatchVideo();
     else if (handler === "retry") this.handleRetryLoad();
-  }
-
-  handleOpenDashboard() {
-    this.show("dashboard");
   }
 
   // From home: straight into adding a source to Contact.
@@ -1898,8 +1718,7 @@ export default class TimeDriveSetup extends LightningElement {
     const ok = await TimeDriveConfirm.open({
       size: "small",
       title: `Remove ${source.label}?`,
-      message:
-        "It comes off the timeline and out of this list. (To delete it for good, use Custom Metadata Types in Setup.)",
+      message: "It comes off the timeline and out of this list, for good.",
       confirmLabel: "Remove"
     });
     if (!ok) return;
@@ -1907,16 +1726,13 @@ export default class TimeDriveSetup extends LightningElement {
       this.viewing = undefined;
       this.show("parent");
     }
+    this.pend(name, { active: false, removing: true });
     try {
-      const ticket = await removeSource({ developerName: name });
-      // eslint-disable-next-line @lwc/lwc/no-async-operation
-      const timer = setTimeout(() => this.slowToggle(name), SAVE_PATIENCE);
-      this.pending = {
-        ...this.pending,
-        [name]: { jobId: ticket.jobId || DONE, active: false, removing: true, label: source.label, timer }
-      };
-      this.settleIfDone(ticket);
+      await removeSource({ developerName: name });
+      this.unpend(name);
+      this.sourceChanged(name, source.label, { removing: true });
     } catch (e) {
+      this.unpend(name);
       this.toast("error", `${source.label} couldn't be removed`, plainError(e).message);
     }
   }
@@ -2050,28 +1866,18 @@ export default class TimeDriveSetup extends LightningElement {
     const name = event.target.dataset.name;
     const active = event.target.checked;
     const source = this.sources.find((s) => s.developerName === name);
+    const toggle = event.target;
+    this.pend(name, { active });
     try {
-      const ticket = await setSourceActive({ developerName: name, active });
-      // eslint-disable-next-line @lwc/lwc/no-async-operation
-      const timer = setTimeout(() => this.slowToggle(name), SAVE_PATIENCE);
-      this.pending = {
-        ...this.pending,
-        [name]: { jobId: ticket.jobId || DONE, active, label: source.label, timer }
-      };
-      this.settleIfDone(ticket);
+      await setSourceActive({ developerName: name, active });
+      this.unpend(name);
+      this.sourceChanged(name, source.label, { active });
     } catch (e) {
-      event.target.checked = !active;
+      this.unpend(name);
+      toggle.checked = !active;
       const error = plainError(e);
       this.toast("error", `${source.label} couldn't be made ${active ? "active" : "inactive"}`, error.message);
     }
-  }
-
-  slowToggle(name) {
-    const pending = { ...this.pending };
-    delete pending[name];
-    this.pending = pending;
-    this.toast("info", "Still saving", "Salesforce is taking a while. Refresh in a minute to see the change.");
-    this.loadSources();
   }
 
   handleRetryLoad() {
@@ -2287,7 +2093,7 @@ export default class TimeDriveSetup extends LightningElement {
       case "look":
         return !this.showWords
           ? ""
-          : "Choose the field each item's title and subtitle show. A lookup (›) leads to a related record's fields: a member's Campaign › Name, say.";
+          : "Choose the field each item's title shows, and up to two for its subtitle (read with a dot between them). A lookup (›) leads to a related record's fields: a member's Campaign › Name, say.";
       case "open":
         return this.isSalesforce
           ? "Opening an item shows more about it, right on the timeline. Clicking its title opens a record page: for a junction like Campaign Member, often the record it joins to. The previews use sample values."
@@ -3101,12 +2907,10 @@ export default class TimeDriveSetup extends LightningElement {
     const objectName = this.draft.objectName;
     if (!objectName) return;
     this.loadingSchema = true;
-    const started = performance.now();
     const waiting = new Set(["fields", ...(this.isSalesforce ? ["links"] : [])]);
     const timed = (name, promise) =>
       promise.finally(() => {
         waiting.delete(name);
-        console.info(`Time Drive setup: ${name} of ${objectName} took ${Math.round(performance.now() - started)} ms`);
       });
     // eslint-disable-next-line @lwc/lwc/no-async-operation
     const timer = setTimeout(() => {
@@ -3624,9 +3428,9 @@ export default class TimeDriveSetup extends LightningElement {
     try {
       const volumes = await getVolumes({ draftJson: this.draftJson() });
       if (seq === this.volumeSeq) this.volumes = volumes;
-    } catch (e) {
+    } catch {
+      // Not counted: the step goes on without volumes.
       if (seq === this.volumeSeq) this.volumes = undefined;
-      console.warn("Time Drive Setup: volumes not counted", plainError(e).message);
     } finally {
       if (seq === this.volumeSeq) this.loadingVolumes = false;
     }
@@ -3731,10 +3535,27 @@ export default class TimeDriveSetup extends LightningElement {
     return out;
   }
 
-  // The title and subtitle are one field each: the first {Field} in what's
-  // kept, or none (the title then shows the source's name).
+  // The title is one field: the first {Field} in what's kept, or none (the
+  // title then shows the source's name). The subtitle is up to two, read
+  // with a dot between them ("{Owner.Name} · {What.Name}").
   firstField(text) {
     return /\{([^}]+)\}/.exec(text ?? "")?.[1] ?? "";
+  }
+
+  fieldsIn(text) {
+    return [...(text ?? "").matchAll(/\{([^}]+)\}/g)].map((m) => m[1]).slice(0, MAX_SUBTITLE_FIELDS);
+  }
+
+  get subtitleFields() {
+    return this.isEmailMessage ? [] : this.fieldsIn(this.draft.subtitle);
+  }
+
+  // The subtitle from its fields, in order, a dot between them.
+  subtitleOf(fields) {
+    return fields
+      .filter(Boolean)
+      .map((f) => `{${f}}`)
+      .join(SUBTITLE_SEPARATOR);
   }
 
   get titleField() {
@@ -3742,7 +3563,31 @@ export default class TimeDriveSetup extends LightningElement {
   }
 
   get subtitleField() {
-    return this.isEmailMessage ? "" : this.firstField(this.draft.subtitle);
+    return this.subtitleFields[0] ?? "";
+  }
+
+  get subtitleSecondField() {
+    return this.subtitleFields[1] ?? "";
+  }
+
+  // A field longer than a line shows (or rich text): said under its choice.
+  cutNote(field, max) {
+    const info = this.fieldInfo(field);
+    if (!info) return "";
+    if (info.html) return `Rich text: shown as plain words, up to ${max} characters.`;
+    return info.length > max ? `Long text: shown cut to ${max} characters.` : "";
+  }
+
+  get detailChars() {
+    return DETAIL_CHARS;
+  }
+
+  get titleCutNote() {
+    return this.cutNote(this.titleField, LINE_CHARS);
+  }
+
+  get subtitleCutNote() {
+    return [this.subtitleField, this.subtitleSecondField].map((f) => this.cutNote(f, LINE_CHARS)).find(Boolean) ?? "";
   }
 
   get titleChoice() {
@@ -3760,6 +3605,31 @@ export default class TimeDriveSetup extends LightningElement {
 
   get subtitleChoiceClass() {
     return `field-choice-name${this.subtitleField ? "" : " field-choice-name_none"}`;
+  }
+
+  // The second field: offered once there's a first.
+  get showSubtitleSecond() {
+    return Boolean(this.subtitleField) && !this.isEmailMessage;
+  }
+
+  get subtitleSecondChoice() {
+    return this.subtitleSecondField ? this.fieldLabel(this.subtitleSecondField) : "Add a second field";
+  }
+
+  get subtitleSecondChoiceClass() {
+    return `field-choice-name${this.subtitleSecondField ? "" : " field-choice-name_none"}`;
+  }
+
+  get subtitleSecondLabel() {
+    return `Subtitle, second field: ${this.subtitleSecondField ? this.fieldLabel(this.subtitleSecondField) : "none"}`;
+  }
+
+  get canClearSubtitleSecond() {
+    return Boolean(this.subtitleSecondField);
+  }
+
+  get subtitleSecondTokensOpen() {
+    return this.tokenTarget === "subtitle2";
   }
 
   get cannotChooseTitleField() {
@@ -3788,9 +3658,17 @@ export default class TimeDriveSetup extends LightningElement {
     return !this.cannotChooseSubtitleField;
   }
 
-  // Taken off: the title shows the source's name again, the subtitle nothing.
+  // Taken off: the title shows the source's name again; a subtitle field
+  // goes, and a second one moves up to first.
   handleFieldClear(event) {
-    this.update({ [event.currentTarget.dataset.field]: "" });
+    const field = event.currentTarget.dataset.field;
+    if (field === "subtitle" || field === "subtitle2") {
+      const fields = [...this.subtitleFields];
+      fields.splice(field === "subtitle" ? 0 : 1, 1);
+      this.update({ subtitle: this.subtitleOf(fields) });
+    } else {
+      this.update({ [field]: "" });
+    }
     this.tokenTarget = undefined;
   }
 
@@ -3800,7 +3678,7 @@ export default class TimeDriveSetup extends LightningElement {
 
   get subtitleParts() {
     if (this.isEmailMessage) return [{ key: "email", text: EMAIL_SAMPLE_SUBTITLE, className: "plain" }];
-    return this.partsOf(this.subtitleField ? `{${this.subtitleField}}` : "");
+    return this.partsOf(this.subtitleOf(this.subtitleFields));
   }
 
   get titleTokensOpen() {
@@ -3819,7 +3697,13 @@ export default class TimeDriveSetup extends LightningElement {
 
   // The field chosen takes the place of the one there.
   insertToken(name) {
-    this.update({ [this.tokenTarget]: `{${name}}` });
+    if (this.tokenTarget === "subtitle" || this.tokenTarget === "subtitle2") {
+      const fields = [...this.subtitleFields];
+      fields[this.tokenTarget === "subtitle" ? 0 : 1] = name;
+      this.update({ subtitle: this.subtitleOf(fields) });
+    } else {
+      this.update({ [this.tokenTarget]: `{${name}}` });
+    }
     this.tokenTarget = undefined;
   }
 
@@ -4106,9 +3990,13 @@ export default class TimeDriveSetup extends LightningElement {
     }));
   }
 
+  // The fields an opened item shows, by name and in order (a label of their
+  // own, else the field's): "Status, Owner, Related To".
   get openAnswer() {
-    const n = (this.draft.details ?? []).filter((x) => x.field).length;
-    return `${n} ${n === 1 ? "field" : "fields"}`;
+    const names = (this.draft.details ?? [])
+      .filter((x) => x.field)
+      .map((x) => (x.label?.trim() ? x.label.trim() : this.fieldLabel(x.field)));
+    return names.length ? names.join(", ") : "No fields";
   }
 
   // What a click opens: the item's own record, or a related one.
@@ -4284,7 +4172,7 @@ export default class TimeDriveSetup extends LightningElement {
     let fields = this.fields ?? [];
     for (const rel of steps.slice(0, -1)) {
       const lookup = fields.find((f) => f.relationshipName === rel);
-      objectName = lookup?.referenceTo;
+      objectName = lookupTarget(lookup);
       fields = this.fieldsOf(objectName);
     }
     const last = steps[steps.length - 1];
@@ -4378,7 +4266,8 @@ export default class TimeDriveSetup extends LightningElement {
     const rel = String(path).split(".");
     if (rel.length < 2) return;
     const lookup = (this.fields ?? []).find((f) => f.relationshipName === rel[0]);
-    if (lookup?.referenceTo) this.loadPreviewFields(lookup.referenceTo);
+    const target = lookupTarget(lookup);
+    if (target) this.loadPreviewFields(target);
   }
 
   handleDetailPickOpen(event) {
@@ -4751,14 +4640,22 @@ export default class TimeDriveSetup extends LightningElement {
   // ---- highlights: an icon when a field has a value ---------------------------
 
   get canHighlight() {
-    return this.isSalesforce;
+    return this.isSalesforce || this.isApex;
+  }
+
+  get highlightHelp() {
+    return this.isApex
+      ? "Mark an item with a small icon where a row's value is true: a checkbox field the class reads (Flagged__c), or a key of its rows. One per source."
+      : "Mark an item with a small icon when a checkbox is checked, such as High priority or Overdue. One per source.";
   }
 
   get canAddHighlight() {
     return (this.draft.highlights?.length ?? 0) < MAX_HIGHLIGHTS;
   }
 
-  // Checkboxes: on or off, nothing to choose between.
+  // Checkboxes: on or off, nothing to choose between. Overdue tasks have one
+  // of Time Drive's own (Overdue__c); other logic is a formula checkbox of
+  // the admin's.
   get highlightFieldOptions() {
     return (this.fields ?? []).filter((f) => f.type === "boolean").map((f) => ({ label: f.label, value: f.name }));
   }
@@ -4930,14 +4827,14 @@ export default class TimeDriveSetup extends LightningElement {
     if (this.saveDisabled || this.stopForContrast()) return;
     if (this.isApex && !(await this.confirmApexScale())) return;
     this.saveError = undefined;
+    this.saving = true;
     try {
       const ticket = await saveDraft({ draftJson: this.draftJson() });
       this.draft = { ...this.draft, developerName: ticket.developerName };
-      // eslint-disable-next-line @lwc/lwc/no-async-operation
-      const timer = setTimeout(() => this.slowSave(), SAVE_PATIENCE);
-      this.saving = { jobId: ticket.jobId || DONE, timer };
-      this.settleIfDone(ticket);
+      this.saving = false;
+      this.finishSave();
     } catch (e) {
+      this.saving = false;
       this.saveError = plainError(e);
     }
   }
@@ -4959,14 +4856,6 @@ export default class TimeDriveSetup extends LightningElement {
         "I've thought about how this class scales and performs with our data, and I take responsibility for it.",
       confirmLabel: "Save"
     });
-  }
-
-  slowSave() {
-    this.saving = undefined;
-    this.dirty = false;
-    this.toast("info", "Still saving", "Salesforce is taking a while. Check the list again in a minute.");
-    this.show("parent");
-    this.loadSources();
   }
 
   draftJson() {

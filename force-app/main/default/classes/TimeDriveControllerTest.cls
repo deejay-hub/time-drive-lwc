@@ -9,7 +9,7 @@
 private class TimeDriveControllerTest {
   // What the Apex test sources were asked for in this test.
   static Integer apexRowsRead = 0;
-  static List<TimeDriveController.TimeWindow> apexSpansAsked = new List<TimeDriveController.TimeWindow>();
+  static List<TimeDriveContext.Span> apexSpansAsked = new List<TimeDriveContext.Span>();
   static List<TimeDriveContext.DayCount> givenCounts;
 
   // A well-formed Id for tests: the object's key prefix and a number.
@@ -88,6 +88,12 @@ private class TimeDriveControllerTest {
     return [SELECT Id FROM Contact LIMIT 1].Id;
   }
 
+  // TaskRelation comes with Shared Activities, an org setting a scratch org
+  // may not have: the tests that need it are skipped where it's off.
+  private static Boolean sharedActivities() {
+    return TimeDriveConfig.sObjectType('TaskRelation') != null;
+  }
+
   private static Integer countOf(TimeDriveController.TimelineResult result, String type) {
     Integer n = 0;
     for (TimeDriveController.EngagementEvent e : result.events) {
@@ -142,7 +148,7 @@ private class TimeDriveControllerTest {
 
   @IsTest
   static void allIsALensASourceIsInOrNot() {
-    // Open and closed items each in a lens of their own, all items in All, and one in no lens (All).
+    // Three sources of the same items: one in All, one only in Service, and one in no lens (which All takes in).
     Id customer = contactId();
     Time_Drive_Source__mdt everyCase = source('All_Cases', 'Task', 'CreatedDate', 'WhoId');
     everyCase.Lenses__c = 'All';
@@ -196,7 +202,8 @@ private class TimeDriveControllerTest {
     Assert.areEqual('On a day', events[0].title);
     Assert.areEqual(Date.today(), events[0].occurredAt.date(), 'on its day');
     Assert.areEqual(record, events[0].recordId, 'an Id given as text');
-    Assert.isTrue(warnings.isEmpty(), 'rows without a date are left out quietly');
+    // A row with no date is left out quietly; one whose date isn't one ('soon') is said.
+    Assert.areEqual(1, warnings.size(), 'an unreadable date is said: ' + warnings);
   }
 
   @IsTest
@@ -433,18 +440,22 @@ private class TimeDriveControllerTest {
       source('Tasks', 'Task', 'ActivityDate', 'WhoId'),
       source('Cases', 'Case', 'CreatedDate', 'ContactId')
     };
-    TimeDriveQueries.ran.clear();
+    TimeDriveQueries.clear();
     TimeDriveController.getTimeline(customer, null, null, null, null, null, null, null, null);
     Boolean sawTask = false;
+    Boolean sawCase = false;
     for (TimeDriveQueries.Ran q : TimeDriveQueries.ran) {
       if (q.soql.contains('FROM Task ')) {
         sawTask = true;
+        // A task's due date can be empty, so each query checks it.
         Assert.isTrue(q.soql.contains('ActivityDate != null'), 'a nillable date must have a value: ' + q.soql);
       } else if (q.soql.contains('FROM Case ')) {
+        sawCase = true;
         Assert.isFalse(q.soql.contains('CreatedDate != null'), 'a date that is always set needs no check');
       }
     }
     Assert.isTrue(sawTask, 'the Tasks were queried');
+    Assert.isTrue(sawCase, 'the Cases were queried');
   }
 
   @IsTest
@@ -469,7 +480,7 @@ private class TimeDriveControllerTest {
     List<String> run = new List<String>{ keys[4], keys[3], keys[2], keys[1], keys[0] };
     String together = String.join(run, ',');
 
-    TimeDriveQueries.ran.clear();
+    TimeDriveQueries.clear();
     List<TimeDriveController.EngagementEvent> page = TimeDriveController.getPageDays(
       customer,
       null,
@@ -487,7 +498,7 @@ private class TimeDriveControllerTest {
     Assert.areEqual(1, rangesAsRun, 'one range for the run');
 
     // Without the runs: a range for each day, the same rows.
-    TimeDriveQueries.ran.clear();
+    TimeDriveQueries.clear();
     List<TimeDriveController.EngagementEvent> apart = TimeDriveController.getPageDays(
       customer,
       null,
@@ -524,7 +535,8 @@ private class TimeDriveControllerTest {
     insert cases;
     List<String> keys = new List<String>();
     for (Integer d = 1; d <= 3; d++) {
-      Datetime at = Datetime.now().addDays(-d);
+      // Midday, so the minutes taken off never cross into the day before.
+      Datetime at = Datetime.newInstance(Date.today().addDays(-d), Time.newInstance(12, 0, 0, 0));
       keys.add(at.format('yyyy-MM-dd'));
       for (Integer i = (d - 1) * 4; i < d * 4; i++) {
         Test.setCreatedDate(cases[i].Id, at.addMinutes(-i));
@@ -594,11 +606,15 @@ private class TimeDriveControllerTest {
     insert tasks;
     List<String> keys = new List<String>();
     for (Integer d = 1; d <= 3; d++) {
-      keys.add(Datetime.now().addDays(-d).format('yyyy-MM-dd'));
+      keys.add(String.valueOf(Date.today().addDays(-d)));
     }
     for (Integer i = 0; i < 12; i++) {
       Integer daysAgo = i < 8 ? 1 : (i < 10 ? 2 : 3);
-      Test.setCreatedDate(tasks[i].Id, Datetime.now().addDays(-daysAgo).addMinutes(-i));
+      // Midday, so the minutes taken off never cross into the day before.
+      Test.setCreatedDate(
+        tasks[i].Id,
+        Datetime.newInstance(Date.today().addDays(-daysAgo), Time.newInstance(12, 0, 0, 0)).addMinutes(-i)
+      );
     }
     Time_Drive_Source__mdt source = source('Items', 'Task', 'CreatedDate', 'WhoId');
     source.Max_Records__c = 5;
@@ -654,6 +670,31 @@ private class TimeDriveControllerTest {
   static void data360ReadsStayUnderTheDmoRowLimit() {
     // Data 360 refuses a DMO query of more than 2,000 rows; a source's Max
     // Records can't take a read past it.
+    TimeDriveCache.testStore = new Map<String, Object>();
+    Time_Drive_Source__mdt s = data360Sources()[0];
+    s.Object_Name__c = 'TimeDriveTest_Email__dlm';
+    s.Max_Records__c = 5000;
+    Map<String, Schema.SObjectType> objects = new Map<String, Schema.SObjectType>{
+      'ssot__individual__dlm' => Contact.SObjectType,
+      'timedrivetest_email__dlm' => Contact.SObjectType
+    };
+    TimeDriveContext context = new TimeDriveContext(
+      contactId(),
+      'Contact',
+      Datetime.now().addDays(-30),
+      s,
+      null,
+      new List<String>()
+    );
+    context.problems = new List<TimeDriveController.Problem>();
+    TimeDriveQueries.clear();
+    new TimeDriveData360Provider().getRows(context, objects);
+    String read;
+    for (TimeDriveQueries.Ran q : TimeDriveQueries.ran) {
+      read = q.kind == 'rows' ? q.soql : read;
+    }
+    Assert.isNotNull(read, 'the read was recorded');
+    Assert.isTrue(read.endsWith(' LIMIT ' + TimeDriveData360Provider.MAX_DMO_ROWS), read);
     Assert.areEqual(2000, TimeDriveData360Provider.MAX_DMO_ROWS);
   }
 
@@ -692,7 +733,14 @@ private class TimeDriveControllerTest {
     Id customer = contactId();
     String someoneElse = TimeDriveCache.key(new List<String>{ 'ids', '005000000000001AAA', customer, null });
     TimeDriveCache.put(someoneElse, new Set<String>{ 'THEIR-UNIFIED-1' });
-    TimeDriveContext context = new TimeDriveContext(customer, 'Contact', Datetime.now(), null, null, new List<String>());
+    TimeDriveContext context = new TimeDriveContext(
+      customer,
+      'Contact',
+      Datetime.now(),
+      null,
+      null,
+      new List<String>()
+    );
     Set<String> ids = TimeDriveData360Provider.individualIdsFor(
       customer,
       new Map<String, Schema.SObjectType>(),
@@ -708,7 +756,12 @@ private class TimeDriveControllerTest {
     Schema.DescribeSObjectResult account = Account.SObjectType.getDescribe();
     Map<String, Schema.SObjectField> fields = TimeDriveConfig.fieldMap('Account');
     Assert.isTrue(
-      TimeDriveData360Provider.readable(account, fields, new List<String>{ 'Name', 'CreatedDate' }, 'Industry = \'Name\' AND Rating != null'),
+      TimeDriveData360Provider.readable(
+        account,
+        fields,
+        new List<String>{ 'Name', 'CreatedDate' },
+        'Industry = \'Name\' AND Rating != null'
+      ),
       'readable fields, words that aren\'t fields skipped, quoted text not taken for a field'
     );
     Assert.isTrue(TimeDriveData360Provider.readable(account, fields, new List<String>{ 'Name' }, null));
@@ -718,8 +771,8 @@ private class TimeDriveControllerTest {
   static void countsAreBatchedUnderTheGroupLimit() {
     Datetime since = Datetime.newInstance(Date.newInstance(2026, 1, 1), Time.newInstance(9, 0, 0, 0));
     Datetime until = Datetime.newInstance(Date.newInstance(2026, 1, 10), Time.newInstance(17, 0, 0, 0));
-    List<List<TimeDriveController.TimeWindow>> batches = TimeDriveSoqlProvider.batches(
-      new List<TimeDriveController.TimeWindow>{ new TimeDriveController.TimeWindow(since, until) },
+    List<List<TimeDriveContext.Span>> batches = TimeDriveSoqlProvider.batches(
+      new List<TimeDriveContext.Span>{ new TimeDriveContext.Span(since, until) },
       4
     );
     Assert.areEqual(3, batches.size(), '4 days, 4 days, 2 days');
@@ -783,6 +836,7 @@ private class TimeDriveControllerTest {
 
   @IsTest
   static void quietDaysAreReadOnTheirOwnNotWithEverythingBetween() {
+    // Open tasks, which are on their due date (a completed one is on its completion day).
     // Two quiet days far apart with plenty between them, and Max Records 5:
     // read as one span, the 5 newest (all from between) would crowd out the
     // older day; read as their own spans, both come back in full.
@@ -791,11 +845,11 @@ private class TimeDriveControllerTest {
     Date between = Date.today().addDays(-50);
     Date newer = Date.today().addDays(-10);
     List<Task> tasks = new List<Task>{
-      new Task(WhoId = customer, Subject = 'Older', ActivityDate = older, Status = 'Completed'),
-      new Task(WhoId = customer, Subject = 'Newer', ActivityDate = newer, Status = 'Completed')
+      new Task(WhoId = customer, Subject = 'Older', ActivityDate = older, Status = 'Not Started'),
+      new Task(WhoId = customer, Subject = 'Newer', ActivityDate = newer, Status = 'Not Started')
     };
     for (Integer i = 0; i < 20; i++) {
-      tasks.add(new Task(WhoId = customer, Subject = 'Between ' + i, ActivityDate = between, Status = 'Completed'));
+      tasks.add(new Task(WhoId = customer, Subject = 'Between ' + i, ActivityDate = between, Status = 'Not Started'));
     }
     insert tasks;
     Time_Drive_Source__mdt source = source('Tasks', 'Task', 'ActivityDate', 'WhoId');
@@ -803,6 +857,7 @@ private class TimeDriveControllerTest {
     source.Title__c = '{Subject}';
     TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ source };
 
+    Integer rowsBefore = Limits.getQueryRows();
     List<TimeDriveController.EngagementEvent> page = TimeDriveController.getPageDays(
       customer,
       null,
@@ -819,20 +874,22 @@ private class TimeDriveControllerTest {
     for (TimeDriveController.EngagementEvent e : page) {
       titles.add(e.title);
     }
+    Integer rowsRead = Limits.getQueryRows() - rowsBefore;
     Assert.areEqual(new Set<String>{ 'Older', 'Newer' }, titles);
-    Assert.isTrue(Limits.getQueryRows() < 20, 'the days between aren\'t read: ' + Limits.getQueryRows());
+    Assert.isTrue(rowsRead < 20, 'the days between aren\'t read: ' + rowsRead);
   }
 
   @IsTest
   static void tasksAreReadWithAllRowsButNotDeletedOnes() {
+    // Open tasks, which are on their due date (a completed one is on its completion day).
     // ALL ROWS brings back archived Tasks and Events (a test can't archive
     // one); deleted ones, in the Recycle Bin, must still stay out.
     Contact fresh = new Contact(LastName = 'All Rows');
     insert fresh;
     Id customer = fresh.Id;
     Date day = Date.today().addDays(-3);
-    Task kept = new Task(WhoId = customer, Subject = 'Kept', ActivityDate = day, Status = 'Completed');
-    Task gone = new Task(WhoId = customer, Subject = 'Gone', ActivityDate = day, Status = 'Completed');
+    Task kept = new Task(WhoId = customer, Subject = 'Kept', ActivityDate = day, Status = 'Not Started');
+    Task gone = new Task(WhoId = customer, Subject = 'Gone', ActivityDate = day, Status = 'Not Started');
     insert new List<Task>{ kept, gone };
     delete gone;
     Time_Drive_Source__mdt source = source('Tasks', 'Task', 'ActivityDate', 'WhoId');
@@ -921,6 +978,7 @@ private class TimeDriveControllerTest {
 
   @IsTest
   static void taskActivityDatesCountByWeekToo() {
+    // Open tasks, which are on their due date (a completed one is on its completion day).
     // ActivityDate takes no date functions (CALENDAR_YEAR, WEEK_IN_YEAR), so
     // by week it's counted by day and rolled up, never read as rows.
     Id customer = contactId();
@@ -928,9 +986,9 @@ private class TimeDriveControllerTest {
     // The setup's tasks may share today's week, depending on the date: leave only these.
     delete [SELECT Id FROM Task];
     insert new List<Task>{
-      new Task(WhoId = customer, Subject = 'A', ActivityDate = today, Status = 'Completed'),
-      new Task(WhoId = customer, Subject = 'B', ActivityDate = today, Status = 'Completed'),
-      new Task(WhoId = customer, Subject = 'C', ActivityDate = today.addDays(-400), Status = 'Completed')
+      new Task(WhoId = customer, Subject = 'A', ActivityDate = today, Status = 'Not Started'),
+      new Task(WhoId = customer, Subject = 'B', ActivityDate = today, Status = 'Not Started'),
+      new Task(WhoId = customer, Subject = 'C', ActivityDate = today.addDays(-400), Status = 'Not Started')
     };
     List<Time_Drive_Source__mdt> many = new List<Time_Drive_Source__mdt>();
     for (Integer i = 0; i < 5; i++) {
@@ -982,18 +1040,7 @@ private class TimeDriveControllerTest {
     Assert.isTrue(stub.sql.contains('GROUP BY'), stub.sql);
     Assert.isTrue(stub.sql.contains('AT TIME ZONE \'' + UserInfo.getTimeZone().getID() + '\''), stub.sql);
     Assert.isTrue(stub.sql.contains('\'' + String.valueOf(contactId()) + '\''), 'the Contact\'s Individual Id');
-    Assert.areEqual('Data 360 · Contact', context.sourceLabel);
-  }
-
-  @IsTest
-  static void data360SourcesThatCantBeCountedAreReadAsRows() {
-    // No Data 360 here: the count fails, so the sources are read as rows,
-    // which says why.
-    TimeDriveController.TimelineSummary summary = TimeDriveController.getSummary(contactId(), null, null, null, null);
-    Assert.isTrue(summary.total > 0, 'CRM events still count');
-    if (!Schema.getGlobalDescribe().containsKey('ssot__individual__dlm')) {
-      Assert.isFalse(summary.warnings.isEmpty(), String.join(summary.warnings, ' | '));
-    }
+    Assert.areEqual('Data 360 · ' + Contact.SObjectType.getDescribe().getLabel(), context.sourceLabel);
   }
 
   private class StubSql implements TimeDriveData360Provider.SqlRunner {
@@ -1032,18 +1079,31 @@ private class TimeDriveControllerTest {
   }
 
   @IsTest
-  static void data360SourcesWithoutData360ShowCrmEventsAndSayWhy() {
+  static void data360SourcesThatCantBeReadShowCrmEventsAndSayWhy() {
+    // The shipped sources and a Data 360 one on a DMO no org has: with Data
+    // 360 or without, it can't be counted, so it's read as rows, which says why.
+    Time_Drive_Source__mdt missing = data360Sources()[0];
+    missing.DeveloperName = 'TimeDriveTest_Missing';
+    missing.Label = 'TimeDriveTest Missing';
+    missing.Object_Name__c = 'TimeDriveTest_Missing__dlm';
+    missing.Parent_Object__c = 'Contact';
+    missing.Active__c = true;
+    missing.Sequence__c = 99;
+    TimeDriveConfig.testSources.add(missing);
+    Set<String> why = new Set<String>{
+      Label.Time_Drive_Server_Data360_Missing,
+      String.format(Label.Time_Drive_Server_Dmo_Missing, new List<String>{ missing.Label, missing.Object_Name__c })
+    };
+
+    TimeDriveController.TimelineSummary summary = TimeDriveController.getSummary(contactId(), null, null, null, null);
+    Assert.isTrue(summary.total > 0, 'CRM events still count');
+    Assert.isFalse(summary.counted.contains(missing.DeveloperName), 'read as rows, not counted');
+    Assert.isTrue(new Set<String>(summary.warnings).removeAll(why), String.join(summary.warnings, ' | '));
+
     TimeDriveController.TimelineResult result = TimeDriveController.getEvents(contactId());
     Assert.areEqual(2, countOf(result, 'purchase'), 'Salesforce sources still load');
-    Assert.areEqual(0, countOf(result, 'email'), 'no Data 360 engagement here');
-    if (!Schema.getGlobalDescribe().containsKey('ssot__individual__dlm')) {
-      Assert.isFalse(result.warnings.isEmpty(), 'explains that Data 360 is missing');
-    }
-  }
-
-  @IsTest
-  static void noContactGivesAnEmptyTimeline() {
-    Assert.isTrue(TimeDriveController.getEvents(null).events.isEmpty());
+    Assert.areEqual(0, countOf(result, 'email'), 'no Data 360 engagement for this contact');
+    Assert.isTrue(new Set<String>(result.warnings).removeAll(why), String.join(result.warnings, ' | '));
   }
 
   @IsTest
@@ -1132,9 +1192,9 @@ private class TimeDriveControllerTest {
       null,
       null
     );
-    context.ranges = new List<TimeDriveController.TimeWindow>{
-      new TimeDriveController.TimeWindow(a, b),
-      new TimeDriveController.TimeWindow(c, null)
+    context.ranges = new List<TimeDriveContext.Span>{
+      new TimeDriveContext.Span(a, b),
+      new TimeDriveContext.Span(c, null)
     };
     Map<String, Object> binds = new Map<String, Object>();
     Assert.areEqual(
@@ -1168,13 +1228,14 @@ private class TimeDriveControllerTest {
     Assert.areEqual('RecordId', context.source.Record_Id_Field__c);
 
     // The fields shown: the ones given, then the title's, subtitle's and
-    // details', once each, and nothing that isn't a field path.
+    // details' (with the record a detail through a lookup names, for its
+    // link), once each, and nothing that isn't a field path.
     context.draftDetailFields = new List<Time_Drive_Detail_Field__mdt>{
       new Time_Drive_Detail_Field__mdt(Field__c = 'Account.Name'),
       new Time_Drive_Detail_Field__mdt(Field__c = 'Id FROM User WHERE')
     };
     Assert.areEqual(
-      new List<String>{ 'Id', 'When', 'Own', 'Place', 'Account.Name' },
+      new List<String>{ 'Id', 'When', 'Own', 'Place', 'Account.Name', 'Account.Id' },
       context.fieldsToQuery(new List<String>{ 'Id', 'When', 'id' })
     );
   }
@@ -1194,17 +1255,28 @@ private class TimeDriveControllerTest {
   }
 
   @IsTest
-  static void unreadableData360ObjectsBecomeWarnings() {
-    // A data model that claims Data 360, the identity link and every
-    // engagement DMO exist; querying them fails here, which must turn into
-    // one warning each rather than an exception.
+  static void unreadableData360ObjectsBecomeProblems() {
+    // A data model that claims Data 360, an identity link and six engagement
+    // DMOs exist, under names no org has (so querying them fails in any org,
+    // Data 360 or not): each failure is a problem, not an exception.
+    TimeDriveCache.testStore = new Map<String, Object>();
+    TimeDriveData360Provider.testSetting = new Time_Drive_Setting__mdt(
+      Identity_Link_Object__c = 'TimeDriveTest_Link__dlm',
+      Link_Source_Field__c = 'TimeDriveTest_Source__c',
+      Link_Unified_Field__c = 'TimeDriveTest_Unified__c'
+    );
     Map<String, Schema.SObjectType> objects = new Map<String, Schema.SObjectType>{
       'ssot__individual__dlm' => Contact.SObjectType,
-      'individualidentitylink__dlm' => Contact.SObjectType
+      'timedrivetest_link__dlm' => Contact.SObjectType
     };
-    List<Time_Drive_Source__mdt> dmos = data360Sources();
-    for (Time_Drive_Source__mdt s : dmos) {
+    List<Time_Drive_Source__mdt> dmos = new List<Time_Drive_Source__mdt>();
+    for (String kind : new List<String>{ 'Email', 'Message', 'Website', 'Search', 'App', 'Cart' }) {
+      Time_Drive_Source__mdt s = data360Sources()[0];
+      s.DeveloperName = 'TimeDriveTest_' + kind;
+      s.Label = 'TimeDriveTest ' + kind;
+      s.Object_Name__c = 'TimeDriveTest_' + kind + '__dlm';
       objects.put(s.Object_Name__c.toLowerCase(), Contact.SObjectType);
+      dmos.add(s);
     }
     List<String> warnings = new List<String>();
     List<TimeDriveController.Problem> problems = new List<TimeDriveController.Problem>();
@@ -1220,14 +1292,15 @@ private class TimeDriveControllerTest {
       );
       context.problems = problems;
       Assert.isTrue(provider.getRows(context, objects).isEmpty());
-      Assert.areEqual('Data 360 · Contact', context.sourceLabel);
+      Assert.areEqual('Data 360 · ' + Contact.SObjectType.getDescribe().getLabel(), context.sourceLabel);
     }
     // Reads that fail are problems, named but never with the exception's text.
     Assert.isTrue(warnings.isEmpty(), String.join(warnings, ' | '));
     Assert.areEqual(7, problems.size(), 'identity links once, plus six engagement objects');
-    Assert.areEqual('Identity links', problems[0].source);
+    Assert.areEqual(Label.Time_Drive_Server_Identity_Links, problems[0].source);
+    Assert.areEqual(dmos[0].Label, problems[1].source);
     for (TimeDriveController.Problem p : problems) {
-      Assert.areEqual('access', p.kind, p.source + ' reads fields this org lacks');
+      Assert.areEqual('access', p.kind, p.source + ' is an object this org lacks');
     }
   }
 
@@ -1263,26 +1336,6 @@ private class TimeDriveControllerTest {
     Assert.areEqual('ssot__Id__c', context.idField());
     Assert.isNull(context.recordIdField());
     Assert.isTrue(TimeDriveConfig.providerFor(s, new List<String>()) instanceof TimeDriveData360Provider);
-  }
-
-  @IsTest
-  static void offersTheRecordsActivityActions() {
-    List<TimeDriveController.ActivityAction> actions = TimeDriveController.getActivityActions(contactId());
-    // Whatever the layout offers, each opens by API name and has an icon.
-    for (TimeDriveController.ActivityAction a : actions) {
-      Assert.isNotNull(a.apiName);
-      Assert.isTrue(a.icon.contains(':'), a.icon);
-    }
-    Assert.isTrue(TimeDriveController.getActivityActions(null).isEmpty());
-    Assert.areEqual(
-      'action:new_task',
-      TimeDriveController.iconName('https://x.my.salesforce.com/img/icon/t4v35/action/new_task_120.png')
-    );
-    Assert.areEqual(
-      'action:log_a_call',
-      TimeDriveController.iconName('https://x.my.salesforce.com/img/icon/t4v35/action/log_a_call')
-    );
-    Assert.areEqual('utility:add', TimeDriveController.iconName(null));
   }
 
   @IsTest
@@ -1483,6 +1536,81 @@ private class TimeDriveControllerTest {
     }
   }
 
+  public class RowsBrokeException extends Exception {
+  }
+
+  /** Counts the orders, as CountedPoints does, but its rows can't be read. */
+  public class CountsButRowsFail extends TimeDriveApexSource {
+    /**
+     * Fails, as a source whose row query breaks would.
+     *
+     * @param context the request context
+     * @return never
+     */
+    public override List<TimeDriveRow> rows(TimeDriveContext context) {
+      throw new RowsBrokeException('the rows could not be read');
+    }
+
+    /**
+     * The orders, counted.
+     *
+     * @param context the request context
+     * @param unit the period to count by
+     * @return the counts
+     */
+    public override List<TimeDriveContext.DayCount> counts(TimeDriveContext context, String unit) {
+      TimeDriveContext.Counter counter = context.counter(unit);
+      for (Task order : [SELECT CreatedDate FROM Task WHERE WhoId = :context.recordId AND Subject LIKE 'Order%']) {
+        counter.add(order.CreatedDate);
+      }
+      return counter.counts();
+    }
+  }
+
+  // A source that counts but whose rows fail is said, as one that can't be
+  // counted is: the first load names it with the summary's problems, and a
+  // page of days fails rather than leaving a gap.
+  @IsTest
+  static void aSourceWhoseRowsFailIsSaidNotLeftOut() {
+    Id customer = contactId();
+    TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{
+      pointsSource('TimeDriveControllerTest.CountsButRowsFail')
+    };
+    TimeDriveController.TimelineLoad load = TimeDriveController.getTimeline(
+      customer,
+      null,
+      null,
+      null,
+      null,
+      null,
+      true,
+      false,
+      7
+    );
+    Assert.areEqual(2, load.summary.total, 'counted');
+    Assert.areEqual(1, load.summary.problems.size(), 'its rows failed, so it is a problem');
+    Assert.areEqual('Points', load.summary.problems[0].source);
+
+    String today = Datetime.now().format('yyyy-MM-dd');
+    try {
+      TimeDriveController.getPageDays(
+        customer,
+        null,
+        null,
+        null,
+        null,
+        new List<String>{ today },
+        new List<String>(),
+        null,
+        null,
+        null
+      );
+      Assert.fail('a page of days whose source fails fails');
+    } catch (AuraHandledException e) {
+      Assert.isTrue(e.getMessage().startsWith('timedrive:'), e.getMessage());
+    }
+  }
+
   // An Apex source as Setup saves one: the class, its look and lens, no date or title.
   private static Time_Drive_Source__mdt pointsSource(String className) {
     return new Time_Drive_Source__mdt(
@@ -1529,7 +1657,7 @@ private class TimeDriveControllerTest {
     Assert.areEqual(2, page.size(), 'the day on screen, in full');
     Assert.areEqual('Earned 100 points', page[0].title);
     Assert.areEqual(1, apexRowsRead, 'read once, for that day');
-    for (TimeDriveController.TimeWindow span : apexSpansAsked) {
+    for (TimeDriveContext.Span span : apexSpansAsked) {
       Assert.areEqual(Date.today(), span.since.date(), 'only the day on screen is asked for');
     }
 
@@ -1555,8 +1683,8 @@ private class TimeDriveControllerTest {
       null
     );
     Date first = Date.newInstance(2026, 3, 1);
-    context.ranges = new List<TimeDriveController.TimeWindow>{
-      new TimeDriveController.TimeWindow(
+    context.ranges = new List<TimeDriveContext.Span>{
+      new TimeDriveContext.Span(
         Datetime.newInstance(first, Time.newInstance(0, 0, 0, 0)),
         Datetime.newInstance(Date.newInstance(2026, 4, 30), Time.newInstance(23, 59, 59, 0))
       )
@@ -1676,29 +1804,6 @@ private class TimeDriveControllerTest {
   }
 
   @IsTest
-  static void rowsWithoutADateAreLeftOutQuietly() {
-    TimeDriveContext context = new TimeDriveContext(
-      contactId(),
-      'Contact',
-      null,
-      pointsSource('TimeDriveControllerTest.PointsRows'),
-      null,
-      null
-    );
-    context.plotBy('Day').title('{Summary}');
-    List<TimeDriveController.EngagementEvent> events = TimeDrivePlotter.plot(
-      context,
-      new List<TimeDriveRow>{
-        new TimeDriveRow(new Map<String, Object>{ 'Id' => 'dated', 'Day' => Date.today(), 'Summary' => 'Sun' }),
-        new TimeDriveRow(new Map<String, Object>{ 'Id' => 'undated', 'Day' => null, 'Summary' => 'Rain' })
-      }
-    );
-    Assert.areEqual(1, events.size(), 'only the dated row is plotted');
-    Assert.areEqual('Sun', events[0].title);
-    Assert.isTrue(context.warnings.isEmpty(), 'no warning over the rest: ' + String.join(context.warnings, ' | '));
-  }
-
-  @IsTest
   static void apexSourcesArePlottedFromTheirRows() {
     Time_Drive_Source__mdt points = pointsSource('TimeDriveControllerTest.PointsRows');
     TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ points };
@@ -1752,7 +1857,7 @@ private class TimeDriveControllerTest {
     // A custom label: its value in the viewer's language.
     s.Event_Label__c = '$Label.Time_Drive_Legend_Calls';
     Assert.areEqual(System.Label.get('', 'Time_Drive_Legend_Calls'), TimeDriveConfig.legendLabel(s));
-    Assert.areEqual('Calls', TimeDriveConfig.customLabel('Time_Drive_Legend_Calls'));
+    Assert.areEqual(Label.Time_Drive_Legend_Calls, TimeDriveConfig.customLabel('Time_Drive_Legend_Calls'));
     // Words: as typed. A label that doesn't exist: the source's own name.
     s.Event_Label__c = 'Follow-ups';
     Assert.areEqual('Follow-ups', TimeDriveConfig.legendLabel(s));
@@ -1816,6 +1921,11 @@ private class TimeDriveControllerTest {
     Assert.areEqual(person, context.parentIdFor(Case.ContactId.getDescribe()), 'a Contact lookup');
     Assert.areEqual(person, context.parentIdFor(Task.WhoId.getDescribe()), 'a Name lookup, Contact or Lead');
     Assert.areEqual(account, context.parentIdFor(Case.AccountId.getDescribe()), 'an Account lookup');
+    Assert.areEqual(
+      account,
+      context.parentIdFor(ContentDocumentLink.LinkedEntityId.getDescribe()),
+      'files are linked to the account'
+    );
     Assert.areEqual(person, context.contactId());
   }
 
@@ -1844,37 +1954,17 @@ private class TimeDriveControllerTest {
   }
 
   @IsTest
-  static void anOpenedItemShowsTheDetailFieldsChosen() {
-    // The setup's review, as a source of its own.
-    Time_Drive_Source__mdt cases = items();
-    cases.Filter__c = 'Subject LIKE \'Review%\'';
-    TimeDriveConfig.testDetailFields = new Map<String, List<Time_Drive_Detail_Field__mdt>>{
-      'Cases' => new List<Time_Drive_Detail_Field__mdt>{
-        new Time_Drive_Detail_Field__mdt(Field__c = 'Status'),
-        new Time_Drive_Detail_Field__mdt(Label = 'Account', Field__c = 'Account.Name')
-      }
-    };
-    List<TimeDriveController.EngagementEvent> events = TimeDrivePlotter.run(
-      new TimeDriveSoqlProvider(),
-      new TimeDriveContext(contactId(), 'Contact', Datetime.now().addDays(-1), cases, null, null)
-    );
-    Assert.areEqual(1, events.size());
-    Assert.areEqual('Status', events[0].details[0].label, 'blank labels use the field label');
-    Assert.areEqual('Completed', events[0].details[0].value);
-    Assert.areEqual('The Savory Spot', events[0].details[1].value, 'a field through a lookup');
-    Assert.areEqual('Salesforce · Task', events[0].sourceLabel);
-  }
-
-  @IsTest
   static void detailFieldsWithNoLabelOfTheirOwnUseTheFieldsOwnLabel() {
+    // The details an opened item shows: the ones chosen, in order.
     Time_Drive_Source__mdt tasks = source('Tasks', 'Task', 'ActivityDate', 'WhoId');
     TimeDriveConfig.testDetailFields = new Map<String, List<Time_Drive_Detail_Field__mdt>>{
       'Tasks' => new List<Time_Drive_Detail_Field__mdt>{
-        // Setup saves "no label of its own" as Label = the field.
+        // Setup saves "no label of its own" as Label = the field; a blank one reads the same.
         new Time_Drive_Detail_Field__mdt(Label = 'Description', Field__c = 'Description'),
         new Time_Drive_Detail_Field__mdt(Label = 'Who.Name', Field__c = 'Who.Name'),
-        new Time_Drive_Detail_Field__mdt(Label = 'Status', Field__c = 'Status'),
-        new Time_Drive_Detail_Field__mdt(Label = 'Notes', Field__c = 'Priority')
+        new Time_Drive_Detail_Field__mdt(Field__c = 'Status'),
+        new Time_Drive_Detail_Field__mdt(Label = 'Notes', Field__c = 'Priority'),
+        new Time_Drive_Detail_Field__mdt(Label = 'Account', Field__c = 'Account.Name')
       }
     };
     List<TimeDriveController.EngagementEvent> events = TimeDrivePlotter.run(
@@ -1895,8 +1985,11 @@ private class TimeDriveControllerTest {
       'a name through a lookup reads as the lookup, without the ID Apex adds'
     );
     Assert.areEqual('Ada Shift', padThai.details[1].value);
-    Assert.areEqual(Task.Status.getDescribe().getLabel(), padThai.details[2].label);
+    Assert.areEqual(Task.Status.getDescribe().getLabel(), padThai.details[2].label, 'a blank label too');
+    Assert.areEqual('Completed', padThai.details[2].value);
     Assert.areEqual('Notes', padThai.details[3].label, 'a label of its own wins');
+    Assert.areEqual('The Savory Spot', padThai.details[4].value, 'a field through a lookup');
+    Assert.areEqual('Salesforce · ' + Task.SObjectType.getDescribe().getLabel(), padThai.sourceLabel);
   }
 
   @IsTest
@@ -2025,12 +2118,13 @@ private class TimeDriveControllerTest {
 
   @IsTest
   static void aNarrowedRangeStartsTodayOrSpansAMonth() {
+    // Open tasks, which are on their due date (a completed one is on its completion day).
     Id customer = contactId();
     Date today = Date.today();
     delete [SELECT Id FROM Task];
     insert new List<Task>{
-      new Task(WhoId = customer, Subject = 'Last week', ActivityDate = today.addDays(-7), Status = 'Completed'),
-      new Task(WhoId = customer, Subject = 'Today', ActivityDate = today, Status = 'Completed'),
+      new Task(WhoId = customer, Subject = 'Last week', ActivityDate = today.addDays(-7), Status = 'Not Started'),
+      new Task(WhoId = customer, Subject = 'Today', ActivityDate = today, Status = 'Not Started'),
       new Task(WhoId = customer, Subject = 'In a fortnight', ActivityDate = today.addDays(14)),
       new Task(WhoId = customer, Subject = 'In two months', ActivityDate = today.addMonths(2))
     };
@@ -2050,21 +2144,22 @@ private class TimeDriveControllerTest {
 
   @IsTest
   static void theTimelineComesWithTheDaysItOpensOn() {
+    // Open tasks, which are on their due date (a completed one is on its completion day).
     Id customer = contactId();
     Date today = Date.today();
     // The setup's tasks would share days with these: leave only these.
     delete [SELECT Id FROM Task];
     insert new List<Task>{
-      new Task(WhoId = customer, Subject = 'Now', ActivityDate = today, Status = 'Completed'),
-      new Task(WhoId = customer, Subject = 'Recent', ActivityDate = today.addDays(-3), Status = 'Completed'),
-      new Task(WhoId = customer, Subject = 'Older', ActivityDate = today.addDays(-40), Status = 'Completed')
+      new Task(WhoId = customer, Subject = 'Now', ActivityDate = today, Status = 'Not Started'),
+      new Task(WhoId = customer, Subject = 'Recent', ActivityDate = today.addDays(-3), Status = 'Not Started'),
+      new Task(WhoId = customer, Subject = 'Older', ActivityDate = today.addDays(-40), Status = 'Not Started')
     };
     TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ source('Tasks', 'Task', 'ActivityDate', 'WhoId') };
     String todayKey = String.valueOf(today);
     String oldest = String.valueOf(today.addDays(-40));
 
-    // Opening on today, newest first: today heads the page; the days under it
-    // follow (up to a page), and every item comes with its summary.
+    // Opening on today, newest first: today heads the keys, the periods before
+    // it follow (up to the count asked for), and their items come with the summary.
     TimeDriveController.TimelineLoad load = TimeDriveController.getTimeline(
       customer,
       null,
@@ -2121,7 +2216,7 @@ private class TimeDriveControllerTest {
     Assert.areEqual(3, load.summary.total);
     Assert.isTrue(load.events.isEmpty());
 
-    // No page asked for, no rows read: just what getSummary answers.
+    // No record: the summary alone, with no periods or items.
     TimeDriveController.TimelineLoad none = TimeDriveController.getTimeline(
       null,
       null,
@@ -2139,8 +2234,8 @@ private class TimeDriveControllerTest {
 
   @IsTest
   static void anActivitySharedWithAnAccountsContactRollsUpToTheAccount() {
-    if (TimeDriveConfig.sObjectType('TaskRelation') == null) {
-      return; // Shared Activities is off in this org: nothing to roll up.
+    if (!sharedActivities()) {
+      return; // Skipped: Shared Activities is off in this org (see sharedActivities()).
     }
     Account mine = new Account(Name = 'Mine');
     Account other = new Account(Name = 'Other');
@@ -2442,11 +2537,14 @@ private class TimeDriveControllerTest {
       null,
       null
     );
+    Integer groupedRows = 0;
     for (TimeDriveController.EngagementEvent e : page) {
       if (e.grouped) {
+        groupedRows++;
         Assert.isFalse(e.pageable);
       }
     }
+    Assert.isTrue(groupedRows > 0, 'the busy day is still grouped: ' + String.valueOf(page));
   }
 
   private static List<Time_Drive_Source__mdt> data360Sources() {
@@ -2503,12 +2601,20 @@ private class TimeDriveControllerTest {
 
   @IsTest
   static void aSourceCanBeAJunctionWithItsFieldsReachedThroughIt() {
-    // Needs Shared Activities, which a scratch org may not have.
-    if (!Schema.getGlobalDescribe().containsKey('taskrelation')) {
-      return;
+    if (!sharedActivities()) {
+      return; // Skipped: Shared Activities is off in this org (see sharedActivities()).
     }
     // TaskRelation is the source (linked by RelationId); the date, title and
-    // filter are the Task's, by path.
+    // filter are the Task's, by path. A completed task on the same day that
+    // was deleted stays out.
+    Task gone = new Task(
+      WhoId = contactId(),
+      Subject = 'Gone',
+      ActivityDate = Date.today().addDays(-3),
+      Status = 'Completed'
+    );
+    insert gone;
+    delete gone;
     Time_Drive_Source__mdt source = source('Relations', 'TaskRelation', 'Task.ActivityDate', 'RelationId');
     source.Title__c = '{Task.Subject}';
     source.Filter__c = 'Task.Status = \'Completed\'';
@@ -2516,7 +2622,7 @@ private class TimeDriveControllerTest {
     TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ source };
 
     TimeDriveController.TimelineSummary summary = TimeDriveController.getSummary(contactId(), null, null, '1', null);
-    Assert.areEqual(1, summary.total, 'only the completed order is counted, by its due date');
+    Assert.areEqual(1, summary.total, 'only the completed order is counted, by its due date, not the deleted one');
     Assert.areEqual(1, summary.days.size());
     Assert.areEqual(String.valueOf(Date.today().addDays(-3)), summary.days[0].key);
 
@@ -2539,50 +2645,13 @@ private class TimeDriveControllerTest {
   }
 
   @IsTest
-  static void activitiesOnEveryContactAreCountedThroughTheirRelations() {
-    // Needs Shared Activities, which a scratch org may not have.
-    if (!Schema.getGlobalDescribe().containsKey('taskrelation')) {
-      return;
-    }
-    Contact fresh = new Contact(LastName = 'Shared');
-    insert fresh;
-    Date day = Date.today().addDays(-3);
-    Task kept = new Task(WhoId = fresh.Id, Subject = 'Kept', ActivityDate = day, Status = 'Completed');
-    Task gone = new Task(WhoId = fresh.Id, Subject = 'Gone', ActivityDate = day, Status = 'Completed');
-    insert new List<Task>{ kept, gone };
-    delete gone;
-    Time_Drive_Source__mdt source = source('Shared', 'TaskRelation', 'Task.ActivityDate', 'RelationId');
-    source.Title__c = '{Task.Subject}';
-    source.Record_Id_Field__c = 'TaskId';
-    TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ source };
-
-    TimeDriveController.TimelineSummary summary = TimeDriveController.getSummary(fresh.Id, null, null, '1', null);
-    Assert.areEqual(1, summary.total, 'counted without the deleted task');
-    List<TimeDriveController.EngagementEvent> page = TimeDriveController.getPageDays(
-      fresh.Id,
-      null,
-      null,
-      '1',
-      null,
-      new List<String>{ String.valueOf(day) },
-      null,
-      null,
-      null,
-      null
-    );
-    Assert.areEqual(1, page.size());
-    Assert.areEqual('Kept', page[0].title);
-    Assert.areEqual(Task.SObjectType, page[0].recordId.getSObjectType());
-    Assert.areEqual('Task', page[0].sourceObject);
-  }
-
-  @IsTest
   static void aLookupsLabelLeavesOffTheIdApexAddsToIt() {
     TimeDriveRow row = new TimeDriveRow(new Task(Subject = 'Call', Status = 'Completed'));
-    Assert.areEqual('Related To', row.labelOf('WhatId'), 'a lookup reads as the page names it');
-    Assert.areEqual('Related To', row.labelOf('What.Name'), 'so does a path through it that ends at Name');
-    Assert.areEqual('Subject', row.labelOf('Subject'), 'other fields are as they were');
-    Assert.areEqual('Status', row.labelOf('Status'));
+    String relatedTo = Task.WhatId.getDescribe().getLabel().removeEnd(' ID');
+    Assert.areEqual(relatedTo, row.labelOf('WhatId'), 'a lookup reads as the page names it');
+    Assert.areEqual(relatedTo, row.labelOf('What.Name'), 'so does a path through it that ends at Name');
+    Assert.areEqual(Task.Subject.getDescribe().getLabel(), row.labelOf('Subject'), 'other fields are as they were');
+    Assert.areEqual(Task.Status.getDescribe().getLabel(), row.labelOf('Status'));
     // Only a lookup's: the record's own Id is not one, and keeps its "ID".
     Schema.DescribeFieldResult id = Task.SObjectType.getDescribe(SObjectDescribeOptions.DEFERRED)
       .fields.getMap()
@@ -2621,7 +2690,6 @@ private class TimeDriveControllerTest {
       TimeDriveConfig.legendLabel(s),
       'Files & Notes, in the viewer\'s language'
     );
-    Assert.areEqual('Files & Notes', Label.Time_Drive_Legend_Files);
     s = source('Files2', 'ContentDocumentLink', 'ContentDocument.CreatedDate', 'LinkedEntityId');
     s.Event_Label__c = 'Attachments';
     Assert.areEqual('Attachments', TimeDriveConfig.legendLabel(s), 'a name of its own wins');
@@ -2704,9 +2772,8 @@ private class TimeDriveControllerTest {
 
   @IsTest
   static void aJunctionSourceCountsThroughTheJunctionAndGivesTheSameAnswer() {
-    // Needs Shared Activities, which a scratch org may not have.
-    if (!Schema.getGlobalDescribe().containsKey('taskrelation')) {
-      return;
+    if (!sharedActivities()) {
+      return; // Skipped: Shared Activities is off in this org (see sharedActivities()).
     }
     // TaskRelation links Tasks to the Contact, as Setup saves it: the Task is
     // the source, the relation the junction.
@@ -2720,7 +2787,7 @@ private class TimeDriveControllerTest {
     source.Filter__c = 'Status = \'Completed\'';
     TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ source };
 
-    TimeDriveQueries.ran.clear();
+    TimeDriveQueries.clear();
     Datetime since = Datetime.now().addYears(-1);
     TimeDriveContext context = new TimeDriveContext(c.Id, null, since, source, null, null);
     TimeDriveSoqlProvider provider = new TimeDriveSoqlProvider();
@@ -2742,14 +2809,21 @@ private class TimeDriveControllerTest {
     Assert.isTrue(counted.contains('Task.Status = \'Completed\''), 'so is the filter: ' + counted);
 
     // A filter that can't be rewritten is counted the usual way, with the same answer.
-    source.Filter__c = 'Id IN (SELECT TaskId FROM TaskRelation WHERE IsWhat = false)';
-    TimeDriveQueries.ran.clear();
+    source.Filter__c = 'Status = \'Completed\' AND Id IN (SELECT TaskId FROM TaskRelation WHERE IsWhat = false)';
+    TimeDriveQueries.clear();
+    counted = null;
     counts = provider.countDays(new TimeDriveContext(c.Id, null, since, source, null, null), TimeDriveContext.UNIT_DAY);
+    total = 0;
+    for (TimeDriveContext.DayCount d : counts) {
+      total += d.count;
+    }
+    Assert.areEqual(1, total, 'the same answer the usual way');
     for (TimeDriveQueries.Ran q : TimeDriveQueries.ran) {
       if (q.kind == 'count') {
         counted = q.soql;
       }
     }
+    Assert.isNotNull(counted, 'the count was recorded');
     Assert.isTrue(counted.contains('FROM Task '), 'a subquery in the filter keeps the original form: ' + counted);
   }
 
@@ -2767,5 +2841,37 @@ private class TimeDriveControllerTest {
       Category__c = 'Service',
       Title__c = 'Case'
     );
+  }
+
+  @IsTest
+  static void aDateStaysOnItsDayWestOfGreenwich() {
+    // Los Angeles, where midnight GMT is the afternoon before.
+    System.runAs(TimeDriveTestData.setupAdmin()) {
+      Date day = Date.newInstance(2026, 11, 12);
+      Datetime plotted = TimeDrivePlotter.instant(day);
+      Assert.areEqual(day, plotted.date(), 'a Date plots on its own day');
+      Assert.areEqual(12, plotted.hour(), 'at midday, so no time zone moves it');
+      Datetime moment = Datetime.newInstanceGmt(2026, 11, 12, 0, 0, 0);
+      Assert.areEqual(moment, TimeDrivePlotter.instant(moment), 'a Datetime is its own moment');
+      Assert.areEqual(
+        day.format(),
+        TimeDrivePlotter.format(day, null, null, null),
+        'a Date detail reads as the date alone'
+      );
+
+      // Plotted, a Date says it has no time; a Datetime doesn't.
+      TimeDriveContext context = new TimeDriveContext(null, null, null);
+      context.plotBy('When').title('{Name}');
+      List<TimeDriveController.EngagementEvent> events = TimeDrivePlotter.plot(
+        context,
+        new List<TimeDriveRow>{
+          new TimeDriveRow(new Map<String, Object>{ 'Id' => 'd', 'Name' => 'A call', 'When' => day }),
+          new TimeDriveRow(new Map<String, Object>{ 'Id' => 't', 'Name' => 'A meeting', 'When' => moment })
+        }
+      );
+      Assert.areEqual(2, events.size());
+      Assert.isTrue(events[0].dateOnly, 'a Date has no time');
+      Assert.isFalse(events[1].dateOnly, 'a Datetime has its time');
+    }
   }
 }

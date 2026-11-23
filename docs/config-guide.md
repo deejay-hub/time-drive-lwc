@@ -13,7 +13,7 @@ Everything an admin needs to put Time Drive on a record page and choose what it 
   - [A custom object](#a-custom-object)
   - [An Apex class](#an-apex-class)
 - [Add the timeline to a page](#add-the-timeline-to-a-page)
-- [Reference](#fit-to-your-org): Fit to your org, source fields, Data 360, Apex, scale, translations
+- [Reference](#check-your-org): Check your org, source fields, Data 360, Apex, scale, translations
 
 ## What Time Drive is
 
@@ -35,8 +35,7 @@ Along the top:
 
 - **The lens**, the timeline's heading (All items, Sales, Service ...): a lens narrows the timeline to one area. People pick one from the heading, and Time Drive remembers their choice.
 - **The summary line**: the date range, the types shown and how many items there are.
-- **Activity actions**: the record's Log a Call, Email, New Task and New Event, as the page layout offers them. As many as fit show as buttons; the rest go in a menu.
-- **Today** brings today into view. **Filters** chooses event types and narrows the date range. The other buttons switch to titles only, expand every item, and refresh.
+- **Today** brings today into view. **Overdue**, there only while something is overdue, opens the Overdue lens. **Filters** chooses event types and narrows the date range. The other buttons switch to titles only, expand every item, and refresh.
 
 Each item shows its title, subtitle and time. Open one to see the fields the admin chose. Click its title to open its record. Its menu offers Edit and Delete, when the person may.
 
@@ -65,16 +64,23 @@ Three kinds of source supply the rows:
 
 ## Before you start
 
-You need the **Customize Application** permission to add and change sources.
-
 1. In Setup, open **Permission Sets**.
 2. Assign `Time Drive` to people who see the timeline.
-3. Assign `Time Drive Setup` to admins who manage it.
+3. Assign `Time Drive Setup` to admins who manage it. It includes everything in `Time Drive`, so admins don't need both. (Admins with **Customize Application** can manage sources without it.)
 
 > [!NOTE]
-> What each person sees still depends on the objects and fields they can read. Every query runs as the person looking.
+> What each person sees depends on the objects and fields they can read: every query runs as the person looking. A source on an object someone can't read is simply left out of their timeline, and a field they can't read shows blank. Neither is an error. Time Drive's own setup (its sources and lenses) is read by Time Drive itself, so people don't need access to it, and they can't change it.
 
 Data 360 is _optional_. Without it, the timeline plots your Salesforce records.
+
+### Allocate Platform Cache
+
+Time Drive keeps its sources, and Data 360 identity lookups, in Platform Cache so each timeline doesn't query them again. It installs a partition, **TimeDrive**, with no capacity: until you allocate some, nothing is kept and every timeline load queries the sources.
+
+1. In Setup, open **Platform Cache** and choose the **TimeDrive** partition.
+2. Under **Org Cache Allocation**, allocate **1 MB** (plenty for Time Drive) and save.
+
+Nothing else changes: with no capacity the timeline still works, it just queries a little more.
 
 ## Time Drive Setup
 
@@ -91,7 +97,7 @@ Open the **Time Drive Setup** tab. Its pages, along the top:
 
 ![Guided setup, with each step done](images/config-guide/setup-guided.png)
 
-**Check your org** looks at how your org works (Shared Activities, contacts to multiple accounts, person accounts, Enhanced Email, Data 360, Einstein Activity Capture) and switches on the shipped sources that suit it. See [Fit to your org](#fit-to-your-org).
+**Check your org** looks at how your org works (Shared Activities, contacts to multiple accounts, person accounts, Enhanced Email, Einstein Activity Capture) and switches on the shipped sources that suit it. See [Check your org](#check-your-org).
 
 ### Customize
 
@@ -113,7 +119,7 @@ The first question is where the records come from.
 
 - **A standard object**: objects Salesforce comes with, like Cases, Opportunities or Tasks.
 - **A custom object**: objects your org added.
-- **Data 360 DMO**: engagement from a Data 360 data model object, like email opens or website visits.
+- **A Data 360 DMO**: engagement from a Data 360 data model object, like email opens or website visits.
 - **An Apex class**: your code returns the items to plot.
 
 ### A standard object
@@ -125,6 +131,8 @@ This walk-through adds the Contact's cases.
 ![Step 2: the object and how it links to the Contact](images/config-guide/standard-2-records.png)
 
 **Step 3, Date.** Choose the date or date/time that places each record on the timeline. Suggested fields come first. A lookup (›) leads to a related record's dates, such as the Account's.
+
+Tasks and Events dated by their usual fields are placed the way Salesforce shows them. A task dated by its **Due Date** (`ActivityDate`) is on its due date, open or done. When it was completed isn't used: Salesforce stamps that at the moment it's saved as done, so logged calls and imported history would all land on the day they were entered. An event dated by its **Start** (`StartDateTime`) is at its start, unless it's all day: then it's on its date, in every time zone. Counts and View all follow the same rules, so a day's count always matches its items. A date (with no time) shows no time, and comes first in its day; in a week or month it shows its day, like everything else.
 
 ![Step 3: the date that places each item](images/config-guide/standard-3-date.png)
 
@@ -143,11 +151,11 @@ On the right, put the source in its place in the legend: drag it, or use the arr
 
 ![Step 5: the name, and the source's place in the legend](images/config-guide/standard-5-name.png)
 
-**Step 6, Words and style.** Choose the field each item's title and subtitle show (here Subject and Status), and its icon and colour. The preview at the top shows how an item will look.
+**Step 6, Words and style.** Choose the field each item's title shows (here Subject), up to two fields for its subtitle, and its icon and colour. The subtitle's fields read with a dot between them, and an empty one drops out with its dot: the Tasks, Calls and Events templates show **Assigned To · Related To**. A lookup to more than one object, such as a task's Related To, Name or Assigned To, leads to the record's name and type (`What.Name`) rather than its ID. The preview at the top shows how an item will look.
 
 ![Step 6: title, subtitle, icon and colour](images/config-guide/standard-6-words.png)
 
-**Step 7, Interactions.** Choose the fields an opened item shows, in order, and how each is formatted. Then choose what clicking its title opens: **Its own record**, or **A related record** (a member's Campaign, say). The preview uses sample values from your data. A **highlight** marks an item with a small icon when a checkbox is checked, such as High priority.
+**Step 7, Interactions.** Choose the fields an opened item shows, in order, and how each is formatted. Then choose what clicking its title opens: **Its own record**, or **A related record** (a member's Campaign, say). The preview uses sample values from your data. A **highlight** marks an item with a small icon when a checkbox is checked, such as High priority. The Tasks templates mark overdue tasks with a red clock, using Time Drive's **Overdue** field (see [The Overdue lens](#the-overdue-lens)), and the Cases templates mark escalated cases. For anything else, a formula checkbox of your own works the same way.
 
 ![Step 7: what an opened item shows and what its title opens](images/config-guide/standard-7-interactions.png)
 
@@ -209,7 +217,7 @@ On **step 1** choose **An Apex class**. An Apex source has six steps: the class 
 
 ### A Data 360 DMO
 
-On **step 1** choose **Data 360 DMO**, then on step 2 the data space and the engagement DMO, and which of its fields holds the individual. Data 360 finds the Contact's unified profile, then reads the engagement of every individual in it. See [Data 360 sources](#data-360-sources) for what to check before going live. Screenshots of this path are still to come.
+On **step 1** choose **A Data 360 DMO**, then on step 2 the data space and the engagement DMO, and which of its fields holds the individual. Data 360 finds the Contact's unified profile, then reads the engagement of every individual in it. See [Data 360 sources](#data-360-sources) for what to check before going live. Screenshots of this path are still to come.
 
 ## Lenses
 
@@ -223,6 +231,17 @@ A lens narrows the timeline to one area, such as Sales or Service. People switch
 - A source can be in several lenses. Leave a source out of All items to show it only in the lenses you choose.
 - The ⓘ next to a source shows the filter it applies, so you can see what each one plots.
 
+### The Overdue lens
+
+The **Overdue** lens shows what's late. Time Drive doesn't decide what counts as overdue: its sources do, each with its own filter. The overdue templates (**Overdue tasks**, and the Check your org variants for Account, Contact, Lead and person account pages) plot tasks whose **Overdue** field is checked (`Overdue__c = true`). Add any source to the Overdue lens with a filter of your own, such as open cases older than a week, and it counts too.
+
+**The Overdue field.** Time Drive adds one formula checkbox to Activity, **Overdue** (`Overdue__c`): an open task whose due date is before today, in the viewing person's own day (`AND(NOT(IsClosed), NOT(ISBLANK(ActivityDate)), ActivityDate < TODAY())`). The Tasks templates' highlight and the overdue templates' filter both use it. Its formula is part of the package, so it can't be edited; for other rules (overdue after three days, or by status), make a formula checkbox of your own and choose it in the source's Highlights, or use it in the source's filter. The **Time Drive** and **Time Drive Setup** permission sets let people read it.
+
+- An overdue template's copy is in the Overdue lens only: its tasks are in All items already.
+- Once the timeline has loaded, it asks whether the Overdue lens has anything for the record. If it does, an orange **Overdue** button appears beside **Today**; clicking it opens the Overdue lens. On the Overdue lens the button shows pressed, and clicking it again goes back to the lens you came from.
+- The question is cheap: one query per object, asking for a single row, stopping at the first that finds one. Ten overdue sources on Task are one query, not ten.
+- The button finds the lens by its API name, `Overdue`, so you can rename or translate the lens's label freely. Turn the lens off and the button goes too.
+
 ## Add the timeline to a page
 
 Open a Contact, Account or Lead record, choose **Edit Page**, and drag **Time Drive** onto the page (it's under custom components). Time Drive Setup's last guided step takes you there. These properties can be set in Lightning App Builder:
@@ -230,8 +249,8 @@ Open a Contact, Account or Lead record, choose **Edit Page**, and drag **Time Dr
 - **Title** (default Time Drive): the timeline's name for screen readers. The lens's name is the visible heading.
 - **Layout** (default Auto): Auto is vertical in narrow regions and horizontal from 640px wide. Vertical or Horizontal pins one.
 - **Default Lens** (default All): the lens the timeline opens on. People can still pick another from the heading; a lens the org doesn't offer opens on All.
+- **Lenses** (blank: every lens): the lenses this page offers, by API name, separated by commas (`Sales, Service`), so an Account page can offer different lenses from a Contact page. **All items** and **Overdue** are always offered. A Default Lens, or a lens someone last used, that the page doesn't offer opens on All.
 - **Open At** (default Today): today's slot (with a placeholder when it has nothing), the earliest item, or the latest.
-- **Activity Actions** (default Full): the record's New Task, New Event, Log a Call and Email, as the page layout's Activity composer offers them. None, One button (a + menu), Inline (a button each among the header buttons) or Full (a button each with its name).
 - **Display Density** (default Auto): Auto follows each user's Comfy or Compact setting; Comfy or Compact overrides it.
 - **History (years)** (default 1): how far back it plots, from 0.25 to 10 years.
 - **Future (years)** (default 0.5): how far ahead it plots future-dated records (scheduled orders, close dates). None is up to today; otherwise 0.25 to 10 years.
@@ -243,15 +262,15 @@ Open a Contact, Account or Lead record, choose **Edit Page**, and drag **Time Dr
 
 The sections below explain what Setup does for you, and what you can change by hand.
 
-## Fit to your org
+## Check your org
 
-**Time Drive Setup > Fit to your org** checks which features the org uses (Shared Activities, person accounts, contacts to multiple accounts) and switches on the shipped sources that suit it. Alternatives share a group, and only one in a group is ever active, so running it again never plots the same record twice.
+**Time Drive Setup > Check your org** checks which features the org uses (Shared Activities, person accounts, contacts to multiple accounts) and switches on the shipped sources that suit it. Alternatives share a group, and only one in a group is ever active, so running it again never plots the same record twice.
 
 #### Account pages and shared activities
 
 An account's activities come from `Task.AccountId` and `Event.AccountId`, the field the standard timeline rolls up by: the account's own, its contacts', and those of its opportunities and contracts. An activity shared with a second contact (Shared Activities) carries another account's Id there.
 
-So with Shared Activities in use, Fit to your org switches each of Tasks, Calls, Emails and Events to its `_Every` variant (`Fit_Account_Tasks_Every` and so on). That's one query through `TaskRelation.AccountId` or `EventRelation.AccountId`, returning the account's own activities and the shared ones together. Without Shared Activities the main sources stay.
+So with Shared Activities in use, Check your org switches each of Tasks, Calls, Emails and Events to its `_Shared` variant (`Account_Tasks_Shared` and so on). That's one query through `TaskRelation.AccountId` or `EventRelation.AccountId`, returning the account's own activities and the shared ones together. Without Shared Activities the main sources stay.
 
 Cases with no contact aren't part of the standard rollup either. A custom object joins an Account page through the field that holds the account (the wizard asks "Which field holds the account?").
 
@@ -276,14 +295,16 @@ Each Time Drive Source record has these fields. Setup fills them in; you can als
 - `Icon__c`, `Icon_Colour__c`: an SLDS icon (`utility:case`, `standard:case`) and its background colour (`#1F7A8C`).
 - `History_Months__c`: how far back this source plots, when that's less than the timeline's own History.
 - `Max_Records__c`: a per-source cap, newest first (default 1000), for sources that are read rather than counted.
-- `Org_Fit__c`, `Requires__c`, `Variant_Group__c`, `Removed__c`: set by Time Drive Setup. Shipped sources Fit to your org turns on, the org features each needs, alternatives of which only one is active, and sources removed in Setup.
+- `Requires__c`, `Variant_Group__c`: set on shipped sources. The org features each needs, and alternatives of which only one is active; Check your org switches only sources with one of these.
 
 ## Expanding records
 
 An event expands with its source's **Time Drive Detail Field** records: Source, Field, Label, Sequence, and Format (Text, Date, Date/Time, Currency or Number). These are the fields you chose in the wizard.
 
 - A blank label uses the field's own label, in the user's language.
+- Long text is shortened, so a long Description doesn't slow the timeline: a detail shows its first 500 characters, a title or subtitle its first 150, each ending in an ellipsis. Rich text shows as plain words. Setup says so when you choose such a field for a title or subtitle. Text areas can't be used in filters (SOQL can't filter on them).
 - A label can be a custom label (`$Label.Points`), to translate it.
+- A detail that names a record links to it, opened as the title is (a workspace tab in Console apps): a field through a lookup, such as a task's **Related To › Name** or **Account › Account Name**, links to that record, and a lookup chosen as itself links to the record it holds. Plain values stay words. The record's Id is read with the item, so a link costs nothing more.
 - An event with no detail fields opens on its title, subtitle and source alone.
 
 ## Data 360 sources
@@ -309,7 +330,7 @@ Check these before you go live:
 - **Fields.** Check each source's Object Name, Individual Field, Date Field, Id Field and templates against your mappings.
 - **Details.** Each DMO's expanded fields are its detail fields (shipped: Channel action).
 - **Access.** Users need read access to the DMOs (a Data Cloud permission set) in the data space they live in.
-- **Counting.** Deploy `force-app-data360` too: it counts each DMO in Data 360 SQL, so the day list, overview and totals cover every engagement record. Without it, or if a count's SQL isn't accepted, each DMO is read as rows, up to Max Records, with a warning when that cuts it short.
+- **Counting.** Install the **Time Drive Data Extension** package too: it counts each DMO in Data 360 SQL, so the day list, overview and totals cover every engagement record. Without it, or if a count's SQL isn't accepted, each DMO is read as rows, up to Max Records, with a warning when that cuts it short.
 - **Volume.** Rows are only read for the days on screen, and a busy day comes back as grouped counts. For very heavy histories, a calculated insight that pre-aggregates per day is still the cheapest summary.
 
 Anything missing or unreadable shows as a warning on the timeline instead of an error, and the CRM events still load.
@@ -320,6 +341,9 @@ Most sources need no code. Write an Apex source when Setup can't reach the data:
 
 - **Records further away**, such as an Account's products on all its opportunities, two steps from the page.
 - **Data from elsewhere**, such as an external system, a calculation or a forecast.
+
+> [!IMPORTANT]
+> Your class lives in your org; Time Drive runs it from its package, in its own namespace (`drvrckt`). So declare the class and its overrides **`global`** (`global with sharing class MySource extends drvrckt.TimeDriveApexSource`, `global override ...`), and name the package's types with `drvrckt.`. A `public` class can't be seen from the package: the timeline says it "doesn't extend TimeDriveApexSource", and Setup doesn't list it.
 
 A source class extends `TimeDriveApexSource`. Time Drive asks it two things, and it answers each its own way:
 
@@ -336,10 +360,13 @@ A source that counts covers any amount of history: the summary takes only its co
 context.plotBy('EarnedAt')               // the key holding each item's Date or Datetime
   .title('Earned {Points} points')       // {Key} is filled from each row
   .subtitle('{Reason}')                  // optional
-  .opens('OrderId');                     // optional: the key holding the Salesforce record a click opens
+  .opens('OrderId')                      // optional: the key holding the Salesforce record a click opens
+  .links('Customer', 'CustomerId');      // optional: a detail's record, so the opened item links it
 ```
 
-Setup doesn't ask an Apex source for these, so without `plotBy` nothing is plotted. A key is a field path for record rows (`Product2.Name`) or a map key for value rows (`Points`). Everything else (icon, colour, lenses, the legend name and the fields an opened item shows) is chosen in Setup.
+Setup doesn't ask an Apex source for these, so without `plotBy` nothing is plotted. A key is a field path for record rows (`Product2.Name`) or a map key for value rows (`Points`). Everything else (icon, colour, lenses, the legend name, the fields an opened item shows and its highlight) is chosen in Setup. An Apex source's highlight is typed, like its details: a checkbox field the class reads (`Flagged__c`, which `fieldsToQuery` then asks for) or a map key, and the icon marks the rows where it's `true`.
+
+`links(detailKey, recordIdKey)` makes a detail a link: the detail chosen in Setup as `detailKey` opens the Salesforce record whose Id is in `recordIdKey`. Call it once for each detail that names a record. Record rows don't need it for a path through a lookup: `Product2.Name` links to `Product2.Id` by itself, since `fieldsToQuery` asks for it.
 
 `opens` decides whether an item's title is a link. Call it when each row holds a Salesforce record to open. Leave it out when there's nothing to open (a weather forecast, an external system's entries): the title is plain text, with no link and no Edit or Delete menu. Such items also can't be highlighted or listed in View all.
 
@@ -384,7 +411,7 @@ public with sharing class TimeDriveOpportunityProducts extends TimeDriveApexSour
     };
     String soql =
       'SELECT ' +
-      String.join(context.fieldsToQuery(new List<String>{ 'Id', CLOSE_DATE }), ', ') +
+      String.join(context.fieldsToQuery(OpportunityLineItem.SObjectType, new List<String>{ 'Id', CLOSE_DATE }), ', ') +
       ' FROM OpportunityLineItem WHERE ' +
       THIS_ACCOUNT +
       context.dateCondition(OpportunityLineItem.SObjectType, CLOSE_DATE, binds) +
@@ -408,10 +435,10 @@ public with sharing class TimeDriveOpportunityProducts extends TimeDriveApexSour
 Each row is a map, and its keys are what the title, subtitle and detail fields name. Give every row a unique `Id` key. Ask the service only for the days in `context.spans()`, and return only the items `context.wants`:
 
 ```apex
-public with sharing class MyLoyaltySource extends TimeDriveApexSource {
+global with sharing class MyLoyaltySource extends drvrckt.TimeDriveApexSource {
   // The summary: one call for the window's daily totals.
-  public override List<TimeDriveContext.DayCount> counts(TimeDriveContext context, String unit) {
-    TimeDriveContext.Counter counter = context.counter(unit);
+  global override List<drvrckt.TimeDriveContext.DayCount> counts(drvrckt.TimeDriveContext context, String unit) {
+    drvrckt.TimeDriveContext.Counter counter = context.counter(unit);
     for (LoyaltyApi.Total total : LoyaltyApi.dailyTotals(context.recordId, context.since, context.until)) {
       counter.add(total.day, total.entries);
     }
@@ -419,14 +446,14 @@ public with sharing class MyLoyaltySource extends TimeDriveApexSource {
   }
 
   // The days on screen.
-  public override List<TimeDriveRow> rows(TimeDriveContext context) {
+  global override List<drvrckt.TimeDriveRow> rows(drvrckt.TimeDriveContext context) {
     context.plotBy('EarnedAt').title('Earned {Points} points').subtitle('{Reason}');
-    List<TimeDriveRow> rows = new List<TimeDriveRow>();
-    for (TimeDriveController.TimeWindow span : context.spans()) {
+    List<drvrckt.TimeDriveRow> rows = new List<drvrckt.TimeDriveRow>();
+    for (drvrckt.TimeDriveContext.Span span : context.spans()) {
       for (LoyaltyApi.Entry entry : LoyaltyApi.entriesFor(context.recordId, span.since, span.until)) {
         if (context.wants(entry.earnedAt)) {
           rows.add(
-            new TimeDriveRow(
+            new drvrckt.TimeDriveRow(
               new Map<String, Object>{
                 'Id' => entry.id,
                 'EarnedAt' => entry.earnedAt, // a Datetime or a Date
@@ -451,8 +478,8 @@ How you count is yours to choose: a totals endpoint, as here; a cached copy; or 
 - `since`, `until`: the timeline's window. `until` is null for "up to now".
 - `spans()`: the days asked for, either the window or the days on screen.
 - `maxRecords()`: the source's record cap.
-- `plotBy(key).title(…).subtitle(…).opens(…)`: how the rows are plotted.
-- `fieldsToQuery(always)`: for record rows, the fields to SELECT.
+- `plotBy(key).title(…).subtitle(…).opens(…).links(…)`: how the rows are plotted, and which details link to records.
+- `fieldsToQuery(objectType, always)`: for record rows, the fields to SELECT: `always` (the Id, the date) and the fields the title, subtitle, details and highlight name. Fields the user can't read are left out (they show blank), so the query, which should run in user mode, doesn't fail for them. `fieldsToQuery(always)` does the same when the source names its object, and keeps every field otherwise.
 - `dateCondition(objectType, field, binds)`: for record rows, the days asked for as a bound condition.
 - `wants(dateOrDatetime)`: for data from elsewhere, whether the timeline asks for that moment.
 - `countBy(objectType, field, condition, binds, unit)`: counts of records, grouped by the period in one query.
@@ -470,7 +497,7 @@ How you count is yours to choose: a totals endpoint, as here; a cached copy; or 
 
 The timeline shows every date, time and number in the viewer's own time zone, language and locale. Your rows get the same treatment as Setup's sources, as long as you hand over real values rather than text:
 
-- **Dates and times.** Give a `Datetime` for a moment and a `Date` for a whole day (a day plots at midday, so it stays on its day in every time zone). When a service sends times as text, parse them with their zone (`2026-10-31T09:00:00Z` or `+11:00`), so they land at the right moment.
+- **Dates and times.** Give a `Datetime` for a moment and a `Date` for a whole day (a day plots at midday, so it stays on its day in every time zone). Text works too, as a service's JSON gives it: `2026-10-31` is a day, and `2026-10-31T09:00:00Z` or `2026-10-31T20:00:00+11:00` is that moment (text with no zone is read as the user's own time). An item whose date can't be read is left out, and the timeline says how many.
 - **Numbers and money.** Give numbers as numbers (`Decimal`, `Integer`, `Double`), not formatted strings. They show grouped as the viewer's locale does (1,200.5 or 1.200,5). A detail field with the Currency format shows in the viewer's currency, or in a row's own when it has a `CurrencyIsoCode` key (records have it in multi-currency orgs; add it to the fields you query).
 - **Picklists** on records show their labels in the viewer's language.
 - **Words you write.** Text in `title` and `subtitle` is shown as you wrote it. For translated text, pass a custom label: `.title(System.Label.Points_Earned)`, whose text can hold tokens such as `{Points}`. A detail field's label can be `$Label.Points` too.
@@ -478,8 +505,8 @@ The timeline shows every date, time and number in the viewer's own time zone, la
 
 ### Test and add it
 
-1. Test the class to at least 85%. Give it test data or an `HttpCalloutMock`, call `rows` and `counts` with a `TimeDriveContext`, and check what they return or the events `TimeDrivePlotter.run` makes of them.
-2. In Time Drive Setup, add a source of kind **Apex** on the record page and choose the class. Pick its look and lenses, then type the fields an opened item shows: a field path, or a map key.
+1. Test the class to at least 85%. Give it test data or an `HttpCalloutMock`, call `rows` and `counts` with a context for the record and window you want (`new TimeDriveContext(recordId, since, until)`), and check what they return: each count's `dayKey`, `hour` and `count` can be read, as `TimeDriveContext.UNIT_DAY` and the other units can.
+2. In Time Drive Setup, add a source of kind **Apex** on the record page and choose the class. Pick its look and lenses, then type the fields an opened item shows, and any highlight: a field path, or a map key.
 3. Saving asks you to confirm you've thought about how the class scales, because it runs every time a timeline with the source loads.
 
 ## How people use the timeline
@@ -492,7 +519,9 @@ The timeline shows every date, time and number in the viewer's own time zone, la
 - **Horizontal** once the card is 640px wide or more: each day is a column along a time axis. From two weeks of active days a **seek bar** runs under the columns. Grab it and an overlay shows the whole history as heat bars; the columns follow the pointer, and a click glides to a day.
 - **Phone.** In the Salesforce mobile app on a phone the card is always the vertical list and fits the screen. It starts in Lite (titles only; the button after Today shows times and dates), has larger tap targets, a one-line header (Today, Filters and a ⋯ menu holding Refresh, Expand all and the Lite switch), and no activity buttons.
 
-The header carries the lens as its heading, then **Today**, **Filters** (event types) and **Refresh**. Each user's lens and Lite choice are kept for them in the org.
+The header carries the lens as its heading with **Today** (and **Overdue**, while something is) at the end of its line; under it, the summary, with **Filters** (event types) and **Refresh** at the end. Each user's lens and Lite choice are kept for them in the org.
+
+Each lens keeps its own filter, as a list view does: the event types someone hides in Sales stay hidden in Sales, and come back when they return to it, while Service has its own. The Filters panel names the lens it's filtering, and the types pill's × (or **All** in the panel) shows the lens's every type again. The date range is shared by every lens. Each person's choices are kept for them in the org.
 
 Busy days (over 50 events of a type) show one grouped row per type, its icon drawn as a stack. For Salesforce sources its title links to all its items (View all). Every event's detail names the object it came from.
 
@@ -513,10 +542,11 @@ The summary counts each source rather than reading it: an aggregate query per Sa
 - When History and Future make the window too long to count every source by day within 30,000 query rows, it counts by week (from 1 January: the 1st-7th, 8th-14th ...) or by month, and the list shows weeks or months.
 - Rows are read only for the days (or weeks) on screen.
 - A busy day (over 50 items) isn't read at all; it comes back as grouped counts.
+- The sources are kept in Platform Cache for 10 minutes, and each Data 360 identity lookup for 15, once the **TimeDrive** partition has capacity (see [Allocate Platform Cache](#allocate-platform-cache)). Saving in Setup clears the sources at once; changes made another way (Data Loader, Apex) show within 10 minutes.
 
 ## Translations
 
-The timeline's text (the card, its filters, the View all page, record details and error messages) is custom labels (`Time_Drive_*`), in English with translations into Spanish, Arabic, Danish, Finnish, French, German, Japanese, Korean, Swedish, Yiddish, and Chinese Simplified and Traditional. Setup's own text is English for now.
+The timeline's text (the card, its filters, the View all page, record details and error messages) is custom labels (`Time_Drive_*`), in English with translations into Spanish, Arabic, Danish, Finnish, French, German, Japanese, Korean, Swedish, and Chinese Simplified and Traditional. Setup's own text is English for now.
 
 > [!IMPORTANT]
 > Make each language **Active** in Setup > **Translation Language Settings** (turn on Translation Workbench first). The card's own labels show their translation either way, but Salesforce only translates the labels Apex reads once the language is Active: until then, warnings, Yes and No, and your own `$Label` names stay in English. Salesforce's own field and picklist names need it too.
