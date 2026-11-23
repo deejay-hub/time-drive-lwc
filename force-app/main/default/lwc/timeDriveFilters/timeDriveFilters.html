@@ -1,0 +1,99 @@
+<template>
+  <!-- The date range and event types panel, a sheet inside the card under
+       its header; nothing applies until Apply. -->
+  <template lwc:if={isOpen}>
+    <div
+      class={panelClass}
+      role="dialog"
+      aria-label={labels.filters}
+      onkeydown={handleKey}
+      onpointerdown={handlePanelPress}
+    >
+      <!-- The title, with a close icon at the end, until a type is ticked or
+           cleared; then Cancel (start) and Apply (end) in their place: nothing
+           to apply or cancel before that. -->
+      <div class="filter-head">
+        <template lwc:if={changed}>
+          <lightning-button label={labels.filtersCancel} onclick={cancel}></lightning-button>
+          <lightning-button variant="brand" label={labels.filtersApply} onclick={apply}></lightning-button>
+        </template>
+        <template lwc:else>
+          <h3 class="filter-title">
+            {labels.filters}<span lwc:if={lensLabel} class="filter-lens"> · {lensLabel}</span>
+          </h3>
+          <lightning-button-icon
+            class="filter-close"
+            icon-name="utility:close"
+            variant="bare"
+            size="small"
+            alternative-text={labels.filtersClose}
+            title={labels.filtersClose}
+            onclick={cancel}
+          ></lightning-button-icon>
+        </template>
+      </div>
+      <div class="filter-body">
+        <!-- How far back and ahead, within the page's own range. -->
+        <template lwc:if={hasRanges}>
+          <fieldset class="range-choices">
+            <legend class="filter-heading">{labels.rangeHeading}</legend>
+            <div class="range-sides">
+              <lightning-select
+                class="range-back"
+                label={labels.rangeBack}
+                options={backChoices}
+                value={draftBack}
+                onchange={handleBack}
+              ></lightning-select>
+              <lightning-select
+                class="range-ahead"
+                label={labels.rangeAhead}
+                options={aheadChoices}
+                value={draftAhead}
+                onchange={handleAhead}
+              ></lightning-select>
+            </div>
+          </fieldset>
+        </template>
+        <template lwc:if={hasChoices}>
+          <!-- Each type its own checkbox (base components), laid out in a
+               grid: two columns on a wide card, one on a narrow one. -->
+          <fieldset class="type-choices">
+            <legend class="filter-heading">{labels.filtersEventTypes}</legend>
+            <lightning-input
+              class="all-types"
+              type="checkbox"
+              label={labels.typesAll}
+              checked={allChecked}
+              onchange={toggleAll}
+            ></lightning-input>
+            <div class="type-grid">
+              <!-- The checkbox keeps its label for screen readers; the name
+                   beside it stays on one line, cut with an ellipsis (the
+                   whole name on hover), and ticks the box when clicked. -->
+              <template for:each={choices} for:item="o">
+                <div key={o.value} class="type-row">
+                  <lightning-input
+                    class="type-choice"
+                    type="checkbox"
+                    variant="label-hidden"
+                    label={o.label}
+                    checked={o.checked}
+                    data-value={o.value}
+                    onchange={handleChange}
+                  ></lightning-input>
+                  <span class="type-name" title={o.label} aria-hidden="true" data-value={o.value} onclick={toggleNamed}
+                    >{o.label}</span
+                  >
+                </div>
+              </template>
+            </div>
+          </fieldset>
+        </template>
+        <template lwc:else>
+          <p class="filter-none">{noneText}</p>
+        </template>
+      </div>
+    </div>
+  </template>
+</template>

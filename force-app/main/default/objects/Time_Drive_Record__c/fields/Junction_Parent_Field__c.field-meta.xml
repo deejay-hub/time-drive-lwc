@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Junction_Parent_Field__c</fullName>
+    <inlineHelpText>The junction's lookup to the page's record.</inlineHelpText>
+    <label>Junction Parent Field</label>
+    <length>255</length>
+    <required>false</required>
+    <type>Text</type>
+</CustomField>

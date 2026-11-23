@@ -1,0 +1,108 @@
+<template>
+  <lightning-modal-header label={label}></lightning-modal-header>
+  <lightning-modal-body>
+    <div class="frame">
+      <template lwc:if={isIntro}>
+        <div class="intro">
+          <div class="art">
+            <img class="art-image" src={logoUrl} width="100" height="100" alt="" />
+          </div>
+          <p class="intro-lede">Time Drive is Tailored to you.</p>
+          <ol class="steps">
+            <li class="step">
+              <span class="step-mark" aria-hidden="true"></span>
+              <span>
+                <span class="step-title">We check how your org is set up</span>
+                <span class="step-text">
+                  Shared Activities, Person Accounts, Enhanced Email and more to help determine a default setup for you.
+                  This saves you time.
+                </span>
+              </span>
+            </li>
+            <li class="step">
+              <span class="step-mark" aria-hidden="true"></span>
+              <span>
+                <span class="step-title">We'll give you a summary</span>
+                <span class="step-text">
+                  Each feature that impacts Time Drive is identified and you'll see where in Setup the feature lives and
+                  the impact it has.
+                </span>
+              </span>
+            </li>
+            <li class="step">
+              <span class="step-mark" aria-hidden="true"></span>
+              <span>
+                <span class="step-title">We'll get you set up quickly</span>
+                <span class="step-text"
+                  >Based on what we find we'll set up Time Drive according to best practice and you can customize it to
+                  your needs.</span
+                >
+              </span>
+            </li>
+          </ol>
+          <div lwc:if={error} class="notice" role="alert">
+            <p class="notice-title">{error.message}</p>
+            <p lwc:if={error.cause}>{error.cause}</p>
+          </div>
+        </div>
+      </template>
+
+      <template lwc:if={isRunning}>
+        <div class="running">
+          <div class="running-head" role="status">
+            <p class="running-title">Checking your org</p>
+            <p class="running-count">{progressText}</p>
+          </div>
+          <div class="progress" aria-hidden="true"><span class="progress-bar" style={progressStyle}></span></div>
+          <ol class="check-list" aria-live="polite">
+            <template for:each={rows} for:item="c">
+              <li key={c.key} class={c.className}>
+                <span class="check-mark" aria-hidden="true">
+                  <template lwc:if={c.isDone}>
+                    <lightning-icon icon-name="utility:check" size="xx-small" variant="inverse"></lightning-icon>
+                  </template>
+                  <template lwc:elseif={c.isRunning}>
+                    <span class="check-spinner"></span>
+                  </template>
+                </span>
+                <span class="check-name">
+                  <span class="check-label">{c.label}</span>
+                  <span class="check-where">{c.settingWhere}</span>
+                </span>
+                <span lwc:if={c.isDone} class={c.badgeClass}>{c.found}</span>
+              </li>
+            </template>
+          </ol>
+        </div>
+      </template>
+
+      <template lwc:if={isSummary}>
+        <div lwc:if={addError} class="notice" role="alert">
+          <p class="notice-title">The recommended sources couldn't be added</p>
+          <p>{addError.message}</p>
+        </div>
+        <h2 class="summary-title">What we found</h2>
+        <ul class="check-found">
+          <template for:each={rows} for:item="c">
+            <li key={c.key} class="check-card">
+              <span class="check-card-title">{c.label}</span>
+              <span class={c.badgeClass}>{c.found}</span>
+            </li>
+          </template>
+        </ul>
+      </template>
+    </div>
+  </lightning-modal-body>
+  <lightning-modal-footer>
+    <template lwc:if={isIntro}>
+      <lightning-button class="cancel" label="Cancel" onclick={handleCancel}></lightning-button>
+      <lightning-button class="start" variant="brand" label="Get started" onclick={handleStart}></lightning-button>
+    </template>
+    <template lwc:if={isRunning}>
+      <span class="footer-space" aria-hidden="true"></span>
+    </template>
+    <template lwc:if={isSummary}>
+      <lightning-button class="done" variant="brand" label="Done" onclick={handleDone}></lightning-button>
+    </template>
+  </lightning-modal-footer>
+</template>

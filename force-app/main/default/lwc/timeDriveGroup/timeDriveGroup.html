@@ -1,0 +1,139 @@
+<template>
+  <!-- As a related list's View All: a link back to the record, the type, its count and
+       order, then the table, which loads more as it scrolls. -->
+  <article class="page" style={pageStyle}>
+    <div class="slds-page-header slds-page-header_related-list">
+      <div class="slds-page-header__row">
+        <div class="slds-page-header__col-title">
+          <div class="back-row">
+            <template lwc:if={headerReady}>
+              <template lwc:if={recordUrl}>
+                <a class="back" href={recordUrl} onclick={openParent}>
+                  <lightning-icon icon-name="utility:back" size="xx-small" alternative-text=""></lightning-icon>
+                  <span>{backText}</span>
+                </a>
+              </template>
+            </template>
+            <template lwc:elseif={recordUrl}>
+              <span class="skeleton skeleton_back" aria-hidden="true"></span>
+            </template>
+          </div>
+          <div class="slds-media slds-media_center">
+            <div class="slds-media__figure">
+              <template lwc:if={headerReady}>
+                <lightning-icon icon-name={iconName} size="medium" alternative-text=""></lightning-icon>
+              </template>
+              <template lwc:else><span class="skeleton skeleton_icon" aria-hidden="true"></span></template>
+            </div>
+            <div class="slds-media__body">
+              <div class="slds-page-header__name">
+                <div class="slds-page-header__name-title">
+                  <h1>
+                    <template lwc:if={headerReady}>
+                      <span class="slds-page-header__title slds-truncate" title={heading}>{heading}</span>
+                    </template>
+                    <template lwc:else>
+                      <span class="slds-page-header__title">
+                        <span class="skeleton skeleton_title" aria-hidden="true"></span>
+                        <span class="slds-assistive-text">{labels.groupLoading}</span>
+                      </span>
+                    </template>
+                  </h1>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="slds-page-header__col-actions">
+          <div class="slds-page-header__controls">
+            <div class="slds-page-header__control">
+              <lightning-button-icon
+                icon-name="utility:refresh"
+                variant="border-filled"
+                alternative-text={labels.buttonRefresh}
+                title={labels.buttonRefresh}
+                disabled={loading}
+                onclick={handleRefresh}
+              ></lightning-button-icon>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="slds-page-header__row">
+        <div class="slds-page-header__col-meta">
+          <template lwc:if={headerReady}>
+            <p class="slds-page-header__meta-text meta">{metaText}</p>
+          </template>
+          <template lwc:else>
+            <p class="slds-page-header__meta-text"><span class="skeleton skeleton_meta" aria-hidden="true"></span></p>
+          </template>
+        </div>
+      </div>
+    </div>
+
+    <template lwc:if={problemNotice}>
+      <div class="notice slds-notify slds-notify_alert slds-alert_warning" role="status">
+        <lightning-icon icon-name="utility:warning" size="x-small" alternative-text=""></lightning-icon>
+        <p>{problemNotice.message}</p>
+      </div>
+    </template>
+
+    <!-- Only the list is outlined, as in a standard list view. -->
+    <div class="list">
+      <template lwc:if={showTable}>
+        <div class="table">
+          <lightning-datatable
+            key-field="id"
+            data={rows}
+            columns={columns}
+            hide-checkbox-column
+            show-row-number-column
+            column-widths-mode="auto"
+            enable-infinite-loading={more}
+            is-loading={loading}
+            load-more-offset="40"
+            onloadmore={handleLoadMore}
+          ></lightning-datatable>
+        </div>
+      </template>
+      <template lwc:elseif={showSkeleton}>
+        <div class="table skeleton-table" aria-hidden="true">
+          <div class="skeleton-head">
+            <span></span>
+            <span class="skeleton skeleton_head"></span>
+            <span class="skeleton skeleton_head"></span>
+            <span class="skeleton skeleton_head"></span>
+            <span class="skeleton skeleton_head"></span>
+          </div>
+          <template for:each={skeletonRows} for:item="row">
+            <div key={row.key} class="skeleton-line">
+              <span class="skeleton skeleton_num"></span>
+              <template for:each={row.cells} for:item="cell">
+                <span key={cell.key} class="skeleton skeleton_cell" style={cell.style}></span>
+              </template>
+            </div>
+          </template>
+        </div>
+      </template>
+      <template lwc:elseif={error}>
+        <div class="state" role="alert">
+          <p class="state-title">{error.message}</p>
+          <lightning-button label={labels.buttonTryAgain} onclick={handleRefresh}></lightning-button>
+        </div>
+      </template>
+      <template lwc:elseif={isEmpty}>
+        <div class="state">
+          <p class="state-title">{labels.groupNothing}</p>
+          <p class="state-text">{labels.groupNothingBody}</p>
+        </div>
+      </template>
+      <template lwc:elseif={missingState}>
+        <div class="state">
+          <p class="state-title">{labels.groupOpenFrom}</p>
+          <p class="state-text">{labels.groupOpenBody}</p>
+        </div>
+      </template>
+    </div>
+    <p class="slds-assistive-text" aria-live="polite">{progressText}</p>
+  </article>
+</template>

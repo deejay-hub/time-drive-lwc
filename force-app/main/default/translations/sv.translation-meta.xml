@@ -1,0 +1,587 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Translations xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customLabels>
+        <label>Ta bort</label>
+        <name>Time_Drive_Action_Delete</name>
+    </customLabels>
+    <customLabels>
+        <label>Redigera</label>
+        <name>Time_Drive_Action_Edit</name>
+    </customLabels>
+    <customLabels>
+        <label>Heldag</label>
+        <name>Time_Drive_All_Day</name>
+    </customLabels>
+    <customLabels>
+        <label>Lade till {0}</label>
+        <name>Time_Drive_Announce_Added</name>
+    </customLabels>
+    <customLabels>
+        <label>Lade till {0} till {1}</label>
+        <name>Time_Drive_Announce_Added_Range</name>
+    </customLabels>
+    <customLabels>
+        <label>Visar {0}</label>
+        <name>Time_Drive_Announce_Showing</name>
+    </customLabels>
+    <customLabels>
+        <label>Visar {0} till {1}</label>
+        <name>Time_Drive_Announce_Showing_Range</name>
+    </customLabels>
+    <customLabels>
+        <label>Visar idag</label>
+        <name>Time_Drive_Announce_Today</name>
+    </customLabels>
+    <customLabels>
+        <label>Inget mellan {0} och {1}</label>
+        <name>Time_Drive_Between</name>
+    </customLabels>
+    <customLabels>
+        <label>Visa tider och datum</label>
+        <name>Time_Drive_Button_Lite_Off</name>
+    </customLabels>
+    <customLabels>
+        <label>Endast rubriker</label>
+        <name>Time_Drive_Button_Lite_On</name>
+    </customLabels>
+    <customLabels>
+        <label>Försenade</label>
+        <name>Time_Drive_Button_Overdue</name>
+    </customLabels>
+    <customLabels>
+        <label>Visa försenade poster</label>
+        <name>Time_Drive_Button_Overdue_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>Uppdatera</label>
+        <name>Time_Drive_Button_Refresh</name>
+    </customLabels>
+    <customLabels>
+        <label>Visa allt</label>
+        <name>Time_Drive_Button_Show_Everything</name>
+    </customLabels>
+    <customLabels>
+        <label>Idag</label>
+        <name>Time_Drive_Button_Today</name>
+    </customLabels>
+    <customLabels>
+        <label>Försök igen</label>
+        <name>Time_Drive_Button_Try_Again</name>
+    </customLabels>
+    <customLabels>
+        <label>Dölj alla</label>
+        <name>Time_Drive_Collapse_All</name>
+    </customLabels>
+    <customLabels>
+        <label>Vill du verkligen ta bort denna {0}?</label>
+        <name>Time_Drive_Delete_Confirm</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} "{1}" har tagits bort.</label>
+        <name>Time_Drive_Delete_Done_Named</name>
+    </customLabels>
+    <customLabels>
+        <label>Kunde inte ta bort</label>
+        <name>Time_Drive_Delete_Failed</name>
+    </customLabels>
+    <customLabels>
+        <label>objekt</label>
+        <name>Time_Drive_Delete_Item</name>
+    </customLabels>
+    <customLabels>
+        <label>Ta bort {0}</label>
+        <name>Time_Drive_Delete_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>Tar bort…</label>
+        <name>Time_Drive_Deleting</name>
+    </customLabels>
+    <customLabels>
+        <label>Dölj detaljer</label>
+        <name>Time_Drive_Details_Hide</name>
+    </customLabels>
+    <customLabels>
+        <label>Visa detaljer</label>
+        <name>Time_Drive_Details_Show</name>
+    </customLabels>
+    <customLabels>
+        <label>Detaljer: {0}</label>
+        <name>Time_Drive_Details_Toggle</name>
+    </customLabels>
+    <customLabels>
+        <label>Studsad</label>
+        <name>Time_Drive_Email_Bounced</name>
+    </customLabels>
+    <customLabels>
+        <label>Öppnad</label>
+        <name>Time_Drive_Email_Opened</name>
+    </customLabels>
+    <customLabels>
+        <label>Oöppnad</label>
+        <name>Time_Drive_Email_Unopened</name>
+    </customLabels>
+    <customLabels>
+        <label>Inget engagemang för denna kund än.</label>
+        <name>Time_Drive_Empty_Customer</name>
+    </customLabels>
+    <customLabels>
+        <label>Inga data</label>
+        <name>Time_Drive_Empty_No_Match</name>
+    </customLabels>
+    <customLabels>
+        <label>Inga data med de använda filtren.</label>
+        <name>Time_Drive_Empty_Nothing</name>
+    </customLabels>
+    <customLabels>
+        <label>Inte konfigurerad</label>
+        <name>Time_Drive_Empty_Setup_Heading</name>
+    </customLabels>
+    <customLabels>
+        <label>Inga data mellan {0} och {1}. Kontrollera filtren och försök igen.</label>
+        <name>Time_Drive_Empty_Window</name>
+    </customLabels>
+    <customLabels>
+        <label>Du har inte åtkomst till en del av de data som behövs.</label>
+        <name>Time_Drive_Err_Access</name>
+    </customLabels>
+    <customLabels>
+        <label>Inläsningen tog för lång tid.</label>
+        <name>Time_Drive_Err_Busy</name>
+    </customLabels>
+    <customLabels>
+        <label>Posten är inte tillgänglig.</label>
+        <name>Time_Drive_Err_Not_Found</name>
+    </customLabels>
+    <customLabels>
+        <label>Kan inte nå Salesforce.</label>
+        <name>Time_Drive_Err_Offline</name>
+    </customLabels>
+    <customLabels>
+        <label>Något som behövs är inte konfigurerat i denna organisation.</label>
+        <name>Time_Drive_Err_Setup</name>
+    </customLabels>
+    <customLabels>
+        <label>Något gick fel.</label>
+        <name>Time_Drive_Err_Unknown</name>
+    </customLabels>
+    <customLabels>
+        <label>Tidslinjen kunde inte läsas in</label>
+        <name>Time_Drive_Error_Load_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>Tidslinjen kunde inte läsas</label>
+        <name>Time_Drive_Error_Read_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>Visa alla</label>
+        <name>Time_Drive_Expand_All</name>
+    </customLabels>
+    <customLabels>
+        <label>Inget att filtrera i denna vy.</label>
+        <name>Time_Drive_Filter_None</name>
+    </customLabels>
+    <customLabels>
+        <label>Filter</label>
+        <name>Time_Drive_Filters</name>
+    </customLabels>
+    <customLabels>
+        <label>Filter, {0} aktiva</label>
+        <name>Time_Drive_Filters_Active</name>
+    </customLabels>
+    <customLabels>
+        <label>Använd</label>
+        <name>Time_Drive_Filters_Apply</name>
+    </customLabels>
+    <customLabels>
+        <label>Avbryt</label>
+        <name>Time_Drive_Filters_Cancel</name>
+    </customLabels>
+    <customLabels>
+        <label>Stäng</label>
+        <name>Time_Drive_Filters_Close</name>
+    </customLabels>
+    <customLabels>
+        <label>Händelsetyper</label>
+        <name>Time_Drive_Filters_Event_Types</name>
+    </customLabels>
+    <customLabels>
+        <label>Tillbaka till {0}</label>
+        <name>Time_Drive_Group_Back</name>
+    </customLabels>
+    <customLabels>
+        <label>Tillbaka till posten</label>
+        <name>Time_Drive_Group_Back_Record</name>
+    </customLabels>
+    <customLabels>
+        <label>Datum</label>
+        <name>Time_Drive_Group_Col_Date</name>
+    </customLabels>
+    <customLabels>
+        <label>Datum/tid</label>
+        <name>Time_Drive_Group_Col_Date_Time</name>
+    </customLabels>
+    <customLabels>
+        <label>Namn</label>
+        <name>Time_Drive_Group_Col_Name</name>
+    </customLabels>
+    <customLabels>
+        <label>Översikt</label>
+        <name>Time_Drive_Group_Col_Summary</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}+ objekt</label>
+        <name>Time_Drive_Group_Count_More</name>
+    </customLabels>
+    <customLabels>
+        <label>Från</label>
+        <name>Time_Drive_Group_From</name>
+    </customLabels>
+    <customLabels>
+        <label>Objekt</label>
+        <name>Time_Drive_Group_Heading</name>
+    </customLabels>
+    <customLabels>
+        <label>Läser in</label>
+        <name>Time_Drive_Group_Loading</name>
+    </customLabels>
+    <customLabels>
+        <label>Läser in fler objekt</label>
+        <name>Time_Drive_Group_Loading_More</name>
+    </customLabels>
+    <customLabels>
+        <label>Inget att visa</label>
+        <name>Time_Drive_Group_Nothing</name>
+    </customLabels>
+    <customLabels>
+        <label>Objekten kan ha ändrats sedan tidslinjen visades. Uppdatera eller gå tillbaka till tidslinjen.</label>
+        <name>Time_Drive_Group_Nothing_Body</name>
+    </customLabels>
+    <customLabels>
+        <label>Den visar objekten bakom en av tidslinjens grupperade rader.</label>
+        <name>Time_Drive_Group_Open_Body</name>
+    </customLabels>
+    <customLabels>
+        <label>Öppna sidan från en tidslinje</label>
+        <name>Time_Drive_Group_Open_From</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} objekt visas</label>
+        <name>Time_Drive_Group_Shown</name>
+    </customLabels>
+    <customLabels>
+        <label>Efter datum</label>
+        <name>Time_Drive_Group_Sorted</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} poster grupperade</label>
+        <name>Time_Drive_Group_Summary_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>1 post grupperad</label>
+        <name>Time_Drive_Group_Summary_One</name>
+    </customLabels>
+    <customLabels>
+        <label>Till</label>
+        <name>Time_Drive_Group_To</name>
+    </customLabels>
+    <customLabels>
+        <label>Visa alla {0} {1}</label>
+        <name>Time_Drive_Group_View_All</name>
+    </customLabels>
+    <customLabels>
+        <label>Klicka för att rulla</label>
+        <name>Time_Drive_Hint_Scroll</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} objekt</label>
+        <name>Time_Drive_Items_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>1 objekt</label>
+        <name>Time_Drive_Items_One</name>
+    </customLabels>
+    <customLabels>
+        <label>Samtal</label>
+        <name>Time_Drive_Legend_Calls</name>
+    </customLabels>
+    <customLabels>
+        <label>E-post</label>
+        <name>Time_Drive_Legend_Emails</name>
+    </customLabels>
+    <customLabels>
+        <label>Filer &amp; anteckningar</label>
+        <name>Time_Drive_Legend_Files</name>
+    </customLabels>
+    <customLabels>
+        <label>Försenade uppgifter</label>
+        <name>Time_Drive_Legend_Overdue_Tasks</name>
+    </customLabels>
+    <customLabels>
+        <label>Objekt</label>
+        <name>Time_Drive_Many_Other</name>
+    </customLabels>
+    <customLabels>
+        <label>Vyer</label>
+        <name>Time_Drive_Menu_Views</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} objekt till: rulla nedåt</label>
+        <name>Time_Drive_More_Aria_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} objekt till den {1}: rulla nedåt</label>
+        <name>Time_Drive_More_Aria_Many_On</name>
+    </customLabels>
+    <customLabels>
+        <label>1 objekt till: rulla nedåt</label>
+        <name>Time_Drive_More_Aria_One</name>
+    </customLabels>
+    <customLabels>
+        <label>1 objekt till den {0}: rulla nedåt</label>
+        <name>Time_Drive_More_Aria_One_On</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} till</label>
+        <name>Time_Drive_More_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>1 till</label>
+        <name>Time_Drive_More_One</name>
+    </customLabels>
+    <customLabels>
+        <label>nu</label>
+        <name>Time_Drive_Near_Now</name>
+    </customLabels>
+    <customLabels>
+        <label>denna månad</label>
+        <name>Time_Drive_Near_This_Month</name>
+    </customLabels>
+    <customLabels>
+        <label>denna vecka</label>
+        <name>Time_Drive_Near_This_Week</name>
+    </customLabels>
+    <customLabels>
+        <label>idag</label>
+        <name>Time_Drive_Near_Today</name>
+    </customLabels>
+    <customLabels>
+        <label>Din administratör har inte konfigurerat detta objekt än.</label>
+        <name>Time_Drive_No_Sources</name>
+    </customLabels>
+    <customLabels>
+        <label>(Ingen rubrik)</label>
+        <name>Time_Drive_No_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>Inget denna månad</label>
+        <name>Time_Drive_Nothing_Month</name>
+    </customLabels>
+    <customLabels>
+        <label>Inget idag</label>
+        <name>Time_Drive_Nothing_Today</name>
+    </customLabels>
+    <customLabels>
+        <label>Inget denna vecka</label>
+        <name>Time_Drive_Nothing_Week</name>
+    </customLabels>
+    <customLabels>
+        <label>Tidslinjeöversikt: välj en dag</label>
+        <name>Time_Drive_Overview_Pick_Day</name>
+    </customLabels>
+    <customLabels>
+        <label>Grupperad</label>
+        <name>Time_Drive_Pill_Grouped</name>
+    </customLabels>
+    <customLabels>
+        <label>Ta bort filter: {0}</label>
+        <name>Time_Drive_Pill_Remove</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} kunde inte läsas.</label>
+        <name>Time_Drive_Prob_Message</name>
+    </customLabels>
+    <customLabels>
+        <label>Framåt</label>
+        <name>Time_Drive_Range_Ahead</name>
+    </customLabels>
+    <customLabels>
+        <label>Bakåt</label>
+        <name>Time_Drive_Range_Back</name>
+    </customLabels>
+    <customLabels>
+        <label>Period</label>
+        <name>Time_Drive_Range_Heading</name>
+    </customLabels>
+    <customLabels>
+        <label>1 månad</label>
+        <name>Time_Drive_Range_Month</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} månader</label>
+        <name>Time_Drive_Range_Months</name>
+    </customLabels>
+    <customLabels>
+        <label>Ingen</label>
+        <name>Time_Drive_Range_None</name>
+    </customLabels>
+    <customLabels>
+        <label>1 år</label>
+        <name>Time_Drive_Range_Year</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} år</label>
+        <name>Time_Drive_Range_Years</name>
+    </customLabels>
+    <customLabels>
+        <label>Engagemangsobjekt</label>
+        <name>Time_Drive_Region_Items</name>
+    </customLabels>
+    <customLabels>
+        <label>Åtgärder</label>
+        <name>Time_Drive_Row_Actions</name>
+    </customLabels>
+    <customLabels>
+        <label>Kontrollerar vad du kan göra…</label>
+        <name>Time_Drive_Row_Checking</name>
+    </customLabels>
+    <customLabels>
+        <label>Du kan inte redigera eller ta bort objektet.</label>
+        <name>Time_Drive_Row_No_Actions</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: en Apex-källa behöver en leverantörsklass.</label>
+        <name>Time_Drive_Server_Apex_Needs_Class</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: {1} utökar inte TimeDriveApexSource.</label>
+        <name>Time_Drive_Server_Bad_Provider</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} “{1}” är inte en av 0,25, 0,5, 1, 2, 3 ... 10 år, så den används inte.</label>
+        <name>Time_Drive_Server_Bad_Years</name>
+    </customLabels>
+    <customLabels>
+        <label>Data 360 är inte tillgängligt i denna organisation, så dess källor hoppas över.</label>
+        <name>Time_Drive_Server_Data360_Missing</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}-engagemang finns inte i denna organisations datamodell ({1}).</label>
+        <name>Time_Drive_Server_Dmo_Missing</name>
+    </customLabels>
+    <customLabels>
+        <label>Identitetslänkar</label>
+        <name>Time_Drive_Server_Identity_Links</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: endast {1} objekt visas (dess högsta antal poster), så några kan saknas.</label>
+        <name>Time_Drive_Server_Max_Records</name>
+    </customLabels>
+    <customLabels>
+        <label>Nej</label>
+        <name>Time_Drive_Server_No</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: {1} har inget fält {2}.</label>
+        <name>Time_Drive_Server_No_Field</name>
+    </customLabels>
+    <customLabels>
+        <label>Inget identitetslänkobjekt ({0}): visar endast engagemang för kontaktens egen person.</label>
+        <name>Time_Drive_Server_No_Identity_Link</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: ange ett överordnat fält eller ett kopplingsobjekt för att länka poster till sidan.</label>
+        <name>Time_Drive_Server_No_Link</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: det finns inget objekt som heter {1}.</label>
+        <name>Time_Drive_Server_No_Object</name>
+    </customLabels>
+    <customLabels>
+        <label>Till: {0}</label>
+        <name>Time_Drive_Server_Sent_To</name>
+    </customLabels>
+    <customLabels>
+        <label>Till: {0} och 1 till</label>
+        <name>Time_Drive_Server_Sent_To_One_Other</name>
+    </customLabels>
+    <customLabels>
+        <label>Till: {0} och {1} till</label>
+        <name>Time_Drive_Server_Sent_To_Others</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: {1} poster har ett datum som Time Drive inte kan läsa, så de visas inte.</label>
+        <name>Time_Drive_Server_Unreadable_Dates</name>
+    </customLabels>
+    <customLabels>
+        <label>Ja</label>
+        <name>Time_Drive_Server_Yes</name>
+    </customLabels>
+    <customLabels>
+        <label>Läser in tidslinjen…</label>
+        <name>Time_Drive_Status_Loading</name>
+    </customLabels>
+    <customLabels>
+        <label>Läser in dagen</label>
+        <name>Time_Drive_Status_Loading_Day</name>
+    </customLabels>
+    <customLabels>
+        <label>Uppdaterar antalen</label>
+        <name>Time_Drive_Status_Updating_Counts</name>
+    </customLabels>
+    <customLabels>
+        <label>veckan från {0}</label>
+        <name>Time_Drive_The_Week_Of</name>
+    </customLabels>
+    <customLabels>
+        <label>Övrigt</label>
+        <name>Time_Drive_Type_Other</name>
+    </customLabels>
+    <customLabels>
+        <label>Alla typer</label>
+        <name>Time_Drive_Types_All</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} av {1} typer</label>
+        <name>Time_Drive_Types_Some</name>
+    </customLabels>
+    <customLabels>
+        <label>Uppdaterar…</label>
+        <name>Time_Drive_Updating</name>
+    </customLabels>
+    <customLabels>
+        <label>Alla objekt</label>
+        <name>Time_Drive_View_All</name>
+    </customLabels>
+    <customLabels>
+        <label>Handel</label>
+        <name>Time_Drive_View_Commerce</name>
+    </customLabels>
+    <customLabels>
+        <label>Digitalt</label>
+        <name>Time_Drive_View_Digital</name>
+    </customLabels>
+    <customLabels>
+        <label>Marknadsföring</label>
+        <name>Time_Drive_View_Marketing</name>
+    </customLabels>
+    <customLabels>
+        <label>Försenade</label>
+        <name>Time_Drive_View_Overdue</name>
+    </customLabels>
+    <customLabels>
+        <label>Försäljning</label>
+        <name>Time_Drive_View_Sales</name>
+    </customLabels>
+    <customLabels>
+        <label>Service</label>
+        <name>Time_Drive_View_Service</name>
+    </customLabels>
+    <customLabels>
+        <label>Vecka från {0}</label>
+        <name>Time_Drive_Week_Of</name>
+    </customLabels>
+    <customLabels>
+        <label>Vecka från</label>
+        <name>Time_Drive_Week_Of_Word</name>
+    </customLabels>
+</Translations>

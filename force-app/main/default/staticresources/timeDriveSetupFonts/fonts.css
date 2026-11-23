@@ -1,0 +1,17 @@
+/* Time Drive Setup's faces, served from this static resource (loaded with
+   lightning/platformResourceLoader). Latin subsets from Google Fonts. */
+@font-face {
+  font-family: "Bitcount Prop Double";
+  font-style: normal;
+  font-weight: var(--slds-g-font-weight-1, 100) 900;
+  font-display: swap;
+  src: url("bitcount-prop-double.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Figtree";
+  font-style: normal;
+  font-weight: var(--slds-g-font-weight-3, 300) 900;
+  font-display: swap;
+  src: url("figtree.woff2") format("woff2");
+}

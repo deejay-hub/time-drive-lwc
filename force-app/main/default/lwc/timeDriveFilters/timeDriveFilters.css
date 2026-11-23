@@ -1,0 +1,174 @@
+/* The Filters panel: a sheet inside the card, from under its header to its
+   foot (the timeline's .below-header holds it). On a wide card it sits at the
+   card's end; on a narrow one it covers the timeline. Over the timeline's own
+   layers (the seek bar is 8), under its menus (the lens menu is 20). Its
+   colours and spacing come from the timeline's custom properties, which reach
+   in through the shadow boundary. */
+:host {
+  display: contents;
+}
+
+.filter-panel {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  z-index: 10;
+  box-sizing: border-box;
+  /* The head keeps its height; the list takes what's left, and scrolls. */
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.75 * var(--time-drive-space));
+  padding: calc(0.75 * var(--time-drive-space)) calc(1 * var(--time-drive-space));
+  background: var(--surface);
+}
+
+/* Wide: at the card's end, a rule on the timeline's side (either way round,
+   right to left too) and a soft shadow. */
+.filter-panel_wide {
+  width: min(40rem, 60%);
+  border-inline-start: 1px solid var(--time-drive-rule);
+  box-shadow: 0 0 28px -12px color-mix(in srgb, var(--shade) 35%, transparent);
+}
+
+/* Narrow: over the whole timeline. */
+.filter-panel_narrow {
+  inset-inline-start: 0;
+}
+
+.filter-heading {
+  margin-bottom: calc(-0.5 * var(--time-drive-space));
+  color: var(--slds-g-color-on-surface-2, #444);
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+}
+
+/* The event types: "All types" above, apart from the types in their grid. */
+.type-choices {
+  display: grid;
+  gap: calc(0.5 * var(--time-drive-space));
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.type-choices .filter-heading {
+  margin-bottom: 0;
+  padding: 0;
+}
+
+.type-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: calc(0.25 * var(--time-drive-space)) calc(1 * var(--time-drive-space));
+}
+
+/* Wide: as many columns of at least 10rem as the sheet has room for (three
+   at its widest, two on a smaller wide card). */
+.filter-panel_wide .type-grid {
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+}
+
+/* A type: its checkbox, then its name on one line, cut with an ellipsis. */
+.type-row {
+  display: flex;
+  align-items: center;
+  gap: calc(0.25 * var(--time-drive-space));
+  min-width: 0;
+}
+
+.type-choice {
+  flex: none;
+}
+
+.type-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8125rem;
+  line-height: 1.5rem;
+  cursor: pointer;
+}
+
+.all-types {
+  padding-bottom: calc(0.375 * var(--time-drive-space));
+  border-bottom: 1px solid var(--time-drive-rule);
+}
+
+/* The date range sits apart from the event types below it: Back and Ahead
+   side by side. */
+.range-choices {
+  display: grid;
+  gap: calc(0.5 * var(--time-drive-space));
+  min-width: 0;
+  margin: 0;
+  padding: 0 0 calc(0.75 * var(--time-drive-space));
+  border: 0;
+  border-bottom: 1px solid var(--time-drive-rule);
+}
+
+.range-choices .filter-heading {
+  margin-bottom: 0;
+  padding: 0;
+}
+
+.range-sides {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: calc(0.5 * var(--time-drive-space));
+}
+
+/* Cancel and Apply at the top, always in reach; the options scroll below. */
+.filter-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  /* The same height with the title as with the buttons, so nothing moves when
+     they swap. */
+  min-height: 2.25rem;
+  gap: calc(0.5 * var(--time-drive-space));
+  padding-bottom: calc(0.625 * var(--time-drive-space));
+  border-bottom: 1px solid var(--time-drive-rule);
+}
+
+/* The close icon sits at the end, a little in from the edge. */
+.filter-close {
+  flex: none;
+  margin-inline-start: auto;
+}
+
+.filter-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.25rem;
+}
+
+.filter-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: calc(0.75 * var(--time-drive-space));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* A scrolling box clips what spills past its edges, and a checkbox's focus
+     ring does (the left of "All types"): room for the ring, taken back with
+     the negative margin so nothing moves. */
+  padding: 0.25rem;
+  margin: -0.25rem;
+}
+
+.filter-none {
+  margin: 0;
+  color: var(--time-drive-muted);
+  font-size: 0.8125rem;
+}
+
+/* The lens being filtered, after the title: quieter. */
+.filter-lens {
+  font-weight: var(--slds-g-font-weight-4, 400);
+  color: var(--time-drive-muted, #5c5c5c);
+}

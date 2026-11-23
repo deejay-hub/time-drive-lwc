@@ -1,0 +1,58 @@
+{
+  "packageDirectories": [
+    {
+      "path": "force-app",
+      "package": "Time Drive",
+      "versionName": "Fermion",
+      "versionNumber": "0.9.0.NEXT",
+      "versionDescription": "An interactive timeline for activity and interactions",
+      "releaseNotesUrl": "https://github.com/deejay-hub/time-drive-lwc/blob/main/changelog.md",
+      "definitionFile": "config/project-scratch-def.json",
+      "default": true
+    },
+    {
+      "path": "force-app-data360",
+      "package": "Time Drive Data Extension",
+      "versionName": "Ottawa",
+      "versionNumber": "0.9.0.NEXT",
+      "versionDescription": "Data extension for Time Drive (supports Data 360)",
+      "definitionFile": "config/data-extension-scratch-def.json",
+      "default": false,
+      "dependencies": [
+        {
+          "package": "Time Drive",
+          "versionNumber": "0.9.0.RELEASED"
+        }
+      ]
+    },
+    {
+      "path": "unpackaged",
+      "default": false
+    }
+  ],
+  "name": "Time Drive",
+  "namespace": "drvrckt",
+  "sfdcLoginUrl": "https://login.salesforce.com",
+  "sourceApiVersion": "67.0",
+  "packageAliases": {
+    "Time Drive": "0HogK0000005kQPSAY",
+    "Time Drive Data Extension": "0HogK0000005kS1SAI",
+    "Time Drive@0.1.0-1": "04tgK000000bJIDQA2",
+    "Time Drive Data Extension@0.1.0-1": "04tgK000000bJN3QAM",
+    "Time Drive@0.1.0-2": "04tgK000000bJYLQA2",
+    "Time Drive Data Extension@0.1.0-2": "04tgK000000bJbZQAU",
+    "Time Drive Data Extension@0.1.0-3": "04tgK000000bJenQAE",
+    "Time Drive@0.1.0-3": "04tgK000000bJgPQAU",
+    "Time Drive@0.1.0-4": "04tgK000000bJq5QAE",
+    "Time Drive@0.1.0-5": "04tgK000000bJuvQAE",
+    "Time Drive@0.1.0-6": "04tgK000000bKKjQAM",
+    "Time Drive@0.1.0-7": "04tgK000000bKMLQA2",
+    "Time Drive@0.1.0-8": "04tgK000000bKXdQAM",
+    "Time Drive@0.1.0-9": "04tgK000000bKhJQAU",
+    "Time Drive@0.1.0-10": "04tgK000000bRfZQAU",
+    "Time Drive@0.1.0-11": "04tgK000000bTMPQA2",
+    "Time Drive@0.1.0-12": "04tgK000000bXMnQAM",
+    "Time Drive@0.9.0-1": "04tgK000000bXhlQAE",
+    "Time Drive Data Extension@0.9.0-1": "04tgK000000bXjNQAU"
+  }
+}

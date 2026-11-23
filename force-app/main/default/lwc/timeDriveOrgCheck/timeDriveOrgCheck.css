@@ -1,0 +1,316 @@
+/* Light and dark pairs: the SLDS hooks where Salesforce supplies them, else
+   light-dark(), which follows the page's colour scheme. */
+:host {
+  --ink: var(--slds-g-color-on-surface-3, light-dark(#181818, #f3f3f3));
+  --muted: var(--slds-g-color-on-surface-1, light-dark(#5c5c5c, #c9c9c9));
+  --rule: light-dark(#e5e5e5, rgb(255 255 255 / 0.16));
+  --ring: light-dark(#c9c9c9, rgb(255 255 255 / 0.35));
+  --ok: #2e844a;
+  --accent: var(--slds-g-color-brand-base-50, #0176d3);
+  --chip: light-dark(#eef1f0, rgb(255 255 255 / 0.1));
+  --on-bg: light-dark(#e3f3e7, rgb(69 198 90 / 0.18));
+  --on-ink: light-dark(#1b5e2e, #86df98);
+  --warn-bg: light-dark(#fdf1d6, rgb(228 162 1 / 0.18));
+  --warn-ink: light-dark(#7a4f00, #f2c350);
+  --bad: light-dark(#c23934, #fe5c4c);
+  --bad-ink: light-dark(#8e030f, #ff9b92);
+  color: var(--ink);
+}
+
+/* The same height at every stage, so the popup doesn't grow and shrink: what
+   doesn't fit scrolls inside. */
+.frame {
+  display: flex;
+  flex-direction: column;
+  height: min(34rem, 62vh);
+  overflow-y: auto;
+  padding: 0.25rem var(--slds-g-spacing-1, 0.25rem) 0;
+  border-radius: 0;
+}
+
+/* ---- the start: what we'll do ---- */
+
+/* The mark, the headline and the steps are one group, centred in the box. */
+.intro {
+  margin-block: auto;
+}
+
+.art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0 var(--slds-g-spacing-6, 2rem);
+}
+
+.art-image {
+  width: 7.5rem;
+  height: auto;
+  filter: drop-shadow(0 0.5rem 0.75rem rgb(0 0 0 / 0.2));
+}
+
+.intro-lede {
+  margin: 0 auto 1.25rem;
+  max-width: 24rem;
+  font-size: 1.0625rem;
+  font-weight: var(--slds-g-font-weight-6, 600);
+  line-height: 1.4;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.steps {
+  list-style: none;
+  margin: 0 auto var(--slds-g-spacing-2, 0.5rem);
+  padding: 0;
+  max-width: 26rem;
+}
+
+.step {
+  position: relative;
+  display: flex;
+  gap: 0.875rem;
+  padding-bottom: var(--slds-g-spacing-4, 1rem);
+}
+
+.step:last-child {
+  padding-bottom: 0;
+}
+
+/* A ring for each step, joined by a hairline: the same rings the checklist
+   ticks off next. */
+.step-mark {
+  position: relative;
+  flex: none;
+  width: var(--slds-g-sizing-6, 1.25rem);
+  height: var(--slds-g-sizing-6, 1.25rem);
+  margin-top: 0.125rem;
+  border: 2px solid var(--ring);
+  border-radius: 50%;
+}
+
+.step:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  top: 1.625rem;
+  bottom: 0.125rem;
+  left: 0.6875rem;
+  width: var(--slds-g-sizing-border-1, 1px);
+  background: var(--rule);
+}
+
+.step-title {
+  display: block;
+  font-weight: var(--slds-g-font-weight-6, 600);
+  line-height: 1.4;
+}
+
+.step-text {
+  display: block;
+  font-size: var(--slds-g-font-scale-base, 0.8125rem);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* ---- checking ---- */
+
+.check-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: var(--slds-g-spacing-3, 0.75rem) 0;
+  border-bottom: 1px solid var(--rule);
+  color: var(--muted);
+}
+
+.check-row_running,
+.check-row_done {
+  color: inherit;
+}
+
+.check-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--slds-g-sizing-7, 1.5rem);
+  height: var(--slds-g-sizing-7, 1.5rem);
+  border-radius: 50%;
+  border: 2px solid var(--ring);
+}
+
+.check-row_done .check-mark {
+  background: var(--ok);
+  border-color: var(--ok);
+  animation: check-pop 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.check-spinner {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  border-right-color: transparent;
+  animation: check-spin 0.7s linear infinite;
+}
+
+.check-name {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.check-label {
+  font-weight: var(--slds-g-font-weight-6, 600);
+}
+
+/* Where in Setup it is read: said while it is read. */
+.check-where {
+  font-size: var(--slds-g-font-scale-neg-1, 0.75rem);
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+/* The checklist sits in the middle of the box, across and down. */
+.running {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+  max-width: 26rem;
+  margin: 0 auto;
+}
+
+/* The footer keeps its height at every stage; while checking it has no buttons. */
+.footer-space {
+  display: block;
+  min-height: var(--slds-g-sizing-9, 2rem);
+}
+
+.running-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.running-title {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: var(--slds-g-font-weight-6, 600);
+}
+
+.running-count {
+  margin: 0;
+  font-size: var(--slds-g-font-scale-base, 0.8125rem);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.progress {
+  height: 0.25rem;
+  margin: 0.625rem 0 var(--slds-g-spacing-2, 0.5rem);
+  overflow: hidden;
+  border-radius: 0.125rem;
+  background: var(--rule);
+}
+
+.progress-bar {
+  display: block;
+  height: 100%;
+  background: var(--ok);
+  transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.check-badge {
+  padding: 0.125rem 0.625rem;
+  border-radius: 1rem;
+  font-size: var(--slds-g-font-scale-base, 0.8125rem);
+  background: var(--chip);
+}
+
+.check-badge_on {
+  background: var(--on-bg);
+  color: var(--on-ink);
+}
+
+.check-badge_unknown {
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+}
+.summary-title {
+  margin: 0 0 var(--slds-g-spacing-3, 0.75rem);
+  font-size: 1.125rem;
+  font-weight: var(--slds-g-font-weight-6, 600);
+}
+
+.check-found {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: var(--slds-g-sizing-border-1, 1px) solid var(--rule);
+  border-radius: var(--slds-g-radius-border-2, 0.5rem);
+}
+
+/* One line each: the feature, and whether it is in use. */
+.check-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem var(--slds-g-spacing-4, 1rem);
+}
+
+.check-card + .check-card {
+  border-top: var(--slds-g-sizing-border-1, 1px) solid var(--rule);
+}
+
+.check-card-title {
+  font-weight: var(--slds-g-font-weight-5, 500);
+}
+
+.notice {
+  margin-top: var(--slds-g-spacing-4, 1rem);
+  padding: 0.75rem var(--slds-g-spacing-4, 1rem);
+  border: var(--slds-g-sizing-border-1, 1px) solid var(--bad);
+  border-radius: var(--slds-g-radius-border-1, 0.25rem);
+  color: var(--bad-ink);
+}
+
+.notice-title {
+  font-weight: var(--slds-g-font-weight-6, 600);
+}
+
+@keyframes check-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes check-pop {
+  from {
+    transform: scale(0.6);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .check-spinner,
+  .check-row_done .check-mark {
+    animation: none;
+  }
+}
+
+/* Room between Cancel and the action beside it. */
+.cancel {
+  margin-inline-end: var(--slds-g-spacing-3, 0.75rem);
+}

@@ -1,0 +1,587 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Translations xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customLabels>
+        <label>삭제</label>
+        <name>Time_Drive_Action_Delete</name>
+    </customLabels>
+    <customLabels>
+        <label>편집</label>
+        <name>Time_Drive_Action_Edit</name>
+    </customLabels>
+    <customLabels>
+        <label>종일</label>
+        <name>Time_Drive_All_Day</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} 추가됨</label>
+        <name>Time_Drive_Announce_Added</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}~{1} 추가됨</label>
+        <name>Time_Drive_Announce_Added_Range</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} 표시 중</label>
+        <name>Time_Drive_Announce_Showing</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}~{1} 표시 중</label>
+        <name>Time_Drive_Announce_Showing_Range</name>
+    </customLabels>
+    <customLabels>
+        <label>오늘 표시 중</label>
+        <name>Time_Drive_Announce_Today</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}에서 {1} 사이에 항목 없음</label>
+        <name>Time_Drive_Between</name>
+    </customLabels>
+    <customLabels>
+        <label>시간 및 날짜 표시</label>
+        <name>Time_Drive_Button_Lite_Off</name>
+    </customLabels>
+    <customLabels>
+        <label>제목만</label>
+        <name>Time_Drive_Button_Lite_On</name>
+    </customLabels>
+    <customLabels>
+        <label>기한 지남</label>
+        <name>Time_Drive_Button_Overdue</name>
+    </customLabels>
+    <customLabels>
+        <label>기한이 지난 항목 표시</label>
+        <name>Time_Drive_Button_Overdue_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>새로 고침</label>
+        <name>Time_Drive_Button_Refresh</name>
+    </customLabels>
+    <customLabels>
+        <label>모두 표시</label>
+        <name>Time_Drive_Button_Show_Everything</name>
+    </customLabels>
+    <customLabels>
+        <label>오늘</label>
+        <name>Time_Drive_Button_Today</name>
+    </customLabels>
+    <customLabels>
+        <label>다시 시도</label>
+        <name>Time_Drive_Button_Try_Again</name>
+    </customLabels>
+    <customLabels>
+        <label>모두 접기</label>
+        <name>Time_Drive_Collapse_All</name>
+    </customLabels>
+    <customLabels>
+        <label>이 {0}을(를) 삭제하시겠습니까?</label>
+        <name>Time_Drive_Delete_Confirm</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} "{1}"이(가) 삭제되었습니다.</label>
+        <name>Time_Drive_Delete_Done_Named</name>
+    </customLabels>
+    <customLabels>
+        <label>삭제할 수 없음</label>
+        <name>Time_Drive_Delete_Failed</name>
+    </customLabels>
+    <customLabels>
+        <label>항목</label>
+        <name>Time_Drive_Delete_Item</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} 삭제</label>
+        <name>Time_Drive_Delete_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>삭제 중…</label>
+        <name>Time_Drive_Deleting</name>
+    </customLabels>
+    <customLabels>
+        <label>세부 사항 숨기기</label>
+        <name>Time_Drive_Details_Hide</name>
+    </customLabels>
+    <customLabels>
+        <label>세부 사항 표시</label>
+        <name>Time_Drive_Details_Show</name>
+    </customLabels>
+    <customLabels>
+        <label>세부 사항: {0}</label>
+        <name>Time_Drive_Details_Toggle</name>
+    </customLabels>
+    <customLabels>
+        <label>반송됨</label>
+        <name>Time_Drive_Email_Bounced</name>
+    </customLabels>
+    <customLabels>
+        <label>열람함</label>
+        <name>Time_Drive_Email_Opened</name>
+    </customLabels>
+    <customLabels>
+        <label>열람 안 함</label>
+        <name>Time_Drive_Email_Unopened</name>
+    </customLabels>
+    <customLabels>
+        <label>이 고객의 참여가 아직 없습니다.</label>
+        <name>Time_Drive_Empty_Customer</name>
+    </customLabels>
+    <customLabels>
+        <label>데이터 없음</label>
+        <name>Time_Drive_Empty_No_Match</name>
+    </customLabels>
+    <customLabels>
+        <label>적용한 필터에 맞는 데이터가 없습니다.</label>
+        <name>Time_Drive_Empty_Nothing</name>
+    </customLabels>
+    <customLabels>
+        <label>설정 안 됨</label>
+        <name>Time_Drive_Empty_Setup_Heading</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}에서 {1} 사이에 데이터가 없습니다. 필터를 확인하고 다시 시도하십시오.</label>
+        <name>Time_Drive_Empty_Window</name>
+    </customLabels>
+    <customLabels>
+        <label>필요한 데이터 중 일부에 액세스할 수 없습니다.</label>
+        <name>Time_Drive_Err_Access</name>
+    </customLabels>
+    <customLabels>
+        <label>로드 시간이 너무 오래 걸렸습니다.</label>
+        <name>Time_Drive_Err_Busy</name>
+    </customLabels>
+    <customLabels>
+        <label>이 레코드를 사용할 수 없습니다.</label>
+        <name>Time_Drive_Err_Not_Found</name>
+    </customLabels>
+    <customLabels>
+        <label>Salesforce에 연결할 수 없습니다.</label>
+        <name>Time_Drive_Err_Offline</name>
+    </customLabels>
+    <customLabels>
+        <label>필요한 항목이 이 조직에 설정되어 있지 않습니다.</label>
+        <name>Time_Drive_Err_Setup</name>
+    </customLabels>
+    <customLabels>
+        <label>문제가 발생했습니다.</label>
+        <name>Time_Drive_Err_Unknown</name>
+    </customLabels>
+    <customLabels>
+        <label>타임라인 로드 오류</label>
+        <name>Time_Drive_Error_Load_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>타임라인 읽기 오류</label>
+        <name>Time_Drive_Error_Read_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>모두 펼치기</label>
+        <name>Time_Drive_Expand_All</name>
+    </customLabels>
+    <customLabels>
+        <label>이 보기에는 필터링할 항목이 없습니다.</label>
+        <name>Time_Drive_Filter_None</name>
+    </customLabels>
+    <customLabels>
+        <label>필터</label>
+        <name>Time_Drive_Filters</name>
+    </customLabels>
+    <customLabels>
+        <label>필터, {0}개 적용됨</label>
+        <name>Time_Drive_Filters_Active</name>
+    </customLabels>
+    <customLabels>
+        <label>적용</label>
+        <name>Time_Drive_Filters_Apply</name>
+    </customLabels>
+    <customLabels>
+        <label>취소</label>
+        <name>Time_Drive_Filters_Cancel</name>
+    </customLabels>
+    <customLabels>
+        <label>닫기</label>
+        <name>Time_Drive_Filters_Close</name>
+    </customLabels>
+    <customLabels>
+        <label>이벤트 유형</label>
+        <name>Time_Drive_Filters_Event_Types</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}(으)로 돌아가기</label>
+        <name>Time_Drive_Group_Back</name>
+    </customLabels>
+    <customLabels>
+        <label>레코드로 돌아가기</label>
+        <name>Time_Drive_Group_Back_Record</name>
+    </customLabels>
+    <customLabels>
+        <label>날짜</label>
+        <name>Time_Drive_Group_Col_Date</name>
+    </customLabels>
+    <customLabels>
+        <label>날짜/시간</label>
+        <name>Time_Drive_Group_Col_Date_Time</name>
+    </customLabels>
+    <customLabels>
+        <label>이름</label>
+        <name>Time_Drive_Group_Col_Name</name>
+    </customLabels>
+    <customLabels>
+        <label>요약</label>
+        <name>Time_Drive_Group_Col_Summary</name>
+    </customLabels>
+    <customLabels>
+        <label>항목 {0}개 이상</label>
+        <name>Time_Drive_Group_Count_More</name>
+    </customLabels>
+    <customLabels>
+        <label>시작</label>
+        <name>Time_Drive_Group_From</name>
+    </customLabels>
+    <customLabels>
+        <label>항목</label>
+        <name>Time_Drive_Group_Heading</name>
+    </customLabels>
+    <customLabels>
+        <label>로드 중</label>
+        <name>Time_Drive_Group_Loading</name>
+    </customLabels>
+    <customLabels>
+        <label>항목 더 로드 중</label>
+        <name>Time_Drive_Group_Loading_More</name>
+    </customLabels>
+    <customLabels>
+        <label>표시할 항목 없음</label>
+        <name>Time_Drive_Group_Nothing</name>
+    </customLabels>
+    <customLabels>
+        <label>타임라인이 표시된 후 이 항목이 변경되었을 수 있습니다. 새로 고치거나 타임라인으로 돌아가십시오.</label>
+        <name>Time_Drive_Group_Nothing_Body</name>
+    </customLabels>
+    <customLabels>
+        <label>타임라인의 그룹화된 행에 포함된 항목을 나열합니다.</label>
+        <name>Time_Drive_Group_Open_Body</name>
+    </customLabels>
+    <customLabels>
+        <label>타임라인에서 이 페이지를 여십시오</label>
+        <name>Time_Drive_Group_Open_From</name>
+    </customLabels>
+    <customLabels>
+        <label>항목 {0}개 표시됨</label>
+        <name>Time_Drive_Group_Shown</name>
+    </customLabels>
+    <customLabels>
+        <label>날짜순 정렬</label>
+        <name>Time_Drive_Group_Sorted</name>
+    </customLabels>
+    <customLabels>
+        <label>레코드 {0}개 그룹화됨</label>
+        <name>Time_Drive_Group_Summary_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>레코드 1개 그룹화됨</label>
+        <name>Time_Drive_Group_Summary_One</name>
+    </customLabels>
+    <customLabels>
+        <label>종료</label>
+        <name>Time_Drive_Group_To</name>
+    </customLabels>
+    <customLabels>
+        <label>{1} {0}개 모두 보기</label>
+        <name>Time_Drive_Group_View_All</name>
+    </customLabels>
+    <customLabels>
+        <label>클릭하여 스크롤</label>
+        <name>Time_Drive_Hint_Scroll</name>
+    </customLabels>
+    <customLabels>
+        <label>항목 {0}개</label>
+        <name>Time_Drive_Items_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>항목 1개</label>
+        <name>Time_Drive_Items_One</name>
+    </customLabels>
+    <customLabels>
+        <label>전화</label>
+        <name>Time_Drive_Legend_Calls</name>
+    </customLabels>
+    <customLabels>
+        <label>이메일</label>
+        <name>Time_Drive_Legend_Emails</name>
+    </customLabels>
+    <customLabels>
+        <label>파일 및 메모</label>
+        <name>Time_Drive_Legend_Files</name>
+    </customLabels>
+    <customLabels>
+        <label>기한이 지난 작업</label>
+        <name>Time_Drive_Legend_Overdue_Tasks</name>
+    </customLabels>
+    <customLabels>
+        <label>항목</label>
+        <name>Time_Drive_Many_Other</name>
+    </customLabels>
+    <customLabels>
+        <label>보기</label>
+        <name>Time_Drive_Menu_Views</name>
+    </customLabels>
+    <customLabels>
+        <label>항목 {0}개 더: 아래로 스크롤</label>
+        <name>Time_Drive_More_Aria_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>{1}에 항목 {0}개 더: 아래로 스크롤</label>
+        <name>Time_Drive_More_Aria_Many_On</name>
+    </customLabels>
+    <customLabels>
+        <label>항목 1개 더: 아래로 스크롤</label>
+        <name>Time_Drive_More_Aria_One</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}에 항목 1개 더: 아래로 스크롤</label>
+        <name>Time_Drive_More_Aria_One_On</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}개 더</label>
+        <name>Time_Drive_More_Many</name>
+    </customLabels>
+    <customLabels>
+        <label>1개 더</label>
+        <name>Time_Drive_More_One</name>
+    </customLabels>
+    <customLabels>
+        <label>지금</label>
+        <name>Time_Drive_Near_Now</name>
+    </customLabels>
+    <customLabels>
+        <label>이번 달</label>
+        <name>Time_Drive_Near_This_Month</name>
+    </customLabels>
+    <customLabels>
+        <label>이번 주</label>
+        <name>Time_Drive_Near_This_Week</name>
+    </customLabels>
+    <customLabels>
+        <label>오늘</label>
+        <name>Time_Drive_Near_Today</name>
+    </customLabels>
+    <customLabels>
+        <label>관리자가 아직 이 개체를 설정하지 않았습니다.</label>
+        <name>Time_Drive_No_Sources</name>
+    </customLabels>
+    <customLabels>
+        <label>(제목 없음)</label>
+        <name>Time_Drive_No_Title</name>
+    </customLabels>
+    <customLabels>
+        <label>이번 달 항목 없음</label>
+        <name>Time_Drive_Nothing_Month</name>
+    </customLabels>
+    <customLabels>
+        <label>오늘 항목 없음</label>
+        <name>Time_Drive_Nothing_Today</name>
+    </customLabels>
+    <customLabels>
+        <label>이번 주 항목 없음</label>
+        <name>Time_Drive_Nothing_Week</name>
+    </customLabels>
+    <customLabels>
+        <label>타임라인 개요: 날짜 선택</label>
+        <name>Time_Drive_Overview_Pick_Day</name>
+    </customLabels>
+    <customLabels>
+        <label>그룹화됨</label>
+        <name>Time_Drive_Pill_Grouped</name>
+    </customLabels>
+    <customLabels>
+        <label>필터 제거: {0}</label>
+        <name>Time_Drive_Pill_Remove</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}을(를) 읽을 수 없습니다.</label>
+        <name>Time_Drive_Prob_Message</name>
+    </customLabels>
+    <customLabels>
+        <label>이후</label>
+        <name>Time_Drive_Range_Ahead</name>
+    </customLabels>
+    <customLabels>
+        <label>이전</label>
+        <name>Time_Drive_Range_Back</name>
+    </customLabels>
+    <customLabels>
+        <label>기간</label>
+        <name>Time_Drive_Range_Heading</name>
+    </customLabels>
+    <customLabels>
+        <label>1개월</label>
+        <name>Time_Drive_Range_Month</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}개월</label>
+        <name>Time_Drive_Range_Months</name>
+    </customLabels>
+    <customLabels>
+        <label>없음</label>
+        <name>Time_Drive_Range_None</name>
+    </customLabels>
+    <customLabels>
+        <label>1년</label>
+        <name>Time_Drive_Range_Year</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}년</label>
+        <name>Time_Drive_Range_Years</name>
+    </customLabels>
+    <customLabels>
+        <label>참여 항목</label>
+        <name>Time_Drive_Region_Items</name>
+    </customLabels>
+    <customLabels>
+        <label>항목 메뉴</label>
+        <name>Time_Drive_Row_Actions</name>
+    </customLabels>
+    <customLabels>
+        <label>가능한 작업 확인 중…</label>
+        <name>Time_Drive_Row_Checking</name>
+    </customLabels>
+    <customLabels>
+        <label>이 항목을 편집하거나 삭제할 수 없습니다.</label>
+        <name>Time_Drive_Row_No_Actions</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: Apex 소스에는 공급자 클래스가 필요합니다.</label>
+        <name>Time_Drive_Server_Apex_Needs_Class</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: {1}이(가) TimeDriveApexSource를 확장하지 않습니다.</label>
+        <name>Time_Drive_Server_Bad_Provider</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} “{1}”은(는) 0.25, 0.5, 1, 2, 3 ... 10년 중 하나가 아니므로 사용되지 않습니다.</label>
+        <name>Time_Drive_Server_Bad_Years</name>
+    </customLabels>
+    <customLabels>
+        <label>이 조직에서는 Data 360을 사용할 수 없으므로 해당 소스를 건너뜁니다.</label>
+        <name>Time_Drive_Server_Data360_Missing</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} 참여가 이 조직의 데이터 모델에 없습니다({1}).</label>
+        <name>Time_Drive_Server_Dmo_Missing</name>
+    </customLabels>
+    <customLabels>
+        <label>ID 링크</label>
+        <name>Time_Drive_Server_Identity_Links</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: {1}개 항목(최대 레코드 수)만 표시되므로 일부가 누락될 수 있습니다.</label>
+        <name>Time_Drive_Server_Max_Records</name>
+    </customLabels>
+    <customLabels>
+        <label>아니요</label>
+        <name>Time_Drive_Server_No</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: {1}에 {2} 필드가 없습니다.</label>
+        <name>Time_Drive_Server_No_Field</name>
+    </customLabels>
+    <customLabels>
+        <label>ID 링크 개체가 없습니다({0}). 연락처 본인의 개인 참여만 표시합니다.</label>
+        <name>Time_Drive_Server_No_Identity_Link</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: 레코드를 페이지에 연결하려면 상위 필드나 연결 개체를 설정하십시오.</label>
+        <name>Time_Drive_Server_No_Link</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: {1}(이)라는 개체가 없습니다.</label>
+        <name>Time_Drive_Server_No_Object</name>
+    </customLabels>
+    <customLabels>
+        <label>받는 사람: {0}</label>
+        <name>Time_Drive_Server_Sent_To</name>
+    </customLabels>
+    <customLabels>
+        <label>받는 사람: {0} 외 1명</label>
+        <name>Time_Drive_Server_Sent_To_One_Other</name>
+    </customLabels>
+    <customLabels>
+        <label>받는 사람: {0} 외 {1}명</label>
+        <name>Time_Drive_Server_Sent_To_Others</name>
+    </customLabels>
+    <customLabels>
+        <label>{0}: {1}개 항목의 날짜를 Time Drive에서 읽을 수 없어 표시되지 않습니다.</label>
+        <name>Time_Drive_Server_Unreadable_Dates</name>
+    </customLabels>
+    <customLabels>
+        <label>예</label>
+        <name>Time_Drive_Server_Yes</name>
+    </customLabels>
+    <customLabels>
+        <label>타임라인 로드 중…</label>
+        <name>Time_Drive_Status_Loading</name>
+    </customLabels>
+    <customLabels>
+        <label>이 날짜 로드 중</label>
+        <name>Time_Drive_Status_Loading_Day</name>
+    </customLabels>
+    <customLabels>
+        <label>개수 업데이트 중</label>
+        <name>Time_Drive_Status_Updating_Counts</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} 주</label>
+        <name>Time_Drive_The_Week_Of</name>
+    </customLabels>
+    <customLabels>
+        <label>기타</label>
+        <name>Time_Drive_Type_Other</name>
+    </customLabels>
+    <customLabels>
+        <label>모든 유형</label>
+        <name>Time_Drive_Types_All</name>
+    </customLabels>
+    <customLabels>
+        <label>{1}개 유형 중 {0}개</label>
+        <name>Time_Drive_Types_Some</name>
+    </customLabels>
+    <customLabels>
+        <label>업데이트 중…</label>
+        <name>Time_Drive_Updating</name>
+    </customLabels>
+    <customLabels>
+        <label>모든 항목</label>
+        <name>Time_Drive_View_All</name>
+    </customLabels>
+    <customLabels>
+        <label>커머스</label>
+        <name>Time_Drive_View_Commerce</name>
+    </customLabels>
+    <customLabels>
+        <label>디지털</label>
+        <name>Time_Drive_View_Digital</name>
+    </customLabels>
+    <customLabels>
+        <label>마케팅</label>
+        <name>Time_Drive_View_Marketing</name>
+    </customLabels>
+    <customLabels>
+        <label>기한 지남</label>
+        <name>Time_Drive_View_Overdue</name>
+    </customLabels>
+    <customLabels>
+        <label>영업</label>
+        <name>Time_Drive_View_Sales</name>
+    </customLabels>
+    <customLabels>
+        <label>서비스</label>
+        <name>Time_Drive_View_Service</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} 주</label>
+        <name>Time_Drive_Week_Of</name>
+    </customLabels>
+    <customLabels>
+        <label>주</label>
+        <name>Time_Drive_Week_Of_Word</name>
+    </customLabels>
+</Translations>

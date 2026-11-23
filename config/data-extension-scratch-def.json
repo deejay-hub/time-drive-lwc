@@ -1,0 +1,16 @@
+{
+  "orgName": "Time Drive Data Extension build",
+  "edition": "Developer",
+  "features": ["EnableSetPasswordInApi", "CustomerDataPlatform", "CustomerDataPlatformLite"],
+  "settings": {
+    "customerDataPlatformSettings": {
+      "enableCustomerDataPlatform": true
+    },
+    "languageSettings": {
+      "enableTranslationWorkbench": true
+    },
+    "lightningExperienceSettings": {
+      "enableS1DesktopEnabled": true
+    }
+  }
+}

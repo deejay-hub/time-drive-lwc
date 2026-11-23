@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PlatformCachePartition xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Time Drive: the admin's sources (10 minutes; Setup clears them on a save), and Data 360 identity links (each user's own, 15 minutes), so each timeline doesn't query them again. Allocate org cache to it (1 MB is plenty); with none, the timeline queries them each time.</description>
+    <isDefaultPartition>false</isDefaultPartition>
+    <masterLabel>TimeDrive</masterLabel>
+    <!-- Every partition declares both types; Time Drive uses only the org cache. -->
+    <platformCachePartitionTypes>
+        <allocatedCapacity>0</allocatedCapacity>
+        <allocatedPartnerCapacity>0</allocatedPartnerCapacity>
+        <allocatedPurchasedCapacity>0</allocatedPurchasedCapacity>
+        <allocatedTrialCapacity>0</allocatedTrialCapacity>
+        <cacheType>Session</cacheType>
+    </platformCachePartitionTypes>
+    <platformCachePartitionTypes>
+        <allocatedCapacity>0</allocatedCapacity>
+        <allocatedPartnerCapacity>0</allocatedPartnerCapacity>
+        <allocatedPurchasedCapacity>0</allocatedPurchasedCapacity>
+        <allocatedTrialCapacity>0</allocatedTrialCapacity>
+        <cacheType>Organization</cacheType>
+    </platformCachePartitionTypes>
+</PlatformCachePartition>
