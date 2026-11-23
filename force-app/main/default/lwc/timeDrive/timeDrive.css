@@ -2388,3 +2388,17 @@
   font-family: ui-monospace, Menlo, Consolas, monospace;
   font-size: 0.6875rem;
 }
+
+.diag-block {
+  margin-top: calc(0.375 * var(--time-drive-space));
+  padding-top: calc(0.375 * var(--time-drive-space));
+  border-top: 1px solid var(--time-drive-rule);
+}
+
+.diag-block-head {
+  font-weight: 700;
+}
+
+.diag-error {
+  color: var(--time-drive-ink);
+}

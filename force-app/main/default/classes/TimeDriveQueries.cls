@@ -27,6 +27,10 @@ public with sharing class TimeDriveQueries {
     // How many times the same line happened in the request.
     @AuraEnabled
     public Integer times = 1;
+    // FAILED lines: the exception's type and message (the trace keeps it for
+    // admins and Login As only).
+    @AuraEnabled
+    public String error;
 
     Ran(String source, String kind, String soql) {
       this.source = source;
@@ -82,6 +86,24 @@ public with sharing class TimeDriveQueries {
     line.rows = rows;
     ran.add(line);
     byKey.put(key, line);
+  }
+
+  /**
+   * Keeps a failure, in tests or while tracing: the kind (for everyone) and
+   * the exception itself (type and message, for admins).
+   * @param source the source that failed, or (request) for the whole request
+   * @param kind access, busy or unknown
+   * @param e what was caught
+   */
+  public static void recordFailure(String source, String kind, Exception e) {
+    if (!tracing && !Test.isRunningTest()) {
+      return;
+    }
+    record(source, FAILED, kind);
+    Ran line = byKey.get(source + '|' + FAILED + '|' + kind);
+    if (line != null && e != null) {
+      line.error = (e.getTypeName() + ': ' + e.getMessage()).left(1000);
+    }
   }
 
   /** Starts afresh (tests clear it between steps). */

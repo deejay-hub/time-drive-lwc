@@ -11,6 +11,9 @@ import { LABELS, format, labelNamed } from "c/timeDriveLabels";
 import { localDetails, ownWords } from "c/timeDriveFormat";
 import getTimeline from "@salesforce/apex/TimeDriveController.getTimeline";
 import getTimelineTrace from "@salesforce/apex/TimeDriveController.getTimelineTrace";
+import getPageDaysTrace from "@salesforce/apex/TimeDriveController.getPageDaysTrace";
+import USER_TIME_ZONE from "@salesforce/i18n/timeZone";
+import USER_LOCALE from "@salesforce/i18n/locale";
 import getDays from "@salesforce/apex/TimeDriveController.getPageDays";
 import getRights from "@salesforce/apex/TimeDriveController.getRights";
 import getViews from "@salesforce/apex/TimeDriveController.getViews";
@@ -202,6 +205,15 @@ function keepRangeCopy(key) {
 }
 
 // An item's details in the user's own words, a value naming a record linked to it.
+// A traced request that failed, as an error the card handles like any other
+// (its code says the kind; the trace already said the rest).
+function tracedFailure(kind) {
+  const error = new Error(`timedrive:${kind}`);
+  error.body = { message: `timedrive:${kind}` };
+  error.traced = true;
+  return error;
+}
+
 function linkedDetails(details) {
   return localDetails(details)?.map((d) => {
     if (!d.recordId || !d.value) return d;
@@ -751,9 +763,8 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     this._timelineKey = key;
     const seq = ++this._timelineSeq;
     const centred = this.horizontal;
-    // Traced once when the diagnostics drawer asks (Trace this load).
-    const traced = this._traceNext;
-    this._traceNext = false;
+    // Traced while the diagnostics drawer is open.
+    const traced = this.diagOpen;
     const started = Date.now();
     return (traced ? getTimelineTrace : getTimeline)({
       contactId: this._recordId,
@@ -768,12 +779,16 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       count: this._keepStale ? 0 : centred ? this.openingColumns : DAY_PAGE
     })
       .then((load) => {
-        this.noteRequest(traced ? "timeline (traced)" : "timeline", started, null);
-        if (traced) this.diagTrace = load?.trace ?? null;
+        if (traced) this.noteTrace("timeline", started, load?.trace);
+        // A traced load never throws: it says it failed, and the card shows
+        // its error page as for any failed load.
+        const failed = load?.trace?.failedKind;
+        if (failed) throw tracedFailure(failed);
+        this.noteRequest("timeline", started, null);
         if (seq === this._timelineSeq) this.receiveTimeline(load);
       })
       .catch((error) => {
-        this.noteRequest(traced ? "timeline (traced)" : "timeline", started, error);
+        this.noteRequest("timeline", started, error);
         if (seq !== this._timelineSeq) return;
         this.summaryPending = false;
         this.refreshHeight = null;
@@ -1022,7 +1037,8 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     const busyKeys = over == null ? null : keys.filter((key) => (counts.get(key) ?? 0) > over);
     const version = this._queryVersion;
     const started = Date.now();
-    getDays({
+    const traced = this.diagOpen;
+    (traced ? getPageDaysTrace : getDays)({
       contactId: this.recordId,
       categories: this.queryCategories,
       hiddenTypes: this.queryHidden,
@@ -1033,7 +1049,14 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       runs: this.runsOf(days, keys, busyKeys),
       ...this.summaryHints(wanted, keys, busyKeys)
     })
-      .then((events) => {
+      .then((answer) => {
+        let events = answer;
+        if (traced) {
+          this.noteTrace(`days (${keys.length})`, started, answer?.trace);
+          const failed = answer?.trace?.failedKind;
+          if (failed) throw tracedFailure(failed);
+          events = answer?.events ?? [];
+        }
         this.noteRequest(`days (${keys.length})`, started, null);
         if (version !== this._queryVersion) return;
         this.ingestDays(keys, events);
@@ -2174,9 +2197,10 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   // and why, failed). The SOQL and limits come only for admins with Time
   // Drive Setup or a Login As session (the server decides). Never record values.
   diagOpen = false;
-  diagTrace = null;
+  // The traced requests, newest first: { key, label, trace }.
+  diagTraces = [];
   diagRequests = [];
-  _traceNext = false;
+  diagShowText = false;
 
   toggleDiagnostics() {
     this.diagOpen = !this.diagOpen;
@@ -2194,24 +2218,49 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       this.closeDiagnostics();
     }
   }
-  // Reloads once with tracing (in place, as Refresh does).
+  // Reloads in place, as Refresh does: with the drawer open, the load and the
+  // days it reads are traced.
   handleDiagTrace() {
-    this._traceNext = true;
     this.handleRefresh();
   }
-  // The last requests, newest first: what, how long, and how it ended.
+  // The last requests, newest first: what, how long, how it ended, and the
+  // error's own words (Salesforce's, for limits and missing access, which
+  // Time Drive's code can't catch).
   noteRequest(kind, started, error) {
+    const described = error ? describeError(error) : null;
     const entry = {
       key: `${started}-${kind}-${Math.random()}`,
       kind,
       ms: Date.now() - started,
       at: new Date(started).toLocaleTimeString(),
-      result: error ? describeError(error).kind : "ok"
+      result: described ? described.kind : "ok",
+      detail: described && !error.traced ? described.detail : ""
     };
     this.diagRequests = [entry, ...this.diagRequests].slice(0, 12);
   }
+  noteTrace(label, started, trace) {
+    if (!trace) return;
+    const entry = {
+      key: `${started}-${label}-${Math.random()}`,
+      label,
+      at: new Date(started).toLocaleTimeString(),
+      trace
+    };
+    this.diagTraces = [entry, ...this.diagTraces].slice(0, 8);
+  }
+  get overdueState() {
+    const answer = this._overdueWire;
+    if (!answer) return "not asked";
+    if (answer.error) {
+      const described = describeError(answer.error);
+      return `failed (${described.kind}: ${described.detail})`;
+    }
+    return answer.data === true ? "yes" : answer.data === false ? "no" : "asking";
+  }
   get diagView() {
     const hidden = [...(this.hiddenTypes ?? [])];
+    const browserZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const sourcesFrom = this.diagTraces.find((t) => t.trace.sourcesFrom)?.trace.sourcesFrom;
     return [
       ["Record", this.recordId],
       ["Lens", `${this.viewLabel} (${this.view})`],
@@ -2220,46 +2269,61 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       ["Layout", `${this.horizontal ? "horizontal" : "vertical"}, ${this.cardWidth}px wide`],
       ["Items", `${this.summary?.total ?? 0} on ${(this.summary?.days ?? []).length} days`],
       ["Problems", (this.summary?.problems ?? []).map((p) => `${p.source}: ${p.kind}`).join("; ") || "none"],
-      ["Warnings", (this.summary?.warnings ?? []).join("; ") || "none"]
+      ["Warnings", (this.summary?.warnings ?? []).join("; ") || "none"],
+      [
+        "Time zone",
+        browserZone && browserZone !== USER_TIME_ZONE
+          ? `${USER_TIME_ZONE} in Salesforce, ${browserZone} on this computer (days follow Salesforce's)`
+          : USER_TIME_ZONE
+      ],
+      ["Locale", USER_LOCALE],
+      ["Overdue check", this.overdueState],
+      ["Sources from", sourcesFrom ?? "trace a load to see"]
     ].map(([label, value]) => ({ label, value: String(value ?? "") }));
   }
-  get diagSources() {
-    const lines = this.diagTrace?.lines ?? [];
-    return lines.map((l, i) => ({
-      key: `line-${i}`,
-      source: l.source,
-      kind: l.kind,
-      rows: l.rows == null ? "" : `${l.rows} rows`,
-      times: l.times > 1 ? `×${l.times}` : "",
-      soql: l.soql,
-      isQuery: l.kind !== "left out" && l.kind !== "failed"
-    }));
-  }
   get diagHasTrace() {
-    return Boolean(this.diagTrace);
+    return this.diagTraces.length > 0;
   }
-  get diagServer() {
-    const t = this.diagTrace;
-    if (!t) return "";
-    const parts = [`${t.serverMs} ms on the server`];
-    if (t.full) parts.push(`CPU ${t.cpuMs} of ${t.cpuLimit} ms`, `${t.queries} of ${t.queryLimit} queries`);
-    else parts.push("SOQL and limits: for admins, or Login As");
-    return parts.join(" · ");
+  // Each traced request: its summary line, then what each source did.
+  get diagTraceBlocks() {
+    return this.diagTraces.map((entry) => {
+      const t = entry.trace;
+      const parts = [`${t.serverMs} ms on the server`];
+      if (t.failedKind) parts.push(`failed: ${t.failedKind}`);
+      if (t.full) parts.push(`CPU ${t.cpuMs} of ${t.cpuLimit} ms`, `${t.queries} of ${t.queryLimit} queries`);
+      else parts.push("SOQL, errors and limits: for admins, or Login As");
+      return {
+        key: entry.key,
+        heading: `${entry.at} · ${entry.label}`,
+        summary: parts.join(" · "),
+        lines: (t.lines ?? []).map((l, i) => ({
+          key: `${entry.key}-${i}`,
+          source: l.source,
+          kind: l.kind,
+          rows: l.rows == null ? "" : `${l.rows} rows`,
+          times: l.times > 1 ? `×${l.times}` : "",
+          soql: l.soql,
+          error: l.error
+        }))
+      };
+    });
   }
   // Everything in the drawer, as text for a support ticket.
   get diagText() {
     const out = ["Time Drive diagnostics", new Date().toISOString(), ""];
     this.diagView.forEach((r) => out.push(`${r.label}: ${r.value}`));
     out.push("", "Requests:");
-    this.diagRequests.forEach((r) => out.push(`  ${r.at}  ${r.kind}  ${r.ms} ms  ${r.result}`));
-    if (this.diagTrace) {
-      out.push("", `Trace: ${this.diagServer}`);
-      this.diagSources.forEach((l) =>
-        out.push(
-          `  ${l.source} · ${l.kind}${l.rows ? " · " + l.rows : ""}${l.times ? " " + l.times : ""}${l.soql ? "\n    " + l.soql : ""}`
-        )
-      );
-    }
+    this.diagRequests.forEach((r) =>
+      out.push(`  ${r.at}  ${r.kind}  ${r.ms} ms  ${r.result}${r.detail ? "  " + r.detail : ""}`)
+    );
+    this.diagTraceBlocks.forEach((b) => {
+      out.push("", `Trace ${b.heading}: ${b.summary}`);
+      b.lines.forEach((l) => {
+        out.push(`  ${l.source} · ${l.kind}${l.rows ? " · " + l.rows : ""}${l.times ? " " + l.times : ""}`);
+        if (l.soql) out.push(`    ${l.soql}`);
+        if (l.error) out.push(`    ${l.error}`);
+      });
+    });
     return out.join("\n");
   }
   handleDiagCopy() {
@@ -2284,7 +2348,6 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     // eslint-disable-next-line @lwc/lwc/no-async-operation
     requestAnimationFrame(() => this.template.querySelector(".diag-text")?.select());
   }
-  diagShowText = false;
 
   handleRefresh() {
     if (this.refreshing) {

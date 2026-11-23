@@ -812,6 +812,9 @@ public with sharing class TimeDriveConfig {
     }
   }
 
+  /** Where this request's sources came from (cache or query), for diagnostics. */
+  public static String sourcesFrom;
+
   private static Cache.OrgPartition partition() {
     try {
       return Test.isRunningTest() ? null : Cache.Org.getPartition(TimeDriveCache.PARTITION);
@@ -826,8 +829,12 @@ public with sharing class TimeDriveConfig {
     Cache.OrgPartition cache = partition();
     try {
       if (cache != null && cache.contains(CACHE_KEY)) {
+        sourcesFrom = 'cache';
         return (List<Time_Drive_Record__c>) cache.get(CACHE_KEY);
       }
+      sourcesFrom = cache == null
+        ? 'query (no Time Drive cache partition)'
+        : 'query (not cached yet, or the partition has no capacity)';
     } catch (Exception e) {
       // Not readable: read the records.
     }
@@ -995,6 +1002,7 @@ public with sharing class TimeDriveConfig {
       loadDrives();
       return driveSources;
     }
+    sourcesFrom = 'a test\'s sources';
     Map<String, Time_Drive_Source__mdt> out = new Map<String, Time_Drive_Source__mdt>();
     for (Time_Drive_Source__mdt s : testSources) {
       out.put(s.DeveloperName, s);

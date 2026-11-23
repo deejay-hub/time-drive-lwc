@@ -273,23 +273,34 @@
           <h4 class="diag-sub">Requests</h4>
           <ul class="diag-lines">
             <template for:each={diagRequests} for:item="r">
-              <li key={r.key}>{r.at} · {r.kind} · {r.ms} ms · {r.result}</li>
+              <li key={r.key}>
+                {r.at} · {r.kind} · {r.ms} ms · {r.result}
+                <template lwc:if={r.detail}><code class="diag-soql">{r.detail}</code></template>
+              </li>
             </template>
           </ul>
           <h4 class="diag-sub">Sources</h4>
           <template lwc:if={diagHasTrace}>
-            <p class="diag-note">{diagServer}</p>
-            <ul class="diag-lines">
-              <template for:each={diagSources} for:item="l">
-                <li key={l.key}>
-                  <span class="diag-source">{l.source}</span> · {l.kind} {l.rows} {l.times}
-                  <template lwc:if={l.soql}><code class="diag-soql">{l.soql}</code></template>
-                </li>
-              </template>
-            </ul>
+            <template for:each={diagTraceBlocks} for:item="b">
+              <div key={b.key} class="diag-block">
+                <p class="diag-block-head">{b.heading}</p>
+                <p class="diag-note">{b.summary}</p>
+                <ul class="diag-lines">
+                  <template for:each={b.lines} for:item="l">
+                    <li key={l.key}>
+                      <span class="diag-source">{l.source}</span> · {l.kind} {l.rows} {l.times}
+                      <template lwc:if={l.soql}><code class="diag-soql">{l.soql}</code></template>
+                      <template lwc:if={l.error}><code class="diag-soql diag-error">{l.error}</code></template>
+                    </li>
+                  </template>
+                </ul>
+              </div>
+            </template>
           </template>
           <template lwc:else>
-            <p class="diag-note">Trace this load to see what each source did.</p>
+            <p class="diag-note">
+              Trace this load to see what each source did. While this is open, the days you scroll to are traced too.
+            </p>
           </template>
           <template lwc:if={diagShowText}>
             <textarea class="diag-text" readonly aria-label="Diagnostics text">{diagText}</textarea>

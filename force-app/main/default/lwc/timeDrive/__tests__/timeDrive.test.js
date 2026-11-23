@@ -5,6 +5,7 @@ import { setup as setupAccessibility } from "@sa11y/jest";
 import TimeDrive from "c/timeDrive";
 import getTimeline from "@salesforce/apex/TimeDriveController.getTimeline";
 import getTimelineTrace from "@salesforce/apex/TimeDriveController.getTimelineTrace";
+import getPageDaysTrace from "@salesforce/apex/TimeDriveController.getPageDaysTrace";
 import getViews from "@salesforce/apex/TimeDriveController.getViews";
 import getOverdue from "@salesforce/apex/TimeDriveController.getOverdue";
 import getDays from "@salesforce/apex/TimeDriveController.getPageDays";
@@ -83,6 +84,9 @@ jest.mock(
 );
 jest.mock("@salesforce/apex/TimeDriveController.getTimeline", () => ({ default: jest.fn() }), { virtual: true });
 jest.mock("@salesforce/apex/TimeDriveController.getTimelineTrace", () => ({ default: jest.fn() }), {
+  virtual: true
+});
+jest.mock("@salesforce/apex/TimeDriveController.getPageDaysTrace", () => ({ default: jest.fn() }), {
   virtual: true
 });
 // The lenses and the Overdue check, as wires a test can answer (left unanswered,
@@ -3332,6 +3336,12 @@ describe("diagnostics", () => {
     expect(root.querySelector(".diag")).not.toBeNull();
   });
 
+  beforeEach(() => {
+    getPageDaysTrace.mockImplementation(() =>
+      Promise.resolve({ events: [], trace: { full: false, serverMs: 5, lines: [], sourcesFrom: "cache" } })
+    );
+  });
+
   it("traces a load: every source's outcome, the SOQL only when the server says full", async () => {
     getTimelineTrace.mockImplementation((params) =>
       Promise.resolve({ summary: summarise(params), keys: [], events: [], trace: traced(false) })
@@ -3348,7 +3358,7 @@ describe("diagnostics", () => {
     expect(drawer.textContent).toContain("12 rows");
     expect(drawer.textContent).toContain("can't read Case");
     expect(drawer.querySelector(".diag-soql")?.textContent).toBe("can't read Case");
-    expect(drawer.textContent).toContain("SOQL and limits: for admins, or Login As");
+    expect(drawer.textContent).toContain("SOQL, errors and limits: for admins, or Login As");
 
     getTimelineTrace.mockImplementation((params) =>
       Promise.resolve({ summary: summarise(params), keys: [], events: [], trace: traced(true) })
@@ -3358,5 +3368,59 @@ describe("diagnostics", () => {
     const full = root.querySelector(".diag");
     expect(full.textContent).toContain("SELECT Id FROM Task WHERE WhoId = :parentId");
     expect(full.textContent).toContain("CPU 340 of 10000 ms");
+  });
+
+  it("keeps the trace of a load that failed, and still shows the error page", async () => {
+    getTimelineTrace.mockImplementation(() =>
+      Promise.resolve({
+        keys: [],
+        events: [],
+        trace: {
+          full: true,
+          failedKind: "access",
+          serverMs: 40,
+          cpuMs: 30,
+          cpuLimit: 10000,
+          queries: 2,
+          queryLimit: 100,
+          lines: [
+            {
+              source: "(request)",
+              kind: "failed",
+              soql: "access",
+              times: 1,
+              error: "System.QueryException: sObject type 'TaskRelation' is not supported."
+            }
+          ]
+        }
+      })
+    );
+    const element = await mount();
+    const root = element.shadowRoot;
+    press();
+    await flush();
+    [...root.querySelectorAll(".diag lightning-button")].find((b) => b.label === "Trace this load").click();
+    await flush();
+    // The card shows its error page as for any failed load ...
+    expect(root.querySelector(".empty_error")).not.toBeNull();
+    // ... and the drawer says what really went wrong.
+    const drawer = root.querySelector(".diag");
+    expect(drawer.textContent).toContain("failed: access");
+    expect(drawer.querySelector(".diag-error").textContent).toContain("TaskRelation");
+  });
+
+  it("lists a request's own error text, and both time zones", async () => {
+    const element = await mount();
+    const root = element.shadowRoot;
+    press();
+    await flush();
+    // A limit Apex can't catch reaches the card as Salesforce's own words.
+    getTimelineTrace.mockImplementation(() => Promise.reject({ body: { message: "Apex CPU time limit exceeded" } }));
+    [...root.querySelectorAll(".diag lightning-button")].find((b) => b.label === "Trace this load").click();
+    await flush();
+    const drawer = root.querySelector(".diag");
+    expect(drawer.textContent).toContain("Apex CPU time limit exceeded");
+    expect(drawer.textContent).toContain("Time zone");
+    expect(drawer.textContent).toContain("Overdue check");
   });
 });

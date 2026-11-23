@@ -124,4 +124,97 @@ private class TimeDriveTraceTest {
       Assert.isNotNull(asUser.cpuMs);
     }
   }
+
+  // A page of days whose source fails: not thrown, but traced: the kind for
+  // the card, and (for an admin) the exception's own type and message.
+  @IsTest
+  static void aTracedPageThatFailsSaysWhyInsteadOfThrowing() {
+    System.runAs(TimeDriveTestData.setupAdmin()) {
+      Contact c = new Contact(LastName = 'Traced');
+      insert c;
+      insert new Task(WhoId = c.Id, Subject = 'Order 1', ActivityDate = Date.today(), Status = 'Not Started');
+      TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{
+        new Time_Drive_Source__mdt(
+          DeveloperName = 'Points',
+          Label = 'Points',
+          Active__c = true,
+          Parent_Object__c = 'Contact',
+          Kind__c = 'Apex',
+          Provider_Class__c = 'TimeDriveControllerTest.CountsButRowsFail',
+          Event_Type__c = 'loyalty',
+          Event_Label__c = 'Loyalty points'
+        )
+      };
+      String today = Datetime.now().format('yyyy-MM-dd');
+      TimeDriveController.DaysLoad page = TimeDriveController.getPageDaysTrace(
+        c.Id,
+        null,
+        null,
+        null,
+        null,
+        new List<String>{ today },
+        new List<String>(),
+        null,
+        null,
+        null
+      );
+      Assert.isNotNull(page.trace.failedKind, 'the card still learns it failed');
+      Assert.isTrue(page.events.isEmpty());
+      TimeDriveQueries.Ran failed;
+      for (TimeDriveQueries.Ran line : page.trace.lines) {
+        if (line.kind == TimeDriveQueries.FAILED && line.source == 'Points') {
+          failed = line;
+        }
+      }
+      Assert.isNotNull(failed, JSON.serialize(page.trace.lines));
+      Assert.isTrue(failed.error.contains('RowsBrokeException'), 'its own type, for an admin: ' + failed.error);
+      Assert.isTrue(failed.error.contains('the rows could not be read'), failed.error);
+      Assert.isNotNull(page.trace.sourcesFrom);
+    }
+  }
+
+  // Without a full trace, the error's own words are left out (its kind stays).
+  @IsTest
+  static void aUsersTraceKeepsTheKindNotTheError() {
+    User u = reader();
+    if (u == null) {
+      return;
+    }
+    TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{
+      new Time_Drive_Source__mdt(
+        DeveloperName = 'Points',
+        Label = 'Points',
+        Active__c = true,
+        Parent_Object__c = 'Contact',
+        Kind__c = 'Apex',
+        Provider_Class__c = 'TimeDriveControllerTest.CountsButRowsFail',
+        Event_Type__c = 'loyalty',
+        Event_Label__c = 'Loyalty points'
+      )
+    };
+    Id contactId;
+    System.runAs(TimeDriveTestData.setupAdmin()) {
+      Contact c = new Contact(LastName = 'Traced');
+      insert c;
+      contactId = c.Id;
+    }
+    System.runAs(u) {
+      TimeDriveController.DaysLoad page = TimeDriveController.getPageDaysTrace(
+        contactId,
+        null,
+        null,
+        null,
+        null,
+        new List<String>{ Datetime.now().format('yyyy-MM-dd') },
+        new List<String>(),
+        null,
+        null,
+        null
+      );
+      Assert.isFalse(page.trace.full);
+      for (TimeDriveQueries.Ran line : page.trace.lines) {
+        Assert.isNull(line.error, 'no error text without a full trace');
+      }
+    }
+  }
 }

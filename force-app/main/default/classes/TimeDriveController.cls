@@ -210,6 +210,12 @@ public with sharing class TimeDriveController {
     /** The request's time on the server, in ms. */
     @AuraEnabled
     public Long serverMs;
+    /** The kind of failure, when the request failed as a whole (else null). */
+    @AuraEnabled
+    public String failedKind;
+    /** Where the request's sources came from: cache, or query (and why). */
+    @AuraEnabled
+    public String sourcesFrom;
     /** Full only: CPU time and SOQL queries used, and their limits. */
     @AuraEnabled
     public Integer cpuMs;
@@ -295,26 +301,118 @@ public with sharing class TimeDriveController {
   ) {
     Long started = System.currentTimeMillis();
     TimeDriveQueries.tracing = true;
-    TimelineLoad out = loadTimeline(
-      contactId,
-      categories,
-      hiddenTypes,
-      historyYears,
-      futureYears,
-      focus,
-      newestFirst,
-      centred,
-      count
-    );
+    TimelineLoad out = new TimelineLoad();
+    String failed;
+    // Never thrown: the trace is wanted most when the load fails, and a thrown
+    // error would lose it. The card still shows its error page (failedKind).
+    try {
+      out = loadTimeline(
+        contactId,
+        categories,
+        hiddenTypes,
+        historyYears,
+        futureYears,
+        focus,
+        newestFirst,
+        centred,
+        count
+      );
+    } catch (Exception e) {
+      failed = failureKind(e);
+    }
+    out.trace = traceOf(started, failed);
+    return out;
+  }
+
+  /** getPageDays' answer, traced: the events and what reading them did. */
+  public class DaysLoad {
+    @AuraEnabled
+    public List<EngagementEvent> events = new List<EngagementEvent>();
+    @AuraEnabled
+    public Trace trace;
+  }
+
+  /**
+   * getPageDays, traced: for the days read while the diagnostics drawer is
+   * open (as someone scrolls), so a failure on one day shows which source and
+   * why. Never thrown, as getTimelineTrace.
+   * @param contactId the record whose timeline is shown
+   * @param categories the lenses shown, or null for every source
+   * @param hiddenTypes the event types filtered out
+   * @param historyYears how far back
+   * @param futureYears how far ahead
+   * @param dayKeys the periods to read
+   * @param busyKeys the periods the summary found busy
+   * @param emptySources the sources the summary found empty there
+   * @param busyCounts the summary's counts for the busy periods
+   * @param runs the periods that follow one another
+   * @return the events and the trace
+   */
+  @AuraEnabled
+  public static DaysLoad getPageDaysTrace(
+    Id contactId,
+    List<String> categories,
+    List<String> hiddenTypes,
+    String historyYears,
+    String futureYears,
+    List<String> dayKeys,
+    List<String> busyKeys,
+    List<String> emptySources,
+    List<BusyCount> busyCounts,
+    List<String> runs
+  ) {
+    Long started = System.currentTimeMillis();
+    TimeDriveQueries.tracing = true;
+    DaysLoad out = new DaysLoad();
+    String failed;
+    try {
+      out.events = getPageDays(
+        contactId,
+        categories,
+        hiddenTypes,
+        historyYears,
+        futureYears,
+        dayKeys,
+        busyKeys,
+        emptySources,
+        busyCounts,
+        runs
+      );
+    } catch (Exception e) {
+      failed = failureKind(e);
+    }
+    out.trace = traceOf(started, failed);
+    return out;
+  }
+
+  // The kind a failure is, as the card's error codes say it (timedrive:access).
+  private static String failureKind(Exception e) {
+    String message = String.valueOf(e.getMessage());
+    if (message.startsWith('timedrive:')) {
+      return message.substringAfter('timedrive:');
+    }
+    TimeDriveQueries.recordFailure('(request)', kindOf(e), e);
+    return kindOf(e);
+  }
+
+  // What this request recorded, as the drawer shows it: the SOQL, the errors'
+  // own words and the limits only when full.
+  private static Trace traceOf(Long started, String failedKind) {
     Trace t = new Trace();
     t.full = fullTrace();
+    t.failedKind = failedKind;
+    t.sourcesFrom = TimeDriveConfig.sourcesFrom;
     t.serverMs = System.currentTimeMillis() - started;
     for (TimeDriveQueries.Ran line : TimeDriveQueries.lines()) {
-      // Only the full trace shows a query's SOQL; reasons and failure kinds
-      // are for everyone (they say why items are missing, not how it's set up).
+      // Reasons and failure kinds are for everyone (they say why items are
+      // missing, not how it's set up); a query's SOQL and an error's own
+      // words only for a full trace.
       Boolean isQuery = line.kind != TimeDriveQueries.LEFT_OUT && line.kind != TimeDriveQueries.FAILED;
-      if (isQuery && !t.full) {
-        line.soql = null;
+      if (!t.full) {
+        if (isQuery) {
+          line.soql = null;
+        }
+        line.error = null;
       }
       t.lines.add(line);
     }
@@ -324,8 +422,7 @@ public with sharing class TimeDriveController {
       t.queries = Limits.getQueries();
       t.queryLimit = Limits.getLimitQueries();
     }
-    out.trace = t;
-    return out;
+    return t;
   }
 
   // Whether a trace shows the SOQL and limits: for admins with Time Drive Setup
@@ -2157,7 +2254,10 @@ public with sharing class TimeDriveController {
   // message or stack trace.
   @TestVisible
   private static AuraHandledException safeFailure(Exception e) {
-    return coded(kindOf(e));
+    String kind = kindOf(e);
+    // A traced request keeps what really went wrong (the card gets the code).
+    TimeDriveQueries.recordFailure('(request)', kind, e);
+    return coded(kind);
   }
 
   // The card's error for a kind of failure ("timedrive:access"): the code alone,
