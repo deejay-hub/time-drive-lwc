@@ -3326,7 +3326,7 @@ describe("diagnostics", () => {
     expect(drawer.textContent).toContain("Lens");
     // The first load is in the list of requests.
     expect([...drawer.querySelectorAll(".diag-lines li")].some((li) => li.textContent.includes("timeline"))).toBe(true);
-    expect(drawer.textContent).toContain("Trace this load to see what each source did.");
+    expect(drawer.textContent).toContain("Trace to see what each source did.");
     drawer.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     await flush();
     expect(root.querySelector(".diag")).toBeNull();
@@ -3350,7 +3350,7 @@ describe("diagnostics", () => {
     const root = element.shadowRoot;
     press();
     await flush();
-    [...root.querySelectorAll(".diag lightning-button")].find((b) => b.label === "Trace this load").click();
+    [...root.querySelectorAll(".diag lightning-button")].find((b) => b.label === "Trace").click();
     await flush();
     expect(getTimelineTrace).toHaveBeenCalled();
     const drawer = root.querySelector(".diag");
@@ -3363,7 +3363,7 @@ describe("diagnostics", () => {
     getTimelineTrace.mockImplementation((params) =>
       Promise.resolve({ summary: summarise(params), keys: [], events: [], trace: traced(true) })
     );
-    [...root.querySelectorAll(".diag lightning-button")].find((b) => b.label === "Trace this load").click();
+    [...root.querySelectorAll(".diag lightning-button")].find((b) => b.label === "Trace").click();
     await flush();
     const full = root.querySelector(".diag");
     expect(full.textContent).toContain("SELECT Id FROM Task WHERE WhoId = :parentId");
@@ -3399,7 +3399,7 @@ describe("diagnostics", () => {
     const root = element.shadowRoot;
     press();
     await flush();
-    [...root.querySelectorAll(".diag lightning-button")].find((b) => b.label === "Trace this load").click();
+    [...root.querySelectorAll(".diag lightning-button")].find((b) => b.label === "Trace").click();
     await flush();
     // The card shows its error page as for any failed load ...
     expect(root.querySelector(".empty_error")).not.toBeNull();
@@ -3416,7 +3416,7 @@ describe("diagnostics", () => {
     await flush();
     // A limit Apex can't catch reaches the card as Salesforce's own words.
     getTimelineTrace.mockImplementation(() => Promise.reject({ body: { message: "Apex CPU time limit exceeded" } }));
-    [...root.querySelectorAll(".diag lightning-button")].find((b) => b.label === "Trace this load").click();
+    [...root.querySelectorAll(".diag lightning-button")].find((b) => b.label === "Trace").click();
     await flush();
     const drawer = root.querySelector(".diag");
     expect(drawer.textContent).toContain("Apex CPU time limit exceeded");

@@ -249,7 +249,7 @@
           <div class="diag-head">
             <h3 class="diag-title">Diagnostics</h3>
             <div class="diag-actions">
-              <lightning-button label="Trace this load" onclick={handleDiagTrace}></lightning-button>
+              <lightning-button label="Trace" onclick={handleDiagTrace}></lightning-button>
               <lightning-button label="Copy" onclick={handleDiagCopy}></lightning-button>
               <lightning-button-icon
                 class="diag-close"
@@ -299,7 +299,7 @@
           </template>
           <template lwc:else>
             <p class="diag-note">
-              Trace this load to see what each source did. While this is open, the days you scroll to are traced too.
+              Trace to see what each source did. While this is open, the days you scroll to are traced too.
             </p>
           </template>
           <template lwc:if={diagShowText}>
