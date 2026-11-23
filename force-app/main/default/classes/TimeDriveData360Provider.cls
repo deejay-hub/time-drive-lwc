@@ -127,7 +127,7 @@ public with sharing class TimeDriveData360Provider implements TimeDriveRowProvid
       Math.min(context.maxRecords(), MAX_DMO_ROWS);
     try {
       List<SObject> found = Database.queryWithBinds(soql, binds, AccessLevel.USER_MODE);
-      TimeDriveQueries.record(s.DeveloperName, 'rows', soql);
+      TimeDriveQueries.record(s.DeveloperName, 'rows', soql, found.size());
       for (SObject row : found) {
         rows.add(new TimeDriveRow(row));
       }

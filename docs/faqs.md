@@ -56,6 +56,12 @@ On the wizard's **Interactions** step: add the fields, in order, and how each is
 - **Missing items for some people** means they can't read something a source needs: its object, its date field, or a field its filter uses. The source is left out of their timeline. That's their access working as set, not a fault; give them access if they should see those items.
 - **A blank field** on an item means the person can't read that field.
 
+### How do I see what the timeline did, for a support request?
+
+Press **Ctrl+Alt+Shift+D** (**Ctrl+Option+Shift+D** on a Mac) on a record page. The **Diagnostics** drawer opens over the timeline: how the view is set (lens, hidden types, date range), the requests it made and how long they took, and, after **Trace this load**, what each source did (its rows, left out and why, or failed). **Copy** puts it all on the clipboard for a support request. Press the keys again, Escape, or the close button to hide it.
+
+Admins with **Time Drive Setup**, and anyone in a **Login As** session, also see each source's SOQL and the request's CPU time and queries against their limits. So an admin who logs in as the person with the problem sees exactly what their timeline did, with their access. Nothing in the drawer holds record values: queries pass them as binds (`:parentId`).
+
 ### What does Check your org do?
 
 It checks how your org works (Shared Activities, contacts to multiple accounts, person accounts, Enhanced Email) and switches on the shipped sources that suit it. Alternatives share a group, and only one in a group is ever active, so running it again never plots the same record twice. See [Check your org](config-guide.md#check-your-org).

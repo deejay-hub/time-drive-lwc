@@ -624,6 +624,7 @@ global with sharing class TimeDriveContext {
    * @param e the exception raised
    */
   public void fail(String what, Exception e) {
+    TimeDriveQueries.record(source?.DeveloperName ?? what, TimeDriveQueries.FAILED, TimeDriveController.kindOf(e));
     for (TimeDriveController.Problem p : problems) {
       if (p.source == what) {
         return;

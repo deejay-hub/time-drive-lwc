@@ -242,6 +242,60 @@
         onopenchange={handleFiltersOpenChange}
         onpanelsize={handleFiltersSize}
       ></c-time-drive-filters>
+      <!-- Diagnostics (Ctrl+Alt+Shift+D): what the timeline did, for support.
+           Over the timeline's foot; nothing here holds record values. -->
+      <template lwc:if={diagOpen}>
+        <section class="diag" role="region" aria-label="Diagnostics" onkeydown={handleDiagKey}>
+          <div class="diag-head">
+            <h3 class="diag-title">Diagnostics</h3>
+            <div class="diag-actions">
+              <lightning-button label="Trace this load" onclick={handleDiagTrace}></lightning-button>
+              <lightning-button label="Copy" onclick={handleDiagCopy}></lightning-button>
+              <lightning-button-icon
+                class="diag-close"
+                icon-name="utility:close"
+                variant="bare"
+                size="small"
+                alternative-text="Close diagnostics"
+                title="Close diagnostics"
+                onclick={closeDiagnostics}
+              ></lightning-button-icon>
+            </div>
+          </div>
+          <dl class="diag-list">
+            <template for:each={diagView} for:item="r">
+              <div key={r.label} class="diag-row">
+                <dt>{r.label}</dt>
+                <dd>{r.value}</dd>
+              </div>
+            </template>
+          </dl>
+          <h4 class="diag-sub">Requests</h4>
+          <ul class="diag-lines">
+            <template for:each={diagRequests} for:item="r">
+              <li key={r.key}>{r.at} · {r.kind} · {r.ms} ms · {r.result}</li>
+            </template>
+          </ul>
+          <h4 class="diag-sub">Sources</h4>
+          <template lwc:if={diagHasTrace}>
+            <p class="diag-note">{diagServer}</p>
+            <ul class="diag-lines">
+              <template for:each={diagSources} for:item="l">
+                <li key={l.key}>
+                  <span class="diag-source">{l.source}</span> · {l.kind} {l.rows} {l.times}
+                  <template lwc:if={l.soql}><code class="diag-soql">{l.soql}</code></template>
+                </li>
+              </template>
+            </ul>
+          </template>
+          <template lwc:else>
+            <p class="diag-note">Trace this load to see what each source did.</p>
+          </template>
+          <template lwc:if={diagShowText}>
+            <textarea class="diag-text" readonly aria-label="Diagnostics text">{diagText}</textarea>
+          </template>
+        </section>
+      </template>
       <template lwc:if={updating}>
         <div class="updating" role="status">
           <span class="updating-bar" aria-hidden="true"></span>

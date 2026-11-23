@@ -440,7 +440,7 @@ private class TimeDriveControllerTest {
       source('Tasks', 'Task', 'ActivityDate', 'WhoId'),
       source('Cases', 'Case', 'CreatedDate', 'ContactId')
     };
-    TimeDriveQueries.ran.clear();
+    TimeDriveQueries.clear();
     TimeDriveController.getTimeline(customer, null, null, null, null, null, null, null, null);
     Boolean sawTask = false;
     Boolean sawCase = false;
@@ -480,7 +480,7 @@ private class TimeDriveControllerTest {
     List<String> run = new List<String>{ keys[4], keys[3], keys[2], keys[1], keys[0] };
     String together = String.join(run, ',');
 
-    TimeDriveQueries.ran.clear();
+    TimeDriveQueries.clear();
     List<TimeDriveController.EngagementEvent> page = TimeDriveController.getPageDays(
       customer,
       null,
@@ -498,7 +498,7 @@ private class TimeDriveControllerTest {
     Assert.areEqual(1, rangesAsRun, 'one range for the run');
 
     // Without the runs: a range for each day, the same rows.
-    TimeDriveQueries.ran.clear();
+    TimeDriveQueries.clear();
     List<TimeDriveController.EngagementEvent> apart = TimeDriveController.getPageDays(
       customer,
       null,
@@ -687,7 +687,7 @@ private class TimeDriveControllerTest {
       new List<String>()
     );
     context.problems = new List<TimeDriveController.Problem>();
-    TimeDriveQueries.ran.clear();
+    TimeDriveQueries.clear();
     new TimeDriveData360Provider().getRows(context, objects);
     String read;
     for (TimeDriveQueries.Ran q : TimeDriveQueries.ran) {
@@ -2787,7 +2787,7 @@ private class TimeDriveControllerTest {
     source.Filter__c = 'Status = \'Completed\'';
     TimeDriveConfig.testSources = new List<Time_Drive_Source__mdt>{ source };
 
-    TimeDriveQueries.ran.clear();
+    TimeDriveQueries.clear();
     Datetime since = Datetime.now().addYears(-1);
     TimeDriveContext context = new TimeDriveContext(c.Id, null, since, source, null, null);
     TimeDriveSoqlProvider provider = new TimeDriveSoqlProvider();
@@ -2810,7 +2810,7 @@ private class TimeDriveControllerTest {
 
     // A filter that can't be rewritten is counted the usual way, with the same answer.
     source.Filter__c = 'Status = \'Completed\' AND Id IN (SELECT TaskId FROM TaskRelation WHERE IsWhat = false)';
-    TimeDriveQueries.ran.clear();
+    TimeDriveQueries.clear();
     counted = null;
     counts = provider.countDays(new TimeDriveContext(c.Id, null, since, source, null, null), TimeDriveContext.UNIT_DAY);
     total = 0;

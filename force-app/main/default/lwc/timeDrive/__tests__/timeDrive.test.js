@@ -4,6 +4,7 @@ import TIME_ZONE from "@salesforce/i18n/timeZone";
 import { setup as setupAccessibility } from "@sa11y/jest";
 import TimeDrive from "c/timeDrive";
 import getTimeline from "@salesforce/apex/TimeDriveController.getTimeline";
+import getTimelineTrace from "@salesforce/apex/TimeDriveController.getTimelineTrace";
 import getViews from "@salesforce/apex/TimeDriveController.getViews";
 import getOverdue from "@salesforce/apex/TimeDriveController.getOverdue";
 import getDays from "@salesforce/apex/TimeDriveController.getPageDays";
@@ -81,6 +82,9 @@ jest.mock(
   }
 );
 jest.mock("@salesforce/apex/TimeDriveController.getTimeline", () => ({ default: jest.fn() }), { virtual: true });
+jest.mock("@salesforce/apex/TimeDriveController.getTimelineTrace", () => ({ default: jest.fn() }), {
+  virtual: true
+});
 // The lenses and the Overdue check, as wires a test can answer (left unanswered,
 // the card uses its own lenses and shows no Overdue button).
 jest.mock(
@@ -3260,5 +3264,99 @@ describe("the page's Lenses property", () => {
     getPreference.mockResolvedValueOnce({ lens: "Sales" });
     const kept = await open({ lenses: "Sales" });
     expect(kept.shadowRoot.querySelector(".view-button").textContent).toContain("Sales");
+  });
+});
+
+describe("diagnostics", () => {
+  afterEach(() => {
+    while (document.body.firstChild) document.body.removeChild(document.body.firstChild);
+  });
+  const mount = async () => {
+    const element = createTimeline();
+    element.recordId = "003000000000001AAA";
+    element.layout = "Vertical";
+    document.body.appendChild(element);
+    emitEvents({ events: EVENTS, warnings: [] });
+    await flush();
+    return element;
+  };
+  const press = () =>
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        ctrlKey: true,
+        altKey: true,
+        shiftKey: true,
+        code: "KeyD",
+        key: "∂",
+        bubbles: true
+      })
+    );
+  const traced = (full) => ({
+    full,
+    serverMs: 120,
+    cpuMs: full ? 340 : null,
+    cpuLimit: full ? 10000 : null,
+    queries: full ? 6 : null,
+    queryLimit: full ? 100 : null,
+    lines: [
+      {
+        source: "Contact_Tasks",
+        kind: "rows",
+        soql: full ? "SELECT Id FROM Task WHERE WhoId = :parentId" : null,
+        rows: 12,
+        times: 1
+      },
+      { source: "Contact_Cases", kind: "left out", soql: "can't read Case", rows: null, times: 1 }
+    ]
+  });
+
+  it("opens on Ctrl+Alt+Shift+D, says how the view is set and what it asked, and closes", async () => {
+    const element = await mount();
+    const root = element.shadowRoot;
+    expect(root.querySelector(".diag")).toBeNull();
+    press();
+    await flush();
+    const drawer = root.querySelector(".diag");
+    expect(drawer).not.toBeNull();
+    expect(drawer.textContent).toContain("003000000000001AAA");
+    expect(drawer.textContent).toContain("Lens");
+    // The first load is in the list of requests.
+    expect([...drawer.querySelectorAll(".diag-lines li")].some((li) => li.textContent.includes("timeline"))).toBe(true);
+    expect(drawer.textContent).toContain("Trace this load to see what each source did.");
+    drawer.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    await flush();
+    expect(root.querySelector(".diag")).toBeNull();
+    // The shortcut again shows it again.
+    press();
+    await flush();
+    expect(root.querySelector(".diag")).not.toBeNull();
+  });
+
+  it("traces a load: every source's outcome, the SOQL only when the server says full", async () => {
+    getTimelineTrace.mockImplementation((params) =>
+      Promise.resolve({ summary: summarise(params), keys: [], events: [], trace: traced(false) })
+    );
+    const element = await mount();
+    const root = element.shadowRoot;
+    press();
+    await flush();
+    [...root.querySelectorAll(".diag lightning-button")].find((b) => b.label === "Trace this load").click();
+    await flush();
+    expect(getTimelineTrace).toHaveBeenCalled();
+    const drawer = root.querySelector(".diag");
+    expect(drawer.textContent).toContain("Contact_Tasks");
+    expect(drawer.textContent).toContain("12 rows");
+    expect(drawer.textContent).toContain("can't read Case");
+    expect(drawer.querySelector(".diag-soql")?.textContent).toBe("can't read Case");
+    expect(drawer.textContent).toContain("SOQL and limits: for admins, or Login As");
+
+    getTimelineTrace.mockImplementation((params) =>
+      Promise.resolve({ summary: summarise(params), keys: [], events: [], trace: traced(true) })
+    );
+    [...root.querySelectorAll(".diag lightning-button")].find((b) => b.label === "Trace this load").click();
+    await flush();
+    const full = root.querySelector(".diag");
+    expect(full.textContent).toContain("SELECT Id FROM Task WHERE WhoId = :parentId");
+    expect(full.textContent).toContain("CPU 340 of 10000 ms");
   });
 });

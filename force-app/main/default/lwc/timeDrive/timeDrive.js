@@ -10,6 +10,7 @@ import { IsConsoleNavigation, openTab } from "lightning/platformWorkspaceApi";
 import { LABELS, format, labelNamed } from "c/timeDriveLabels";
 import { localDetails, ownWords } from "c/timeDriveFormat";
 import getTimeline from "@salesforce/apex/TimeDriveController.getTimeline";
+import getTimelineTrace from "@salesforce/apex/TimeDriveController.getTimelineTrace";
 import getDays from "@salesforce/apex/TimeDriveController.getPageDays";
 import getRights from "@salesforce/apex/TimeDriveController.getRights";
 import getViews from "@salesforce/apex/TimeDriveController.getViews";
@@ -543,6 +544,16 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       if (this.headerMenu) this.headerMenu = null;
     };
     document.addEventListener("scroll", this._onDocumentScroll, true);
+    // Diagnostics: Ctrl+Alt+Shift+D (Ctrl+Option+Shift+D on a Mac) shows or
+    // hides the drawer, anywhere on the page (by the key, so Option's
+    // characters on a Mac don't matter).
+    this._onDiagKey = (event) => {
+      if (event.ctrlKey && event.altKey && event.shiftKey && event.code === "KeyD") {
+        event.preventDefault();
+        this.toggleDiagnostics();
+      }
+    };
+    window.addEventListener("keydown", this._onDiagKey);
   }
 
   // Width decides the layout when Layout is Auto. The observer starts once
@@ -644,6 +655,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     if (this._refreshId !== undefined) unregisterRefreshHandler(this._refreshId);
     document.removeEventListener("pointerdown", this._onDocumentPointer);
     document.removeEventListener("scroll", this._onDocumentScroll, true);
+    window.removeEventListener("keydown", this._onDiagKey);
     window.removeEventListener("resize", this._onViewport);
     window.visualViewport?.removeEventListener("resize", this._onViewport);
     this._wheelTrack?.removeEventListener("wheel", this._onTrackWheel);
@@ -739,7 +751,11 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     this._timelineKey = key;
     const seq = ++this._timelineSeq;
     const centred = this.horizontal;
-    return getTimeline({
+    // Traced once when the diagnostics drawer asks (Trace this load).
+    const traced = this._traceNext;
+    this._traceNext = false;
+    const started = Date.now();
+    return (traced ? getTimelineTrace : getTimeline)({
       contactId: this._recordId,
       categories: this.queryCategories,
       hiddenTypes: this.queryHidden,
@@ -752,9 +768,12 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       count: this._keepStale ? 0 : centred ? this.openingColumns : DAY_PAGE
     })
       .then((load) => {
+        this.noteRequest(traced ? "timeline (traced)" : "timeline", started, null);
+        if (traced) this.diagTrace = load?.trace ?? null;
         if (seq === this._timelineSeq) this.receiveTimeline(load);
       })
       .catch((error) => {
+        this.noteRequest(traced ? "timeline (traced)" : "timeline", started, error);
         if (seq !== this._timelineSeq) return;
         this.summaryPending = false;
         this.refreshHeight = null;
@@ -1002,6 +1021,7 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
     const counts = new Map(wanted.map((d) => [d.key, d.count]));
     const busyKeys = over == null ? null : keys.filter((key) => (counts.get(key) ?? 0) > over);
     const version = this._queryVersion;
+    const started = Date.now();
     getDays({
       contactId: this.recordId,
       categories: this.queryCategories,
@@ -1014,10 +1034,12 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
       ...this.summaryHints(wanted, keys, busyKeys)
     })
       .then((events) => {
+        this.noteRequest(`days (${keys.length})`, started, null);
         if (version !== this._queryVersion) return;
         this.ingestDays(keys, events);
       })
       .catch((error) => {
+        this.noteRequest(`days (${keys.length})`, started, error);
         if (version !== this._queryVersion) return;
         this.error = this.reportError(error);
       })
@@ -2145,6 +2167,125 @@ export default class TimeDrive extends NavigationMixin(LightningElement) {
   // The Refresh button: the loading skeleton shows while it works, at the
   // height the timeline already has (so the card doesn't jump), then the
   // fresh days. After an error, the timeline loads again from the start.
+  // ---- diagnostics: a drawer for support ---------------------------------------
+  // What the timeline did, for a support ticket: shown by Ctrl+Alt+Shift+D.
+  // Everyone sees how the view is set (lens, filters, range), the requests it
+  // made and, once a load is traced, each source's outcome (rows, left out
+  // and why, failed). The SOQL and limits come only for admins with Time
+  // Drive Setup or a Login As session (the server decides). Never record values.
+  diagOpen = false;
+  diagTrace = null;
+  diagRequests = [];
+  _traceNext = false;
+
+  toggleDiagnostics() {
+    this.diagOpen = !this.diagOpen;
+    if (this.diagOpen) {
+      // eslint-disable-next-line @lwc/lwc/no-async-operation
+      requestAnimationFrame(() => this.template.querySelector(".diag-close")?.focus());
+    }
+  }
+  closeDiagnostics() {
+    this.diagOpen = false;
+  }
+  handleDiagKey(event) {
+    if (event.key === "Escape") {
+      event.stopPropagation();
+      this.closeDiagnostics();
+    }
+  }
+  // Reloads once with tracing (in place, as Refresh does).
+  handleDiagTrace() {
+    this._traceNext = true;
+    this.handleRefresh();
+  }
+  // The last requests, newest first: what, how long, and how it ended.
+  noteRequest(kind, started, error) {
+    const entry = {
+      key: `${started}-${kind}-${Math.random()}`,
+      kind,
+      ms: Date.now() - started,
+      at: new Date(started).toLocaleTimeString(),
+      result: error ? describeError(error).kind : "ok"
+    };
+    this.diagRequests = [entry, ...this.diagRequests].slice(0, 12);
+  }
+  get diagView() {
+    const hidden = [...(this.hiddenTypes ?? [])];
+    return [
+      ["Record", this.recordId],
+      ["Lens", `${this.viewLabel} (${this.view})`],
+      ["Hidden types", hidden.length ? hidden.join(", ") : "none"],
+      ["Range", `history ${this.queryHistory} years, ahead ${this.queryFuture}`],
+      ["Layout", `${this.horizontal ? "horizontal" : "vertical"}, ${this.cardWidth}px wide`],
+      ["Items", `${this.summary?.total ?? 0} on ${(this.summary?.days ?? []).length} days`],
+      ["Problems", (this.summary?.problems ?? []).map((p) => `${p.source}: ${p.kind}`).join("; ") || "none"],
+      ["Warnings", (this.summary?.warnings ?? []).join("; ") || "none"]
+    ].map(([label, value]) => ({ label, value: String(value ?? "") }));
+  }
+  get diagSources() {
+    const lines = this.diagTrace?.lines ?? [];
+    return lines.map((l, i) => ({
+      key: `line-${i}`,
+      source: l.source,
+      kind: l.kind,
+      rows: l.rows == null ? "" : `${l.rows} rows`,
+      times: l.times > 1 ? `×${l.times}` : "",
+      soql: l.soql,
+      isQuery: l.kind !== "left out" && l.kind !== "failed"
+    }));
+  }
+  get diagHasTrace() {
+    return Boolean(this.diagTrace);
+  }
+  get diagServer() {
+    const t = this.diagTrace;
+    if (!t) return "";
+    const parts = [`${t.serverMs} ms on the server`];
+    if (t.full) parts.push(`CPU ${t.cpuMs} of ${t.cpuLimit} ms`, `${t.queries} of ${t.queryLimit} queries`);
+    else parts.push("SOQL and limits: for admins, or Login As");
+    return parts.join(" · ");
+  }
+  // Everything in the drawer, as text for a support ticket.
+  get diagText() {
+    const out = ["Time Drive diagnostics", new Date().toISOString(), ""];
+    this.diagView.forEach((r) => out.push(`${r.label}: ${r.value}`));
+    out.push("", "Requests:");
+    this.diagRequests.forEach((r) => out.push(`  ${r.at}  ${r.kind}  ${r.ms} ms  ${r.result}`));
+    if (this.diagTrace) {
+      out.push("", `Trace: ${this.diagServer}`);
+      this.diagSources.forEach((l) =>
+        out.push(
+          `  ${l.source} · ${l.kind}${l.rows ? " · " + l.rows : ""}${l.times ? " " + l.times : ""}${l.soql ? "\n    " + l.soql : ""}`
+        )
+      );
+    }
+    return out.join("\n");
+  }
+  handleDiagCopy() {
+    const text = this.diagText;
+    const done = () =>
+      this.dispatchEvent(
+        new ShowToastEvent({
+          title: "Diagnostics copied",
+          message: "Paste them into your support request.",
+          variant: "success"
+        })
+      );
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).then(done, () => this.selectDiagText());
+    } else {
+      this.selectDiagText();
+    }
+  }
+  // Where the clipboard can't be written: the text, selected, to copy by hand.
+  selectDiagText() {
+    this.diagShowText = true;
+    // eslint-disable-next-line @lwc/lwc/no-async-operation
+    requestAnimationFrame(() => this.template.querySelector(".diag-text")?.select());
+  }
+  diagShowText = false;
+
   handleRefresh() {
     if (this.refreshing) {
       this._refreshAgain = true;

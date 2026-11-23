@@ -34,6 +34,7 @@
 - fieldsToQuery(objectType, always), for Apex sources: leaves out fields the user can't read
 - Time Drive Setup's unused Dashboard is gone
 - An opened item shows every detail field, a blank one with its label and no value, rather than leaving it out
+- Diagnostics drawer (Ctrl+Alt+Shift+D): the view's settings, requests and, for a traced load, each source's outcome; SOQL and limits for Time Drive Setup admins and Login As sessions
 - The Time Drive Setup permission set includes the timeline itself, so admins need only it; Time Drive reads its own setup, so people need no access to it
 - The Filters panel is a sheet inside the card, under its header and as tall as the timeline: at the card's end with the event types in up to three columns on a wide card, over the whole timeline in one column on a narrow one
 - Added the Overdue lens, defined by its sources' filters, with an Overdue button in the header while the record has something overdue

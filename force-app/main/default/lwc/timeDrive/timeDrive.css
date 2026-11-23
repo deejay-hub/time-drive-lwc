@@ -2297,3 +2297,94 @@
   min-width: 7rem;
   height: 2.25rem;
 }
+
+/* ---- diagnostics (Ctrl+Alt+Shift+D) ---------------------------------------- */
+
+/* Over the timeline's foot, above the Filters sheet (10), under its menus. */
+.diag {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 12;
+  max-height: min(70%, 28rem);
+  overflow: auto;
+  padding: calc(0.75 * var(--time-drive-space)) var(--side);
+  border-top: 1px solid var(--time-drive-rule);
+  background: var(--surface);
+  box-shadow: 0 -8px 24px -16px color-mix(in srgb, var(--shade) 40%, transparent);
+  font-size: 0.75rem;
+  line-height: 1.125rem;
+}
+
+.diag-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(0.5 * var(--time-drive-space));
+}
+
+.diag-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.diag-actions {
+  display: flex;
+  align-items: center;
+  gap: calc(0.25 * var(--time-drive-space));
+}
+
+.diag-sub {
+  margin-top: calc(0.5 * var(--time-drive-space));
+  font-weight: 700;
+}
+
+.diag-list {
+  display: grid;
+  gap: 0.125rem;
+  margin-top: calc(0.5 * var(--time-drive-space));
+}
+
+.diag-row {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  gap: calc(0.5 * var(--time-drive-space));
+}
+
+.diag-row dt {
+  color: var(--time-drive-muted);
+}
+
+.diag-row dd {
+  overflow-wrap: anywhere;
+}
+
+.diag-lines li {
+  padding-block: 0.125rem;
+}
+
+.diag-source {
+  font-weight: 700;
+}
+
+.diag-note {
+  color: var(--time-drive-muted);
+}
+
+.diag-soql {
+  display: block;
+  margin-top: 0.125rem;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.6875rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--time-drive-muted);
+}
+
+.diag-text {
+  width: 100%;
+  min-height: 8rem;
+  margin-top: calc(0.5 * var(--time-drive-space));
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.6875rem;
+}

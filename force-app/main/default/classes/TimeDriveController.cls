@@ -187,6 +187,38 @@ public with sharing class TimeDriveController {
     public List<String> keys = new List<String>();
     @AuraEnabled
     public List<EngagementEvent> events = new List<EngagementEvent>();
+    // What the load did, source by source: only when traced (getTimelineTrace).
+    @AuraEnabled
+    public Trace trace;
+  }
+
+  /**
+   * What a traced load did, for the timeline's diagnostics drawer: each
+   * source's queries and the rows they returned, the sources left out for the
+   * user and why, and the ones that failed. The SOQL and the request's limits
+   * only when full (an admin with Time Drive Setup, or a Login As session):
+   * everyone else sees what happened, not how it was set up. Never record
+   * values: queries pass them as binds.
+   */
+  public class Trace {
+    /** Whether the SOQL and limits are included. */
+    @AuraEnabled
+    public Boolean full = false;
+    /** What each source did. */
+    @AuraEnabled
+    public List<TimeDriveQueries.Ran> lines = new List<TimeDriveQueries.Ran>();
+    /** The request's time on the server, in ms. */
+    @AuraEnabled
+    public Long serverMs;
+    /** Full only: CPU time and SOQL queries used, and their limits. */
+    @AuraEnabled
+    public Integer cpuMs;
+    @AuraEnabled
+    public Integer cpuLimit;
+    @AuraEnabled
+    public Integer queries;
+    @AuraEnabled
+    public Integer queryLimit;
   }
 
   /**
@@ -232,6 +264,101 @@ public with sharing class TimeDriveController {
       centred,
       count
     );
+  }
+
+  /**
+   * getTimeline, traced: the same load, with what it did source by source
+   * (TimelineLoad.trace). For the timeline's diagnostics drawer, when someone
+   * asks to trace a load.
+   * @param contactId the record whose timeline is shown
+   * @param categories the lenses shown, or null for every source
+   * @param hiddenTypes the event types filtered out
+   * @param historyYears how far back (App Builder or the user's range)
+   * @param futureYears how far ahead
+   * @param focus where the card opens (Today, Earliest item, Latest item)
+   * @param newestFirst whether the newest periods come first
+   * @param centred whether the opening periods sit either side of the focus
+   * @param count how many periods to read for the opening view
+   * @return the summary, the events of the opening periods, and the trace
+   */
+  @AuraEnabled
+  public static TimelineLoad getTimelineTrace(
+    Id contactId,
+    List<String> categories,
+    List<String> hiddenTypes,
+    String historyYears,
+    String futureYears,
+    String focus,
+    Boolean newestFirst,
+    Boolean centred,
+    Integer count
+  ) {
+    Long started = System.currentTimeMillis();
+    TimeDriveQueries.tracing = true;
+    TimelineLoad out = loadTimeline(
+      contactId,
+      categories,
+      hiddenTypes,
+      historyYears,
+      futureYears,
+      focus,
+      newestFirst,
+      centred,
+      count
+    );
+    Trace t = new Trace();
+    t.full = fullTrace();
+    t.serverMs = System.currentTimeMillis() - started;
+    for (TimeDriveQueries.Ran line : TimeDriveQueries.lines()) {
+      // Only the full trace shows a query's SOQL; reasons and failure kinds
+      // are for everyone (they say why items are missing, not how it's set up).
+      Boolean isQuery = line.kind != TimeDriveQueries.LEFT_OUT && line.kind != TimeDriveQueries.FAILED;
+      if (isQuery && !t.full) {
+        line.soql = null;
+      }
+      t.lines.add(line);
+    }
+    if (t.full) {
+      t.cpuMs = Limits.getCpuTime();
+      t.cpuLimit = Limits.getLimitCpuTime();
+      t.queries = Limits.getQueries();
+      t.queryLimit = Limits.getLimitQueries();
+    }
+    out.trace = t;
+    return out;
+  }
+
+  // Whether a trace shows the SOQL and limits: for admins with Time Drive Setup
+  // (who can manage sources), and for a Login As session, so an admin seeing
+  // the timeline as someone else gets the whole picture, with that user's
+  // access. Anyone else sees what happened, not how it was set up.
+  @TestVisible
+  private static Boolean fullTrace() {
+    if (Schema.sObjectType.Time_Drive_Record__c.isCreateable()) {
+      return true;
+    }
+    return loggedInAs();
+  }
+
+  @TestVisible
+  private static Boolean loggedInAsForTest;
+
+  // A Login As session: Salesforce marks it SubstituteUser. Only asked in a
+  // user's own request: without a session (tests, async work) the platform
+  // throws an error Apex can't catch, so a test says instead.
+  private static Boolean loggedInAs() {
+    if (loggedInAsForTest != null) {
+      return loggedInAsForTest;
+    }
+    if (Test.isRunningTest() || System.isBatch() || System.isFuture() || System.isQueueable() || System.isScheduled()) {
+      return false;
+    }
+    try {
+      Map<String, String> session = Auth.SessionManagement.getCurrentSession();
+      return session != null && session.get('SessionType') == 'SubstituteUser';
+    } catch (Exception e) {
+      return false;
+    }
   }
 
   private static TimelineLoad loadTimeline(

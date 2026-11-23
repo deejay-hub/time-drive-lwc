@@ -95,7 +95,11 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
 
   // Whether the user can see the source at all.
   private static Boolean visibleTo(Time_Drive_Source__mdt s) {
-    return s != null && hiddenReason(s) == null;
+    String reason = hiddenReason(s);
+    if (reason != null) {
+      TimeDriveQueries.record(s.DeveloperName, TimeDriveQueries.LEFT_OUT, 'can\'t read ' + reason);
+    }
+    return s != null && reason == null;
   }
 
   public List<TimeDriveRow> getRows(TimeDriveContext context) {
@@ -189,7 +193,7 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
     List<SObject> rows;
     try {
       rows = Database.queryWithBinds(soql, q.binds, AccessLevel.USER_MODE);
-      TimeDriveQueries.record(s.DeveloperName, paging ? 'rows (page)' : 'rows', soql);
+      TimeDriveQueries.record(s.DeveloperName, paging ? 'rows (page)' : 'rows', soql, rows.size());
     } catch (Exception e) {
       TimeDriveQueries.record(s.DeveloperName, 'rows', soql);
       context.fail(s.Label, e);
@@ -229,7 +233,7 @@ public with sharing class TimeDriveSoqlProvider implements TimeDriveRowProvider,
       List<SObject> read;
       try {
         read = Database.queryWithBinds(soql, q.binds, AccessLevel.USER_MODE);
-        TimeDriveQueries.record(s.DeveloperName, 'rows (page)', soql);
+        TimeDriveQueries.record(s.DeveloperName, 'rows (page)', soql, read.size());
       } catch (Exception e) {
         TimeDriveQueries.record(s.DeveloperName, 'rows (page)', soql);
         context.fail(s.Label, e);

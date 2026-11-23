@@ -50,7 +50,7 @@ private class TimeDriveOverdueTest {
   private static Integer anyQueries() {
     Integer n = 0;
     for (TimeDriveQueries.Ran q : TimeDriveQueries.ran) {
-      n += q.kind == 'any' ? 1 : 0;
+      n += q.kind == 'any' ? q.times : 0;
     }
     return n;
   }
@@ -120,7 +120,7 @@ private class TimeDriveOverdueTest {
       };
       Contact c = new Contact(LastName = 'Quiet');
       insert c;
-      TimeDriveQueries.ran.clear();
+      TimeDriveQueries.clear();
       // Nothing anywhere: every object asked, once each (Task, then Case).
       Assert.isFalse(TimeDriveController.getOverdue(c.Id, '1', null));
       Assert.areEqual(2, anyQueries(), 'one query for the three Task sources, one for Cases: ' + anyQueries());
@@ -133,7 +133,7 @@ private class TimeDriveOverdueTest {
         ActivityDate = Date.today().addDays(-2),
         Status = 'Not Started'
       );
-      TimeDriveQueries.ran.clear();
+      TimeDriveQueries.clear();
       Assert.isTrue(TimeDriveController.getOverdue(c.Id, '1', null));
       Assert.areEqual(1, anyQueries(), 'it stops at the first that has one');
     }
@@ -167,7 +167,7 @@ private class TimeDriveOverdueTest {
       Contact c = new Contact(LastName = 'Shared');
       insert c;
       insert new Task(WhoId = c.Id, Subject = 'Late', ActivityDate = Date.today().addDays(-2), Status = 'Not Started');
-      TimeDriveQueries.ran.clear();
+      TimeDriveQueries.clear();
       Assert.isTrue(TimeDriveController.getOverdue(c.Id, '1', null), 'found through the junction');
       for (TimeDriveQueries.Ran q : TimeDriveQueries.ran) {
         if (q.kind == 'any') {
@@ -193,7 +193,7 @@ private class TimeDriveOverdueTest {
       Assert.isTrue(TimeDriveController.getOverdue(c.Id, '1', null));
       insert new Time_Drive_Setup__c(Name = 'Org', Hidden_Views__c = 'Overdue');
       TimeDriveConfig.forgetHiddenViews();
-      TimeDriveQueries.ran.clear();
+      TimeDriveQueries.clear();
       Assert.isFalse(TimeDriveController.getOverdue(c.Id, '1', null), 'switched off: no button');
       Assert.areEqual(0, anyQueries(), 'and nothing is asked');
       Assert.isFalse(TimeDriveController.getOverdue(null, '1', null), 'no record, no button');
