@@ -1,5 +1,9 @@
 # Change Log
 
+## 23 Nov 2026 v0.9.0
+
+Time Drive 0.9.0 (Fermion) and Time Drive Data Extension 0.9.0 (Ottawa): the first released versions, with everything below.
+
 ## 1 Nov 2026 v0.1.0
 
 **WHAT'S NEW**

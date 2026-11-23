@@ -56,9 +56,14 @@ and data360. The GitHub repo was renamed to `deejay-hub/time-drive-lwc` on
   there on 2026-11-20; the betas 0.1.0-1 to -7 were in `bumpy-rckt`'s old Time
   Drive package (never released). Betas are built with
   `config/project-scratch-def.json` (the Translation Workbench).
+- Released on 2026-11-23: Time Drive 0.9.0-1 (`04tgK000000bXhlQAE`) and the
+  Data Extension 0.9.0-1 (`04tgK000000bXjNQAU`, depends on Time Drive
+  0.9.0.RELEASED). Global Apex is now locked. A released number can't be
+  built again: the next betas need 0.9.1 or 0.10.0. Betas can't upgrade to a
+  release, so moving an org with betas onto 0.9 means uninstall and reinstall.
 - Version names (`versionName` in `sfdx-project.json`): Time Drive uses
-  terms from quantum physics (Boson from 2026-11-20), the Data Extension
-  capital cities of the world (Canberra from 2026-11-20). Pick a new one
+  terms from quantum physics (Boson for 0.1, Fermion for 0.9), the Data Extension
+  capital cities of the world (Canberra for 0.1, Ottawa for 0.9). Pick a new one
   when the version number moves on, not for each beta.
 - The setup page's Docs links point at GitHub `deejay-hub/time-drive-lwc`
   (private for now, so the links need a GitHub login until it's public).
